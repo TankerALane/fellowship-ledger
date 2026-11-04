@@ -20,17 +20,34 @@ Friends.byCharacter = {}   -- "Name-Realm" -> peer
 
 local function plain(v) return T.Plain(v) end
 
+-- My realm as players see it. Taken from my own character key (UnitFullName),
+-- because on Forever GetNormalizedRealmName returns an internal ID such as
+-- "CAMWOWUS1Realm3PvE" instead of the realm's name.
 function Friends.OwnRealm()
+    local key = ns.Store and ns.Store.key
+    local fromKey = key and key:match("^[^%-]+%-(.+)$")
+    if fromKey and fromKey ~= "" then return (fromKey:gsub("%s", "")) end
     local ok, realm = ns.Compat.Call("friends", "GetNormalizedRealmName")
     return ok and plain(realm) or ((GetRealmName() or ""):gsub("%s", ""))
 end
 
--- "Name" or "Name-Realm" (realm may contain spaces) -> "Name-Realm" without spaces.
+-- Split "Name-Realm", "Name Realm" (how Forever names addon-message senders) or
+-- "Name" into name, realm. Character names never contain spaces or hyphens.
+function Friends.SplitName(full)
+    if type(full) ~= "string" then return nil end
+    local name, realm = full:match("^%s*([^%-%s]+)[%-%s]+(.-)%s*$")
+    if name then return name, realm ~= "" and realm or nil end
+    name = full:match("^%s*([^%-%s]+)%s*$")
+    return name, nil
+end
+
+-- Any of those forms (or name + separate realm) -> "Name-Realm" with no spaces.
 function Friends.FullName(name, realm)
     if type(name) ~= "string" or name == "" then return nil end
-    if name:find("-", 1, true) then return (name:gsub("%s", "")) end
-    realm = realm and realm ~= "" and realm:gsub("%s", "") or Friends.OwnRealm()
-    return name .. "-" .. realm
+    local n, r = Friends.SplitName(name)
+    if not n then return nil end
+    r = r or (type(realm) == "string" and realm ~= "" and realm) or Friends.OwnRealm()
+    return n .. "-" .. (r:gsub("%s", ""))
 end
 
 function Friends.Self()
@@ -44,17 +61,17 @@ function Friends.Normalize(full)
     return (tostring(full or ""):gsub("%s", ""):lower())
 end
 
+-- Do two character names (any of the forms above) mean the same character?
+function Friends.SameCharacter(a, b)
+    local fa, fb = Friends.FullName(a), Friends.FullName(b)
+    return fa ~= nil and fb ~= nil and Friends.Normalize(fa) == Friends.Normalize(fb)
+end
+
 -- Is this whisper sender me? A sender without a realm is on my realm.
 function Friends.IsSelf(sender)
     local key = ns.Store.key
     if type(sender) ~= "string" or sender == "" or not key then return false end
-    if Friends.Normalize(Friends.FullName(sender)) == Friends.Normalize(key) then return true end
-    local sName, sRealm = sender:match("^([^%-]+)%-?(.*)$")
-    local myName, myRealm = key:match("^([^%-]+)%-(.*)$")
-    if not sName or sName:lower() ~= (myName or ""):lower() then return false end
-    if sRealm == "" then return true end
-    sRealm = Friends.Normalize(sRealm)
-    return sRealm == Friends.Normalize(myRealm) or sRealm == Friends.Normalize(Friends.OwnRealm())
+    return Friends.SameCharacter(sender, key)
 end
 
 local function sameFlavor(projectID)
@@ -82,26 +99,27 @@ function Friends.Refresh()
                     peer.online = true
                     peer.target = plain(g.gameAccountID)
                     byGame[peer.target] = peer
-                    local full = Friends.FullName(plain(g.characterName), plain(g.realmName))
+                    local full = Friends.FullName(plain(g.characterName), plain(g.realmDisplayName) or plain(g.realmName))
                     if full then
                         peer.character = full
-                        byChar[full] = peer
+                        byChar[Friends.Normalize(full)] = peer
                     end
                 end
             end
             peers[peer.id] = peer
         end
     end
-    -- Character friends
+    -- Character friends (whispered by the name the game gave us)
     local okF, n = ns.Compat.Call("friends", "C_FriendList.GetNumFriends")
     for i = 1, okF and (plain(n) or 0) or 0 do
         local okI, info = ns.Compat.Call("friends", "C_FriendList.GetFriendInfoByIndex", i)
-        local full = okI and type(info) == "table" and Friends.FullName(plain(info.name))
-        if full and not byChar[full] then
+        local raw = okI and type(info) == "table" and plain(info.name)
+        local full = raw and Friends.FullName(raw)
+        if full and not byChar[Friends.Normalize(full)] then
             local peer = { id = "ch:" .. full, kind = "char", tag = full, name = full, online = plain(info.connected) == true,
-                target = full, transport = "whisper", character = full }
+                target = raw, transport = "whisper", character = full }
             peers[peer.id] = peer
-            byChar[full] = peer
+            byChar[Friends.Normalize(full)] = peer
         end
     end
     Friends.peers, Friends.byGameAccount, Friends.byCharacter = peers, byGame, byChar
@@ -125,10 +143,11 @@ function Friends.PeerFor(transport, sender)
     end
     local full = Friends.FullName(sender)
     if not full then return nil end
-    local p = Friends.byCharacter[full]
+    local key = Friends.Normalize(full)
+    local p = Friends.byCharacter[key]
     if not p then
         Friends.Refresh()
-        p = Friends.byCharacter[full]
+        p = Friends.byCharacter[key]
     end
     return p
 end

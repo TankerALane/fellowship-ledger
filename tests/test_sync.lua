@@ -45,7 +45,7 @@ local function network(clients, seconds)
                     local st = to.__state
                     if m.kind == "bn" and m.target == st.myGameAccount then
                         Mock.fire(to, "BN_CHAT_MSG_ADDON", m.prefix, m.text, "WHISPER", from.__state.myGameAccount)
-                    elseif m.kind == "addon" and m.channel == "WHISPER" and m.target == (st.name .. "-" .. st.realm) then
+                    elseif m.kind == "addon" and m.channel == "WHISPER" and (m.target == st.name or m.target == (st.name .. "-" .. st.realm)) then
                         Mock.fire(to, "CHAT_MSG_ADDON", m.prefix, m.text, "WHISPER", from.__state.name .. "-" .. from.__state.realm)
                     elseif m.kind == "addon" and (m.channel == "PARTY" or m.channel == "INSTANCE_CHAT") and to ~= from then
                         Mock.fire(to, "CHAT_MSG_ADDON", m.prefix, m.text, m.channel, from.__state.name .. "-" .. from.__state.realm)

@@ -192,3 +192,40 @@ H.test("commtest reports a self mismatch clearly", function()
     ns.Sync.CommTestReport()
     H.ok(ns.CopyWindow.text:find("NOT recognised as self: sender 'Imposter-Elsewhere' vs key 'Tester-TestRealm'", 1, true), ns.CopyWindow.text)
 end)
+
+H.test("Forever name forms: 'Name Realm' senders and an internal realm ID", function()
+    local env, ns = boot({ interface = 16001, tocFlavor = "Forever", playerName = "Tarahallow", realm = "Soldecouple" })
+    env.GetNormalizedRealmName = function() return "CAMWOWUS1Realm3PvE" end
+    local F = ns.Friends
+    H.eq(ns.Store.key, "Tarahallow-Soldecouple")
+    H.eq(F.OwnRealm(), "Soldecouple", "own realm comes from the character key, not the internal ID")
+    H.eq(F.FullName("Tarahallow Soldecouple"), "Tarahallow-Soldecouple")
+    H.eq(F.FullName("Bob"), "Bob-Soldecouple")
+    H.eq(F.FullName("Bob", "Argent Dawn"), "Bob-ArgentDawn")
+    H.eq(F.FullName("Bob Argent Dawn"), "Bob-ArgentDawn")
+    H.eq(F.FullName("Bob-Argent Dawn"), "Bob-ArgentDawn")
+    H.ok(F.IsSelf("Tarahallow Soldecouple"))
+    H.ok(F.IsSelf("Tarahallow"))
+    H.ok(not F.IsSelf("Tarahallow OtherRealm"))
+    -- the commtest round trip with Forever's sender format
+    Mock.slash(env, "commtest")
+    local sent = env.__state.sent
+    env.__state.sent = {}
+    for _, m in ipairs(sent) do
+        if m.kind == "addon" and m.channel == "WHISPER" then
+            Mock.fire(env, "CHAT_MSG_ADDON", m.prefix, m.text, "WHISPER", "Tarahallow Soldecouple")
+        end
+    end
+    ns.Sync.CommTestReport()
+    H.ok(ns.CopyWindow.text:find("received sizes: 60/WHISPER, 100/WHISPER", 1, true), ns.CopyWindow.text)
+end)
+
+H.test("a character friend whispering as 'Name Realm' is recognised", function()
+    local env, ns = boot({ interface = 16001, tocFlavor = "Forever", playerName = "Tarahallow", realm = "Soldecouple",
+        charFriends = { { name = "Carl", connected = true } } })
+    ns.Friends.Refresh()
+    local peer = ns.Friends.PeerFor("whisper", "Carl Soldecouple")
+    H.ok(peer, "found")
+    H.eq(peer.id, "ch:Carl-Soldecouple")
+    H.eq(peer.target, "Carl", "whispers go to the name the game gave")
+end)

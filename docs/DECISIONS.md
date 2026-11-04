@@ -197,3 +197,6 @@ A bug made the "install Questie" hint show even with Questie loaded: it compared
 
 ## D-062 Names are compared without spaces or case
 On Forever, `/fl commtest` whispers to yourself arrived but were dropped as "not a friend", because the sender's name did not exactly match the character key. Realm names can be spelt "Some Realm" or "SomeRealm" depending on the API. `Friends.IsSelf` now ignores spaces and case, and treats a sender with no realm as being on your own realm. If a test whisper is still rejected, the commtest report shows both spellings.
+
+## D-063 Character names in any form (Forever)
+On Forever, `CHAT_MSG_ADDON` names the sender "Name Realm", with a space instead of a hyphen, and `GetNormalizedRealmName` returns an internal ID (`CAMWOWUS1Realm3PvE`) rather than the realm's name. Names are now parsed from "Name-Realm", "Name Realm" or "Name", and compared without spaces or case. Your own realm comes from your character key (`UnitFullName`). Battle.net characters use `realmDisplayName` when it is present. Character friends are whispered by the exact name the game lists.

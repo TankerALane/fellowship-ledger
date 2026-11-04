@@ -1,0 +1,20 @@
+WoW Forever, 2026-11-04 15:48-15:50: second commtest, verify with the probe on, and an export (character name kept, as Austin agreed).
+
+/fl commtest: sent 60..255 all Success, received none, dropped 6.
+  self key: Tarahallow-Soldecouple | own realm: CAMWOWUS1Realm3PvE
+  NOT recognised as self: sender 'Tarahallow Soldecouple' vs key 'Tarahallow-Soldecouple'
+  -> On Forever, CHAT_MSG_ADDON names the sender "Name Realm" (a space, not a hyphen), and
+     GetNormalizedRealmName returns an internal ID. Fixed (D-063).
+
+/fl verify (15:50): 191 pass, 0 errors; same as 15:29. Probe since 15:30:
+  PLAYER_LEVEL_UP (3, 15, 25, ...) and (4, ...): the first argument is the new level, as on retail
+  QUEST_TURNED_IN (376, 170, 0) etc.: questID, xp, money, as on retail
+  PARTY_KILL (Player-6921-..., Creature-0-6825-0-2-1501-...): readable GUIDs on Forever
+  LOOT_READY, LOOT_OPENED, LOOT_SLOT_CLEARED (1)/(2), LOOT_CLOSED, MERCHANT_SHOW/CLOSED, PLAYER_MONEY,
+  UPDATE_FACTION, SKILL_LINES_CHANGED, UI_INFO_MESSAGE, QUEST_ACCEPTED, QUEST_REMOVED, UNIT_LEVEL all fire
+  BN_FRIEND_ACCOUNT_ONLINE (18, false); BN_FRIEND_INFO_CHANGED fired 139 times in 20 min
+
+/fl export:
+  levels 1->2 10m 14s, 2->3 10m 13s, 3->4 14m 35s (Tirisfal Glades), all complete levels
+  7 quests with titles; gold loot 90c, vendor 150c, quest 17c, other -10c (trainer), net 247c
+  repGained 650 (reputation by faction ID works); zonesDiscovered 2; kills 38; active 2135 of 2156 played
