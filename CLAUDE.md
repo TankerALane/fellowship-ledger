@@ -42,6 +42,9 @@ powershell -ExecutionPolicy Bypass -File tools\sync.ps1 -Target Forever   # or R
 # Regenerate the API verification table after editing VerifyChecks.lua
 python tools/gen_verify_doc.py
 
+# Build the release zip (and check a tag): see docs/RELEASING.md
+python tools/build_release.py --tag v0.1.0
+
 # Apply a pasted /fl verify report to the Forever or Retail column
 python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 ```

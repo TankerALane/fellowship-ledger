@@ -164,3 +164,12 @@ A notice appears when a friend's character crosses a multiple of 10 between two 
 
 ## D-051 Gentle default rate
 The send queue allows 2 messages a second, in bursts of 4, with 200-byte pieces, until in-game tests show what the clients really allow. `/fl comms size N` changes the piece size.
+
+## D-052 Own release script instead of the BigWigs packager
+The BigWigs packager names the package from a TOC in the repository root, and its `move-folders` only rearranges folders inside the package. This repo keeps the addon in `FellowshipLedger/` (the layout from the brief), so `tools/build_release.py` builds the zip itself. It holds one `FellowshipLedger/` folder plus `LICENSE.txt`, and fails if the tag and the TOC versions differ. It also uploads to CurseForge's upload API with `CF_API_KEY`. The CurseForge game versions it attaches are set in `tools/release.config.json`. `.github/workflows/release.yml` runs it on `v*` tags and creates the GitHub release. `ci.yml` runs the tests, the verification-doc check and a test build on every push. `.pkgmeta` remains, explaining this.
+
+## D-053 Message size stays at 200 bytes
+`/fl commtest` showed whispers up to 255 bytes arrive on retail. The default piece size stays at 200 bytes until Battle.net game data (`SendGameData`), which has no documented limit, is measured with a second client. `/fl comms size 255` raises it.
+
+## D-054 The name "Fellowship Ledger" looks free
+A web search on 2026-11-04 found no CurseForge addon called "Fellowship Ledger". The nearest names are "Fellowship" (group auto-invite), "Asgard's Guild Fellowship" and several "... Ledger" addons (Alt Ledger, Warband Ledger, Artisan Ledger, Argent Ledger). CurseForge's own project-creation page is the final check.

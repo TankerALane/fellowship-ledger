@@ -51,5 +51,13 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [ ] Austin: `/fl commtest` on both clients (sizes and argument shapes)
 - [ ] Done when: two characters (or Austin and a friend) see each other's data on the same client, and nothing crosses between Forever and retail
 
-## Phase 4: Polish and release
-Accessibility and performance, the full verification pass, a README with screenshots, `.pkgmeta` and a GitHub Actions workflow for CurseForge, the name check, v0.1.0.
+## Phase 4: Polish and release (in progress)
+- [x] Accessibility and performance review (`docs/REVIEW.md`)
+- [x] README; release script, CI and release workflows, `.pkgmeta` note (`docs/RELEASING.md`)
+- [x] CurseForge name check: no existing "Fellowship Ledger" found (D-054)
+- [x] `/fl commtest` on retail: whispers up to 255 bytes arrive; argument order confirmed
+- [ ] Screenshots for the README (Austin)
+- [ ] Full verification pass on Forever (launch 2026-11-04 15:00 PST): `/fl verify`, `/fl test`, `/fl commtest`, `/fl fake`, Questie chains
+- [ ] Two-client sharing test (Austin and a friend, or two accounts)
+- [ ] GitHub repository (name and public confirmed by Austin), then `v0.1.0`
+- [ ] CurseForge project created by Austin, project ID in the TOCs, `CF_API_KEY` secret, upload

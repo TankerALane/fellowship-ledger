@@ -51,6 +51,7 @@
     - `AddonCompartmentFrame:RegisterAddon`, `GameTooltip`, `UnitIsPlayer`, `GetGameMessageInfo` and both `ERR_ZONE_EXPLORED` strings pass.
     - Questie is not installed on retail, so `x:questie.db` is a Forever check.
     - `m:fakeviews` failed by eye: overlapping date labels, labels outside the window, repeated axis numbers, and a font halo. All are fixed in the next build and need re-checking.
+  - `/fl commtest` (13:53, `retail-2026-11-04-commtest.txt`): addon whispers to yourself of 60, 100, 150, 200, 240 and 255 bytes all returned Success and all arrived. **255 bytes is the real whisper limit.** `CHAT_MSG_ADDON` arguments are (string prefix, string text, string channel, string sender, string target, number zoneChannelID, number localID, string name, number instanceID), the order `Comms/Transport.lua` assumes. The 2 HELLOs to online retail friends returned Success; neither runs the ledger. The size limits for `C_BattleNet.SendGameData` and the `BN_CHAT_MSG_ADDON` arguments still need a second client.
   - **Not yet seen firing:** the mail and auction events, `PLAYER_DEAD`, and a real reputation gain or flight path learned. The trackers that use them are built defensively and stay on the in-game checklist.
 - **Event arguments** used by the trackers come from retail documentation and memory until the probe confirms them. Every tracker reads state from APIs (for example `UnitLevel`) rather than trusting event arguments wherever it can.
 
@@ -372,7 +373,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `WOW_PROJECT_ID` | api | our project ID, compared with friends' wowProjectID so only same-flavor friends are messaged | `/dump type(WOW_PROJECT_ID)` -> "number" | pending | ? |
 | `BNET_CLIENT_WOW` | api | the clientProgram value of a friend playing WoW | `/dump type(BNET_CLIENT_WOW)` -> "string" | pending | ? |
 | `LE_PARTY_CATEGORY_INSTANCE` | api | tell finder groups (INSTANCE_CHAT) from home parties for the dungeon-name note | `/dump type(LE_PARTY_CATEGORY_INSTANCE)` -> "number" | pending | ? |
-| `m:commtest` | manual | addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types | `/fl commtest, then paste the report` | pending | ? |
+| `m:commtest` | manual | addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types | `/fl commtest, then paste the report` | pending | PASS |
 
 ### Battle.net friends
 

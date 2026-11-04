@@ -1,15 +1,20 @@
-# Packaging metadata for the BigWigs packager (used by the CurseForge workflow in Phase 4).
-# DRAFT: not yet tested. Phase 4 will verify the move-folders layout with a dry packaging run.
+# Fellowship Ledger does NOT use the BigWigs packager.
+#
+# The packager names the package from a TOC in the repository root, and this repo
+# keeps the addon in FellowshipLedger/ (a layout chosen up front). Releases are
+# built by tools/build_release.py instead, run by .github/workflows/release.yml on
+# a version tag (see docs/RELEASING.md and docs/DECISIONS.md D-052).
+#
+# This file is kept so packager-based tooling that looks for it finds an answer.
+# If the repo is ever flattened, these settings would package it correctly:
 package-as: FellowshipLedger
-
-# The addon lives in a subfolder of the repo; package only that folder.
-move-folders:
-  FellowshipLedger/FellowshipLedger: FellowshipLedger
 
 ignore:
   - assets
   - docs
   - tests
   - tools
+  - dist
+  - .github
   - CLAUDE.md
   - CLAUDE_CODE_PROMPT.md

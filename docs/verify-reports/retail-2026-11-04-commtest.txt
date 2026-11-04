@@ -1,0 +1,16 @@
+Fellowship Ledger comms test | Retail | 2026-11-04 13:53
+sent 60 bytes: Success
+sent 100 bytes: Success
+sent 150 bytes: Success
+sent 200 bytes: Success
+sent 240 bytes: Success
+sent 255 bytes: Success
+received sizes: 60/WHISPER, 100/WHISPER, 150/WHISPER, 200/WHISPER, 240/WHISPER, 255/WHISPER
+args CHAT_MSG_ADDON: string,string,string,string,string,number,number,string,number
+queue 0, sent 2, retried 0, failed 0, received 6, dropped 0; results Success=2
+friends seen 64, online on this flavor 2, with ledger data 0
+
+Reading: whisper addon messages up to 255 bytes arrive intact (the full C_ChatInfo limit).
+CHAT_MSG_ADDON args = prefix, text, channel, sender, target, zoneChannelID, localID, name, instanceID
+(the order Transport.lua assumes). The 2 sends are HELLOs to the 2 online retail friends (neither runs
+the ledger, so no reply). BN_CHAT_MSG_ADDON and SendGameData limits still need a second client.

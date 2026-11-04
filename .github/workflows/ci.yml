@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
+      - name: Unit and smoke tests
+        run: luajit tests/run_all.lua
+
+      - name: API verification doc is in step with the checks
+        run: |
+          python3 tools/gen_verify_doc.py
+          git diff --exit-code docs/API-VERIFICATION.md
+
+      - name: Release zip builds
+        run: python3 tools/build_release.py

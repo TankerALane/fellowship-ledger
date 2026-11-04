@@ -1,0 +1,43 @@
+name: Release
+
+# Runs when a version tag (v1.2.3) is pushed: tests, builds the zip, creates the
+# GitHub release, and uploads to CurseForge when the CF_API_KEY secret exists.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
+      - name: Tests
+        run: luajit tests/run_all.lua
+
+      - name: Build zip (checks the tag matches the TOC versions)
+        run: python3 tools/build_release.py --tag "${GITHUB_REF_NAME}"
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "${GITHUB_REF_NAME}" "dist/FellowshipLedger-${VERSION}.zip" \
+            --title "Fellowship Ledger ${VERSION}" --notes-file CHANGELOG.md
+
+      - name: CurseForge upload
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+        run: |
+          if [ -z "${CF_API_KEY}" ]; then
+            echo "CF_API_KEY secret not set: skipping CurseForge."
+          else
+            python3 tools/build_release.py --tag "${GITHUB_REF_NAME}" --upload
+          fi
