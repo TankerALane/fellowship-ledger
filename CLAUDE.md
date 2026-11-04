@@ -55,4 +55,6 @@ python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 
 ## Status
 
+The public repo is https://github.com/TankerALane/fellowship-ledger and v0.1.0 is a pre-release. Releases come from version tags (`docs/RELEASING.md`), and this repo commits with the GitHub noreply email.
+
 See `docs/ROADMAP.md` for the current phase and step. **Forever is not yet verified.** Development proceeds on the retail report (`docs/verify-reports/retail-2026-11-04.txt`). When a Forever report arrives, save it under `docs/verify-reports/` and run `python tools/apply_verify_report.py <file>`, then fix every difference it lists.
