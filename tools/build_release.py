@@ -19,6 +19,7 @@ import os
 import pathlib
 import re
 import sys
+import urllib.error
 import urllib.request
 import uuid
 import zipfile
@@ -141,13 +142,38 @@ def upload(zip_path, version, project, token, dry_run):
         print("CurseForge upload OK:", r.read().decode()[:200])
 
 
+def check_curseforge():
+    """Read-only: is the token accepted, and which configured game versions exist?"""
+    token = os.environ.get("CF_API_KEY", "")
+    if not token:
+        sys.exit("CF_API_KEY is not set.")
+    req = urllib.request.Request(CF_API + "/game/versions", headers={"X-Api-Token": token})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            all_versions = json.load(r)
+    except urllib.error.HTTPError as e:
+        sys.exit(f"CurseForge rejected the request (HTTP {e.code}). Is the token valid?")
+    print(f"Token accepted: CurseForge returned {len(all_versions)} game versions.")
+    by_flavor = wanted_game_versions()
+    for flavor, names in by_flavor.items():
+        for name in names:
+            hits = [v["id"] for v in all_versions if v.get("name") == name]
+            print(f"  {flavor}: '{name}' -> {'id ' + str(hits[0]) if hits else 'NOT LISTED'}")
+    near = sorted({v.get("name") for v in all_versions if str(v.get("name", "")).startswith(("1.60", "1.6", "12.1"))})
+    print("  Nearby version names on CurseForge:", ", ".join(near) if near else "none")
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--check-curseforge", action="store_true", help="read-only token and game-version check")
     ap.add_argument("--tag")
     ap.add_argument("--upload", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--project", help="CurseForge project ID (default: TOC X-Curse-Project-ID)")
     args = ap.parse_args()
+    if args.check_curseforge:
+        check_curseforge()
+        return
     version = check_versions(args.tag)
     zip_path, n = build_zip(version)
     notes = ROOT / "dist" / "RELEASE_NOTES.md"
