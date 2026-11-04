@@ -29,8 +29,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          PRE=""
+          case "${VERSION}" in 0.*|*-*) PRE="--prerelease" ;; esac   # 0.x and -suffix versions are pre-releases (D-055)
           gh release create "${GITHUB_REF_NAME}" "dist/FellowshipLedger-${VERSION}.zip" \
-            --title "Fellowship Ledger ${VERSION}" --notes-file CHANGELOG.md
+            --title "Fellowship Ledger ${VERSION}" --notes-file dist/RELEASE_NOTES.md ${PRE}
 
       - name: CurseForge upload
         env:

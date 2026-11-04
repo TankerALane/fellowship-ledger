@@ -83,8 +83,8 @@ def changelog_for(version):
 def release_type(version):
     if "alpha" in version or "dev" in version:
         return "alpha"
-    if "beta" in version:
-        return "beta"
+    if "beta" in version or version.startswith("0."):
+        return "beta"  # 0.x releases are pre-releases (D-055)
     return "release"
 
 
@@ -150,7 +150,9 @@ def main():
     args = ap.parse_args()
     version = check_versions(args.tag)
     zip_path, n = build_zip(version)
-    print(f"Built {zip_path.relative_to(ROOT)} ({n} files, version {version})")
+    notes = ROOT / "dist" / "RELEASE_NOTES.md"
+    notes.write_text(changelog_for(version) + "\n", encoding="utf-8")
+    print(f"Built {zip_path.relative_to(ROOT)} ({n} files, version {version}); notes in dist/RELEASE_NOTES.md")
     if args.upload:
         project = args.project or toc_fields(ADDON / FLAVOR_TOCS["Retail"]).get("X-Curse-Project-ID")
         if not project:

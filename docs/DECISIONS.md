@@ -173,3 +173,9 @@ The BigWigs packager names the package from a TOC in the repository root, and it
 
 ## D-054 The name "Fellowship Ledger" looks free
 A web search on 2026-11-04 found no CurseForge addon called "Fellowship Ledger". The nearest names are "Fellowship" (group auto-invite), "Asgard's Guild Fellowship" and several "... Ledger" addons (Alt Ledger, Warband Ledger, Artisan Ledger, Argent Ledger). CurseForge's own project-creation page is the final check.
+
+## D-055 0.x versions are pre-releases
+At Austin's request, v0.1.0 ships before the Forever verification and the two-client test, as a pre-release. Every 0.x version (and any version with a `-suffix`) becomes a GitHub pre-release and a CurseForge "beta". 1.0.0 will be the first full release.
+
+## D-056 Public history uses the GitHub noreply address
+Before the first push, the local history was rewritten so author and committer emails are the GitHub noreply address for TankerALane, and this repo's git config uses it from now on.

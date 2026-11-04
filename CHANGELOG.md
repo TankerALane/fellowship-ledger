@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased: 0.0.1-dev
+## 0.1.0 - 2026-11-04 (pre-release)
+
+First public pre-release. Verified on retail (12.1.5); WoW Forever verification and the two-client sharing test are still to come (see docs/ROADMAP.md).
 
 ### Added
 - Repository layout, MIT license, docs and tooling.
