@@ -28,6 +28,9 @@ What is covered today:
 - **Verify report formatting.** Problems come first, wrapping works, the probe section renders.
 - **Verify check list.** Ids are unique and well formed, the combat log and player chat are never probed, every custom check is implemented, and every check is in `docs/API-VERIFICATION.md`.
 - **TOCs.** The two flavor TOCs stay in step, every listed file exists, the icon file exists, and versions agree.
+- **Runtime smoke** (`test_runtime_smoke.lua` + `wowmock.lua`). Loads the whole addon in TOC order against a small fake WoW API, fires login and logout events, and runs every slash command. Covered: Forever, retail, flavor mismatch, unknown client, the fallback TOC, missing APIs, the persistence probe across a simulated reload, the probe, and that the report never leaks friend names. This proves the code paths run. It does **not** prove the real client behaves like the mock.
+
+Installed interpreter: LuaJIT 2.1 (`winget install --id DEVCOM.LuaJIT`).
 
 ## In-game checks
 

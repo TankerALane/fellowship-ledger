@@ -22,7 +22,7 @@ CLAUDE.md  README.md  LICENSE  CHANGELOG.md  .gitignore  .pkgmeta  CLAUDE_CODE_P
 assets/            logo source art (not synced to the game)
 docs/              ARCHITECTURE, API-VERIFICATION (generated table), PROTOCOL, DECISIONS, ROADMAP, TESTING
 tools/             sync.ps1, sync.config.json, run_tests.ps1, gen_verify_doc.py
-tests/             pure-Lua unit tests (harness.lua, run_all.lua, test_*.lua)
+tests/             unit tests (harness.lua, run_all.lua, test_*.lua) + wowmock.lua runtime smoke tests
 FellowshipLedger/  the addon folder copied into the game, unchanged
   FellowshipLedger_Forever.toc / _Mainline.toc   keep in step (a test enforces it)
   FellowshipLedger.toc                           fallback: prints "unsupported client" only

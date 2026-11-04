@@ -10,4 +10,4 @@
 - SavedVariables persistence probe in both saved variables.
 - Schema version 1 and a migration function.
 - `tools/sync.ps1` (robocopy mirror of the addon folder only), `tools/run_tests.ps1`, `tools/gen_verify_doc.py`.
-- Pure-Lua unit tests.
+- Pure-Lua unit tests and runtime smoke tests against a mock WoW API.

@@ -11,7 +11,8 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] `/fl verify` (190 checks, copy window, saved report), `/fl probe`, `/fl debug`, `/fl version`
 - [x] `tools/sync.ps1` (dry run shown to Austin), `tools/run_tests.ps1`, `tools/gen_verify_doc.py`
 - [x] `docs/API-VERIFICATION.md`
-- [x] unit tests written (they run once a Lua 5.1 or LuaJIT interpreter is installed)
+- [x] unit tests and runtime smoke tests: 54 passing under LuaJIT 2.1
+- [x] first real sync to both clients
 - [ ] Austin: first real sync, then `/fl verify` in Forever and retail, with reports pasted back
 
 ### Step 1.1 onward (after the verify reports)
