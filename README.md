@@ -42,6 +42,8 @@ These use the made-up preview data from `/fl fake`.
 | **Compare:** time per level next to a friend's character | **Quests per day** over the last 30 days |
 | ![Gold per session](docs/screenshots/fl_graph_gps.png) | ![XP per hour](docs/screenshots/fl_graph_xph.png) |
 | **Gold per session:** losses below the line | **XP per hour** per session |
+| ![Settings: track and share per tracker, appearance, notices](docs/screenshots/fl_settings.png) | |
+| **Settings:** Track and Share for each tracker, the look, notices and the block list | |
 
 ## Commands
 
