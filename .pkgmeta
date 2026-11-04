@@ -1,0 +1,15 @@
+# Packaging metadata for the BigWigs packager (used by the CurseForge workflow in Phase 4).
+# DRAFT: not yet tested. Phase 4 will verify the move-folders layout with a dry packaging run.
+package-as: FellowshipLedger
+
+# The addon lives in a subfolder of the repo; package only that folder.
+move-folders:
+  FellowshipLedger/FellowshipLedger: FellowshipLedger
+
+ignore:
+  - assets
+  - docs
+  - tests
+  - tools
+  - CLAUDE.md
+  - CLAUDE_CODE_PROMPT.md

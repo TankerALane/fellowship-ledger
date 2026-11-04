@@ -1,0 +1,23 @@
+# OS clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editors and local tool settings
+.vscode/
+.idea/
+.claude/settings.local.json
+
+# Local overrides that may contain machine paths
+tools/sync.config.local.json
+
+# Packaging output
+.release/
+*.zip
+
+# Python caches from tools/
+__pycache__/
+
+# Never commit secrets
+.env
+*.secret

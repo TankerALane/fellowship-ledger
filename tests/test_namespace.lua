@@ -1,0 +1,31 @@
+local H = ...
+
+H.test("pack keeps trailing nils", function()
+    local ns = H.pureNamespace()
+    local p = ns.util.pack(1, nil, nil)
+    H.eq(p.n, 3)
+    H.eq(p[1], 1)
+end)
+
+H.test("splitCommand lower-cases the command and trims the rest", function()
+    local ns = H.pureNamespace()
+    local cmd, rest = ns.util.splitCommand("  Verify   show  ")
+    H.eq(cmd, "verify")
+    H.eq(rest, "show")
+end)
+
+H.test("splitCommand handles empty and nil", function()
+    local ns = H.pureNamespace()
+    local cmd, rest = ns.util.splitCommand(nil)
+    H.eq(cmd, "")
+    H.eq(rest, "")
+    cmd, rest = ns.util.splitCommand("probe")
+    H.eq(cmd, "probe")
+    H.eq(rest, "")
+end)
+
+H.test("sortedKeys sorts", function()
+    local ns = H.pureNamespace()
+    local keys = ns.util.sortedKeys({ b = 1, a = 2, c = 3 })
+    H.eq(table.concat(keys, ","), "a,b,c")
+end)

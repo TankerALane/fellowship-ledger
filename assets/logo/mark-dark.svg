@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+<title>Fellowship Ledger mark (dark backgrounds)</title>
+<circle cx="120" cy="120" r="112" fill="none" stroke="#E0B34A" stroke-width="8"/>
+<circle cx="120" cy="120" r="101" fill="none" stroke="#F1E4C3" stroke-width="2.5"/>
+<g stroke="#F1E4C3" stroke-width="2.5" stroke-linecap="round">
+<line x1="120" y1="19" x2="120" y2="29"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(30 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(60 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(90 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(120 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(150 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(180 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(210 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(240 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(270 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(300 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(330 120 120)"/>
+</g>
+<polygon points="120,22 134,106 218,120 134,134 120,218 106,134 22,120 106,106" fill="#E0B34A" stroke="#F1E4C3" stroke-width="3" stroke-linejoin="round"/>
+<rect x="90" y="74" width="60" height="9" rx="2" fill="#2B1E12"/>
+<rect x="90" y="157" width="60" height="9" rx="2" fill="#2B1E12"/>
+<path d="M96 83 L144 83 C144 103 132 112 124 120 C132 128 144 137 144 157 L96 157 C96 137 108 128 116 120 C108 112 96 103 96 83 Z" fill="#F6EBD0" stroke="#2B1E12" stroke-width="3" stroke-linejoin="round"/>
+<path d="M103 88 L137 88 C136 100 129 107 120 113 C111 107 104 100 103 88 Z" fill="#C99A2E"/>
+<path d="M100 154 L140 154 C136 146 127 140 120 138 C113 140 104 146 100 154 Z" fill="#C99A2E"/>
+<line x1="120" y1="116" x2="120" y2="140" stroke="#C99A2E" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

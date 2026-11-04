@@ -1,0 +1,26 @@
+## Interface: 16001
+## Title: Fellowship Ledger
+## Notes: Keeps a ledger of your characters' progress and shares it with friends who also run it.
+## Author: Decoupled Lane Studio
+## Version: 0.0.1-dev
+## IconTexture: Interface\AddOns\FellowshipLedger\media\icon
+## SavedVariables: FellowshipLedgerDB, FellowshipLedgerBackupDB
+## OptionalDeps: Questie
+## X-Flavor: Forever
+## X-License: MIT
+
+# Load order matters: Namespace first, Init last.
+# Files under the "pure" list in docs/ARCHITECTURE.md must not touch WoW globals at load time.
+Core\Namespace.lua
+Locale\Locale.lua
+Locale\enUS.lua
+Core\Log.lua
+Core\Migrations.lua
+Compat\FlavorLogic.lua
+Compat\Compat.lua
+Debug\VerifyChecks.lua
+Debug\VerifyReport.lua
+Debug\CopyWindow.lua
+Debug\Probe.lua
+Debug\Verify.lua
+Core\Init.lua

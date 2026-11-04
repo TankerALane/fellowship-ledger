@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 560" width="880" height="560">
+<title>Fellowship Ledger logo lockup</title>
+<!-- Text is live. For an exact match install the free Cinzel and Crimson Pro fonts, or export the lockup from the design canvas. -->
+<rect width="880" height="560" fill="#F1E4C3"/>
+<rect x="24.5" y="24.5" width="831" height="511" fill="none" stroke="#3B2A1A" stroke-width="1"/>
+<rect x="26.5" y="26.5" width="827" height="507" fill="none" stroke="#3B2A1A" stroke-width="1"/>
+<g transform="translate(335 92) scale(0.875)">
+<circle cx="120" cy="120" r="112" fill="none" stroke="#C99A2E" stroke-width="7"/>
+<circle cx="120" cy="120" r="101" fill="none" stroke="#3B2A1A" stroke-width="2"/>
+<g stroke="#3B2A1A" stroke-width="2" stroke-linecap="round">
+<line x1="120" y1="19" x2="120" y2="29"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(30 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(60 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(90 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(120 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(150 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(180 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(210 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(240 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(270 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(300 120 120)"/>
+<line x1="120" y1="19" x2="120" y2="29" transform="rotate(330 120 120)"/>
+</g>
+<polygon points="120,22 134,106 218,120 134,134 120,218 106,134 22,120 106,106" fill="#C99A2E" stroke="#3B2A1A" stroke-width="3" stroke-linejoin="round"/>
+<rect x="90" y="74" width="60" height="9" rx="2" fill="#3B2A1A"/>
+<rect x="90" y="157" width="60" height="9" rx="2" fill="#3B2A1A"/>
+<path d="M96 83 L144 83 C144 103 132 112 124 120 C132 128 144 137 144 157 L96 157 C96 137 108 128 116 120 C108 112 96 103 96 83 Z" fill="#F6EBD0" stroke="#3B2A1A" stroke-width="3" stroke-linejoin="round"/>
+<path d="M103 88 L137 88 C136 100 129 107 120 113 C111 107 104 100 103 88 Z" fill="#C99A2E"/>
+<path d="M100 154 L140 154 C136 146 127 140 120 138 C113 140 104 146 100 154 Z" fill="#C99A2E"/>
+<line x1="120" y1="116" x2="120" y2="140" stroke="#C99A2E" stroke-width="2.5" stroke-linecap="round"/>
+</g>
+<text x="440" y="366" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Times New Roman', serif" font-weight="700" font-size="58" letter-spacing="5.8" fill="#3B2A1A">FELLOWSHIP</text>
+<rect x="225" y="400.5" width="90" height="3" fill="#C99A2E"/>
+<rect x="565" y="400.5" width="90" height="3" fill="#C99A2E"/>
+<text x="440" y="412" text-anchor="middle" font-family="Cinzel, 'Trajan Pro', 'Times New Roman', serif" font-weight="500" font-size="30" letter-spacing="12.6" fill="#7A560F">LEDGER</text>
+<text x="440" y="462" text-anchor="middle" font-family="'Crimson Pro', Georgia, serif" font-style="italic" font-size="20" fill="#3B2A1A">Every level, quest and dungeon, shared with your fellowship.</text>
+</svg>
