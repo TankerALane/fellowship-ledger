@@ -179,3 +179,18 @@ At Austin's request, v0.1.0 ships before the Forever verification and the two-cl
 
 ## D-056 Public history uses the GitHub noreply address
 Before the first push, the local history was rewritten so author and committer emails are the GitHub noreply address for TankerALane, and this repo's git config uses it from now on.
+
+## D-057 Notable items come from your own loot window
+When the loot window opens, `GetNumLootItems`, `GetLootSlotInfo` and `GetLootSlotLink` are read, and green (quality 2) or better items are noted. An item counts only once its slot is taken (`LOOT_SLOT_CLEARED`), so items left behind do not count, and currencies are skipped. Group need/greed rolls are not covered. Retail showed that `ITEM_PUSH` carries only a bag slot and an icon, so it cannot be used. The tracker status is "unverified" until the loot functions pass `/fl verify` (they are on the list).
+
+## D-058 "What killed you" from the death recap, never from chat
+One second after `PLAYER_DEAD`, the newest death recap is found by probing `C_DeathRecap.HasRecapEvents(id)` upward from the last one seen (IDs count from 1 each UI session). The killing blow is the recap event with the latest timestamp. If its source or spell is a secret value, the death is stored as "the game hides what killed you", never guessed. `x:death.recap` in `/fl verify` checks this after a death.
+
+## D-059 Friends' quest chains travel with the Quests share switch
+Each character keeps a snapshot of the chains it is on (`char.chains`), refreshed at login and after quest-log changes. DATA carries them only when the character shares Quests. The Quest chains view lists chains friends are on that you are not on and whose first quest you have not completed (`C_QuestLog.IsQuestFlaggedCompleted`), with where the chain begins (first quest and zone) when known.
+
+## D-060 Retail TOC also declares 12.1.7
+The Mainline TOC lists `## Interface: 120105, 120107`, and the release attaches CurseForge versions 12.1.5 and 12.1.7, so the addon is not flagged out of date when retail patches. Several installed addons already declare 120107.
+
+## D-061 The Questie hint shows only when Questie is missing
+A bug made the "install Questie" hint show even with Questie loaded: it compared Questie's state with a value it never takes. It now shows only when Questie is not installed.

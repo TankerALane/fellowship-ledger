@@ -138,9 +138,25 @@ function M.new(opts)
                 if field == "preQuestSingle" then return q.pre and { q.pre } or nil end
                 if field == "nextQuestInChain" then return q.next end
                 if field == "name" then return q.name end
+                if field == "zoneOrSort" then return q.zone end
             end }
         end,
     }
+    -- Loot window: state.loot = { { name, quantity, quality, link, currency } }
+    env.GetNumLootItems = function() return state.loot and #state.loot or 0 end
+    env.GetLootSlotInfo = function(i)
+        local l = state.loot and state.loot[i]
+        if not l then return nil end
+        return 136000, l.name, l.quantity or 1, l.currency, l.quality, false, false, nil, false
+    end
+    env.GetLootSlotLink = function(i) local l = state.loot and state.loot[i] return l and l.link end
+    -- Death recap: state.recaps[id] = { events }
+    env.C_DeathRecap = {
+        HasRecapEvents = function(id) return state.recaps ~= nil and state.recaps[id] ~= nil end,
+        GetRecapEvents = function(id) return state.recaps and state.recaps[id] end,
+    }
+    -- Secret values: anything listed in state.secrets is "secret".
+    env.issecretvalue = function(v) return state.secrets ~= nil and state.secrets[v] == true end
     env.UnitIsPlayer = function(unit)
         if unit == "player" then return true end
         local u = state.units[unit]
@@ -190,12 +206,14 @@ function M.new(opts)
     end
     env.GetRealmName = function() return "Test Realm" end
     env.C_Map = {
+        GetAreaInfo = function(area) return state.areas and state.areas[area] end,
         GetBestMapForUnit = function() return 1429 end,
         GetMapInfo = function() return { name = "Elwynn Forest", mapID = 1429 } end,
     }
     env.C_QuestLog = {
         GetNumQuestLogEntries = function() return 2 end,
         GetTitleForQuestID = function(id) return "Quest " .. id end,
+        IsQuestFlaggedCompleted = function(id) return state.completed ~= nil and state.completed[id] == true end,
         GetInfo = function(i)
             if i == 1 then return { isHeader = true, title = "Elwynn" } end
             return { isHeader = false, questID = 54, title = "Report to Goldshire" }

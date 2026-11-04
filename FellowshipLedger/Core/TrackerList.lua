@@ -26,7 +26,7 @@ TrackerList.ORDER = {
     { id = "flightPaths", status = "unverified" },-- taxi node fields
     { id = "achievements", status = "ready" },
     { id = "partyLevels", status = "ready" },
-    { id = "items", status = "unavailable" },     -- needs loot APIs not yet verified
+    { id = "items", status = "unverified" },      -- loot window functions on the verify list
 }
 
 TrackerList.byId = {}

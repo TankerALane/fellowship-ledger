@@ -1,4 +1,4 @@
-## Interface: 120105
+## Interface: 120105, 120107
 ## Title: Fellowship Ledger
 ## Notes: Keeps a ledger of your characters' progress and shares it with friends who also run it.
 ## Author: Decoupled Lane Studio
@@ -59,6 +59,7 @@ Trackers\Gold.lua
 Trackers\Professions.lua
 Trackers\Dungeons.lua
 Trackers\Extras.lua
+Trackers\Items.lua
 Trackers\QuestChains.lua
 Comms\Friends.lua
 Comms\Transport.lua

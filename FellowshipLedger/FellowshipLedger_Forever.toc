@@ -59,6 +59,7 @@ Trackers\Gold.lua
 Trackers\Professions.lua
 Trackers\Dungeons.lua
 Trackers\Extras.lua
+Trackers\Items.lua
 Trackers\QuestChains.lua
 Comms\Friends.lua
 Comms\Transport.lua

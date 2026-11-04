@@ -25,6 +25,8 @@ function Character.Ensure(char, now)
     char.deathLog = char.deathLog or {}
     char.zones = char.zones or {}          -- [mapID] = { name, first }
     char.discoveries = char.discoveries or {} -- { name, at }, from "Discovered: <area>", 90 days
+    char.items = char.items or {}          -- notable loot { at, link, name, quality, quantity, zone }, 90 days
+    char.chains = char.chains or {}        -- quest chains in progress [key] = { name, step, total, firstQuestID, firstName, startZone, source }
     char.reputation = char.reputation or {}
     char.flightPaths = char.flightPaths or {}
     char.achievements = char.achievements or {}

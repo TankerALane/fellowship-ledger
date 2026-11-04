@@ -201,6 +201,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetZoneText` | api | zone name fallback | `/dump type(GetZoneText)` -> "function" | pending | PASS |
 | `GetRealZoneText` | api | zone name inside instances | `/dump type(GetRealZoneText)` -> "function" | pending | PASS |
 | `GetSubZoneText` | api | subzone name | `/dump type(GetSubZoneText)` -> "function" | pending | PASS |
+| `C_Map.GetAreaInfo` | api | zone name from an area ID (start zone of a Questie chain) | `/dump type(C_Map.GetAreaInfo)` -> "function" | pending | ? |
 | `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` | api | zones discovered | `/dump type(C_MapExplorationInfo.GetExploredAreaIDsAtPosition)` -> "function" | pending | PASS |
 | `GetGameMessageInfo` | api | name of a UI info message type (ERR_ZONE_EXPLORED = discovered an area) | `/dump type(GetGameMessageInfo)` -> "function" | pending | PASS |
 | `ERR_ZONE_EXPLORED` | api | client's own 'Discovered: %s' format, to recognise discoveries in any language | `/dump type(ERR_ZONE_EXPLORED)` -> "string" | pending | PASS |
@@ -291,6 +292,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | pending | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | pending | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | pending | PASS |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | pending | ? |
 
 ### Reputation
 
@@ -344,6 +346,10 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetItemStats` | api | reported missing on Forever; not planned, listed to confirm | `/dump type(GetItemStats)` -> "function" | pending | FAIL |
 | `C_Spell.GetSpellInfo` | api | spell names | `/dump type(C_Spell.GetSpellInfo)` -> "function" | pending | PASS |
 | `GetSpellInfo` | api | fallback (reported missing on Forever) | `/dump type(GetSpellInfo)` -> "function" | pending | FAIL |
+| `GetNumLootItems` | api | how many slots the open loot window has | `/dump type(GetNumLootItems)` -> "function" | pending | ? |
+| `GetLootSlotInfo` | api | loot slot name, quantity, currency, quality | `/dump type(GetLootSlotInfo)` -> "function" | pending | ? |
+| `GetLootSlotLink` | api | item link of a loot slot | `/dump type(GetLootSlotLink)` -> "function" | pending | ? |
+| `ev:LOOT_SLOT_CLEARED` | event | a loot slot was taken: the item counts as looted | `/dump C_EventUtils.IsEventValid("LOOT_SLOT_CLEARED")` -> true | pending | ? |
 | `ev:ITEM_PUSH` | event | item went into your bags | `/dump C_EventUtils.IsEventValid("ITEM_PUSH")` -> true | pending | PASS |
 | `ev:BAG_UPDATE_DELAYED` | event | bags settled (diff for new items) | `/dump C_EventUtils.IsEventValid("BAG_UPDATE_DELAYED")` -> true | pending | PASS |
 

@@ -57,8 +57,18 @@ local function fromQuestie(questID)
         function(id) return questieQuery(id, "nextQuestInChain") end)
     if questieBroken or #chain < 2 then return nil end
     local step, total = Logic.StepOf(chain, questID)
-    local firstName = questieQuery(chain[1], "name")
-    return { step = step, total = total, chainName = type(firstName) == "string" and firstName or nil, source = "questie" }
+    local first = chain[1]
+    local firstName = questieQuery(first, "name")
+    firstName = type(firstName) == "string" and firstName or nil
+    -- Questie's zoneOrSort: a positive value is the zone (area) the quest belongs to.
+    local zone
+    local area = questieQuery(first, "zoneOrSort")
+    if type(area) == "number" and area > 0 and ns.Compat.Has("C_Map.GetAreaInfo") then
+        local okA, name = pcall(C_Map.GetAreaInfo, area)
+        zone = okA and T.Plain(name) or nil
+    end
+    return { step = step, total = total, chainName = firstName, source = "questie", key = "q:" .. first,
+        firstQuestID = first, firstName = firstName, startZone = zone }
 end
 
 local function fromGame(questID)
@@ -68,11 +78,47 @@ local function fromGame(questID)
     if not okQ or type(quests) ~= "table" or #quests == 0 then return nil end
     local step, total = Logic.StepOf(quests, questID)
     if not step then return nil end
-    return { step = step, total = total, chainName = T.Plain(line.questLineName), source = "game" }
+    local first = quests[1]
+    local okT, firstName = ns.Compat.Try("C_QuestLog.GetTitleForQuestID", first)
+    local zone
+    local okF, firstLine = ns.Compat.Try("C_QuestLine.GetQuestLineInfo", first)
+    if okF and type(firstLine) == "table" then
+        firstName = firstName or T.Plain(firstLine.questName)
+        local mapID = T.Plain(firstLine.startMapID)
+        if mapID then
+            local okM, info = ns.Compat.Try("C_Map.GetMapInfo", mapID)
+            zone = okM and type(info) == "table" and T.Plain(info.name) or nil
+        end
+    end
+    return { step = step, total = total, chainName = T.Plain(line.questLineName), source = "game",
+        key = "g:" .. tostring(T.Plain(line.questLineID)), firstQuestID = first,
+        firstName = T.Plain(firstName), startZone = zone }
 end
 
 function QuestChains.Lookup(questID)
     return fromGame(questID) or fromQuestie(questID)
+end
+
+-- Save the chains this character is on (for sharing and for when it is offline).
+function QuestChains.Snapshot()
+    local char = ns.Store.char
+    if not char then return end
+    local chains = {}
+    for _, e in ipairs((QuestChains.ForLog())) do
+        if e.key and e.step then
+            chains[e.key] = { name = e.chainName, step = e.step, total = e.total, firstQuestID = e.firstQuestID,
+                firstName = e.firstName, startZone = e.startZone, source = e.source }
+        end
+    end
+    char.chains = chains
+    return chains
+end
+
+-- Has this character started (or finished) the chain that begins with questID?
+function QuestChains.HaveStarted(firstQuestID)
+    if not firstQuestID then return false end
+    local ok, done = ns.Compat.Try("C_QuestLog.IsQuestFlaggedCompleted", firstQuestID)
+    return ok and done == true
 end
 
 -- Every quest in the log with its chain info. Returns entries, questieState.

@@ -292,6 +292,24 @@ custom["x:questie.db"] = function()
     return state == "ready" and "PASS" or (state == "loading" and "INFO" or "FAIL"), detail
 end
 
+custom["x:death.recap"] = function()
+    if not (Compat.Has("C_DeathRecap.HasRecapEvents") and Compat.Has("C_DeathRecap.GetRecapEvents")) then
+        return "FAIL", "death recap functions missing"
+    end
+    local newest
+    for id = 1, 60 do
+        local ok, has = Compat.Try("C_DeathRecap.HasRecapEvents", id)
+        if ok and has == true then newest = id end
+    end
+    if not newest then return "INFO", "no death recap this session; die once (a fall will do) and run /fl verify again" end
+    local ok, events = Compat.Try("C_DeathRecap.GetRecapEvents", newest)
+    if not ok or type(events) ~= "table" or #events == 0 then return "FAIL", "recap " .. newest .. " has no readable events" end
+    local e = events[1]
+    local secret = Compat.IsSecret(e.sourceName) or Compat.IsSecret(e.spellName)
+    return secret and "FAIL" or "PASS", string.format("recap %d: %d events; fields %s; source/spell %s", newest, #events,
+        table.concat(keysOf(e), ","), secret and "SECRET" or "readable")
+end
+
 local function runCheck(check)
     if check.kind == "api" then
         local value = Compat.Resolve(check.id)

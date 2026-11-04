@@ -13,11 +13,11 @@ An addon for World of Warcraft. It supports **WoW Forever** and **retail**, and 
 | Tracker | What you see |
 |---|---|
 | Levels | Time per level as `1 -> 2: 10m 23s (total 14m 02s)`: active time (idle stretches over 5 minutes removed) and logged-in time; XP per hour; the zone where you levelled |
-| Quests | Every turn-in (kept 30 days) and daily totals (kept 90 days); quest chains: "step X of Y" from the game's data, or from Questie |
+| Quests | Every turn-in (kept 30 days) and daily totals (kept 90 days); quest chains: "step X of Y" from the game's data, or from Questie; chains your friends are on that you haven't started |
 | Dungeons | Entered vs completed (last boss killed), duration, deaths, group make-up (class and role only) |
 | Gold | Net per session, split into loot, vendor, quest, mail, auction and other |
 | Professions | Skill-ups, time to each point, current rank |
-| Extras | Deaths, zones discovered, reputation gained, kills (rare, elite, creature type), flight paths, achievements, party level-ups |
+| Extras | Deaths and what killed you, notable loot (green or better), zones discovered, reputation gained, kills (rare, elite, creature type), flight paths, achievements, party level-ups |
 
 Every tracker has its own **Track** and **Share** switch for each character, and all are on by default.
 

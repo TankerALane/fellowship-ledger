@@ -57,7 +57,9 @@ H.test("tracker flags default on; share needs track and no pause", function()
     char.flags.quests.track = false
     H.ok(not TL.IsTracking(char, "quests"))
     H.ok(not TL.IsSharing(char, "quests"), "no share without track")
+    TL.byId.items.status = "unavailable" -- a tracker whose APIs are missing
     H.ok(not TL.IsTracking(char, "items"), "unavailable trackers never track")
+    TL.byId.items.status = "unverified"
     H.ok(not TL.IsTracking(char, "nonsense"))
     char.flags.levels.track = false
     TL.EnsureFlags(char)

@@ -118,6 +118,23 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
     c.professions["fake1"] = { name = "Mining", rank = math.min(300, level * 5), max = 300, history = {}, lastAt = now - 86400 }
     c.professions["fake2"] = { name = "Cooking", rank = math.min(300, level * 3), max = 300, history = {}, lastAt = now - 3 * 86400 }
     c.lastSeen = now - rng.int(0, 3) * 86400
+    -- A few quest chains in progress, deaths and notable loot, for previews.
+    local chainNames = { "The Venture Co. Menace", "Defias Brotherhood", "Nesingwary's Expedition", "The Missing Diplomat", "Stalvan's Legacy" }
+    for i = 1, rng.int(1, 3) do
+        local name = chainNames[rng.int(1, #chainNames)]
+        local total = rng.int(4, 12)
+        c.chains["fake:" .. name] = { name = name, step = rng.int(1, total), total = total, firstQuestID = 990000 + i,
+            firstName = "Into " .. ZONES[rng.int(1, #ZONES)], startZone = ZONES[rng.int(1, #ZONES)], source = "game" }
+    end
+    for i = 1, rng.int(1, 3) do
+        c.deathLog[#c.deathLog + 1] = { at = now - rng.int(1, 20) * 86400 + i, zone = ZONES[rng.int(1, #ZONES)],
+            level = level, killer = rng.float() < 0.7 and ("Gnoll " .. ({ "Brute", "Mystic", "Poacher" })[rng.int(1, 3)]) or nil,
+            killerSpell = "Melee" }
+    end
+    for i = 1, rng.int(2, 5) do
+        c.items[#c.items + 1] = { at = now - rng.int(1, 20) * 86400 + i, name = ({ "Gnoll Hide Belt", "Cutthroat's Mantle",
+            "Seer's Robe", "Ironforge Breastplate" })[rng.int(1, 4)], quality = rng.int(2, 4) }
+    end
     return c
 end
 

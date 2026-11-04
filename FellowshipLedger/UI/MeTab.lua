@@ -51,6 +51,9 @@ local function characterLines()
             local levelLines = MeModel.LevelLines(chars[key], L)
             if #levelLines == 0 then levelLines = { L.NO_LEVELS_YET } end
             for _, text in ipairs(levelLines) do lines[#lines + 1] = { kind = "detail", text = text, indent = true } end
+            for _, text in ipairs(MeModel.RecentLines(chars[key], L, date)) do
+                lines[#lines + 1] = { kind = "detail", text = text, indent = true }
+            end
         end
     end
     return lines, #rows
@@ -69,7 +72,25 @@ local function chainLines()
         lines[#lines + 1] = { kind = "detail", text = text }
     end
     if #entries == 0 then lines[1] = { kind = "detail", text = L.CHAIN_EMPTY_LOG } end
-    if source ~= "questie" then lines[#lines + 1] = { kind = "group", text = L.CHAIN_QUESTIE_HINT } end
+    if source == "missing" then lines[#lines + 1] = { kind = "group", text = L.CHAIN_QUESTIE_HINT } end
+
+    -- Chains friends are on that this character has not started.
+    lines[#lines + 1] = { kind = "group", text = L.CHAIN_FRIENDS_TITLE }
+    local mine = {}
+    local me = ns.Store.char
+    for key in pairs(me and me.chains or {}) do mine[key] = true end
+    local started = ns.Data.IsFake() and function() return false end or ns.QuestChains.HaveStarted
+    local suggestions = ns.QuestChainLogic.FriendSuggestions(ns.Data.Friends(),
+        function(f) return ns.FriendsModel.IsBlocked(ns.db.blocklist, f) end, mine, started)
+    for _, s in ipairs(suggestions) do
+        local c = s.chain
+        local where = c.firstName and c.startZone and string.format(L.CHAIN_STARTS_AT, c.firstName, c.startZone)
+            or c.firstName and string.format(L.CHAIN_STARTS_WITH, c.firstName)
+            or L.CHAIN_START_UNKNOWN
+        lines[#lines + 1] = { kind = "detail", indent = true, text = string.format(L.CHAIN_FRIEND_LINE, s.friend, s.character,
+            c.name or L.CHAIN_UNNAMED, c.step or 0, c.total or 0, where) }
+    end
+    if #suggestions == 0 then lines[#lines + 1] = { kind = "detail", indent = true, text = L.CHAIN_FRIENDS_NONE } end
     return lines
 end
 

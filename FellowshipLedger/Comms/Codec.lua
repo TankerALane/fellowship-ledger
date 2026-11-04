@@ -39,6 +39,7 @@ Codec.FIELDS = {
     repGained = { "rg", "reputation" }, kills = { "kl", "kills" }, rareKills = { "kr", "kills" },
     eliteKills = { "ke", "kills" }, flightPaths = { "fp", "flightPaths" }, achievements = { "av", "achievements" },
     partyLevelUps = { "pu", "partyLevels" },
+    itemsNotable = { "in", "items" }, itemsEpic = { "ie", "items" },
 }
 Codec.BY_CODE = {}
 for field, def in pairs(Codec.FIELDS) do Codec.BY_CODE[def[1]] = field end
@@ -160,6 +161,17 @@ function Codec.EncodeData(key, char, shared, since)
                 r.partial and "1" or "0", tostring(r.at or 0) }, ",")
         end
     end
+    if shared.quests then
+        local keys = {}
+        for key in pairs(char.chains or {}) do keys[#keys + 1] = key end
+        table.sort(keys)
+        for _, key in ipairs(keys) do
+            local ch = char.chains[key]
+            recs[#recs + 1] = table.concat({ "k", Codec.Escape(key), Codec.Escape(ch.name), tostring(ch.step or 0),
+                tostring(ch.total or 0), tostring(ch.firstQuestID or 0), Codec.Escape(ch.firstName), Codec.Escape(ch.startZone),
+                Codec.Escape(ch.source) }, ",")
+        end
+    end
     local sessions = {}
     for _, s in ipairs(char.sessions or {}) do
         if not since or (s.stop or s.start or 0) >= ns.Codec.SinceEpoch(since) then sessions[#sessions + 1] = s end
@@ -189,7 +201,7 @@ function Codec.SinceEpoch(day)
 end
 
 function Codec.DecodeData(body)
-    local out = { days = {}, levels = {}, sessions = {} }
+    local out = { days = {}, levels = {}, sessions = {}, chains = {} }
     for _, rec in ipairs(split(body, "~")) do
         local f = split(rec, ",")
         if f[1] == "c" then
@@ -201,6 +213,11 @@ function Codec.DecodeData(body)
             local to = tonumber(f[2])
             out.levels[to] = { from = to - 1, to = to, active = tonumber(f[3]) or 0, total = tonumber(f[4]) or 0,
                 partial = f[5] == "1" or nil, at = tonumber(f[6]) or 0 }
+        elseif f[1] == "k" and f[2] and f[2] ~= "" then
+            local function opt(v) v = Codec.Unescape(v) return v ~= "" and v or nil end
+            out.chains[Codec.Unescape(f[2])] = { name = opt(f[3]), step = tonumber(f[4]), total = tonumber(f[5]),
+                firstQuestID = tonumber(f[6]) ~= 0 and tonumber(f[6]) or nil, firstName = opt(f[7]), startZone = opt(f[8]),
+                source = opt(f[9]) }
         elseif f[1] == "s" and tonumber(f[2]) then
             out.sessions[#out.sessions + 1] = { start = tonumber(f[2]), played = tonumber(f[3]) or 0, active = tonumber(f[4]) or 0,
                 levelStart = tonumber(f[5]), levelEnd = tonumber(f[6]), counts = decodeCounts(f, 7) }

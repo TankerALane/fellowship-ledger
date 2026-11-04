@@ -10,14 +10,54 @@ local Store, Days, Character = ns.Store, ns.Days, ns.Character
 
 -- Deaths ---------------------------------------------------------------------
 local Deaths = T.Define({ id = "deaths" })
+
+-- "What killed you": the game's death recap. Recap IDs count up from 1 each UI
+-- session; after a death the newest ID with events is found by probing upward
+-- (no chat is read). The killing blow is the event with the latest timestamp.
+-- On clients where these values are secret, the killer is stored as hidden.
+local lastRecap = 0
+function Deaths.FindKiller()
+    if not (ns.Compat.Has("C_DeathRecap.HasRecapEvents") and ns.Compat.Has("C_DeathRecap.GetRecapEvents")) then
+        return nil, "unavailable"
+    end
+    local newest
+    for id = lastRecap + 1, lastRecap + 25 do
+        local ok, has = pcall(C_DeathRecap.HasRecapEvents, id)
+        if ok and T.Plain(has) == true then newest = id end
+    end
+    if not newest then return nil, "none" end
+    lastRecap = newest
+    local ok, events = pcall(C_DeathRecap.GetRecapEvents, newest)
+    if not ok or type(events) ~= "table" or #events == 0 then return nil, "none" end
+    local blow, best = nil, -math.huge
+    for _, e in ipairs(events) do
+        local ts = type(e) == "table" and T.Plain(e.timestamp)
+        if type(ts) == "number" and ts > best then blow, best = e, ts end
+    end
+    blow = blow or events[1]
+    if type(blow) ~= "table" then return nil, "none" end
+    local source, spell = T.Plain(blow.sourceName), T.Plain(blow.spellName)
+    if ns.Compat.IsSecret(blow.sourceName) or ns.Compat.IsSecret(blow.spellName) then return nil, "hidden" end
+    return { source = source, spell = spell, amount = T.Plain(blow.amount) }, "ok"
+end
+
 Deaths.events.PLAYER_DEAD = function()
     if T.Dedupe("death", 5) then return end
     local char = Store.char
     local zone = Store.Zone()
     local _, instanceType = GetInstanceInfo()
-    char.deathLog[#char.deathLog + 1] = { at = Store.Now(), zone = zone, level = char.level, instanceType = T.Plain(instanceType) }
+    local entry = { at = Store.Now(), zone = zone, level = char.level, instanceType = T.Plain(instanceType) }
+    char.deathLog[#char.deathLog + 1] = entry
     Days.PruneList(char.deathLog, "at", Store.Now(), Character.LIST_KEEP_SECONDS)
     Store.Count("deaths")
+    -- The recap is built a moment after the death.
+    ns.Events.After(1, function()
+        local killer, status = Deaths.FindKiller()
+        entry.killerStatus = status
+        if killer then
+            entry.killer, entry.killerSpell = killer.source, killer.spell
+        end
+    end)
 end
 
 -- New zones visited ("zones discovered" while the ledger is running) -------------

@@ -27,4 +27,22 @@ ns.Locale.Set({
     SYNC_STATUS = "%d friend(s) online here, last sync %s, %d message(s) waiting",
     SYNC_STATUS_FAKE = "Fake data: nothing is sent or received.",
     NEVER = "never",
+
+    -- Phase 5
+    CHAIN_FRIENDS_TITLE = "Chains your friends are on that you haven't started",
+    CHAIN_FRIEND_LINE = "%s (%s): %s, step %d of %d - %s",
+    CHAIN_STARTS_AT = "starts with \"%s\" in %s",
+    CHAIN_STARTS_WITH = "starts with \"%s\"",
+    CHAIN_START_UNKNOWN = "start not known",
+    CHAIN_FRIENDS_NONE = "None right now (friends share their chains when they share Quests).",
+    RECENT_DEATH = "Died %s in %s",
+    RECENT_DEATH_BY = "Died %s to %s in %s",
+    RECENT_DEATH_HIDDEN = "Died %s in %s (the game hides what killed you)",
+    RECENT_ITEM = "Looted %s: %s (%s)",
+    QUALITY_2 = "Uncommon",
+    QUALITY_3 = "Rare",
+    QUALITY_4 = "Epic",
+    QUALITY_5 = "Legendary",
+    QUALITY_6 = "Artifact",
+    QUALITY_7 = "Heirloom",
 })

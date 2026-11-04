@@ -51,6 +51,7 @@ q,<YYYY-MM-DD or empty>
 c,<Name-Realm>,<CLASS>,<race>,<faction>,<level>,<lastSeen>,<shareMask>
 d,<YYYY-MM-DD>,<code>=<int>,...                                        day buckets
 l,<toLevel>,<active>,<total>,<partial 0|1>,<at>                        level times (levels tracker)
+k,<chainKey>,<name>,<step>,<total>,<firstQuestID>,<firstName>,<startZone>,<source>   quest chains in progress (quests tracker)
 s,<start>,<played>,<active>,<levelStart>,<levelEnd>,<code>=<int>,...   last 60 sessions
 ```
 
@@ -72,8 +73,9 @@ Field codes:
 | `fp` | flightPaths | flightPaths |
 | `av` | achievements | achievements |
 | `pu` | partyLevelUps | partyLevels |
+| `in`, `ie` | itemsNotable, itemsEpic | items |
 
-The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days.
+The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days. Quest chains (`k`) describe what the character is on now, so the received set replaces the stored one. When the sender stops sharing Quests, the stored chains are cleared. Chain keys are `g:<questLineID>` (game data) or `q:<firstQuestID>` (Questie). Version 1 receivers that predate these records ignore them.
 
 ### NAME (`N`)
 

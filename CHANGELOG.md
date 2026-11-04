@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Friends' quest chains: chains your friends are on that you haven't started, and where each begins. Chains are shared only when you share Quests.
+- Notable loot: green or better items you take from your loot window, with quality and zone.
+- What killed you: the killing blow from the game's death recap, or "hidden" where the game keeps it secret.
+- Retail 12.1.7 is declared, so the addon stays current when retail patches.
+
+### Fixed
+- The "install Questie" hint showed even when Questie was loaded.
+
 ## 0.1.0 - 2026-11-04 (pre-release)
 
 First public pre-release. Verified on retail (12.1.5); WoW Forever verification and the two-client sharing test are still to come (see docs/ROADMAP.md).

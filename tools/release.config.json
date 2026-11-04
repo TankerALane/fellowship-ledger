@@ -1,7 +1,12 @@
 {
   "curseforgeGameVersions": {
-    "Retail": ["12.1.5"],
-    "Forever": ["1.60.1"]
+    "Retail": [
+      "12.1.5",
+      "12.1.7"
+    ],
+    "Forever": [
+      "1.60.1"
+    ]
   },
   "note": "Names as CurseForge lists them in its game-versions API. The release script warns about any name CurseForge does not list (Forever may not be listed yet) and uploads with the rest. Update when the clients patch."
 }

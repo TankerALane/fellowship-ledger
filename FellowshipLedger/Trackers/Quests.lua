@@ -22,7 +22,14 @@ end
 
 local Quests = T.Define({ id = "quests" })
 
-function Quests:OnLogin() scanLog() end
+local function snapshot()
+    if ns.QuestChains then pcall(ns.QuestChains.Snapshot) end
+end
+
+function Quests:OnLogin()
+    scanLog()
+    snapshot()
+end
 
 local scanPending = false
 Quests.events.QUEST_LOG_UPDATE = function()
@@ -31,6 +38,7 @@ Quests.events.QUEST_LOG_UPDATE = function()
     ns.Events.After(2, function()
         scanPending = false
         scanLog()
+        snapshot()
     end)
 end
 

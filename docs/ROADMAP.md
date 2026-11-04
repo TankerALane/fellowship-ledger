@@ -51,6 +51,14 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [ ] Austin: `/fl commtest` on both clients (sizes and argument shapes)
 - [ ] Done when: two characters (or Austin and a friend) see each other's data on the same client, and nothing crosses between Forever and retail
 
+## Phase 5: Finish the brief (built and unit-tested; 1.0.0 waits for Forever)
+- [x] Friends' quest chains: chains shared with Quests, and "chains your friends are on that you haven't started", with where each begins
+- [x] Notable item drops from your own loot window (green or better), shown in the character's expanded row
+- [x] What killed you, from the death recap; stored as hidden if the game makes it secret
+- [x] Retail 12.1.7 declared in the TOC and the release versions
+- [ ] Austin in-game: loot a green item, die once, then `/fl verify` (new checks: loot functions, `LOOT_SLOT_CLEARED`, `x:death.recap`, `C_Map.GetAreaInfo`)
+- [ ] Forever verification pass, two-client test, screenshots, then 1.0.0
+
 ## Phase 4: Polish and release (in progress)
 - [x] Accessibility and performance review (`docs/REVIEW.md`)
 - [x] README; release script, CI and release workflows, `.pkgmeta` note (`docs/RELEASING.md`)

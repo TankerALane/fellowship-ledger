@@ -18,6 +18,30 @@ function QuestChainLogic.StepOf(list, questID)
     return nil, list and #list or 0
 end
 
+-- Chains friends are on that I have not started.
+-- friends: db.friends shape; mine: set of my chain keys; started(firstQuestID) -> bool.
+-- Returns { friend, character, chain } sorted by friend then chain name; one entry per chain key.
+function QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)
+    local out, seen = {}, {}
+    for _, f in pairs(friends or {}) do
+        if not blocked(f) then
+            for charKey, c in pairs(f.characters or {}) do
+                for key, chain in pairs(c.chains or {}) do
+                    if not mine[key] and not seen[key] and not started(chain.firstQuestID) then
+                        seen[key] = true
+                        out[#out + 1] = { friend = f.name or "?", character = c.name or charKey, chain = chain, key = key }
+                    end
+                end
+            end
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.friend ~= b.friend then return a.friend < b.friend end
+        return tostring(a.chain.name) < tostring(b.chain.name)
+    end)
+    return out
+end
+
 -- prevOf(id) -> previous quest ID or nil; nextOf(id) -> next quest ID or nil.
 -- Returns the ordered chain (first quest first). Stops on loops or MAX_STEPS.
 function QuestChainLogic.Walk(questID, prevOf, nextOf)

@@ -103,6 +103,7 @@ ns.VerifyChecks = {
     { id = "GetZoneText", kind = "api", area = "Zones", why = "zone name fallback" },
     { id = "GetRealZoneText", kind = "api", area = "Zones", why = "zone name inside instances" },
     { id = "GetSubZoneText", kind = "api", area = "Zones", why = "subzone name" },
+    { id = "C_Map.GetAreaInfo", kind = "api", area = "Zones", why = "zone name from an area ID (start zone of a Questie chain)" },
     { id = "C_MapExplorationInfo.GetExploredAreaIDsAtPosition", kind = "api", area = "Zones", why = "zones discovered" },
     { id = "GetGameMessageInfo", kind = "api", area = "Zones", why = "name of a UI info message type (ERR_ZONE_EXPLORED = discovered an area)" },
     { id = "ERR_ZONE_EXPLORED", kind = "api", area = "Zones", why = "client's own 'Discovered: %s' format, to recognise discoveries in any language", expect = "string" },
@@ -178,6 +179,7 @@ ns.VerifyChecks = {
     { id = "C_DeathRecap.GetRecapEvents", kind = "api", area = "Deaths", why = "what killed you (may be secret)" },
     { id = "C_DeathRecap.HasRecapEvents", kind = "api", area = "Deaths", why = "is a death recap available" },
     { id = "GetDeathRecapLink", kind = "api", area = "Deaths", why = "death recap fallback" },
+    { id = "x:death.recap", kind = "custom", area = "Deaths", why = "the newest death recap can be found and its killing blow (source, spell) is readable, not secret", test = "die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1))" },
 
     -- Extras: reputation
     { id = "C_Reputation.GetNumFactions", kind = "api", area = "Reputation", why = "walk factions" },
@@ -210,6 +212,10 @@ ns.VerifyChecks = {
     { id = "GetItemStats", kind = "api", area = "Items", why = "reported missing on Forever; not planned, listed to confirm" },
     { id = "C_Spell.GetSpellInfo", kind = "api", area = "Items", why = "spell names" },
     { id = "GetSpellInfo", kind = "api", area = "Items", why = "fallback (reported missing on Forever)" },
+    { id = "GetNumLootItems", kind = "api", area = "Items", why = "how many slots the open loot window has" },
+    { id = "GetLootSlotInfo", kind = "api", area = "Items", why = "loot slot name, quantity, currency, quality" },
+    { id = "GetLootSlotLink", kind = "api", area = "Items", why = "item link of a loot slot" },
+    { id = "ev:LOOT_SLOT_CLEARED", kind = "event", area = "Items", why = "a loot slot was taken: the item counts as looted" },
     { id = "ev:ITEM_PUSH", kind = "event", area = "Items", why = "item went into your bags" },
     { id = "ev:BAG_UPDATE_DELAYED", kind = "event", area = "Items", why = "bags settled (diff for new items)" },
 

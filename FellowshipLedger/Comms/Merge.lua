@@ -65,6 +65,8 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     end
     c.levels = c.levels or {}
     for to, r in pairs(data.levels) do c.levels[to] = r end
+    -- Quest chains are "what they are on now": replace them when quests are shared.
+    if ns.Codec.MaskToSet(data.mask or "").quests then c.chains = data.chains or {} else c.chains = nil end
     -- sessions: upsert by start time, keep sorted
     c.sessions = c.sessions or {}
     local byStart = {}
