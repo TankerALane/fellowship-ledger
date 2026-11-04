@@ -132,11 +132,14 @@ It reads "Turn off all sharing for this character" while any tracker shares, and
 ## D-040 Table columns fit the window
 Column widths come from `UI/Layout.lua`. Columns stretch up to 1.6 times their natural width on wide windows and shrink down to 0.7 times on narrow ones. Below that, columns are dropped from the right, so Skill-ups goes first, then Kills, then Deaths, and the name column always stays. Tables with row buttons (Friends: Block) keep an 80-pixel column for the button. Austin saw columns past the window edge and Block covering "Updated".
 
-## D-041 Resizing redraws at most every 0.35 seconds
-While the corner grip is dragged, size changes only mark a redraw as pending. A redraw then happens at most every 0.35 seconds, plus once when the grip is let go. Redrawing on every size change made resizing laggy.
+## D-041 Resizing redraws at most every 0.1 seconds
+While the corner grip is dragged, size changes only mark a redraw as pending. A redraw then happens at most every 0.1 seconds (10 per second, which Austin preferred over 0.35), plus once when the grip is let go. Redrawing on every size change made resizing laggy.
 
 ## D-042 The window opens on Me
 Opening the window without naming a tab (`/fl`, a minimap left-click, the addon menu) always shows Me. "Open on the last tab I used" in Settings > Appearance (off by default) changes that. Minimap right-click and the Options page still go straight to Settings.
 
 ## D-043 Welcome panel after the loading screen
 The welcome panel is queued 3 seconds after the first `PLAYER_ENTERING_WORLD` instead of at `PLAYER_LOGIN`. At login it never appeared for Austin on retail, though `/fl welcome` worked. The likely (unconfirmed) cause is that windows which close with Escape are closed while the world loads. If that event cannot be registered, a 3-second timer from login is used instead.
+
+## D-044 Welcome panel at every load, with an opt-out box (replaces the show-once rule of D-037)
+At Austin's request, the welcome panel shows after every loading screen (login and `/reload`) while "Show the welcome panel every time I log in" is ticked. It is ticked by default, and the box is on the panel and in Settings > Notices. Its sharing button is now a switch ("Turn off all sharing" / "Turn sharing back on"), like the per-character one. It probably never appeared before because pressing a button after `/fl welcome` had marked it as seen.

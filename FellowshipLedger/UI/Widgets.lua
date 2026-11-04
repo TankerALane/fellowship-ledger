@@ -114,6 +114,7 @@ end
 function W.Button(parent, label, width, height, onClick)
     local b = CreateFrame("Button", nil, parent)
     b:SetSize(width or 90, height or 22)
+    b.selected = false
     b.bg = W.Background(b, "buttonBg")
     W.Border(b, "buttonBorder", 1)
     b.text = W.Text(b, "small", "buttonText")
@@ -135,6 +136,7 @@ end
 function W.Toggle(parent, label, get, set, width)
     local t = CreateFrame("Button", nil, parent)
     t:SetSize(width or 220, 20)
+    t.disabled = false
     t.text = W.Text(t, "body", "text")
     t.text:SetPoint("LEFT")
     function t:Refresh()

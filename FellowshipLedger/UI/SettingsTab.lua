@@ -265,6 +265,7 @@ local function build(panel)
     toggle(L.TOAST_LEVEL, "levelToast")
     toggle(L.TOAST_SESSION, "sessionSummary")
     toggle(L.TOAST_FRIENDS, "friendToasts")
+    toggle(L.WELCOME_EVERY_LOGIN, "welcomeEveryLogin")
 
     -- Block list -------------------------------------------------------------
     heading(L.SETTINGS_BLOCKLIST)

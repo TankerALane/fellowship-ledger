@@ -1,6 +1,7 @@
 -- UI/Welcome.lua
--- First-launch panel: what the ledger records, exactly what is shared and with whom,
--- a one-click "turn off all sharing", and a way to the per-character toggles.
+-- Welcome panel: what the ledger records, exactly what is shared and with whom, a
+-- sharing on/off switch, and a way to the per-character toggles. Shown after every
+-- loading screen (login and /reload) while "Show this every time I log in" is ticked.
 
 local _, ns = ...
 local L = ns.L
@@ -13,7 +14,7 @@ local frame
 
 local function build()
     local f = CreateFrame("Frame", "FellowshipLedgerWelcome", UIParent)
-    f:SetSize(520, 330)
+    f:SetSize(540, 360)
     f:SetPoint("CENTER", 0, 60)
     f:SetFrameStrata("DIALOG")
     f:EnableMouse(true)
@@ -35,14 +36,22 @@ local function build()
         ns.db.settings.welcomeSeen = true
         f:Hide()
     end
+    local every = W.Toggle(f, L.WELCOME_EVERY_LOGIN,
+        function() return ns.db.settings.welcomeEveryLogin ~= false end,
+        function(v) ns.db.settings.welcomeEveryLogin = v end, 400)
+    every:SetPoint("BOTTOMLEFT", 16, 48)
+    f.every = every
     local keep = W.Button(f, L.WELCOME_KEEP, 150, 24, done)
     keep:SetPoint("BOTTOMLEFT", 16, 14)
-    local off = W.Button(f, L.WELCOME_OFF, 170, 24, function()
-        ns.db.settings.sharingPaused = true
-        ns.Log.Info(L.WELCOME_OFF_DONE)
-        done()
+    -- Sharing switch: pauses all sharing, or turns it back on.
+    local share = W.Button(f, L.WELCOME_OFF, 190, 24, function(self)
+        local s = ns.db.settings
+        s.sharingPaused = not s.sharingPaused
+        ns.Log.Info(s.sharingPaused and L.WELCOME_OFF_DONE or L.WELCOME_ON_DONE)
+        Welcome.RefreshButtons()
     end)
-    off:SetPoint("BOTTOM", 0, 14)
+    share:SetPoint("BOTTOM", 0, 14)
+    f.share = share
     local settings = W.Button(f, L.WELCOME_SETTINGS, 150, 24, function()
         done()
         ns.MainWindow.Open("settings")
@@ -50,6 +59,12 @@ local function build()
     settings:SetPoint("BOTTOMRIGHT", -16, 14)
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, "FellowshipLedgerWelcome") end
     return f
+end
+
+function Welcome.RefreshButtons()
+    if not frame then return end
+    frame.share.text:SetText(ns.db.settings.sharingPaused and L.WELCOME_ON or L.WELCOME_OFF)
+    frame.every:Refresh()
 end
 
 function Welcome.Show()
@@ -61,9 +76,11 @@ function Welcome.Show()
         end
         frame = result
     end
+    Welcome.RefreshButtons()
     frame:Show()
+    ns.Log.Debug("welcome panel shown")
 end
 
 function Welcome.MaybeShow()
-    if not ns.db.settings.welcomeSeen then Welcome.Show() end
+    if ns.db.settings.welcomeEveryLogin ~= false then Welcome.Show() end
 end

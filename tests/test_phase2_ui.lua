@@ -82,14 +82,28 @@ H.test("skins, text sizes and scale apply without errors", function()
     noErrors(env)
 end)
 
-H.test("first launch shows the welcome panel once; turning off sharing pauses it", function()
+H.test("welcome panel shows every load until its box is unticked; sharing switch", function()
     local env, ns = boot()
-    H.ok(env.FellowshipLedgerWelcome and env.FellowshipLedgerWelcome:IsShown(), "welcome shown")
+    local w = env.FellowshipLedgerWelcome
+    H.ok(w and w:IsShown(), "welcome shown")
+    -- sharing switch: off, then back on
+    w.share:GetScript("OnClick")(w.share)
+    H.eq(env.FellowshipLedgerDB.settings.sharingPaused, true)
+    H.eq(w.share.text:GetText(), "Turn sharing back on")
+    w.share:GetScript("OnClick")(w.share)
     H.eq(env.FellowshipLedgerDB.settings.sharingPaused, false)
+    -- seen before: still shows on the next load
     env.FellowshipLedgerDB.settings.welcomeSeen = true
     Mock.fire(env, "PLAYER_LOGOUT")
     local env2 = boot(RETAIL, env.FellowshipLedgerDB, env.FellowshipLedgerBackupDB)
-    H.ok(not (env2.FellowshipLedgerWelcome and env2.FellowshipLedgerWelcome:IsShown()), "not again")
+    H.ok(env2.FellowshipLedgerWelcome:IsShown(), "shown again on the next load")
+    -- untick the box: not shown on the next load
+    local box = env2.FellowshipLedgerWelcome.every
+    box:GetScript("OnClick")(box)
+    H.eq(env2.FellowshipLedgerDB.settings.welcomeEveryLogin, false)
+    Mock.fire(env2, "PLAYER_LOGOUT")
+    local env3 = boot(RETAIL, env2.FellowshipLedgerDB, env2.FellowshipLedgerBackupDB)
+    H.ok(not (env3.FellowshipLedgerWelcome and env3.FellowshipLedgerWelcome:IsShown()), "not shown once unticked")
 end)
 
 H.test("minimap button, options page and compartment entry", function()

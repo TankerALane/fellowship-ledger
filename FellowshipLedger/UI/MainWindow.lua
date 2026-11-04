@@ -13,7 +13,7 @@ ns.MainWindow = Main
 Main.TABS = { "me", "friends", "graphs", "settings" }
 Main.tabs = {}
 Main.current = nil
-Main.RESIZE_REDRAW = 0.35 -- seconds between redraws while resizing
+Main.RESIZE_REDRAW = 0.1 -- seconds between redraws while resizing (10 per second)
 
 local FRAME_NAME = "FellowshipLedgerMainWindow"
 
