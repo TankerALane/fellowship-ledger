@@ -1,0 +1,5 @@
+* text=auto
+*.tga binary
+*.png binary
+*.blp binary
+*.ps1 text eol=crlf
