@@ -38,30 +38,113 @@ Zones.events.ZONE_CHANGED_NEW_AREA = function()
     visitZone()
 end
 
+-- True discoveries: the game's on-screen info message "Discovered: <area>" (seen on
+-- retail as UI_INFO_MESSAGE type 408). This is the UI info line, not chat. It is
+-- recognised by the message's error name (GetGameMessageInfo) or, failing that, by
+-- the client's own localized format strings ERR_ZONE_EXPLORED / ERR_ZONE_EXPLORED_XP.
+local DISCOVERY_NAMES = { ERR_ZONE_EXPLORED = true, ERR_ZONE_EXPLORED_XP = true }
+local discoveryPatterns
+local function patterns()
+    if not discoveryPatterns then
+        discoveryPatterns = {}
+        for _, key in ipairs({ "ERR_ZONE_EXPLORED", "ERR_ZONE_EXPLORED_XP" }) do
+            local fmt = _G[key]
+            if type(fmt) == "string" then discoveryPatterns[#discoveryPatterns + 1] = ns.Format.PatternFromFormat(fmt) end
+        end
+    end
+    return discoveryPatterns
+end
+
+Zones.events.UI_INFO_MESSAGE = function(_, messageType, message)
+    messageType, message = T.Plain(messageType), T.Plain(message)
+    local discovered, area = false, nil
+    if messageType and ns.Compat.Has("GetGameMessageInfo") then
+        local ok, errorName = ns.Compat.Call("zones", "GetGameMessageInfo", messageType)
+        discovered = ok and DISCOVERY_NAMES[T.Plain(errorName)] == true
+    end
+    if type(message) == "string" then
+        for _, p in ipairs(patterns()) do
+            local found = message:match(p)
+            if found then
+                discovered, area = true, found
+                break
+            end
+        end
+    end
+    if not discovered then return end
+    area = area or message
+    if T.Dedupe("discover:" .. tostring(area), 10) then return end
+    local list = Store.char.discoveries
+    list[#list + 1] = { name = area, at = Store.Now() }
+    Days.PruneList(list, "at", Store.Now(), Character.LIST_KEEP_SECONDS)
+    Store.Count("zonesDiscovered")
+end
+
 -- Reputation (diff of standings on UPDATE_FACTION) --------------------------------
 local Reputation = T.Define({ id = "reputation" })
 local standings
 
-local function readStandings()
-    local ok, n = ns.Compat.Call("reputation", "C_Reputation.GetNumFactions")
-    if not ok then return nil end
-    local out = {}
-    for i = 1, n or 0 do
-        local okData, data = ns.Compat.Call("reputation", "C_Reputation.GetFactionDataByIndex", i)
-        if okData and type(data) == "table" then
-            local id, standing = T.Plain(data.factionID), T.Plain(data.currentStanding)
-            if id and type(standing) == "number" and not data.isHeader then
-                out[id] = { name = T.Plain(data.name), standing = standing }
-            elseif id and data.currentStanding == nil then
-                ns.Compat.Disable("reputation", "FactionData has no currentStanding field")
-                return nil
+-- The reputation list by index hides factions under collapsed headers (seen on
+-- retail: 28 UPDATE_FACTION, no gain found). So at login the ledger looks factions
+-- up by ID once and then watches every ID that exists, whatever the panel shows.
+local MAX_FACTION_ID = 4000
+local factionIDs
+
+local function addFaction(out, data)
+    if type(data) ~= "table" or data.isHeader and not data.isHeaderWithRep then return end
+    local id, standing = T.Plain(data.factionID), T.Plain(data.currentStanding)
+    if id and type(standing) == "number" then
+        out[id] = { name = T.Plain(data.name), standing = standing }
+    end
+end
+
+local function discoverFactionIDs()
+    local ids, seen = {}, {}
+    if ns.Compat.Has("C_Reputation.GetFactionDataByID") then
+        for id = 1, MAX_FACTION_ID do
+            local ok, data = pcall(C_Reputation.GetFactionDataByID, id)
+            if ok and type(data) == "table" and T.Plain(data.factionID) then
+                ids[#ids + 1] = id
+                seen[id] = true
             end
         end
+    end
+    -- Also anything visible in the panel (covers clients where lookup by ID is missing).
+    local okN, n = ns.Compat.Call("reputation", "C_Reputation.GetNumFactions")
+    for i = 1, okN and n or 0 do
+        local okData, data = ns.Compat.Call("reputation", "C_Reputation.GetFactionDataByIndex", i)
+        local id = okData and type(data) == "table" and T.Plain(data.factionID)
+        if id and not seen[id] then
+            ids[#ids + 1] = id
+            seen[id] = true
+        end
+    end
+    return ids
+end
+
+local function readStandings()
+    factionIDs = factionIDs or discoverFactionIDs()
+    local out = {}
+    if ns.Compat.Has("C_Reputation.GetFactionDataByID") then
+        for _, id in ipairs(factionIDs) do
+            local ok, data = ns.Compat.Call("reputation", "C_Reputation.GetFactionDataByID", id)
+            if ok then addFaction(out, data) end
+        end
+    end
+    -- Plus anything visible in the panel that the ID scan did not have (newly met factions).
+    local okN, n = ns.Compat.Call("reputation", "C_Reputation.GetNumFactions")
+    for i = 1, okN and n or 0 do
+        local ok, data = ns.Compat.Call("reputation", "C_Reputation.GetFactionDataByIndex", i)
+        local id = ok and type(data) == "table" and T.Plain(data.factionID)
+        if id and not out[id] then addFaction(out, data) end
     end
     return out
 end
 
-function Reputation:OnLogin() standings = readStandings() end
+function Reputation:OnLogin()
+    factionIDs = nil -- rescan IDs once per login
+    standings = readStandings()
+end
 
 local repPending = false
 Reputation.events.UPDATE_FACTION = function()
@@ -162,17 +245,23 @@ end
 -- Party level-ups (class and level only, no names) -------------------------------
 local PartyLevels = T.Define({ id = "partyLevels" })
 local partyLevel = {}
+-- Real players only: follower-dungeon companions are party units that level with you.
+local function isPlayer(unit)
+    local ok, yes = ns.Compat.Call("partyLevels", "UnitIsPlayer", unit)
+    return ok and T.Plain(yes) == true
+end
+
 local function refreshParty()
     partyLevel = {}
     for i = 1, 4 do
         local unit = "party" .. i
-        if UnitExists(unit) then partyLevel[unit] = T.Plain(UnitLevel(unit)) end
+        if UnitExists(unit) and isPlayer(unit) then partyLevel[unit] = T.Plain(UnitLevel(unit)) end
     end
 end
 function PartyLevels:OnLogin() refreshParty() end
 PartyLevels.events.GROUP_ROSTER_UPDATE = refreshParty
 PartyLevels.events.UNIT_LEVEL = function(_, unit)
-    if type(unit) ~= "string" or not unit:find("^party%d$") then return end
+    if type(unit) ~= "string" or not unit:find("^party%d$") or not isPlayer(unit) then return end
     local level = T.Plain(UnitLevel(unit))
     local before = partyLevel[unit]
     partyLevel[unit] = level

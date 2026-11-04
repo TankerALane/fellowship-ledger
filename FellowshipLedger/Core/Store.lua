@@ -83,17 +83,18 @@ function Store.Login()
     refreshCharInfo(char)
 
     char.clock = char.clock or Clock.New(t)
-    Clock.Resume(char.clock, t)
+    local _, resumed = Clock.Resume(char.clock, t)
     startOrContinueSession(char, t)
     char.lastSeen = t
     prune(char, t)
 
     Store.char = char
+    Store.AddTime(0, resumed)
     return char
 end
 
 -- Add played/active seconds everywhere they are counted.
-local function addTime(dp, da)
+function Store.AddTime(dp, da)
     if dp <= 0 and da <= 0 then return end
     local char, s = Store.char, Store.session
     local day = Store.Today()
@@ -107,7 +108,7 @@ function Store.Tick()
     local char = Store.char
     if not char then return end
     local t = now()
-    addTime(Clock.Advance(char.clock, t))
+    Store.AddTime(Clock.Advance(char.clock, t))
     Store.session.stop = t
     Store.session.levelEnd = char.level
     char.lastSeen = t
@@ -117,14 +118,14 @@ function Store.Touch()
     local char = Store.char
     if not char then return end
     local t = now()
-    addTime(Clock.Touch(char.clock, t))
+    Store.AddTime(Clock.Touch(char.clock, t))
     Store.session.stop = t
     char.lastSeen = t
 end
 
 function Store.Idle()
     if not Store.char then return end
-    addTime(Clock.Idle(Store.char.clock, now()))
+    Store.AddTime(Clock.Idle(Store.char.clock, now()))
 end
 
 -- Count `n` (default 1) of `field` today and in this session.

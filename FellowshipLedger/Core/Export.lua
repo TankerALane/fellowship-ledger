@@ -9,7 +9,8 @@
 --   D | key | day | field=value,field=value,...
 --   S | key | start | stop | played | active | levelStart | levelEnd
 --   Q | key | at | questID | title
---   R | key | entered | name | difficultyID | completed | duration | deaths
+--   R | key | entered | name | difficultyID | completed | duration | deaths | bosses | completedBy
+--   P | key | profession | rank | max | points logged | last skill-up at
 
 local _, ns = ...
 
@@ -59,7 +60,12 @@ function Export.Build(db, flavor, exportedAt)
             out[#out + 1] = line("Q", key, q.at, q.id, q.title)
         end
         for _, r in ipairs(c.dungeons or {}) do
-            out[#out + 1] = line("R", key, r.entered, r.name, r.difficultyID, r.completed and 1 or 0, r.duration, r.deaths)
+            out[#out + 1] = line("R", key, r.entered, r.name, r.difficultyID, r.completed and 1 or 0, r.duration, r.deaths,
+                r.bosses and #r.bosses or 0, r.completedBy)
+        end
+        for _, pk in ipairs(sortedKeys(c.professions or {})) do
+            local p = c.professions[pk]
+            out[#out + 1] = line("P", key, p.name, p.rank, p.max, p.history and #p.history or 0, p.lastAt)
         end
     end
     return table.concat(out, "\n")

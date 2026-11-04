@@ -22,6 +22,18 @@ H.test("money", function()
     H.eq(F.Money(0, true), "0c")
 end)
 
+H.test("client format strings become match patterns", function()
+    local F = H.pureNamespace().Format
+    local p = F.PatternFromFormat("Discovered: %s")
+    H.eq(("Discovered: Ruins of Zul'Kunda"):match(p), "Ruins of Zul'Kunda")
+    H.eq(("Bloodscalp Scout slain: 1/7"):match(p), nil)
+    local xp = F.PatternFromFormat("Discovered %s: %d experience gained")
+    H.eq(("Discovered Booty Bay: 1,250 experience gained"):match(xp), "Booty Bay")
+    local pos = F.PatternFromFormat("%1$s entdeckt (100%%)")
+    H.eq(("Beutebucht entdeckt (100%)"):match(pos), "Beutebucht")
+    H.eq(("a.b (x)"):match(F.PatternFromFormat("a.b (%s)")), "x")
+end)
+
 H.test("numbers and per hour", function()
     local F = H.pureNamespace().Format
     H.eq(F.Number(1234567), "1,234,567")
@@ -67,15 +79,59 @@ H.test("gold source classification", function()
     H.eq(G.Classify({ merchant = true, loot = true }, 100), "vendor")
     H.eq(G.Classify({ mail = true }, 100), "mail")
     H.eq(G.Classify({ auction = true }, 100), "auction")
-    H.eq(G.Classify({ questAt = 98 }, 100), "quest")
-    H.eq(G.Classify({ questAt = 90 }, 100), "other")
     H.eq(G.Classify({ loot = true }, 100), "loot")
     H.eq(G.Classify({ lootClosedAt = 99 }, 100), "loot")
     H.eq(G.Classify({}, 100), "other")
-    H.eq(G.Classify({ questAt = 99 }, 100, -20), "other", "spending is never quest money")
-    H.eq(G.Classify({ loot = true }, 100, -5), "other")
+    H.eq(G.Classify({ loot = true }, 100, -5), "other", "a loss is never loot")
     H.eq(G.Classify({ merchant = true }, 100, -5), "vendor")
     H.eq(G.Field("loot"), "money_loot")
+end)
+
+local function total(entries)
+    local t = {}
+    for _, e in ipairs(entries) do t[e[1]] = (t[e[1]] or 0) + e[2] end
+    return t
+end
+
+H.test("quest money is matched whichever event comes first", function()
+    local G = H.pureNamespace().GoldLogic
+    -- money first, then the turn-in names it
+    local m = G.NewMatcher()
+    H.eq(total(G.OnMoney(m, {}, 100, 500)).other, 500)
+    local fix = total(G.OnQuestReward(m, 101, 500))
+    H.eq(fix.other, -500); H.eq(fix.quest, 500)
+    -- turn-in first, then the money
+    m = G.NewMatcher()
+    H.eq(#G.OnQuestReward(m, 200, 300), 0)
+    H.eq(total(G.OnMoney(m, {}, 201, 300)).quest, 300)
+end)
+
+H.test("several quick turn-ins each claim their own reward", function()
+    local G = H.pureNamespace().GoldLogic
+    local m = G.NewMatcher()
+    local sums = {}
+    local function add(entries) for k, v in pairs(total(entries)) do sums[k] = (sums[k] or 0) + v end end
+    add(G.OnMoney(m, {}, 10, 452))
+    add(G.OnMoney(m, {}, 11, 555))
+    add(G.OnQuestReward(m, 12, 452))
+    add(G.OnQuestReward(m, 12, 555))
+    add(G.OnQuestReward(m, 14, 100))      -- arrives before its money
+    add(G.OnMoney(m, { loot = true }, 15, 130)) -- 100 quest + 30 loot in one change
+    H.eq(sums.quest, 1107)
+    H.eq(sums.loot, 30)
+    H.eq(sums.other or 0, 0)
+end)
+
+H.test("quest credit expires and spending never matches it", function()
+    local G = H.pureNamespace().GoldLogic
+    local m = G.NewMatcher()
+    G.OnQuestReward(m, 0, 200)
+    H.eq(total(G.OnMoney(m, {}, 2, -50)).other, -50, "a loss is not quest money")
+    H.eq(total(G.OnMoney(m, {}, 20, 200)).other, 200, "credit expired after the window")
+    m = G.NewMatcher()
+    G.OnMoney(m, {}, 0, 100)
+    H.eq(#G.OnQuestReward(m, 30, 100), 0, "old 'other' money is not reclaimed")
+    H.eq(#G.OnQuestReward(m, 30, 0), 0)
 end)
 
 H.test("backup assessment", function()

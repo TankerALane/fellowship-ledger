@@ -35,7 +35,19 @@
     - Played 958 s and active 870 s.
     - No feature disabled itself.
     - Saved as `docs/verify-reports/retail-2026-11-04-export.txt`, with the character name redacted.
-  - **Not yet seen firing:** the mail and auction events, `ENCOUNTER_END`, `PLAYER_DEAD`, `UPDATE_FACTION`, `TAXIMAP_OPENED` and `ACHIEVEMENT_EARNED`. The trackers that use them are built defensively and stay on the in-game checklist.
+  - Fifth check (12:35, `docs/verify-reports/retail-2026-11-04-1235.txt`, after a follower dungeon and levels 16-18):
+    - `ENCOUNTER_START` (id, name, difficulty, size) and `ENCOUNTER_END` (id, name, difficulty, size, success, table) fire, and so do `BOSS_KILL` (id, name), `LFG_COMPLETION_REWARD` and `SCENARIO_COMPLETED`. The dungeon was counted entered once and completed once, with 4 boss kills.
+    - `GetInstanceInfo` reported difficulty **0** on entry, so the difficulty is now taken from the encounter events.
+    - Follower-dungeon companions are party units that level up with you, which gave 10 false "party level-ups". `UnitIsPlayer` now filters them out.
+    - `UPDATE_FACTION` fired 28 times with no gain found. Factions under collapsed headers are hidden from the by-index list, so reputation is now looked up by faction ID.
+    - `UI_INFO_MESSAGE` (408, "Discovered: Ruins of Zul'Kunda") is the real "zone discovered" signal, and it is now used.
+    - `ACHIEVEMENT_EARNED` (16275, true): the second argument is "already earned on the account", and those are skipped.
+    - `TAXIMAP_OPENED` (2) fires. `PLAYER_FLAGS_CHANGED` ("player") fired 10 times, so AFK is seen.
+    - `BN_FRIEND_INFO_CHANGED` fired 286 times in an hour, which Phase 3 must throttle.
+    - **Battle.net friends in WoW** expose `characterName, realmName, realmDisplayName, realmID, wowProjectID, classFilename, characterLevel, factionName, areaName, playerGuid`. `wowProjectID` was 1 for retail.
+    - `x:rep.fields` and `x:ui.frame` pass (`SetResizeBounds` yes, `SetMinResize` no).
+    - Manual checks confirmed on retail: `/fl` works, the window works and the report copies.
+  - **Not yet seen firing:** the mail and auction events, `PLAYER_DEAD`, and a real reputation gain or flight path learned. The trackers that use them are built defensively and stay on the in-game checklist.
 - **Event arguments** used by the trackers come from retail documentation and memory until the probe confirms them. Every tracker reads state from APIs (for example `UnitLevel`) rather than trusting event arguments wherever it can.
 
 Every WoW API, event and value Fellowship Ledger plans to use, with a way to test it in each client. Nothing here counts as verified until Austin runs it in-game and marks it.
@@ -91,8 +103,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_EventUtils.IsEventValid` | api | how /fl verify checks events; if missing it falls back to trying RegisterEvent | `/dump type(C_EventUtils.IsEventValid)` -> "function" | pending | PASS |
 | `x:addon.questie` | custom | is Questie loaded and which version | `/dump C_AddOns.IsAddOnLoaded("Questie")` | pending | INFO |
 | `m:toc.icon` | manual | IconTexture path format works | AddOns list (character select or Esc > AddOns): the compass icon shows next to Fellowship Ledger | pending | ? |
-| `m:toc.suffix` | manual | client picks the _Forever / _Mainline TOC, not the fallback | AddOns list title reads 'Fellowship Ledger' with no red '(unsupported client)' | pending | ? |
-| `m:slash` | manual | /fl is not taken by another addon | type /fl - our command list appears | pending | ? |
+| `m:toc.suffix` | manual | client picks the _Forever / _Mainline TOC, not the fallback | AddOns list title reads 'Fellowship Ledger' with no red '(unsupported client)' | pending | PASS |
+| `m:slash` | manual | /fl is not taken by another addon | type /fl - our command list appears | pending | PASS |
 
 ### SavedVariables
 
@@ -185,6 +197,9 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetRealZoneText` | api | zone name inside instances | `/dump type(GetRealZoneText)` -> "function" | pending | PASS |
 | `GetSubZoneText` | api | subzone name | `/dump type(GetSubZoneText)` -> "function" | pending | PASS |
 | `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` | api | zones discovered | `/dump type(C_MapExplorationInfo.GetExploredAreaIDsAtPosition)` -> "function" | pending | PASS |
+| `GetGameMessageInfo` | api | name of a UI info message type (ERR_ZONE_EXPLORED = discovered an area) | `/dump type(GetGameMessageInfo)` -> "function" | pending | ? |
+| `ERR_ZONE_EXPLORED` | api | client's own 'Discovered: %s' format, to recognise discoveries in any language | `/dump type(ERR_ZONE_EXPLORED)` -> "string" | pending | ? |
+| `ERR_ZONE_EXPLORED_XP` | api | same, for discoveries that give experience | `/dump type(ERR_ZONE_EXPLORED_XP)` -> "string" | pending | ? |
 | `ev:ZONE_CHANGED` | event | subzone change | `/dump C_EventUtils.IsEventValid("ZONE_CHANGED")` -> true | pending | PASS |
 | `ev:ZONE_CHANGED_NEW_AREA` | event | zone change | `/dump C_EventUtils.IsEventValid("ZONE_CHANGED_NEW_AREA")` -> true | pending | PASS |
 | `ev:UI_INFO_MESSAGE` | event | possible signal for 'discovered' and 'flight path learned' | `/dump C_EventUtils.IsEventValid("UI_INFO_MESSAGE")` -> true | pending | PASS |
@@ -217,6 +232,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetInstanceInfo` | api | dungeon name, type, difficulty, instance ID | `/dump type(GetInstanceInfo)` -> "function" | pending | PASS |
 | `GetDifficultyInfo` | api | difficulty name | `/dump type(GetDifficultyInfo)` -> "function" | pending | PASS |
 | `IsInGroup` | api | group make-up | `/dump type(IsInGroup)` -> "function" | pending | PASS |
+| `UnitIsPlayer` | api | tell real players from follower-dungeon companions | `/dump type(UnitIsPlayer)` -> "function" | pending | ? |
 | `GetNumGroupMembers` | api | group make-up | `/dump type(GetNumGroupMembers)` -> "function" | pending | PASS |
 | `UnitGroupRolesAssigned` | api | party member role | `/dump type(UnitGroupRolesAssigned)` -> "function" | pending | PASS |
 | `EJ_GetInstanceForMap` | api | find a dungeon's journal entry (to know the last boss) | `/dump type(EJ_GetInstanceForMap)` -> "function" | pending | PASS |
@@ -280,7 +296,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_Reputation.GetFactionDataByID` | api | faction standing by ID | `/dump type(C_Reputation.GetFactionDataByID)` -> "function" | pending | PASS |
 | `GetNumFactions` | api | classic style fallback | `/dump type(GetNumFactions)` -> "function" | pending | FAIL |
 | `GetFactionInfo` | api | classic style fallback | `/dump type(GetFactionInfo)` -> "function" | pending | FAIL |
-| `x:rep.fields` | custom | FactionData field names (factionID, currentStanding, isHeader) used to diff standings | `/dump C_Reputation.GetFactionDataByIndex(2)` | pending | ? |
+| `x:rep.fields` | custom | FactionData field names (factionID, currentStanding, isHeader) used to diff standings | `/dump C_Reputation.GetFactionDataByIndex(2)` | pending | PASS |
 | `ev:UPDATE_FACTION` | event | reputation changed (diff standings) | `/dump C_EventUtils.IsEventValid("UPDATE_FACTION")` -> true | pending | PASS |
 
 ### Achievements
@@ -297,15 +313,15 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_TaxiMap.GetAllTaxiNodes` | api | known flight paths | `/dump type(C_TaxiMap.GetAllTaxiNodes)` -> "function" | pending | PASS |
 | `NumTaxiNodes` | api | flight map fallback | `/dump type(NumTaxiNodes)` -> "function" | pending | PASS |
 | `TaxiNodeName` | api | flight map fallback | `/dump type(TaxiNodeName)` -> "function" | pending | PASS |
-| `GetTaxiMapID` | api | map ID of the open flight map | `/dump type(GetTaxiMapID)` -> "function" | pending | ? |
-| `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | pending | ? |
+| `GetTaxiMapID` | api | map ID of the open flight map | `/dump type(GetTaxiMapID)` -> "function" | pending | PASS |
+| `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | pending | PASS |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | pending | PASS |
 
 ### Kills
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `UnitGUID` | api | compare PARTY_KILL attacker/target with you and your target (equality only) | `/dump type(UnitGUID)` -> "function" | pending | ? |
+| `UnitGUID` | api | compare PARTY_KILL attacker/target with you and your target (equality only) | `/dump type(UnitGUID)` -> "function" | pending | PASS |
 | `UnitExists` | api | target exists | `/dump type(UnitExists)` -> "function" | pending | PASS |
 | `UnitIsDead` | api | target died (no combat log allowed) | `/dump type(UnitIsDead)` -> "function" | pending | PASS |
 | `UnitClassification` | api | rare / elite kills | `/dump type(UnitClassification)` -> "function" | pending | PASS |
@@ -384,7 +400,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | pending | PASS |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | pending | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | pending | PASS |
-| `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture) | `/dump CreateFrame("Frame").SetResizeBounds` | pending | ? |
-| `m:copywindow` | manual | the verify report window opens, scrolls, copies and closes with Escape | `/fl verify, then Ctrl+A, Ctrl+C, Escape` | pending | ? |
+| `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture) | `/dump CreateFrame("Frame").SetResizeBounds` | pending | PASS |
+| `m:copywindow` | manual | the verify report window opens, scrolls, copies and closes with Escape | `/fl verify, then Ctrl+A, Ctrl+C, Escape` | pending | PASS |
 
 <!-- GENERATED:END -->

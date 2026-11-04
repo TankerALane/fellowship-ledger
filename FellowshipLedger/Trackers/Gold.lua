@@ -1,15 +1,16 @@
 -- Trackers/Gold.lua
 -- Net money per day and session, split by source using what was open at the time
--- (vendor, mailbox, auction house, loot window, quest turn-in). Never reads chat.
--- Confirmed on retail: PLAYER_MONEY (no args), LOOT_READY/OPENED/CLOSED fire.
+-- (vendor, mailbox, auction house, loot window) and by matching quest rewards by
+-- amount. Never reads chat. Confirmed on retail: PLAYER_MONEY (no args),
+-- LOOT_READY/OPENED/CLOSED, MERCHANT_SHOW/CLOSED and QUEST_TURNED_IN (questID, xp, money).
 
 local _, ns = ...
 local T = ns.Trackers
 local Store, GoldLogic = ns.Store, ns.GoldLogic
 
 local state = {}
+local matcher = GoldLogic.NewMatcher()
 local lastMoney
-local recentOther -- { at, amount } of the last "other" gain, so a late QUEST_TURNED_IN can claim it
 
 local Gold = T.Define({ id = "gold" })
 
@@ -35,17 +36,12 @@ Gold.events.LOOT_CLOSED = function()
     state.lootClosedAt = Store.Now()
 end
 
+local function count(entries)
+    for _, e in ipairs(entries) do Store.Count(GoldLogic.Field(e[1]), e[2]) end
+end
+
 Gold.events.QUEST_TURNED_IN = function(_, _, _, moneyReward)
-    local t = Store.Now()
-    state.questAt = t
-    -- PLAYER_MONEY may already have fired and been counted as "other": move it.
-    moneyReward = T.Plain(moneyReward)
-    if type(moneyReward) == "number" and moneyReward > 0 and recentOther and t - recentOther.at <= GoldLogic.QUEST_WINDOW then
-        local moved = math.min(moneyReward, recentOther.amount)
-        Store.Count(GoldLogic.Field("other"), -moved)
-        Store.Count(GoldLogic.Field("quest"), moved)
-        recentOther = nil
-    end
+    count(GoldLogic.OnQuestReward(matcher, Store.Now(), T.Plain(moneyReward)))
 end
 
 Gold.events.PLAYER_MONEY = function()
@@ -58,11 +54,8 @@ Gold.events.PLAYER_MONEY = function()
     local delta = money - lastMoney
     lastMoney = money
     if delta == 0 then return end
-    local t = Store.Now()
-    local source = GoldLogic.Classify(state, t, delta)
     Store.Count("moneyNet", delta)
     Store.Count(delta > 0 and "moneyIn" or "moneyOut", math.abs(delta))
-    Store.Count(GoldLogic.Field(source), delta)
+    count(GoldLogic.OnMoney(matcher, state, Store.Now(), delta))
     Store.session.moneyEnd = money
-    if source == "other" and delta > 0 then recentOther = { at = t, amount = delta } end
 end

@@ -41,7 +41,7 @@ Every load bumps a counter in `FellowshipLedgerDB.dev.persistProbe` and in `Fell
 ## D-013 Building on retail verify data until Forever launches
 On 2026-11-04 Austin chose to keep building for both clients on the retail `/fl verify` results, because Forever launched later that day. Forever cells in `API-VERIFICATION.md` say `pending`, the addon reminds on Forever until a Forever report is saved, and `tools/apply_verify_report.py` lists every difference once that report exists.
 
-## D-014 What "active time" means
+## D-014 What "active time" means (superseded by D-024)
 Time counts as active for up to 5 minutes after the last activity signal: movement (and a 30-second movement check), combat, casting, targeting, XP, loot, quests, vendors, mail, zone changes or the flight map. After that it stops until the next signal. Going AFK stops it immediately. So quiet moments such as reading quest text still count, but walking away does not. There is no API for raw keyboard or mouse input, so a player who only reads for more than 5 minutes is treated as idle.
 
 ## D-015 What the "(total ...)" level time means
@@ -70,3 +70,26 @@ Quest rewards and loot only add money. A loss while a vendor, mailbox or auction
 
 ## D-023 Party level-ups store class and level only
 No names are stored, in keeping with the privacy rule for party members. Names arrive only through the Phase 3 opt-in.
+
+## D-024 Idle stretches are removed whole (replaces D-014)
+Austin's retail test showed the D-014 rule hid AFK time. That rule counted up to 5 quiet minutes as active, and the game's own auto-AFK also starts at 5 minutes, so a 5-minute AFK barely showed. The new rule:
+- Time since the last activity signal is held as *pending*. The next activity signal commits it as active.
+- If 5 minutes pass with no signal, the **whole** quiet stretch is dropped.
+- Going AFK keeps the pending time only if there was activity in the last 60 seconds (a typed `/afk`). The game's auto-AFK keeps none of it.
+- A level-up counts as activity, so pending time is committed before the level's time is recorded.
+- Activity signals are unchanged: movement (and a 30-second movement check), combat, casting, targeting, XP, loot, quests, vendors, mail, zone changes and the flight map.
+
+## D-025 Real zone discoveries come from the UI info message
+Retail fires `UI_INFO_MESSAGE` (408, "Discovered: <area>"). That is the on-screen info line, not chat. The ledger recognises it by the message's error name (`GetGameMessageInfo` returns `ERR_ZONE_EXPLORED` or `ERR_ZONE_EXPLORED_XP`), or by matching the client's own localized format strings, so it works in any language. Results are counted as `zonesDiscovered` and listed in `discoveries`. "New zones visited" (D-018) is kept alongside.
+
+## D-026 Reputation is read by faction ID
+Factions under collapsed headers are missing from the by-index reputation list. At login the ledger asks `C_Reputation.GetFactionDataByID` for IDs 1 to 4000 once, keeps the ones that exist, and diffs their standings on `UPDATE_FACTION`. The diff is throttled to one per second and also includes anything newly visible in the panel. It never expands or collapses headers in your reputation panel.
+
+## D-027 Follower companions are not party members for level-ups
+In follower dungeons the AI companions are party units that level up with you. Party level-ups count real players only (`UnitIsPlayer`). Dungeon party make-up keeps companions but marks them `npc`.
+
+## D-028 Quest money is matched by amount (refines D-021)
+`QUEST_TURNED_IN` names the money reward. That amount is claimed from money gains within 5 seconds on either side, whichever event arrives first. Several quick turn-ins each claim their own reward. A loss never matches. Other money with no matching turn-in stays under "other". The 13g 16s left in "other" after Austin's follower dungeon was most likely the dungeon-finder reward.
+
+## D-029 Dungeon difficulty from the encounter events
+`GetInstanceInfo` reported difficulty 0 on entering a follower dungeon on retail. When the run's difficulty is 0, it is filled from `ENCOUNTER_START` and `ENCOUNTER_END`, which carried difficulty 1.

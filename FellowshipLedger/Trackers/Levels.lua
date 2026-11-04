@@ -41,7 +41,7 @@ Levels.events.PLAYER_LEVEL_UP = function(_, newLevel)
     newLevel = T.Plain(newLevel)
     if type(newLevel) ~= "number" then newLevel = (char.level or 0) + 1 end
     if T.Dedupe("levelup:" .. newLevel, 10) then return end
-    Store.Tick()
+    Store.Touch() -- a level-up is activity; commits pending time first
 
     local ls = char.levelStart or {}
     local clock = char.clock

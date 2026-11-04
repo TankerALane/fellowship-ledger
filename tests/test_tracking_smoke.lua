@@ -42,7 +42,7 @@ H.test("login creates the character, a session and starts tracking", function()
     H.eq(ns.Store.key, "Tester-TestRealm")
 end)
 
-H.test("moving keeps time active; standing still goes idle after 5 minutes", function()
+H.test("moving keeps time active; a quiet stretch over 5 minutes is removed", function()
     local env = boot(RETAIL)
     env.__state.speed = 7
     Mock.advance(env, 600)
@@ -50,10 +50,10 @@ H.test("moving keeps time active; standing still goes idle after 5 minutes", fun
     Mock.advance(env, 1200)
     local d = today(env)
     H.eq(d.played, 1800)
-    H.eq(d.active, 900, "600 moving + 300 grace")
+    H.eq(d.active, 600, "the 20 quiet minutes are removed entirely")
     local s = char(env).sessions[1]
     H.eq(s.played, 1800)
-    H.eq(s.active, 900)
+    H.eq(s.active, 600)
 end)
 
 H.test("level up records active and total time with zone and toast", function()
@@ -316,6 +316,64 @@ H.test("Me tab model sums ranges per character", function()
     H.eq(rows[1].quests, 6)
     local lines = ns.MeModel.LevelLines({ levels = { [3] = { from = 2, to = 3, active = 60, total = 90, zone = "Elwynn" } } })
     H.eq(lines[1], "2 -> 3: 1m 00s (total 1m 30s)  Elwynn")
+end)
+
+H.test("retail findings: follower companions, difficulty 0 on entry, discoveries", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.units.party1 = { class = "PRIEST", role = "HEALER", level = 16, npc = true }
+    st.units.party2 = { class = "MAGE", role = "DAMAGER", level = 16 }
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    st.units.party1.level, st.units.party2.level = 17, 17
+    Mock.fire(env, "UNIT_LEVEL", "party1")
+    Mock.fire(env, "UNIT_LEVEL", "party2")
+    H.eq(today(env).partyLevelUps, 1, "companions are not counted")
+
+    st.instance = { "The Nokhud Offensive", "party", 0, "", 5, 0, false, 2516 }
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", false, false)
+    local run = char(env).currentRun
+    H.eq(run.difficultyID, 0)
+    H.eq(run.party[1].npc, true)
+    H.eq(run.party[2].npc, nil)
+    Mock.fire(env, "ENCOUNTER_START", 2637, "Granyth", 1, 5)
+    H.eq(run.difficultyID, 1, "taken from the encounter")
+
+    Mock.fire(env, "UI_INFO_MESSAGE", 408, "Discovered: Ruins of Zul'Kunda")
+    Mock.fire(env, "UI_INFO_MESSAGE", 408, "Discovered: Ruins of Zul'Kunda")
+    Mock.fire(env, "UI_INFO_MESSAGE", 312, "Bloodscalp Scout slain: 1/7")
+    Mock.fire(env, "UI_INFO_MESSAGE", 999, "Discovered Booty Bay: 1,250 experience gained")
+    local d = char(env).discoveries
+    H.eq(#d, 2)
+    H.eq(d[1].name, "Ruins of Zul'Kunda")
+    H.eq(d[2].name, "Booty Bay")
+    H.eq(today(env).zonesDiscovered, 2)
+end)
+
+H.test("reputation under a collapsed header is still counted", function()
+    local Mock2 = Mock
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.factions = { { factionID = 67, name = "Horde", isHeader = true, currentStanding = 0 } }
+    st.hiddenFactions = { { factionID = 530, name = "Darkspear Trolls", isHeader = false, currentStanding = 3000 } }
+    Mock2.fire(env, "PLAYER_LOGIN") -- rescan faction IDs with the factions present
+    Mock2.runTimers(env)
+    st.hiddenFactions[1].currentStanding = 3250
+    Mock2.fire(env, "UPDATE_FACTION")
+    Mock2.runTimers(env)
+    H.eq(today(env).repGained, 250)
+    H.eq(char(env).reputation["530"].name, "Darkspear Trolls")
+end)
+
+H.test("export carries professions and dungeon details", function()
+    local env, ns = boot(RETAIL)
+    local c = char(env)
+    c.professions["186"] = { name = "Mining", rank = 40, max = 75, history = { {}, {}, {} }, lastAt = 123 }
+    c.dungeons[1] = { entered = 1, name = "Nokhud", difficultyID = 1, completed = true, duration = 986, deaths = 0,
+        bosses = { {}, {}, {}, {} }, completedBy = "lastBoss" }
+    Mock.slash(env, "export")
+    local text = ns.CopyWindow.text
+    H.ok(text:find("\nP | Tester-TestRealm | Mining | 40 | 75 | 3 | 123", 1, true), text)
+    H.ok(text:find("\nR | Tester-TestRealm | 1 | Nokhud | 1 | 1 | 986 | 0 | 4 | lastBoss", 1, true), text)
 end)
 
 H.test("unsupported or newer data: no tracking, no errors", function()

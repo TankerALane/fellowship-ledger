@@ -54,6 +54,37 @@ function Format.Number(n)
     return sign .. digits
 end
 
+-- Turn a client format string ("Discovered: %s", "Discovered %s: %d experience gained")
+-- into a Lua pattern that captures the first %s. Lets the ledger recognise game
+-- messages in any client language using the client's own strings.
+function Format.PatternFromFormat(fmt)
+    local out, captured = {}, false
+    local i = 1
+    while i <= #fmt do
+        local ch = fmt:sub(i, i)
+        if ch == "%" then
+            local spec = fmt:match("^%%%d*%$?[%-%d%.]*([sdif%%])", i)
+            local whole = fmt:match("^(%%%d*%$?[%-%d%.]*[sdif%%])", i)
+            if spec == "%" then
+                out[#out + 1] = "%%"
+            elseif spec == "s" then
+                out[#out + 1] = captured and ".-" or "(.-)"
+                captured = true
+            elseif spec then
+                out[#out + 1] = "[%d%.,]+"
+            else
+                out[#out + 1] = "%%"
+                whole = "%"
+            end
+            i = i + #(whole or "%")
+        else
+            out[#out + 1] = ch:find("[%^%$%(%)%.%[%]%*%+%-%?]") and ("%" .. ch) or ch
+            i = i + 1
+        end
+    end
+    return "^" .. table.concat(out) .. "$"
+end
+
 -- XP per hour from xp gained over active seconds; nil when there is too little time.
 function Format.PerHour(amount, seconds)
     if not seconds or seconds < 60 then return nil end

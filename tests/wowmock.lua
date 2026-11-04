@@ -82,10 +82,24 @@ function M.new(opts)
     env.GetUnitSpeed = function() return state.speed end
     env.GetZoneText = function() return "Elwynn Forest" end
     env.GetAchievementInfo = function(id) return id, "Achievement " .. id end
+    -- state.factions: list as the panel shows it; state.hiddenFactions: only reachable by ID
     env.C_Reputation = {
         GetNumFactions = function() return state.factions and #state.factions or 0 end,
         GetFactionDataByIndex = function(i) return state.factions and state.factions[i] end,
+        GetFactionDataByID = function(id)
+            for _, list in ipairs({ state.factions or {}, state.hiddenFactions or {} }) do
+                for _, f in ipairs(list) do if f.factionID == id then return f end end
+            end
+        end,
     }
+    env.UnitIsPlayer = function(unit)
+        if unit == "player" then return true end
+        local u = state.units[unit]
+        return u ~= nil and not u.npc
+    end
+    env.GetGameMessageInfo = function(t) if t == 408 then return "ERR_ZONE_EXPLORED" end return "ERR_OTHER" end
+    env.ERR_ZONE_EXPLORED = "Discovered: %s"
+    env.ERR_ZONE_EXPLORED_XP = "Discovered %s: %d experience gained"
 
     env.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) state.chat[#state.chat + 1] = text end }
     env.print = function(...) state.chat[#state.chat + 1] = table.concat({ ... }, " ") end

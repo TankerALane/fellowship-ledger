@@ -17,7 +17,12 @@ local function partySnapshot()
         if UnitExists(unit) then
             local class = T.Plain(select(2, UnitClass(unit)))
             local okRole, role = ns.Compat.Call("dungeons", "UnitGroupRolesAssigned", unit)
-            party[#party + 1] = { class = class, role = okRole and T.Plain(role) or nil }
+            local okPlayer, isPlayer = ns.Compat.Call("dungeons", "UnitIsPlayer", unit)
+            party[#party + 1] = {
+                class = class,
+                role = okRole and T.Plain(role) or nil,
+                npc = (okPlayer and T.Plain(isPlayer) == false) or nil, -- follower-dungeon companion
+            }
         end
     end
     return party
@@ -113,8 +118,22 @@ Dungeons.events.GROUP_ROSTER_UPDATE = function()
     end
 end
 
-Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, _, _, success)
+-- GetInstanceInfo reported difficulty 0 on entry in the retail run; the encounter
+-- events carry the real difficulty, so fill it in from them.
+local function noteDifficulty(run, difficultyID)
+    difficultyID = T.Plain(difficultyID)
+    if run and type(difficultyID) == "number" and difficultyID > 0 and (run.difficultyID or 0) == 0 then
+        run.difficultyID = difficultyID
+    end
+end
+
+Dungeons.events.ENCOUNTER_START = function(_, _, _, difficultyID)
+    noteDifficulty(Store.char.currentRun, difficultyID)
+end
+
+Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficultyID, _, success)
     local run = Store.char.currentRun
+    noteDifficulty(run, difficultyID)
     if not run or T.Plain(success) ~= 1 then return end
     encounterID = T.Plain(encounterID)
     if T.Dedupe("boss:" .. tostring(encounterID), 10) then return end

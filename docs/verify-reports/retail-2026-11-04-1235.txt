@@ -1,0 +1,98 @@
+Fellowship Ledger verify report (player GUID redacted)
+addon=0.0.1-dev flavor=Retail toc=Retail interface=120105 client=12.1.5 build=70783 at=2026-11-04 12:35
+summary pass=176 fail=7 error=0 info=8 manual=4
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+-- details
+PASS x:build.interface: 120105 -> Retail
+INFO x:build.version: 12.1.5 (70783)
+PASS x:build.tocflavor: loaded Retail TOC
+INFO x:build.projectid: WOW_PROJECT_ID=1; constants: CLASSIC=2 ID=1 MAINLINE=1
+INFO x:addon.questie: loaded=false version=nil
+PASS x:sv.persist: loads=7 lastLogoutSaved=2026-11-04 12:15 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=7 lastLogoutSaved=2026-11-04 12:15 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=50 name readable
+INFO x:quest.questline: checked 14 quests, 3 returned a quest line. e.g. questLineID=414 with 60 quests
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 6 slots, 3 with readable rank
+PASS x:rep.fields: fields: atWarWith,canSetInactive,canToggleAtWar,currentReactionThreshold,currentStanding,description,factionID,hasBonusRepGain,isAccountWide,isChild,isCollapsed,isHeader,isHeaderWithRep,isWatched,name,nextReactionThreshold,reaction
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=64 online=15; account fields: accountName,appearOffline,battleTag,bnetAccountID,customMessage,customMessageTime,friendLevel,friendTags,gameAccountInfo,isAFK,isBattleTagFriend,isDND,isFavorite,isFriend,lastOnlineTime,note,rafLinkType; game fields: areaName,canSummon,characterLevel,characterName,classFilename,classID,className,clientProgram,factionName,gameAccountID,hasFocus,isAppearOffline,isGameAFK,isGameBusy,isInCurrentRegion,isOnline,playerGuid,raceName,realmDisplayName,realmID,realmName,regionID,richPresence,wowProjectID; online client/project: App/nil x11, BSAp/nil x6, WoW/1 x2
+PASS x:comms.prefix: FLDGR register returned 0; registered=true
+INFO x:friends.charfields: no character friends to inspect
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:copywindow
+-- api pass
+GetBuildInfo, C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded, C_EventUtils.IsEventValid, UnitName, UnitFullName, GetRealmName, GetNormalizedRealmName,
+UnitClass, UnitRace, UnitFactionGroup, UnitLevel, UnitXP, UnitXPMax, GetXPExhaustion, GetMoney, GetLocale, IsTrialAccount, IsVeteranTrialAccount, issecretvalue,
+canaccessvalue, issecrettable, canaccesssecrets, C_Timer.After, C_Timer.NewTicker, GetServerTime, GetTime, RequestTimePlayed, UnitIsAFK, GetUnitSpeed,
+InCombatLockdown, UnitAffectingCombat, C_Map.GetBestMapForUnit, C_Map.GetMapInfo, GetZoneText, GetRealZoneText, GetSubZoneText,
+C_MapExplorationInfo.GetExploredAreaIDsAtPosition, C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetInfo, C_QuestLog.GetTitleForQuestID,
+C_QuestLog.IsQuestFlaggedCompleted, C_QuestLine.GetQuestLineInfo, C_QuestLine.GetQuestLineQuests, C_QuestLine.GetAvailableQuestLines,
+C_QuestLine.RequestQuestLinesForMap, IsInInstance, GetInstanceInfo, GetDifficultyInfo, IsInGroup, GetNumGroupMembers, UnitGroupRolesAssigned,
+EJ_GetInstanceForMap, EJ_SelectInstance, EJ_GetEncounterInfoByIndex, GetProfessions, GetProfessionInfo, C_TradeSkillUI.GetBaseProfessionInfo,
+C_DeathRecap.GetRecapEvents, C_DeathRecap.HasRecapEvents, GetDeathRecapLink, C_Reputation.GetNumFactions, C_Reputation.GetFactionDataByIndex,
+C_Reputation.GetFactionDataByID, GetAchievementInfo, C_TaxiMap.GetAllTaxiNodes, NumTaxiNodes, TaxiNodeName, GetTaxiMapID, Enum.FlightPathState, UnitGUID,
+UnitExists, UnitIsDead, UnitClassification, UnitCreatureType, C_Item.GetItemInfo, C_Item.GetItemQualityByID, C_Spell.GetSpellInfo, C_BattleNet.SendGameData,
+BNGetInfo, BNGetNumFriends, C_BattleNet.GetFriendAccountInfo, C_BattleNet.GetFriendNumGameAccounts, C_BattleNet.GetFriendGameAccountInfo,
+C_BattleNet.GetGameAccountInfoByID, C_BattleNet.GetAccountInfoByID, C_ChatInfo.RegisterAddonMessagePrefix, C_ChatInfo.IsAddonMessagePrefixRegistered,
+C_ChatInfo.SendAddonMessage, C_ChatInfo.InChatMessagingLockdown, C_FriendList.GetNumFriends, C_FriendList.GetFriendInfoByIndex, C_FriendList.ShowFriends,
+CreateFrame, BackdropTemplateMixin, UISpecialFrames, Minimap, GetCursorPosition, Settings.RegisterCanvasLayoutCategory, Settings.RegisterAddOnCategory,
+Settings.OpenToCategory, AddonCompartmentFrame, MenuUtil.CreateContextMenu, CreateColor, PlaySound, SOUNDKIT
+-- event pass: same list as retail-2026-11-04.txt (all 63 candidate events exist)
+-- probe (on, since 2026-11-04 11:26, 47 events seen)
+ACHIEVEMENT_EARNED=1 | (16275, true)
+ADDON_LOADED=34
+BAG_UPDATE_DELAYED=77
+BN_CHAT_MSG_ADDON=2
+BN_FRIEND_INFO_CHANGED=286 | (nil) | (17) | (1)
+BOSS_KILL=4 | (2637, Granyth) | (2636, The Raging Tempest) | (2581, Teera and Maruuk)
+CHAT_MSG_ADDON=14
+ENCOUNTER_END=4 | (2637, Granyth, 1, 5, 1, table) | (2636, The Raging Tempest, 1, 5, 1, table) | (2581, Teera and Maruuk, 1, 5, 1, table)
+ENCOUNTER_START=3 | (2636, The Raging Tempest, 1, 5) | (2581, Teera and Maruuk, 1, 5) | (2580, Balakar Khan, 1, 5)
+FRIENDLIST_UPDATE=4
+GROUP_ROSTER_UPDATE=15
+ITEM_PUSH=71 | (0, 135242)
+LFG_COMPLETION_REWARD=1 | ()
+LOOT_CLOSED=117
+LOOT_OPENED=5 | (true, false)
+LOOT_READY=68 | (true)
+MERCHANT_CLOSED=4
+MERCHANT_SHOW=2
+PARTY_KILL=108 | (Player-<redacted>, Creature-0-3019-0-148-42620-...)
+PLAYER_ALIVE=4
+PLAYER_ENTERING_WORLD=7 | (false, true) | (true, false) | (false, true)
+PLAYER_FLAGS_CHANGED=10 | (player)
+PLAYER_LEAVING_WORLD=7
+PLAYER_LEVEL_UP=5 | (14, 87, 0, 0, 0, 2, 3, 29, 2) | (15, 87, 0, 1, 0, 1, 2, 29, 1) | (16, 821, 0, 0, 0, 2, 2, 30, 2)
+PLAYER_LOGOUT=5
+PLAYER_MONEY=51
+PLAYER_REGEN_DISABLED=52
+PLAYER_REGEN_ENABLED=52
+PLAYER_STARTED_MOVING=415
+PLAYER_STOPPED_MOVING=415
+PLAYER_TARGET_CHANGED=405
+PLAYER_XP_UPDATE=140 | (player)
+QUEST_ACCEPTED=6 | (26332) | (26301) | (72292)
+QUEST_COMPLETE=6
+QUEST_LOG_UPDATE=88
+QUEST_REMOVED=6 | (26338, false)
+QUEST_TURNED_IN=6 | (26338, 3062, 45200) | (26330, 3250, 55500) | (26300, 3250, 55500)
+SCENARIO_COMPLETED=1 | (nil, nil, nil)
+SKILL_LINES_CHANGED=173
+TAXIMAP_OPENED=1 | (2)
+TRADE_SKILL_SHOW=1
+UI_INFO_MESSAGE=43 | (408, Discovered: Ruins of Zul'Kunda) | (312, Bloodscalp Mystic slain: 1/7)
+UNIT_LEVEL=35 | (player) | (target) | (pet)
+UPDATE_FACTION=28
+UPDATE_INSTANCE_INFO=7
+ZONE_CHANGED=41
+ZONE_CHANGED_NEW_AREA=4
