@@ -30,7 +30,7 @@ end)
 H.test("flavor TOCs share every other field and the file list", function()
     local f, ff = parseToc(FOREVER)
     local m, mf = parseToc(MAINLINE)
-    for _, k in ipairs({ "Title", "Notes", "Author", "Version", "IconTexture", "SavedVariables", "SavedVariablesPerCharacter", "OptionalDeps", "X-License" }) do
+    for _, k in ipairs({ "Title", "Notes", "Author", "Version", "IconTexture", "SavedVariables", "SavedVariablesPerCharacter", "OptionalDeps", "X-License", "X-Curse-Project-ID" }) do
         H.eq(f[k], m[k], k)
     end
     H.eq(table.concat(ff, "|"), table.concat(mf, "|"), "file lists differ")
@@ -38,6 +38,7 @@ H.test("flavor TOCs share every other field and the file list", function()
     H.eq(f.SavedVariables, "FellowshipLedgerDB")
     H.eq(f.SavedVariablesPerCharacter, "FellowshipLedgerBackupDB")
     H.eq(f.OptionalDeps, "Questie")
+    H.eq(f["X-Curse-Project-ID"], "1784128")
 end)
 
 H.test("every listed file exists", function()

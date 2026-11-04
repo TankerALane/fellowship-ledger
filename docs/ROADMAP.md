@@ -60,4 +60,5 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [ ] Full verification pass on Forever (launch 2026-11-04 15:00 PST): `/fl verify`, `/fl test`, `/fl commtest`, `/fl fake`, Questie chains
 - [ ] Two-client sharing test (Austin and a friend, or two accounts)
 - [x] GitHub repository https://github.com/TankerALane/fellowship-ledger (public), CI green, `v0.1.0` published as a pre-release (2026-11-04)
-- [ ] CurseForge project created by Austin, project ID in the TOCs, `CF_API_KEY` secret, upload
+- [x] CurseForge project created by Austin (ID 1784128), ID in both TOCs
+- [ ] First file uploaded by hand (0.1.0) and approved; `CF_API_KEY` secret added for automatic uploads

@@ -9,6 +9,7 @@
 ## OptionalDeps: Questie
 ## X-Flavor: Forever
 ## X-License: MIT
+## X-Curse-Project-ID: 1784128
 
 # Load order matters: Namespace first, Init last.
 # Files under the "pure" list in docs/ARCHITECTURE.md must not touch WoW globals at load time.
