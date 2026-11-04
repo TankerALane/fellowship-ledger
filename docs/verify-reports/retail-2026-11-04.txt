@@ -1,0 +1,55 @@
+Fellowship Ledger verify report
+addon=0.0.1-dev flavor=Retail toc=Retail interface=120105 client=12.1.5 build=70783 at=2026-11-04 11:23
+summary pass=169 fail=7 error=0 info=10 manual=4
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+-- details
+PASS x:build.interface: 120105 -> Retail
+INFO x:build.version: 12.1.5 (70783)
+PASS x:build.tocflavor: loaded Retail TOC
+INFO x:build.projectid: WOW_PROJECT_ID=1; constants: CLASSIC=2 ID=1 MAINLINE=1
+INFO x:addon.questie: loaded=false version=nil
+INFO x:sv.persist: loads=1 lastLogoutSaved=nil firstSeen=2026-11-04 11:21 (first load: /reload, run /fl verify again, loads should be 2)
+INFO x:sv.backup: loads=1 lastLogoutSaved=nil firstSeen=2026-11-04 11:21 (first load: /reload, run /fl verify again, loads should be 2)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=50 name readable
+INFO x:quest.questline: checked 14 quests, 3 returned a quest line. e.g. questLineID=414 with 60 quests; fields: floorLocation,inProgress,isAccountCompleted,isCampaign,isCombatAllyQuest,isDaily,isHidden,isImportant,isLegendary,isLocalStory,isMeta,isQuestStart,questID,questLineID,questLineName,questName,startMapID,x,y
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 6 slots, 3 with readable rank
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=64 online=15; account fields: accountName,appearOffline,battleTag,bnetAccountID,customMessage,customMessageTime,friendLevel,friendTags,gameAccountInfo,isAFK,isBattleTagFriend,isDND,isFavorite,isFriend,lastOnlineTime,note,rafLinkType; game fields: canSummon,clientProgram,gameAccountID,hasFocus,isAppearOffline,isGameAFK,isGameBusy,isInCurrentRegion,isOnline,regionID,richPresence; online client/project: AUKS/nil x1, App/nil x11, BSAp/nil x6
+PASS x:comms.prefix: FLDGR register returned 0; registered=true
+INFO x:friends.charfields: no character friends to inspect
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:copywindow
+-- api pass
+GetBuildInfo, C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded, C_EventUtils.IsEventValid, UnitName, UnitFullName, GetRealmName, GetNormalizedRealmName,
+UnitClass, UnitRace, UnitFactionGroup, UnitLevel, UnitXP, UnitXPMax, GetXPExhaustion, GetMoney, GetLocale, IsTrialAccount, IsVeteranTrialAccount, issecretvalue,
+canaccessvalue, issecrettable, canaccesssecrets, C_Timer.After, C_Timer.NewTicker, GetServerTime, GetTime, RequestTimePlayed, UnitIsAFK, GetUnitSpeed,
+InCombatLockdown, UnitAffectingCombat, C_Map.GetBestMapForUnit, C_Map.GetMapInfo, GetZoneText, GetRealZoneText, GetSubZoneText,
+C_MapExplorationInfo.GetExploredAreaIDsAtPosition, C_QuestLog.GetNumQuestLogEntries, C_QuestLog.GetInfo, C_QuestLog.GetTitleForQuestID,
+C_QuestLog.IsQuestFlaggedCompleted, C_QuestLine.GetQuestLineInfo, C_QuestLine.GetQuestLineQuests, C_QuestLine.GetAvailableQuestLines,
+C_QuestLine.RequestQuestLinesForMap, IsInInstance, GetInstanceInfo, GetDifficultyInfo, IsInGroup, GetNumGroupMembers, UnitGroupRolesAssigned,
+EJ_GetInstanceForMap, EJ_SelectInstance, EJ_GetEncounterInfoByIndex, GetProfessions, GetProfessionInfo, C_TradeSkillUI.GetBaseProfessionInfo,
+C_DeathRecap.GetRecapEvents, C_DeathRecap.HasRecapEvents, GetDeathRecapLink, C_Reputation.GetNumFactions, C_Reputation.GetFactionDataByIndex,
+C_Reputation.GetFactionDataByID, GetAchievementInfo, C_TaxiMap.GetAllTaxiNodes, NumTaxiNodes, TaxiNodeName, UnitExists, UnitIsDead, UnitClassification,
+UnitCreatureType, C_Item.GetItemInfo, C_Item.GetItemQualityByID, C_Spell.GetSpellInfo, C_BattleNet.SendGameData, BNGetInfo, BNGetNumFriends,
+C_BattleNet.GetFriendAccountInfo, C_BattleNet.GetFriendNumGameAccounts, C_BattleNet.GetFriendGameAccountInfo, C_BattleNet.GetGameAccountInfoByID,
+C_BattleNet.GetAccountInfoByID, C_ChatInfo.RegisterAddonMessagePrefix, C_ChatInfo.IsAddonMessagePrefixRegistered, C_ChatInfo.SendAddonMessage,
+C_ChatInfo.InChatMessagingLockdown, C_FriendList.GetNumFriends, C_FriendList.GetFriendInfoByIndex, C_FriendList.ShowFriends, CreateFrame, BackdropTemplateMixin,
+UISpecialFrames, Minimap, GetCursorPosition, Settings.RegisterCanvasLayoutCategory, Settings.RegisterAddOnCategory, Settings.OpenToCategory,
+AddonCompartmentFrame, MenuUtil.CreateContextMenu, CreateColor, PlaySound, SOUNDKIT
+-- event pass (exists; fired counts are under probe)
+TIME_PLAYED_MSG, PLAYER_FLAGS_CHANGED, PLAYER_STARTED_MOVING, PLAYER_STOPPED_MOVING, PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_SUCCEEDED,
+ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD, PLAYER_LOGOUT, PLAYER_LEAVING_WORLD, PLAYER_LEVEL_UP, PLAYER_XP_UPDATE, UNIT_LEVEL, ZONE_CHANGED,
+ZONE_CHANGED_NEW_AREA, UI_INFO_MESSAGE, QUEST_ACCEPTED, QUEST_TURNED_IN, QUEST_REMOVED, QUEST_LOG_UPDATE, QUEST_COMPLETE, ENCOUNTER_START, ENCOUNTER_END,
+BOSS_KILL, LFG_COMPLETION_REWARD, SCENARIO_COMPLETED, UPDATE_INSTANCE_INFO, GROUP_ROSTER_UPDATE, SKILL_LINES_CHANGED, TRADE_SKILL_SHOW, NEW_RECIPE_LEARNED,
+PLAYER_MONEY, MERCHANT_SHOW, MERCHANT_CLOSED, MAIL_SHOW, MAIL_CLOSED, AUCTION_HOUSE_SHOW, AUCTION_HOUSE_CLOSED, LOOT_READY, LOOT_OPENED, LOOT_CLOSED,
+PLAYER_DEAD, PLAYER_ALIVE, PLAYER_UNGHOST, UPDATE_FACTION, ACHIEVEMENT_EARNED, TAXIMAP_OPENED, PLAYER_TARGET_CHANGED, PARTY_KILL, ITEM_PUSH, BAG_UPDATE_DELAYED,
+BN_CHAT_MSG_ADDON, BN_FRIEND_ACCOUNT_ONLINE, BN_FRIEND_ACCOUNT_OFFLINE, BN_FRIEND_INFO_CHANGED, CHAT_MSG_ADDON, FRIENDLIST_UPDATE, ADDON_ACTION_FORBIDDEN

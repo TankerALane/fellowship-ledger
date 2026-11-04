@@ -11,6 +11,7 @@ ns.Locale.Set({
     LOADED = "The ledger is open (v%s, %s). Type /fl for commands.",
     FLAVOR_MISMATCH = "Warning: this client reports flavor %s, but the %s file was loaded. Please run /fl verify and send the report.",
     UNKNOWN_FLAVOR = "This client is not one the ledger recognises (interface %s). Tracking is disabled.",
+    FOREVER_VERIFY_REMINDER = "This ledger has not been checked on WoW Forever yet. Please type /fl verify and send the report (this reminder stops once a report is saved).",
     UNSUPPORTED_CLIENT = "Fellowship Ledger does not support this game client yet, so nothing was loaded. It runs on WoW Forever and retail.",
 
     -- Feature guard

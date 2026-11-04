@@ -13,7 +13,9 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] `docs/API-VERIFICATION.md`
 - [x] unit tests and runtime smoke tests: 54 passing under LuaJIT 2.1
 - [x] first real sync to both clients
-- [ ] Austin: `/fl verify` in Forever and retail (plus `/reload` and verify again), reports pasted back
+- [x] Austin: retail `/fl verify` report (2026-11-04), applied to `docs/API-VERIFICATION.md`
+- [ ] **Austin: Forever `/fl verify` once Forever launches (2026-11-04 15:00 PST). Everything since then rests on retail data.**
+- [ ] Austin: retail extras: `/fl probe on` and play a bit, `/reload` then verify again, manual checks, and a verify while a Battle.net friend is in WoW
 
 ### Step 1.1 onward (after the verify reports)
 - [ ] DB per character, backup every 10 minutes and at logout, restore prompt, `/fl export`

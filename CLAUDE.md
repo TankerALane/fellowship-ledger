@@ -41,6 +41,9 @@ powershell -ExecutionPolicy Bypass -File tools\sync.ps1 -Target Forever   # or R
 
 # Regenerate the API verification table after editing VerifyChecks.lua
 python tools/gen_verify_doc.py
+
+# Apply a pasted /fl verify report to the Forever or Retail column
+python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 ```
 
 ## In-game commands so far
@@ -49,4 +52,4 @@ python tools/gen_verify_doc.py
 
 ## Status
 
-See `docs/ROADMAP.md` for the current phase and step. As of this writing: Phase 1, Step 1.0 is done and waiting for Austin's `/fl verify` reports from both clients.
+See `docs/ROADMAP.md` for the current phase and step. **Forever is not yet verified.** Development proceeds on the retail report (`docs/verify-reports/retail-2026-11-04.txt`). When a Forever report arrives, save it under `docs/verify-reports/` and run `python tools/apply_verify_report.py <file>`, then fix every difference it lists.

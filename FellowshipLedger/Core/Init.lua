@@ -52,6 +52,11 @@ function handlers.PLAYER_LOGIN()
     end
     Log.Info(L.LOADED, ns.VERSION, tostring(Compat.flavor))
 
+    -- The code was built on retail verify results; nag on Forever until a Forever report exists.
+    if Compat.flavor == ns.FlavorLogic.FOREVER and not (ns.db.verify and ns.db.verify.flavor == ns.FlavorLogic.FOREVER) then
+        Log.Warn(L.FOREVER_VERIFY_REMINDER)
+    end
+
     local probe = ns.db.dev.probe
     if probe and probe.enabled then ns.Probe.Start(true) end
 end
