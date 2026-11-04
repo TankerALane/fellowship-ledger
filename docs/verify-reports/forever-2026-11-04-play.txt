@@ -18,3 +18,6 @@ WoW Forever, 2026-11-04 15:48-15:50: second commtest, verify with the probe on, 
   levels 1->2 10m 14s, 2->3 10m 13s, 3->4 14m 35s (Tirisfal Glades), all complete levels
   7 quests with titles; gold loot 90c, vendor 150c, quest 17c, other -10c (trainer), net 247c
   repGained 650 (reputation by faction ID works); zonesDiscovered 2; kills 38; active 2135 of 2156 played
+
+/fl commtest (15:53, after D-063): all six sizes 60..255 sent Success and received; dropped 0;
+self key Tarahallow-Soldecouple, own realm Soldecouple. Whisper addon messages work on Forever up to 255 bytes.

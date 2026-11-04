@@ -381,7 +381,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `WOW_PROJECT_ID` | api | our project ID, compared with friends' wowProjectID so only same-flavor friends are messaged | `/dump type(WOW_PROJECT_ID)` -> "number" | PASS | ? |
 | `BNET_CLIENT_WOW` | api | the clientProgram value of a friend playing WoW | `/dump type(BNET_CLIENT_WOW)` -> "string" | PASS | ? |
 | `LE_PARTY_CATEGORY_INSTANCE` | api | tell finder groups (INSTANCE_CHAT) from home parties for the dungeon-name note | `/dump type(LE_PARTY_CATEGORY_INSTANCE)` -> "number" | PASS | ? |
-| `m:commtest` | manual | addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types | `/fl commtest, then paste the report` | pending | PASS |
+| `m:commtest` | manual | addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types | `/fl commtest, then paste the report` | PASS | PASS |
 
 ### Battle.net friends
 
