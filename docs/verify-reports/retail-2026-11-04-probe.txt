@@ -1,0 +1,53 @@
+Fellowship Ledger verify report
+addon=0.0.1-dev flavor=Retail toc=Retail interface=120105 client=12.1.5 build=70783 at=2026-11-04 11:29
+summary pass=171 fail=7 error=0 info=8 manual=4
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+-- details
+PASS x:build.interface: 120105 -> Retail
+INFO x:build.version: 12.1.5 (70783)
+PASS x:build.tocflavor: loaded Retail TOC
+INFO x:build.projectid: WOW_PROJECT_ID=1; constants: CLASSIC=2 ID=1 MAINLINE=1
+INFO x:addon.questie: loaded=false version=nil
+PASS x:sv.persist: loads=2 lastLogoutSaved=2026-11-04 11:23 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=2 lastLogoutSaved=2026-11-04 11:23 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=50 name readable
+INFO x:quest.questline: checked 14 quests, 3 returned a quest line. e.g. questLineID=414 with 60 quests; fields: floorLocation,inProgress,isAccountCompleted,isCampaign,isCombatAllyQuest,isDaily,isHidden,isImportant,isLegendary,isLocalStory,isMeta,isQuestStart,questID,questLineID,questLineName,questName,startMapID,x,y
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 6 slots, 3 with readable rank
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=64 online=15; (field lists as in retail-2026-11-04.txt); online client/project: AUKS/nil x1, App/nil x11, BSAp/nil x6
+PASS x:comms.prefix: FLDGR register returned 0; registered=true
+INFO x:friends.charfields: no character friends to inspect
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:copywindow
+-- api pass and event pass lists: identical to retail-2026-11-04.txt
+-- probe (on, since 2026-11-04 11:26, 21 events seen)
+ADDON_LOADED=1 | (Blizzard_PlayerSpells, false)
+BAG_UPDATE_DELAYED=11 | () | () | ()
+BN_FRIEND_INFO_CHANGED=1 | (nil)
+ITEM_PUSH=10 | (0, 135242) | (0, 134295) | (0, 132834)
+LOOT_CLOSED=14 | () | () | ()
+LOOT_OPENED=1 | (true, false)
+LOOT_READY=8 | (true) | (true) | (true)
+PARTY_KILL=6 | (Player-..., Creature-0-3019-0-148-42620-...) | (Player-..., Creature-...-686-...) | (Player-..., Creature-...-694-...)
+PLAYER_FLAGS_CHANGED=1 | (player)
+PLAYER_LEVEL_UP=1 | (14, 87, 0, 0, 0, 2, 3, 29, 2)
+PLAYER_MONEY=2 | () | ()
+PLAYER_REGEN_DISABLED=8 | () | () | ()
+PLAYER_REGEN_ENABLED=8 | () | () | ()
+PLAYER_STARTED_MOVING=20 | () | () | ()
+PLAYER_STOPPED_MOVING=20 | () | () | ()
+PLAYER_TARGET_CHANGED=27 | () | () | ()
+PLAYER_XP_UPDATE=8 | (player) | (player) | (player)
+QUEST_LOG_UPDATE=1 | ()
+SKILL_LINES_CHANGED=28 | () | () | ()
+UNIT_LEVEL=3 | (player) | (target) | (pet)
+ZONE_CHANGED=12 | () | () | ()

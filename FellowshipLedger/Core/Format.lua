@@ -1,0 +1,61 @@
+-- Core/Format.lua
+-- PURE: no WoW globals. Text formatting for times, levels and money.
+
+local _, ns = ...
+
+local Format = {}
+ns.Format = Format
+
+-- 45 -> "45s", 623 -> "10m 23s", 3720 -> "1h 02m", 93600 -> "1d 02h"
+function Format.Duration(seconds)
+    seconds = math.floor(tonumber(seconds) or 0)
+    if seconds < 0 then seconds = 0 end
+    if seconds < 60 then return seconds .. "s" end
+    if seconds < 3600 then
+        return string.format("%dm %02ds", math.floor(seconds / 60), seconds % 60)
+    end
+    if seconds < 86400 then
+        return string.format("%dh %02dm", math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
+    end
+    return string.format("%dd %02dh", math.floor(seconds / 86400), math.floor(seconds % 86400 / 3600))
+end
+
+-- { from = 1, to = 2, active = 623, total = 842 } -> "1 -> 2: 10m 23s (total 14m 02s)"
+function Format.LevelLine(rec)
+    return string.format("%d -> %d: %s (total %s)", rec.from, rec.to,
+        Format.Duration(rec.active), Format.Duration(rec.total))
+end
+
+-- Copper -> "12g 03s 07c" (no icons, so it reads the same in every skin). Signed if asked.
+function Format.Money(copper, signed)
+    copper = math.floor(tonumber(copper) or 0)
+    local sign = ""
+    if copper < 0 then
+        sign = "-"
+        copper = -copper
+    elseif signed and copper > 0 then
+        sign = "+"
+    end
+    local g = math.floor(copper / 10000)
+    local s = math.floor(copper % 10000 / 100)
+    local c = copper % 100
+    if g > 0 then return string.format("%s%dg %02ds %02dc", sign, g, s, c) end
+    if s > 0 then return string.format("%s%ds %02dc", sign, s, c) end
+    return string.format("%s%dc", sign, c)
+end
+
+-- 1234567 -> "1,234,567"
+function Format.Number(n)
+    local s = tostring(math.floor(tonumber(n) or 0))
+    local sign, digits = s:match("^(-?)(%d+)$")
+    if not digits then return s end
+    digits = digits:reverse():gsub("(%d%d%d)", "%1,"):reverse()
+    if digits:sub(1, 1) == "," then digits = digits:sub(2) end
+    return sign .. digits
+end
+
+-- XP per hour from xp gained over active seconds; nil when there is too little time.
+function Format.PerHour(amount, seconds)
+    if not seconds or seconds < 60 then return nil end
+    return math.floor(amount * 3600 / seconds + 0.5)
+end

@@ -17,6 +17,15 @@ Locale\enUS.lua
 Core\Log.lua
 Core\Migrations.lua
 Compat\FlavorLogic.lua
+Core\Clock.lua
+Core\Days.lua
+Core\Sessions.lua
+Core\Format.lua
+Core\TrackerList.lua
+Core\Character.lua
+Core\BackupLogic.lua
+Core\GoldLogic.lua
+Core\Export.lua
 Compat\Compat.lua
 Debug\VerifyChecks.lua
 Debug\VerifyReport.lua

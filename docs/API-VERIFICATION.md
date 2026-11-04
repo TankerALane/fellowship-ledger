@@ -15,6 +15,17 @@
   - SavedVariables persistence (`loads=1`). Run `/reload`, then `/fl verify`.
   - Character friend fields (no character friends).
   - The four manual checks.
+- **Second retail report (11:29, probe on, after a /reload):** saved data **survives /reload** (`x:sv.persist` and `x:sv.backup` both PASS, loads=2). Events confirmed **firing**, with arguments:
+  - `PLAYER_LEVEL_UP` (newLevel, ...): the first argument is the new level (14).
+  - `PLAYER_XP_UPDATE` ("player").
+  - `UNIT_LEVEL` (unit): fires for player, target and pet, so it has to be filtered to party units.
+  - `PARTY_KILL` (attackerGUID, targetGUID): plain readable strings on retail, not secret. Kills are counted by comparing the attacker with `UnitGUID("player")` (equality only, never parsing). Forever obfuscates GUIDs, so equality still has to be confirmed there.
+  - `ITEM_PUSH` (bagSlot, iconFileID): no item ID or link, so notable drops still need another source (the loot APIs, not yet verified).
+  - `LOOT_READY` (autoLoot), `LOOT_OPENED` (autoLoot, isFromItem), `LOOT_CLOSED`, `PLAYER_MONEY` (no arguments), `BAG_UPDATE_DELAYED`.
+  - `SKILL_LINES_CHANGED` fired 28 times in a few minutes, so it is throttled.
+  - `ZONE_CHANGED`, `PLAYER_TARGET_CHANGED`, `PLAYER_REGEN_*`, `PLAYER_STARTED/STOPPED_MOVING` and `PLAYER_FLAGS_CHANGED` ("player") also fired.
+  - Third report (11:30, after another /reload): `PLAYER_ENTERING_WORLD` passes (isInitialLogin=false, isReloadingUi=true) on a reload. `PLAYER_LEAVING_WORLD` and `PLAYER_LOGOUT` **both fire on /reload**, so the logout save also runs then. Persistence still holds (loads=3). `UPDATE_INSTANCE_INFO` fires on load.
+  - **Not yet seen firing:** `QUEST_TURNED_IN`, `QUEST_ACCEPTED`, `ZONE_CHANGED_NEW_AREA`, the merchant, mail and auction events, `ENCOUNTER_END`, `PLAYER_DEAD`, `UPDATE_FACTION`, `TAXIMAP_OPENED` and `ACHIEVEMENT_EARNED`. The trackers that use them are built defensively and stay on the in-game checklist.
 - **Event arguments** used by the trackers come from retail documentation and memory until the probe confirms them. Every tracker reads state from APIs (for example `UnitLevel`) rather than trusting event arguments wherever it can.
 
 Every WoW API, event and value Fellowship Ledger plans to use, with a way to test it in each client. Nothing here counts as verified until Austin runs it in-game and marks it.
@@ -77,8 +88,8 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `x:sv.persist` | custom | SavedVariables survive /reload and relog (reported Forever bug) | `/dump FellowshipLedgerDB.dev.persistProbe` | pending | INFO |
-| `x:sv.backup` | custom | the second saved variable (backup) persists too | `/dump FellowshipLedgerBackupDB.persistProbe` | pending | INFO |
+| `x:sv.persist` | custom | SavedVariables survive /reload and relog (reported Forever bug) | `/dump FellowshipLedgerDB.dev.persistProbe` | pending | PASS |
+| `x:sv.backup` | custom | the second saved variable (backup) persists too | `/dump FellowshipLedgerBackupDB.persistProbe` | pending | PASS |
 
 ### Character
 
