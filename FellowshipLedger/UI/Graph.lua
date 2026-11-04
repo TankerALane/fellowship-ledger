@@ -15,7 +15,7 @@ ns.Graph = Graph
 local Obj = {}
 Obj.__index = Obj
 
-local LEFT, BOTTOM, TOP = 64, 22, 8
+local LEFT, BOTTOM, TOP = 72, 22, 8
 
 function Graph.New(parent)
     local self = setmetatable({ parent = parent, bars = {}, grid = {}, xlabels = {} }, Obj)
@@ -94,7 +94,7 @@ function Obj:Render()
     self.zero:SetShown(hasData)
     if not hasData then return end
 
-    local layout = GraphModel.Layout(values, h, GraphModel.IsInteger(self.chart))
+    local layout = GraphModel.Layout(values, h, GraphModel.IsInteger(self.chart), GraphModel.KIND[self.chart])
     -- Gridlines and value labels.
     local i = 0
     local v = layout.lo
@@ -116,7 +116,7 @@ function Obj:Render()
         g.line:Show()
         g.label:ClearAllPoints()
         g.label:SetPoint("RIGHT", self.plot, "BOTTOMLEFT", -4, y)
-        g.label:SetText(GraphModel.FormatValue(self.chart, v))
+        g.label:SetText(GraphModel.FormatAxis(self.chart, v))
         g.label:Show()
         v = v + layout.step
     end

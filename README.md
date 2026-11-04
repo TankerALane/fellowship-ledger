@@ -30,7 +30,18 @@ Type **`/fl`**, or click the minimap button.
 - **Graphs:** levels per session, time per level, quests per day, gold per session and XP per hour, with tooltips. **Compare** pairs any two characters, yours or a friend's.
 - **Settings:** tracking and sharing switches, the Ledger or Plain look, text size, scale, colorblind-safe colors (on by default), notices, the block list and recommended addons.
 
-Screenshots: *coming with 0.1.0* (`docs/screenshots/`).
+### Screenshots
+
+These use the made-up preview data from `/fl fake`.
+
+| | |
+|---|---|
+| ![Me tab: characters and time per level](docs/screenshots/fl_me.png) | ![Friends tab: friends grouped by Battle.net name](docs/screenshots/fl_friends.png) |
+| **Me:** your characters, with time per level | **Friends:** grouped under their Battle.net name |
+| ![Time per level, compared with a friend's character](docs/screenshots/fl_graph_tpl_compare.png) | ![Quests per day](docs/screenshots/fl_graph_qpd.png) |
+| **Compare:** time per level next to a friend's character | **Quests per day** over the last 30 days |
+| ![Gold per session](docs/screenshots/fl_graph_gps.png) | ![XP per hour](docs/screenshots/fl_graph_xph.png) |
+| **Gold per session:** losses below the line | **XP per hour** per session |
 
 ## Commands
 

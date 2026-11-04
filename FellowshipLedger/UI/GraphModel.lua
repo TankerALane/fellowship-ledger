@@ -119,6 +119,14 @@ function GraphModel.LabelEvery(n, width)
     return math.max(1, math.ceil(n / fit))
 end
 
+-- Axis labels: short and round (tooltips use FormatValue).
+function GraphModel.FormatAxis(chart, v)
+    local kind = GraphModel.KIND[chart]
+    if kind == "duration" then return ns.Format.DurationShort(v) end
+    if kind == "money" then return ns.Format.MoneyShort(v, true) end
+    return ns.Format.Number(v)
+end
+
 function GraphModel.FormatValue(chart, v)
     local kind = GraphModel.KIND[chart]
     if kind == "duration" then return ns.Format.Duration(v) end
@@ -127,13 +135,35 @@ function GraphModel.FormatValue(chart, v)
 end
 
 -- Bar geometry for a plot `height` pixels tall: returns zeroY and a function value -> (y, h).
-function GraphModel.Layout(points, height, integer)
+-- Round steps for time axes: 1, 2, 5, 10, 15, 20, 30 minutes, then hours.
+GraphModel.DURATION_STEPS = { 60, 120, 300, 600, 900, 1200, 1800, 3600, 5400, 7200, 10800, 14400, 21600, 43200, 86400 }
+
+function GraphModel.NiceDurationScale(lo, hi, ticks)
+    ticks = ticks or 4
+    lo, hi = math.min(lo or 0, 0), math.max(hi or 0, 0)
+    if hi == lo then hi = lo + 60 end
+    local raw = (hi - lo) / ticks
+    local step
+    for _, s in ipairs(GraphModel.DURATION_STEPS) do
+        if s >= raw then step = s break end
+    end
+    step = step or math.ceil(raw / 86400) * 86400
+    return math.floor(lo / step) * step, math.ceil(hi / step) * step, step
+end
+
+-- kind: "duration" uses round time steps; integer keeps whole-number steps.
+function GraphModel.Layout(points, height, integer, kind)
     local lo, hi = 0, 0
     for _, p in ipairs(points) do
         if p.value < lo then lo = p.value end
         if p.value > hi then hi = p.value end
     end
-    local niceLo, niceHi, step = GraphModel.NiceScale(lo, hi, 4, integer)
+    local niceLo, niceHi, step
+    if kind == "duration" then
+        niceLo, niceHi, step = GraphModel.NiceDurationScale(lo, hi, 4)
+    else
+        niceLo, niceHi, step = GraphModel.NiceScale(lo, hi, 4, integer)
+    end
     local span = niceHi - niceLo
     local zeroY = (0 - niceLo) / span * height
     local function bar(v)

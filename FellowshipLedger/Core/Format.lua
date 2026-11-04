@@ -85,6 +85,39 @@ function Format.PatternFromFormat(fmt)
     return "^" .. table.concat(out) .. "$"
 end
 
+-- Short forms for graph axes (tooltips keep the full forms above).
+-- 1800 -> "30m", 5400 -> "1h 30m", 7200 -> "2h", 45 -> "45s"
+function Format.DurationShort(seconds)
+    seconds = math.floor(tonumber(seconds) or 0)
+    if seconds < 60 then return seconds .. "s" end
+    if seconds < 3600 then
+        if seconds % 60 == 0 then return math.floor(seconds / 60) .. "m" end
+        return string.format("%dm %02ds", math.floor(seconds / 60), seconds % 60)
+    end
+    local h, m = math.floor(seconds / 3600), math.floor(seconds % 3600 / 60)
+    if m == 0 then return h .. "h" end
+    return string.format("%dh %02dm", h, m)
+end
+
+-- 60000 -> "+6g", 25000 -> "+2.5g", 5000 -> "+50s", -20000 -> "-2g", 0 -> "0"
+function Format.MoneyShort(copper, signed)
+    copper = math.floor(tonumber(copper) or 0)
+    if copper == 0 then return "0" end
+    local sign = copper < 0 and "-" or (signed and "+" or "")
+    local a = math.abs(copper)
+    local text
+    if a >= 10000 then
+        local g = a / 10000
+        text = (g == math.floor(g)) and string.format("%dg", g) or (string.format("%.1f", g):gsub("%.0$", "") .. "g")
+    elseif a >= 100 then
+        local s = a / 100
+        text = (s == math.floor(s)) and string.format("%ds", s) or (string.format("%.1f", s):gsub("%.0$", "") .. "s")
+    else
+        text = a .. "c"
+    end
+    return sign .. text
+end
+
 -- XP per hour from xp gained over active seconds; nil when there is too little time.
 function Format.PerHour(amount, seconds)
     if not seconds or seconds < 60 then return nil end
