@@ -38,7 +38,18 @@ Current pure modules:
 | `Debug/VerifyChecks.lua` | the list of things to verify (data only) |
 | `Debug/VerifyReport.lua` | builds the verify report text |
 
-**Runtime** modules talk to the game: `Core/Log.lua`, `Compat/Compat.lua`, `Debug/CopyWindow.lua`, `Debug/Probe.lua`, `Debug/Verify.lua`, `Core/Init.lua`.
+Also pure: `Core/Clock.lua` (played and active time), `Core/Days.lua` (date buckets and ranges), `Core/Sessions.lua`, `Core/Format.lua`, `Core/TrackerList.lua` (trackers and Track/Share flags), `Core/Character.lua`, `Core/BackupLogic.lua`, `Core/GoldLogic.lua`, `Core/Export.lua` and `UI/MeModel.lua`.
+
+**Runtime** modules talk to the game:
+- `Core/Events.lua`: one event frame, with a pcall around each handler and the debug ring buffer.
+- `Core/Store.lua`: the current character, clock, session, day counters, backup and restore.
+- `Core/Activity.lua`: activity signals, the 30-second clock ticker and the 10-minute backup ticker.
+- `Trackers/*.lua`: one tracker per id in `TrackerList`, each gated by its Track flag.
+- `UI/*.lua`: the window and the Me tab.
+- `Debug/*.lua`: verify, probe, copy and text windows, the event log and the self-test.
+- `Compat/Compat.lua` and `Core/Init.lua`.
+
+Every tracker writes numbers through `Store.Count(field, n)`, which adds them to today's bucket and to the current session at the same time.
 
 Planned pure modules: time math (active and total time, idle cut-off, session splitting), daily buckets and retention, aggregation by range, protocol encode/decode and chunking, and graph scaling.
 
@@ -55,7 +66,24 @@ Any API that is not verified on both clients is called through `ns.Compat`:
 
 `FellowshipLedgerDB` is account-wide. Its top level (schema v1) is `schemaVersion`, `settings`, `characters["Name-Realm"]`, `friends`, `blocklist`, `dev` (diagnostics: persistence probe and event probe) and `verify` (the last report). The full per-character shape arrives in the next step and is documented here then.
 
-`FellowshipLedgerBackupDB` holds the rolling snapshot. Today it holds only the persistence probe.
+`FellowshipLedgerBackupDB` is **per character** (a different file on disk, see D-016): `{ savedAt, schemaVersion, key, character, settings, persistProbe }`.
+
+Per character (`characters["Name-Realm"]`, shape in `Core/Character.lua`):
+
+| Field | Contents | Kept |
+|---|---|---|
+| `name, realm, class, race, faction, level` | identity | always |
+| `clock` | `{ played, active, last, lastActivity }`, all-time seconds | always |
+| `levelStart` | snapshot taken when the current level began | always |
+| `levels[to]` | `{ from, to, active, total, at, zone, mapID, xpPerHour, kills, partial }` | always |
+| `days["YYYY-MM-DD"]` | counters: `played, active, levels, xp, quests, questsAccepted, moneyNet, moneyIn, moneyOut, money_<source>, dungeonsEntered, dungeonsCompleted, bossKills, deaths, kills, rareKills, eliteKills, skillUps, zonesNew, repGained, flightPaths, achievements, partyLevelUps` | 90 days |
+| `sessions[]` | `{ id, start, stop, played, active, levelStart, levelEnd, moneyStart, moneyEnd, counts{...same fields as days} }` | 90 days |
+| `questLog[]` | `{ id, title, at, xp, money }` | 30 days |
+| `dungeons[]`, `currentRun` | `{ name, instanceID, difficultyID, entered, left, duration, deaths, bosses[], party[{class, role}], completed, completedBy }` | 90 days |
+| `professions[skillLine]` | `{ name, rank, max, history[{rank, at, active}] }` | last 300 points |
+| `deathLog, zones, reputation, kills, flightPaths, achievements, partyLevels` | extras | 90 days for logs |
+| `flags[tracker]` | `{ track, share }`, both default true | always |
+| `lastSeen, savedAt` | session split and backup comparison | always |
 
 `Core/Migrations.lua` upgrades older tables step by step. A table from a newer build is left alone, so an older addon never damages newer data.
 

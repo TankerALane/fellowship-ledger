@@ -181,6 +181,7 @@ ns.VerifyChecks = {
     { id = "C_Reputation.GetFactionDataByID", kind = "api", area = "Reputation", why = "faction standing by ID" },
     { id = "GetNumFactions", kind = "api", area = "Reputation", why = "classic style fallback" },
     { id = "GetFactionInfo", kind = "api", area = "Reputation", why = "classic style fallback" },
+    { id = "x:rep.fields", kind = "custom", area = "Reputation", why = "FactionData field names (factionID, currentStanding, isHeader) used to diff standings", test = "/dump C_Reputation.GetFactionDataByIndex(2)" },
     { id = "ev:UPDATE_FACTION", kind = "event", area = "Reputation", why = "reputation changed (diff standings)" },
 
     -- Extras: achievements, flight paths, kills, items
@@ -189,7 +190,10 @@ ns.VerifyChecks = {
     { id = "C_TaxiMap.GetAllTaxiNodes", kind = "api", area = "Flight paths", why = "known flight paths" },
     { id = "NumTaxiNodes", kind = "api", area = "Flight paths", why = "flight map fallback" },
     { id = "TaxiNodeName", kind = "api", area = "Flight paths", why = "flight map fallback" },
+    { id = "GetTaxiMapID", kind = "api", area = "Flight paths", why = "map ID of the open flight map" },
+    { id = "Enum.FlightPathState", kind = "api", area = "Flight paths", why = "which taxi nodes are known (Unreachable = unknown)", expect = "table" },
     { id = "ev:TAXIMAP_OPENED", kind = "event", area = "Flight paths", why = "flight map opened (diff known nodes)" },
+    { id = "UnitGUID", kind = "api", area = "Kills", why = "compare PARTY_KILL attacker/target with you and your target (equality only)" },
     { id = "UnitExists", kind = "api", area = "Kills", why = "target exists" },
     { id = "UnitIsDead", kind = "api", area = "Kills", why = "target died (no combat log allowed)" },
     { id = "UnitClassification", kind = "api", area = "Kills", why = "rare / elite kills" },
@@ -251,5 +255,6 @@ ns.VerifyChecks = {
     { id = "CreateColor", kind = "api", area = "UI", why = "colors" },
     { id = "PlaySound", kind = "api", area = "UI", why = "toast sound" },
     { id = "SOUNDKIT", kind = "api", area = "UI", why = "sound IDs", expect = "table" },
+    { id = "x:ui.frame", kind = "custom", area = "UI", why = "frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture)", test = "/dump CreateFrame(\"Frame\").SetResizeBounds" },
     { id = "m:copywindow", kind = "manual", area = "UI", why = "the verify report window opens, scrolls, copies and closes with Escape", test = "/fl verify, then Ctrl+A, Ctrl+C, Escape" },
 }

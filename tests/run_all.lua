@@ -22,6 +22,7 @@ local FILES = {
     "test_verify_checks",
     "test_toc",
     "test_runtime_smoke",
+    "test_tracking_smoke",
 }
 
 for _, name in ipairs(FILES) do

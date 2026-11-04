@@ -91,6 +91,7 @@ H.PURE_FILES = {
     "Core/BackupLogic.lua",
     "Core/GoldLogic.lua",
     "Core/Export.lua",
+    "UI/MeModel.lua",
     "Debug/VerifyChecks.lua",
     "Debug/VerifyReport.lua",
 }

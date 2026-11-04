@@ -48,7 +48,7 @@ python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 
 ## In-game commands so far
 
-`/fl verify` (report window to copy), `/fl verify show`, `/fl probe on|off|clear`, `/fl debug`, `/fl version`. `/fellowshipledger` is an alias.
+`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl version`. `/fellowshipledger` is an alias.
 
 ## Status
 

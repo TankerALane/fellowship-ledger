@@ -1,6 +1,6 @@
 -- Core/Init.lua
--- Startup: saved variables, migrations, flavor detection, slash commands.
--- Loaded last, so every other module already exists on `ns`.
+-- Startup: saved variables, migrations, flavor detection, the current character,
+-- trackers, timers and slash commands. Loaded last, so every module exists on `ns`.
 
 local ADDON_NAME, ns = ...
 local L, Log, Compat = ns.L, ns.Log, ns.Compat
@@ -33,14 +33,26 @@ function handlers.ADDON_LOADED(name)
     local _, migrateStatus = ns.Migrations.Migrate(FellowshipLedgerDB)
     ns.db = FellowshipLedgerDB
     ns.dbIsNewer = migrateStatus == "newer"
-    -- A db from a newer build may lack nothing we need, but make sure our dev area exists.
     ns.db.settings = ns.db.settings or {}
+    ns.db.characters = ns.db.characters or {}
     ns.db.dev = ns.db.dev or {}
 
     touchPersistProbe(ns.db.dev, "persistProbe")
     touchPersistProbe(FellowshipLedgerBackupDB, "persistProbe")
 
     ns.supported = ns.FlavorLogic.IsSupported(Compat.flavor)
+end
+
+local function offerRestore()
+    local state = ns.Store.backupState
+    if state ~= "missing" and state ~= "older" then return end
+    local backup = FellowshipLedgerBackupDB
+    local when = date("%Y-%m-%d %H:%M", backup.savedAt or 0)
+    local text = (state == "missing" and L.RESTORE_PROMPT_MISSING or L.RESTORE_PROMPT_OLDER):format(when)
+    Log.Warn(text)
+    ns.Widgets.Confirm(text, L.RESTORE_YES, L.RESTORE_NO,
+        function() ns.Store.Restore() end,
+        function() Log.Info(L.RESTORE_SKIPPED) end)
 end
 
 function handlers.PLAYER_LOGIN()
@@ -59,13 +71,34 @@ function handlers.PLAYER_LOGIN()
 
     local probe = ns.db.dev.probe
     if probe and probe.enabled then ns.Probe.Start(true) end
+
+    if not ns.supported or ns.dbIsNewer then
+        if ns.dbIsNewer then Log.Warn(L.DB_NEWER) end
+        return -- diagnostics only: no tracking
+    end
+
+    local ok, err = pcall(function()
+        ns.Store.Login()
+        ns.Trackers.RegisterAll()
+        ns.Trackers.LoginAll()
+        ns.Activity.Start()
+    end)
+    if not ok then
+        Log.Warn(L.TRACKING_FAILED, tostring(err))
+        return
+    end
+    ns.tracking = true
+    offerRestore()
 end
 
 function handlers.PLAYER_LOGOUT()
     if not ns.db then return end
-    local now = time()
-    if ns.db.dev.persistProbe then ns.db.dev.persistProbe.lastLogout = now end
-    if FellowshipLedgerBackupDB.persistProbe then FellowshipLedgerBackupDB.persistProbe.lastLogout = now end
+    if ns.tracking then pcall(ns.Store.Logout) end
+    local t = time()
+    if ns.db.dev.persistProbe then ns.db.dev.persistProbe.lastLogout = t end
+    if type(FellowshipLedgerBackupDB) == "table" and FellowshipLedgerBackupDB.persistProbe then
+        FellowshipLedgerBackupDB.persistProbe.lastLogout = t
+    end
 end
 
 frame:SetScript("OnEvent", function(_, event, ...)
@@ -78,16 +111,22 @@ frame:RegisterEvent("PLAYER_LOGOUT")
 
 -- Slash commands ------------------------------------------------------------
 
+local HELP = { "HELP_OPEN", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
+    "HELP_TEST", "HELP_RESTORE", "HELP_VERSION" }
+
 local function printHelp()
     Log.Info(L.HELP_HEADER)
-    Log.Info(L.HELP_VERIFY)
-    Log.Info(L.HELP_VERIFY_SHOW)
-    Log.Info(L.HELP_PROBE)
-    Log.Info(L.HELP_DEBUG)
-    Log.Info(L.HELP_VERSION)
+    for _, key in ipairs(HELP) do Log.Info(L[key]) end
 end
 
 local commands = {}
+
+commands[""] = function()
+    if not ns.tracking then printHelp() return end
+    ns.MainWindow.Toggle()
+end
+
+commands.help = printHelp
 
 function commands.verify(rest)
     if rest == "show" then ns.Verify.Show() else ns.Verify.Run() end
@@ -103,6 +142,22 @@ end
 function commands.debug()
     ns.db.settings.debug = not ns.db.settings.debug
     Log.Info(ns.db.settings.debug and L.DEBUG_ON or L.DEBUG_OFF)
+    if ns.db.settings.debug then ns.EventLog.Show() else ns.EventLog.Hide() end
+end
+
+function commands.export()
+    if ns.tracking then ns.Store.Tick() end
+    local text = ns.Export.Build(ns.db, tostring(Compat.flavor), date("%Y-%m-%d %H:%M"))
+    ns.CopyWindow:Show(L.EXPORT_TITLE, text)
+end
+
+function commands.test()
+    ns.SelfTest.Run()
+end
+
+function commands.restore()
+    if not ns.tracking then return end
+    if not ns.Store.Restore() then Log.Info(L.RESTORE_NONE) end
 end
 
 function commands.version()

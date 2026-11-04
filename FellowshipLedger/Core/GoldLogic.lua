@@ -13,10 +13,13 @@ GoldLogic.LOOT_WINDOW = 2  -- seconds after the loot window closes that still co
 
 -- state: { merchant = bool, mail = bool, auction = bool, loot = bool,
 --          lootClosedAt = epoch, questAt = epoch }
-function GoldLogic.Classify(state, now)
+-- delta: the money change (nil = treat as a gain). Quest rewards and loot only ever
+-- add money, so a loss is never put under those sources.
+function GoldLogic.Classify(state, now, delta)
     if state.merchant then return "vendor" end
     if state.auction then return "auction" end
     if state.mail then return "mail" end
+    if delta ~= nil and delta < 0 then return "other" end
     if state.questAt and now - state.questAt <= GoldLogic.QUEST_WINDOW then return "quest" end
     if state.loot or (state.lootClosedAt and now - state.lootClosedAt <= GoldLogic.LOOT_WINDOW) then
         return "loot"

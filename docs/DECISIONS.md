@@ -37,3 +37,36 @@ Every load bumps a counter in `FellowshipLedgerDB.dev.persistProbe` and in `Fell
 
 ## D-012 Empty module folders
 `Trackers/`, `Comms/` and `UI/` hold a `.gitkeep` until code lands. The file is harmless when synced into the game.
+
+## D-013 Building on retail verify data until Forever launches
+On 2026-11-04 Austin chose to keep building for both clients on the retail `/fl verify` results, because Forever launched later that day. Forever cells in `API-VERIFICATION.md` say `pending`, the addon reminds on Forever until a Forever report is saved, and `tools/apply_verify_report.py` lists every difference once that report exists.
+
+## D-014 What "active time" means
+Time counts as active for up to 5 minutes after the last activity signal: movement (and a 30-second movement check), combat, casting, targeting, XP, loot, quests, vendors, mail, zone changes or the flight map. After that it stops until the next signal. Going AFK stops it immediately. So quiet moments such as reading quest text still count, but walking away does not. There is no API for raw keyboard or mouse input, so a player who only reads for more than 5 minutes is treated as idle.
+
+## D-015 What the "(total ...)" level time means
+The total is **logged-in time** during that level, not wall-clock time. A night offline in the middle of a level does not inflate it.
+
+## D-016 Backup is a per-character saved variable
+`FellowshipLedgerBackupDB` is declared `SavedVariablesPerCharacter`, so it lives in a **different file** (`WTF\Account\<acct>\<realm>\<char>\SavedVariables\FellowshipLedger.lua`) from the main database. Both account-wide variables would share one file, so an account-wide backup could not protect against that file being lost or reset (the reported Forever bug). Each character's backup holds that character's record and a copy of the settings, written every 10 minutes and at logout (which also runs on `/reload`, as confirmed on retail). At login, if this character's main record is missing or empty, or was saved clearly before its backup, a dialog offers to restore it. `/fl restore` does the same by hand. The trade-off: after a full reset, each character is restored when you log into it.
+
+## D-017 Partial levels
+If the ledger starts partway through a level (first install, or the addon was off), that level's time is incomplete. It is recorded with `partial = true`, shown as "(partial)", and left out of XP-per-hour.
+
+## D-018 Zones "discovered" means new zones visited while tracking
+There is no confirmed event for "zone discovered". The ledger records the first visit to each map while it is running, and shows it as new zones visited.
+
+## D-019 Kills come from PARTY_KILL by equality only
+`PARTY_KILL(attackerGUID, targetGUID)` arguments were readable on retail. The ledger compares them with `UnitGUID("player")` and `UnitGUID("target")` and never parses them, which is safe with Forever's obfuscated GUIDs. Creature type and rare or elite status are recorded only when the killed unit was your target. If the arguments are secret on a client, the kills tracker turns itself off with a message.
+
+## D-020 Not built yet: "what killed you" and notable item drops
+`ITEM_PUSH` carries only a bag slot and an icon (seen on retail), and the death recap needs a recap ID whose source is unverified. Both are marked unavailable in `TrackerList` rather than faked, and are revisited in Phase 2 with new verify checks.
+
+## D-021 Gold losses are never "quest" or "loot"
+Quest rewards and loot only add money. A loss while a vendor, mailbox or auction house is open goes to that source, and any other loss goes to "other". Quest money that arrives a moment before `QUEST_TURNED_IN` is moved from "other" to "quest" when the event names the reward.
+
+## D-022 `/fl` opens the window
+`/fl` on its own toggles the ledger window, and `/fl help` lists the commands. An unknown subcommand also lists them.
+
+## D-023 Party level-ups store class and level only
+No names are stored, in keeping with the privacy rule for party members. Names arrive only through the Phase 3 opt-in.

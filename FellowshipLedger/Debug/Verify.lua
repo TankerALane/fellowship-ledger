@@ -237,6 +237,36 @@ custom["x:friends.charfields"] = function()
     return "INFO", string.format("friends=%d; fields: %s", n, table.concat(keysOf(info), ","))
 end
 
+custom["x:rep.fields"] = function()
+    local okN, n = Compat.Try("C_Reputation.GetNumFactions")
+    if not okN then return "FAIL", "C_Reputation.GetNumFactions unavailable" end
+    for i = 1, math.min(n or 0, 60) do
+        local ok, data = Compat.Try("C_Reputation.GetFactionDataByIndex", i)
+        if ok and type(data) == "table" and not data.isHeader then
+            local need = { "factionID", "currentStanding", "name", "isHeader" }
+            local missing = {}
+            for _, k in ipairs(need) do if data[k] == nil then missing[#missing + 1] = k end end
+            local detail = "fields: " .. table.concat(keysOf(data), ",")
+            if #missing > 0 then return "FAIL", "missing " .. table.concat(missing, ",") .. "; " .. detail end
+            return "PASS", detail
+        end
+    end
+    return "INFO", "no non-header faction found (" .. describe(n) .. " entries)"
+end
+
+custom["x:ui.frame"] = function()
+    local f = CreateFrame("Frame")
+    local t = f:CreateTexture()
+    local have = {}
+    for _, m in ipairs({ "SetResizeBounds", "SetMinResize", "StartSizing", "SetShown", "SetResizable", "SetClampedToScreen" }) do
+        have[#have + 1] = m .. "=" .. (type(f[m]) == "function" and "yes" or "no")
+    end
+    have[#have + 1] = "SetColorTexture=" .. (type(t.SetColorTexture) == "function" and "yes" or "no")
+    local ok = type(f.StartSizing) == "function" and type(f.SetShown) == "function" and type(t.SetColorTexture) == "function"
+        and (type(f.SetResizeBounds) == "function" or type(f.SetMinResize) == "function")
+    return ok and "PASS" or "FAIL", table.concat(have, " ")
+end
+
 local function runCheck(check)
     if check.kind == "api" then
         local value = Compat.Resolve(check.id)
@@ -283,7 +313,7 @@ function Verify.Run()
     local text, counts = ns.VerifyReport.Build(meta, results, probe)
     ns.db.verify = { at = time(), flavor = Compat.flavor, counts = counts, text = text }
     ns.Log.Info(L.VERIFY_DONE, counts.PASS, counts.FAIL, counts.ERROR, counts.INFO, counts.MANUAL)
-    ns.CopyWindow.Show(L.VERIFY_WINDOW_TITLE, text)
+    ns.CopyWindow:Show(L.VERIFY_WINDOW_TITLE, text)
 end
 
 function Verify.Show()
@@ -291,5 +321,5 @@ function Verify.Show()
         ns.Log.Info(L.VERIFY_NONE)
         return
     end
-    ns.CopyWindow.Show(L.VERIFY_WINDOW_TITLE, ns.db.verify.text)
+    ns.CopyWindow:Show(L.VERIFY_WINDOW_TITLE, ns.db.verify.text)
 end

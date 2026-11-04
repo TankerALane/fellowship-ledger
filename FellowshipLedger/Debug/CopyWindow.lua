@@ -1,19 +1,15 @@
 -- Debug/CopyWindow.lua
--- A small movable window with a read-only, selectable text box, so reports can be
--- copied out of the game with Ctrl+A, Ctrl+C. Plain look on purpose (debug tool).
--- If building the window fails on some client, the text is printed to chat instead.
+-- Movable windows with a read-only, selectable text box, so text can be copied out
+-- of the game with Ctrl+A, Ctrl+C. Used by /fl verify, /fl export, /fl test and the
+-- /fl debug event log. If building a window fails, the text goes to chat instead.
 
 local _, ns = ...
 local L = ns.L
 
-local CopyWindow = {}
-ns.CopyWindow = CopyWindow
+local TextWindow = {}
+ns.TextWindow = TextWindow
 
-local FRAME_NAME = "FellowshipLedgerCopyWindow"
-local frame, editBox, titleText
-local currentText = ""
-
--- Night #2B1E12, gold #C99A2E, parchment #F1E4C3 (see assets/README.md).
+-- Night #2B1E12, gold #C99A2E (see assets/README.md).
 local NIGHT = { 0.169, 0.118, 0.071, 0.96 }
 local GOLD = { 0.788, 0.604, 0.180, 1 }
 
@@ -31,8 +27,8 @@ local function addBorder(f, size)
     edge("TOPRIGHT", "BOTTOMRIGHT", size, nil)
 end
 
-local function build()
-    local f = CreateFrame("Frame", FRAME_NAME, UIParent)
+local function build(self)
+    local f = CreateFrame("Frame", self.frameName, UIParent)
     f:SetSize(680, 440)
     f:SetPoint("CENTER")
     f:SetFrameStrata("DIALOG")
@@ -48,9 +44,8 @@ local function build()
     bg:SetColorTexture(NIGHT[1], NIGHT[2], NIGHT[3], NIGHT[4])
     addBorder(f, 2)
 
-    titleText = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    titleText:SetPoint("TOPLEFT", 14, -12)
-    titleText:SetText(L.VERIFY_WINDOW_TITLE)
+    self.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    self.title:SetPoint("TOPLEFT", 14, -12)
 
     local hint = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     hint:SetPoint("BOTTOMLEFT", 14, 16)
@@ -59,35 +54,35 @@ local function build()
     local scroll = CreateFrame("ScrollFrame", nil, f)
     scroll:SetPoint("TOPLEFT", 14, -36)
     scroll:SetPoint("BOTTOMRIGHT", -14, 44)
+    self.scroll = scroll
 
     local inner = scroll:CreateTexture(nil, "BACKGROUND")
     inner:SetAllPoints()
     inner:SetColorTexture(0, 0, 0, 0.35)
 
-    editBox = CreateFrame("EditBox", nil, scroll)
-    editBox:SetMultiLine(true)
-    editBox:SetAutoFocus(false)
-    editBox:SetFontObject(ChatFontNormal)
-    editBox:SetWidth(640)
-    editBox:SetHeight(360)
-    editBox:SetScript("OnEscapePressed", function() f:Hide() end)
-    -- Read-only: undo any typing by restoring the report text.
-    editBox:SetScript("OnTextChanged", function(self, userInput)
-        if userInput then self:SetText(currentText) end
+    local edit = CreateFrame("EditBox", nil, scroll)
+    edit:SetMultiLine(true)
+    edit:SetAutoFocus(false)
+    edit:SetFontObject(ChatFontNormal)
+    edit:SetWidth(640)
+    edit:SetHeight(360)
+    edit:SetScript("OnEscapePressed", function() f:Hide() end)
+    edit:SetScript("OnTextChanged", function(box, userInput)
+        if userInput then box:SetText(self.text) end -- read-only
     end)
-    scroll:SetScrollChild(editBox)
+    scroll:SetScrollChild(edit)
+    self.edit = edit
 
     scroll:EnableMouseWheel(true)
-    scroll:SetScript("OnMouseWheel", function(self, delta)
-        local range = self:GetVerticalScrollRange()
-        local new = self:GetVerticalScroll() - delta * 40
+    scroll:SetScript("OnMouseWheel", function(sf, delta)
+        local range = sf:GetVerticalScrollRange()
+        local new = sf:GetVerticalScroll() - delta * 40
         if new < 0 then new = 0 end
         if new > range then new = range end
-        self:SetVerticalScroll(new)
+        sf:SetVerticalScroll(new)
     end)
-    -- Clicking anywhere in the box focuses the edit box.
     scroll:EnableMouse(true)
-    scroll:SetScript("OnMouseDown", function() editBox:SetFocus() end)
+    scroll:SetScript("OnMouseDown", function() edit:SetFocus() end)
 
     local close = CreateFrame("Button", nil, f)
     close:SetSize(80, 22)
@@ -100,29 +95,57 @@ local function build()
     closeText:SetText(L.CLOSE)
     close:SetScript("OnClick", function() f:Hide() end)
 
-    if type(UISpecialFrames) == "table" then
-        table.insert(UISpecialFrames, FRAME_NAME)
-    end
-
+    if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, self.frameName) end
     f:Hide()
     return f
 end
 
-function CopyWindow.Show(title, text)
-    currentText = text or ""
-    if not frame then
-        local ok, result = pcall(build)
-        if not ok then
-            ns.Log.Warn("Could not build the copy window (%s). Printing to chat instead.", tostring(result))
-            for l in currentText:gmatch("[^\n]+") do ns.Log.Info(l) end
-            return
-        end
-        frame = result
-    end
-    titleText:SetText(title or L.VERIFY_WINDOW_TITLE)
-    editBox:SetText(currentText)
-    editBox:SetCursorPosition(0)
-    frame:Show()
-    editBox:SetFocus()
-    editBox:HighlightText()
+local Window = {}
+Window.__index = Window
+
+function TextWindow.Create(frameName)
+    return setmetatable({ frameName = frameName, text = "" }, Window)
 end
+
+function Window:Ensure()
+    if self.frame then return true end
+    local ok, result = pcall(build, self)
+    if not ok then
+        ns.Log.Warn("Could not build a text window (%s). Printing to chat instead.", tostring(result))
+        return false
+    end
+    self.frame = result
+    return true
+end
+
+function Window:SetText(text)
+    self.text = text or ""
+    if self.edit then self.edit:SetText(self.text) end
+end
+
+function Window:Show(title, text, focus)
+    self.text = text or ""
+    if not self:Ensure() then
+        for l in self.text:gmatch("[^\n]+") do ns.Log.Info(l) end
+        return
+    end
+    self.title:SetText(title or "")
+    self.edit:SetText(self.text)
+    self.edit:SetCursorPosition(0)
+    self.frame:Show()
+    if focus ~= false then
+        self.edit:SetFocus()
+        self.edit:HighlightText()
+    end
+end
+
+function Window:IsShown()
+    return self.frame ~= nil and self.frame:IsShown()
+end
+
+function Window:Hide()
+    if self.frame then self.frame:Hide() end
+end
+
+-- The shared report window used by verify, export and self-test.
+ns.CopyWindow = TextWindow.Create("FellowshipLedgerCopyWindow")

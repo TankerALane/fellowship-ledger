@@ -48,11 +48,44 @@ function M.new(opts)
         env[k] = _G[k]
     end
     env._G = env
-    env.date = os.date
-    env.time = os.time
 
-    local state = { frames = {}, chat = {} }
+    -- Controllable clock: tests move state.now; date()/time() follow it.
+    local state = { frames = {}, chat = {}, now = opts.now or os.time({ year = 2026, month = 11, day = 4, hour = 12 }),
+        timers = {}, tickers = {}, speed = 0, afk = false, money = 10000, level = 12, xp = 300, xpMax = 2000,
+        instance = { "Elwynn Forest", "none", 0, "", 5, 0, false, 0 }, units = {}, guid = {} }
     env.__state = state
+    env.time = function(t) if t then return os.time(t) end return state.now end
+    env.date = function(fmt, t) return os.date(fmt, t or state.now) end
+    env.C_Timer = {
+        After = function(_, fn) state.timers[#state.timers + 1] = fn end,
+        NewTicker = function(seconds, fn)
+            local t = { seconds = seconds, fn = fn, Cancel = function() end }
+            state.tickers[#state.tickers + 1] = t
+            return t
+        end,
+    }
+    env.UnitFullName = function(unit) if unit == "player" then return "Tester", "TestRealm" end end
+    env.GetNormalizedRealmName = function() return "TestRealm" end
+    env.UnitClass = function(unit)
+        if unit == "player" then return "Mage", "MAGE" end
+        local u = state.units[unit]
+        if u then return u.class, u.class end
+    end
+    env.UnitRace = function() return "Human", "Human" end
+    env.UnitFactionGroup = function() return "Alliance" end
+    env.UnitExists = function(unit) return unit == "player" or state.units[unit] ~= nil end
+    env.UnitGroupRolesAssigned = function(unit) return state.units[unit] and state.units[unit].role or "NONE" end
+    env.UnitGUID = function(unit) return state.guid[unit] end
+    env.UnitCreatureType = function(unit) return state.units[unit] and state.units[unit].ctype end
+    env.UnitClassification = function(unit) return state.units[unit] and state.units[unit].classification end
+    env.UnitIsAFK = function() return state.afk end
+    env.GetUnitSpeed = function() return state.speed end
+    env.GetZoneText = function() return "Elwynn Forest" end
+    env.GetAchievementInfo = function(id) return id, "Achievement " .. id end
+    env.C_Reputation = {
+        GetNumFactions = function() return state.factions and #state.factions or 0 end,
+        GetFactionDataByIndex = function(i) return state.factions and state.factions[i] end,
+    }
 
     env.DEFAULT_CHAT_FRAME = { AddMessage = function(_, text) state.chat[#state.chat + 1] = text end }
     env.print = function(...) state.chat[#state.chat + 1] = table.concat({ ... }, " ") end
@@ -81,10 +114,13 @@ function M.new(opts)
     }
     env.C_EventUtils = { IsEventValid = function(e) return M.knownEvents == nil or M.knownEvents[e] == true end }
 
-    env.UnitLevel = function() return 12 end
-    env.UnitXP = function() return 300 end
-    env.UnitXPMax = function() return 2000 end
-    env.GetMoney = function() return 12345 end
+    env.UnitLevel = function(unit)
+        if unit == "player" then return state.level end
+        return state.units[unit] and state.units[unit].level
+    end
+    env.UnitXP = function() return state.xp end
+    env.UnitXPMax = function() return state.xpMax end
+    env.GetMoney = function() return state.money end
     env.UnitName = function() return "Tester" end
     env.GetRealmName = function() return "Test Realm" end
     env.C_Map = {
@@ -93,6 +129,7 @@ function M.new(opts)
     }
     env.C_QuestLog = {
         GetNumQuestLogEntries = function() return 2 end,
+        GetTitleForQuestID = function(id) return "Quest " .. id end,
         GetInfo = function(i)
             if i == 1 then return { isHeader = true, title = "Elwynn" } end
             return { isHeader = false, questID = 54, title = "Report to Goldshire" }
@@ -102,7 +139,13 @@ function M.new(opts)
         GetQuestLineInfo = function() return { questLineID = 7, questLineName = "Chain" } end,
         GetQuestLineQuests = function() return { 54, 55, 56 } end,
     }
-    env.GetInstanceInfo = function() return "Elwynn", "none", 0, "", 5, 0, false, 0 end
+    env.GetInstanceInfo = function() return unpack(state.instance, 1, 8) end
+    env.EJ_GetInstanceForMap = function() return state.ejInstance end
+    env.EJ_SelectInstance = function() end
+    env.EJ_GetEncounterInfoByIndex = function(i)
+        local b = state.ejBosses and state.ejBosses[i]
+        if b then return b.name, "", i, 0, "", state.ejInstance, b.id end
+    end
     env.GetProfessions = function() return 1, nil end
     env.GetProfessionInfo = function() return "Mining", 0, 15, 75 end
     env.Enum = { SendAddonMessageResult = { Success = 0, AddOnMessageLockdown = 9, TargetOffline = 3,
@@ -157,6 +200,31 @@ function M.fire(env, event, ...)
         local handler = f._scripts.OnEvent
         if f._events[event] and handler then handler(f, event, ...) end
     end
+end
+
+-- Run queued C_Timer.After callbacks (and any they queue).
+function M.runTimers(env)
+    local st = env.__state
+    for _ = 1, 10 do
+        local queue = st.timers
+        if #queue == 0 then return end
+        st.timers = {}
+        for _, fn in ipairs(queue) do fn() end
+    end
+end
+
+-- Move the clock forward in ticker-sized steps, firing tickers whose period divides.
+function M.advance(env, seconds, step)
+    local st = env.__state
+    step = step or 30
+    local target = st.now + seconds
+    while st.now < target do
+        st.now = math.min(st.now + step, target)
+        for _, t in ipairs(st.tickers) do
+            if t.seconds <= step or (st.now % t.seconds) < step then t.fn() end
+        end
+    end
+    M.runTimers(env)
 end
 
 function M.slash(env, msg)

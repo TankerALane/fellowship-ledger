@@ -30,6 +30,22 @@ What is covered today:
 - **TOCs.** The two flavor TOCs stay in step, every listed file exists, the icon file exists, and versions agree.
 - **Runtime smoke** (`test_runtime_smoke.lua` + `wowmock.lua`). Loads the whole addon in TOC order against a small fake WoW API, fires login and logout events, and runs every slash command. Covered: Forever, retail, flavor mismatch, unknown client, the fallback TOC, missing APIs, the persistence probe across a simulated reload, the probe, and that the report never leaks friend names. This proves the code paths run. It does **not** prove the real client behaves like the mock.
 
+- **Tracking smoke** (`test_tracking_smoke.lua`). An end-to-end run against the mock with a controllable clock. It covers:
+  - login
+  - active and idle time
+  - level-ups, including the exact `10m 23s (total 14m 02s)` case and duplicate events
+  - XP across a level wrap
+  - quest turn-ins with titles and de-duplication
+  - gold by source, including late quest money and losses
+  - Track off
+  - reload vs a new session
+  - backup and the restore dialog
+  - a full dungeon run with the last boss
+  - kills
+  - zones, achievements, party level-ups and reputation
+  - profession skill-ups with timing
+  - every slash command, the Me tab model, and an unsupported client or newer database
+
 Installed interpreter: LuaJIT 2.1 (`winget install --id DEVCOM.LuaJIT`).
 
 ## In-game checks

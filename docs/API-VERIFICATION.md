@@ -270,6 +270,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_Reputation.GetFactionDataByID` | api | faction standing by ID | `/dump type(C_Reputation.GetFactionDataByID)` -> "function" | pending | PASS |
 | `GetNumFactions` | api | classic style fallback | `/dump type(GetNumFactions)` -> "function" | pending | FAIL |
 | `GetFactionInfo` | api | classic style fallback | `/dump type(GetFactionInfo)` -> "function" | pending | FAIL |
+| `x:rep.fields` | custom | FactionData field names (factionID, currentStanding, isHeader) used to diff standings | `/dump C_Reputation.GetFactionDataByIndex(2)` | pending | ? |
 | `ev:UPDATE_FACTION` | event | reputation changed (diff standings) | `/dump C_EventUtils.IsEventValid("UPDATE_FACTION")` -> true | pending | PASS |
 
 ### Achievements
@@ -286,12 +287,15 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_TaxiMap.GetAllTaxiNodes` | api | known flight paths | `/dump type(C_TaxiMap.GetAllTaxiNodes)` -> "function" | pending | PASS |
 | `NumTaxiNodes` | api | flight map fallback | `/dump type(NumTaxiNodes)` -> "function" | pending | PASS |
 | `TaxiNodeName` | api | flight map fallback | `/dump type(TaxiNodeName)` -> "function" | pending | PASS |
+| `GetTaxiMapID` | api | map ID of the open flight map | `/dump type(GetTaxiMapID)` -> "function" | pending | ? |
+| `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | pending | ? |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | pending | PASS |
 
 ### Kills
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `UnitGUID` | api | compare PARTY_KILL attacker/target with you and your target (equality only) | `/dump type(UnitGUID)` -> "function" | pending | ? |
 | `UnitExists` | api | target exists | `/dump type(UnitExists)` -> "function" | pending | PASS |
 | `UnitIsDead` | api | target died (no combat log allowed) | `/dump type(UnitIsDead)` -> "function" | pending | PASS |
 | `UnitClassification` | api | rare / elite kills | `/dump type(UnitClassification)` -> "function" | pending | PASS |
@@ -370,6 +374,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | pending | PASS |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | pending | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | pending | PASS |
+| `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture) | `/dump CreateFrame("Frame").SetResizeBounds` | pending | ? |
 | `m:copywindow` | manual | the verify report window opens, scrolls, copies and closes with Escape | `/fl verify, then Ctrl+A, Ctrl+C, Escape` | pending | ? |
 
 <!-- GENERATED:END -->

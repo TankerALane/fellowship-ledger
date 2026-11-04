@@ -4,7 +4,8 @@
 ## Author: Decoupled Lane Studio
 ## Version: 0.0.1-dev
 ## IconTexture: Interface\AddOns\FellowshipLedger\media\icon
-## SavedVariables: FellowshipLedgerDB, FellowshipLedgerBackupDB
+## SavedVariables: FellowshipLedgerDB
+## SavedVariablesPerCharacter: FellowshipLedgerBackupDB
 ## OptionalDeps: Questie
 ## X-Flavor: Forever
 ## X-License: MIT
@@ -26,10 +27,26 @@ Core\Character.lua
 Core\BackupLogic.lua
 Core\GoldLogic.lua
 Core\Export.lua
+UI\MeModel.lua
 Compat\Compat.lua
 Debug\VerifyChecks.lua
 Debug\VerifyReport.lua
 Debug\CopyWindow.lua
 Debug\Probe.lua
 Debug\Verify.lua
+Core\Events.lua
+Core\Store.lua
+Core\Activity.lua
+Trackers\Trackers.lua
+Trackers\Levels.lua
+Trackers\Quests.lua
+Trackers\Gold.lua
+Trackers\Professions.lua
+Trackers\Dungeons.lua
+Trackers\Extras.lua
+UI\Widgets.lua
+UI\MainWindow.lua
+UI\MeTab.lua
+Debug\EventLog.lua
+Debug\SelfTest.lua
 Core\Init.lua
