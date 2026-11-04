@@ -181,3 +181,22 @@ H.test("count charts use whole-number steps; labels are spaced to fit", function
     H.eq(G.LabelEvery(40, 800), 3)
     H.eq(G.LabelEvery(40, 0), 40)
 end)
+
+H.test("columns stretch, shrink, then drop from the right", function()
+    local Lay = H.pureNamespace().Layout
+    local cols = { { width = 150 }, { width = 50 }, { width = 50 }, { width = 50 } } -- 300 + 3 gaps = 312
+    local w, n = Lay.FitColumns(cols, 400, 4)
+    H.eq(n, 4)
+    H.ok(w[1] > 150, "stretches when there is room")
+    w, n = Lay.FitColumns(cols, 260, 4)
+    H.eq(n, 4)
+    local total = w[1] + w[2] + w[3] + w[4] + 12
+    H.ok(total <= 260, "shrinks to fit: " .. total)
+    w, n = Lay.FitColumns(cols, 160, 4)
+    H.ok(n < 4 and w[4] == nil, "right-most columns dropped")
+    local used = 0
+    for i = 1, n do used = used + w[i] end
+    H.ok(used + 4 * (n - 1) <= 160, "what remains fits")
+    w, n = Lay.FitColumns(cols, 10, 4)
+    H.eq(n, 1, "the name column is never dropped")
+end)

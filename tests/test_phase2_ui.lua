@@ -222,5 +222,61 @@ H.test("/fl welcome reopens the panel; startup failures are reported", function(
     ns2.Welcome.MaybeShow = function() error("boom") end
     Mock.fire(env2, "ADDON_LOADED", "FellowshipLedger")
     Mock.fire(env2, "PLAYER_LOGIN")
+    Mock.fire(env2, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env2)
     H.ok(Mock.chatContains(env2, "The welcome panel could not start: "), table.concat(env2.__state.chat, "\n"))
+end)
+
+H.test("tables fit the window; the Block button has its own space", function()
+    local env, ns = boot()
+    Mock.slash(env, "fake")
+    ns.MainWindow.Select("me")
+    local panel = ns.MainWindow.tabs.me.panel
+    local columns = {}
+    for _, col in ipairs(ns.MeModel.COLUMNS) do columns[#columns + 1] = { label = col.label, width = col.width } end
+    local tbl = ns.Table.New(panel, columns, { top = 30 })
+    panel:SetWidth(450)
+    tbl:SetLines({ { kind = "row", cells = { "a", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" } } })
+    local right = 4
+    for c, h in ipairs(tbl.headers) do
+        if h:IsShown() then right = right + tbl.widths[c] + 4 end
+    end
+    H.ok(right <= 450, "columns end inside the panel: " .. right)
+    H.ok(not tbl.headers[#tbl.headers]:IsShown(), "the last column is hidden when narrow")
+    local withButtons = ns.Table.New(panel, columns, { top = 30, actions = true })
+    withButtons:SetLines({})
+    local used = 4
+    for c in ipairs(columns) do if withButtons.widths[c] then used = used + withButtons.widths[c] + 4 end end
+    H.ok(used <= 450 - 80, "space kept for the Block button: " .. used)
+end)
+
+H.test("the window opens on Me unless 'open on the last tab' is on", function()
+    local env, ns = boot()
+    ns.MainWindow.Open("graphs")
+    ns.MainWindow.frame:Hide()
+    ns.MainWindow.Toggle()
+    H.eq(ns.MainWindow.current, "me")
+    env.FellowshipLedgerDB.settings.rememberTab = true
+    ns.MainWindow.Open("friends")
+    ns.MainWindow.frame:Hide()
+    ns.MainWindow.Toggle()
+    H.eq(ns.MainWindow.current, "friends")
+end)
+
+H.test("resizing defers redraws until the corner is let go", function()
+    local env, ns = boot()
+    ns.MainWindow.Open("me")
+    local f = ns.MainWindow.frame
+    local calls = 0
+    local original = ns.MeTab.Refresh
+    ns.MeTab.Refresh = function() calls = calls + 1; original() end
+    ns.MainWindow.tabs.me.OnShow = function() ns.MeTab.Refresh() end
+    ns.MainWindow.sizing = true
+    for _ = 1, 20 do f:GetScript("OnSizeChanged")(f) end
+    H.eq(calls, 0, "no redraw per resize step")
+    H.ok(ns.MainWindow.resizePending)
+    ns.MainWindow.sizing = false
+    f:GetScript("OnSizeChanged")(f)
+    H.eq(calls, 1)
+    ns.MeTab.Refresh = original
 end)

@@ -99,7 +99,8 @@ function handlers.PLAYER_LOGIN()
     end
     step("minimap button", ns.MinimapButton.Update)
     step("options page", ns.OptionsPanel.Register)
-    step("welcome panel", ns.Welcome.MaybeShow)
+    ns.welcomeStep = function() step("welcome panel", ns.Welcome.MaybeShow) end
+    if not ns.pewRegistered then ns.Events.After(3, ns.welcomeStep) end
     if ns.Store.newSession and ns.Store.previousSession and ns.db.settings.sessionSummary then
         local title, lines = ns.Summary.Session(ns.Store.previousSession, L, date)
         ns.Toast.Show(title, lines)
@@ -116,6 +117,16 @@ function handlers.PLAYER_LOGOUT()
     end
 end
 
+-- The welcome panel waits until the loading screen is over: windows that close
+-- with Escape appear to be closed while the world loads, so showing it at
+-- PLAYER_LOGIN was not reliable (Austin never saw it on retail).
+local welcomeQueued = false
+function handlers.PLAYER_ENTERING_WORLD()
+    if welcomeQueued or not ns.welcomeStep then return end
+    welcomeQueued = true
+    ns.Events.After(3, ns.welcomeStep)
+end
+
 frame:SetScript("OnEvent", function(_, event, ...)
     local handler = handlers[event]
     if handler then handler(...) end
@@ -123,6 +134,7 @@ end)
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("PLAYER_LOGOUT")
+ns.pewRegistered = pcall(frame.RegisterEvent, frame, "PLAYER_ENTERING_WORLD") -- only used to delay the welcome panel
 
 -- Slash commands ------------------------------------------------------------
 

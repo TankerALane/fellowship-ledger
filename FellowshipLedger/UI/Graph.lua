@@ -29,7 +29,9 @@ function Graph.New(parent)
     self.empty = W.Text(parent, "body", "muted")
     self.empty:SetPoint("CENTER", self.plot, "CENTER")
     -- Redraw at the real size whenever the plot is resized.
-    self.plot:SetScript("OnSizeChanged", function() if self.points then self:Render() end end)
+    self.plot:SetScript("OnSizeChanged", function()
+        if self.points and not ns.MainWindow.sizing then self:Render() end
+    end)
     return self
 end
 

@@ -1,5 +1,8 @@
 -- UI/Table.lua
 -- A scrolling table: sortable column headers and a pool of line widgets.
+-- Columns are fitted to the panel width (UI/Layout.lua): they stretch, shrink and,
+-- when the window is very narrow, the right-most ones are hidden. Tables with row
+-- buttons (opts.actions) keep a column of space for them on the right.
 -- Lines are tables:
 --   { cells = { "text", ... }, kind = "row"|"total"|"group"|"detail", indent = bool,
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick } }
@@ -11,27 +14,27 @@ local Table = {}
 ns.Table = Table
 
 local ROW_H = 20
+local GAP = 4
+local ACTION_W = 80
 local Obj = {}
 Obj.__index = Obj
 
--- columns: { { label, width, field }, ... }; opts.onSort(field), opts.sortState() -> field, desc
+-- columns: { { label, width, field }, ... }
+-- opts: top, bottom, actions (bool), onSort(field), sortState() -> field, desc
 function Table.New(parent, columns, opts)
     local self = setmetatable({ parent = parent, columns = columns, opts = opts or {}, widgets = {}, offset = 0, lines = {} }, Obj)
     self.headers = {}
-    local x = 4
     for c, col in ipairs(columns) do
         local h = CreateFrame("Button", nil, parent)
-        h:SetSize(col.width, ROW_H)
-        h:SetPoint("TOPLEFT", x, -(self.opts.top or 0))
+        h:SetHeight(ROW_H)
         h.text = W.Text(h, "small", "muted")
         h.text:SetPoint("LEFT")
+        h.text:SetWordWrap(false)
         h:SetScript("OnClick", function()
             if self.opts.onSort and col.field then self.opts.onSort(col.field) end
         end)
         self.headers[c] = h
-        x = x + col.width + 4
     end
-    self.width = x
     local rule = W.Rule(parent, "rule")
     rule:SetPoint("TOPLEFT", 4, -(self.opts.top or 0) - ROW_H)
     rule:SetPoint("TOPRIGHT", -4, -(self.opts.top or 0) - ROW_H)
@@ -43,6 +46,44 @@ function Table.New(parent, columns, opts)
     return self
 end
 
+-- Work out column widths for the current panel width (only when it changed).
+function Obj:Fit()
+    local width = self.parent:GetWidth() or 0
+    if width < 100 then width = 800 end
+    if self.fittedFor == width then return end
+    self.fittedFor = width
+    local available = width - 8 - (self.opts.actions and (ACTION_W + GAP) or 0)
+    self.widths, self.visibleCols = ns.Layout.FitColumns(self.columns, available, GAP)
+    local x = 4
+    for c, h in ipairs(self.headers) do
+        local w = self.widths[c]
+        if w then
+            h:ClearAllPoints()
+            h:SetPoint("TOPLEFT", x, -(self.opts.top or 0))
+            h:SetWidth(w)
+            h.text:SetWidth(w)
+            h:Show()
+            x = x + w + GAP
+        else
+            h:Hide()
+        end
+    end
+    for _, line in pairs(self.widgets) do self:PlaceCells(line) end
+end
+
+function Obj:PlaceCells(w)
+    local cx = 0
+    for c, fs in ipairs(w.cells) do
+        local width = self.widths and self.widths[c]
+        if width then
+            fs:ClearAllPoints()
+            fs:SetPoint("LEFT", cx, 0)
+            fs:SetWidth(width)
+            cx = cx + width + GAP
+        end
+    end
+end
+
 function Obj:Line(i)
     local w = self.widgets[i]
     if w then return w end
@@ -52,20 +93,17 @@ function Obj:Line(i)
     w:SetPoint("RIGHT", self.parent, "RIGHT", -4, 0)
     w.alt = W.Background(w, "rowAlt")
     w.cells = {}
-    local cx = 0
-    for c, col in ipairs(self.columns) do
+    for c = 1, #self.columns do
         local fs = W.Text(w, "body", "text")
-        fs:SetPoint("LEFT", cx, 0)
-        fs:SetWidth(col.width)
         fs:SetWordWrap(false)
         w.cells[c] = fs
-        cx = cx + col.width + 4
     end
+    self:PlaceCells(w)
     w.full = W.Text(w, "body", "text")
     w.full:SetPoint("LEFT", 0, 0)
-    w.full:SetPoint("RIGHT", -90, 0)
+    w.full:SetPoint("RIGHT", -(ACTION_W + GAP), 0)
     w.full:SetWordWrap(false)
-    w.action = W.Button(w, "", 80, ROW_H - 2)
+    w.action = W.Button(w, "", ACTION_W, ROW_H - 2)
     w.action:SetPoint("RIGHT", 0, 0)
     w:SetScript("OnClick", function(btn)
         if btn.line and btn.line.onClick then btn.line.onClick() end
@@ -86,6 +124,7 @@ function Obj:Visible()
 end
 
 function Obj:Render()
+    self:Fit()
     local field, desc = nil, nil
     if self.opts.sortState then field, desc = self.opts.sortState() end
     for c, col in ipairs(self.columns) do
@@ -108,11 +147,12 @@ function Obj:Render()
             if line.cells then
                 w.full:Hide()
                 for c = 1, #self.columns do
+                    local shown = self.widths[c] ~= nil
                     local text = line.cells[c] or ""
                     if c == 1 and line.indent then text = "    " .. text end
                     w.cells[c]:SetText(text)
                     W.SetTextRole(w.cells[c], line.kind == "total" and "heading" or (line.muted and "muted" or "text"))
-                    w.cells[c]:Show()
+                    w.cells[c]:SetShown(shown)
                 end
             else
                 for c = 1, #self.columns do w.cells[c]:Hide() end

@@ -13,6 +13,7 @@ ns.MainWindow = Main
 Main.TABS = { "me", "friends", "graphs", "settings" }
 Main.tabs = {}
 Main.current = nil
+Main.RESIZE_REDRAW = 0.35 -- seconds between redraws while resizing
 
 local FRAME_NAME = "FellowshipLedgerMainWindow"
 
@@ -57,11 +58,28 @@ local function build()
     grip:SetSize(14, 14)
     grip:SetPoint("BOTTOMRIGHT", -2, 2)
     W.Background(grip, "accent", 0.8)
-    grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
+    -- While the corner is dragged, redraw at most every RESIZE_REDRAW seconds;
+    -- redraw once more when it is let go. (Redrawing every frame made resizing laggy.)
+    grip:SetScript("OnMouseDown", function()
+        Main.sizing = true
+        Main.sinceRedraw = 0
+        f:StartSizing("BOTTOMRIGHT")
+    end)
     grip:SetScript("OnMouseUp", function()
         f:StopMovingOrSizing()
+        Main.sizing = false
+        Main.resizePending = false
         savePosition(f)
         refreshCurrent()
+    end)
+    grip:SetScript("OnUpdate", function(_, elapsed)
+        if not Main.sizing then return end
+        Main.sinceRedraw = (Main.sinceRedraw or 0) + (elapsed or 0)
+        if Main.resizePending and Main.sinceRedraw >= Main.RESIZE_REDRAW then
+            Main.sinceRedraw = 0
+            Main.resizePending = false
+            refreshCurrent()
+        end
     end)
 
     W.Background(f, "bg")
@@ -101,7 +119,9 @@ local function build()
 
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, FRAME_NAME) end
     f:SetScript("OnShow", function() Main.Refresh() end)
-    f:SetScript("OnSizeChanged", function() refreshCurrent() end)
+    f:SetScript("OnSizeChanged", function()
+        if Main.sizing then Main.resizePending = true else refreshCurrent() end
+    end)
     f:Hide()
     return f
 end
@@ -141,20 +161,27 @@ function Main.Select(id)
     Main.Refresh()
 end
 
+-- The tab to show when the window opens without a specific tab: Me, unless the
+-- "open on the last tab" setting is on.
+function Main.DefaultTab()
+    if ns.db.settings.rememberTab and Main.current then return Main.current end
+    return "me"
+end
+
 function Main.Toggle(tabId)
     if not Main.Ensure() then return end
     if Main.frame:IsShown() and (not tabId or tabId == Main.current) then
         Main.frame:Hide()
     else
         Main.frame:Show()
-        Main.Select(tabId or Main.current or "me")
+        Main.Select(tabId or Main.DefaultTab())
     end
 end
 
 function Main.Open(tabId)
     if not Main.Ensure() then return end
     Main.frame:Show()
-    Main.Select(tabId or Main.current or "me")
+    Main.Select(tabId or Main.DefaultTab())
 end
 
 function Main.ApplyScale()

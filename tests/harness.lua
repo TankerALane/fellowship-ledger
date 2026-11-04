@@ -96,6 +96,7 @@ H.PURE_FILES = {
     "Core/Summary.lua",
     "Core/QuestChainLogic.lua",
     "UI/Palette.lua",
+    "UI/Layout.lua",
     "UI/MeModel.lua",
     "UI/GraphModel.lua",
     "UI/FriendsModel.lua",

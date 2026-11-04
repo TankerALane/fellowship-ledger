@@ -90,6 +90,7 @@ ns.Locale.Set({
     FONT_NORMAL = "Normal",
     FONT_LARGE = "Large",
     SETTINGS_COLORBLIND = "Colorblind-safe graph colors",
+    SETTINGS_REMEMBER_TAB = "Open on the last tab I used (otherwise always Me)",
     SETTINGS_MINIMAP = "Show the minimap button",
     SETTINGS_TOASTS = "Notices",
     TOAST_LEVEL = "Level-up notice with the time that level took",

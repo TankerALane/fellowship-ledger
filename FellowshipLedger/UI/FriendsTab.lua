@@ -88,7 +88,7 @@ local function build(panel)
     end
     local columns = {}
     for _, col in ipairs(COLUMNS) do columns[#columns + 1] = { label = L[col.label], width = col.width } end
-    ui.table = ns.Table.New(panel, columns, { top = 30 })
+    ui.table = ns.Table.New(panel, columns, { top = 30, actions = true })
     ui.empty = W.Text(panel, "body", "muted")
     ui.empty:SetPoint("TOPLEFT", 8, -80)
     ui.empty:SetPoint("RIGHT", -8, 0)
