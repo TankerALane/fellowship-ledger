@@ -143,3 +143,40 @@ function GraphModel.Layout(points, height, integer)
     end
     return { lo = niceLo, hi = niceHi, step = step, zeroY = zeroY, bar = bar }
 end
+
+-- Compare overlay: only charts whose x axis means the same thing for both
+-- characters (level number, calendar day) can be compared.
+GraphModel.COMPARABLE = { timePerLevel = true, questsPerDay = true }
+
+function GraphModel.CanCompare(chart)
+    return GraphModel.COMPARABLE[chart] == true
+end
+
+-- Line two series up by label. Returns rows { label, note, a, b, partialA, partialB }
+-- (a or b nil where that character has no point). Level labels sort numerically.
+function GraphModel.Align(a, b)
+    local byLabel, order = {}, {}
+    local function add(points, side)
+        for _, p in ipairs(points or {}) do
+            local row = byLabel[p.label]
+            if not row then
+                row = { label = p.label, note = p.note }
+                byLabel[p.label] = row
+                order[#order + 1] = row
+            end
+            row[side] = p.value
+            row["partial" .. side:upper()] = p.partial
+        end
+    end
+    add(a, "a")
+    add(b, "b")
+    local numeric = true
+    for _, row in ipairs(order) do if not tonumber(row.label) then numeric = false end end
+    if numeric then
+        table.sort(order, function(x, y) return tonumber(x.label) < tonumber(y.label) end)
+    else
+        table.sort(order, function(x, y) return tostring(x.note or x.label) < tostring(y.note or y.label) end)
+    end
+    while #order > GraphModel.MAX_POINTS do table.remove(order, 1) end
+    return order
+end

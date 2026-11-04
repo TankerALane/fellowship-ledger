@@ -230,6 +230,11 @@ ns.VerifyChecks = {
     { id = "ev:BN_FRIEND_INFO_CHANGED", kind = "event", area = "Battle.net friends", why = "friend switched character or game" },
 
     -- Comms: character friends
+    { id = "WOW_PROJECT_ID", kind = "api", area = "Character friends", why = "our project ID, compared with friends' wowProjectID so only same-flavor friends are messaged", expect = "number" },
+    { id = "BNET_CLIENT_WOW", kind = "api", area = "Character friends", why = "the clientProgram value of a friend playing WoW", expect = "string" },
+    { id = "LE_PARTY_CATEGORY_INSTANCE", kind = "api", area = "Character friends", why = "tell finder groups (INSTANCE_CHAT) from home parties for the dungeon-name note", expect = "number" },
+    { id = "m:commtest", kind = "manual", area = "Character friends", why = "addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types", test = "/fl commtest, then paste the report" },
+    { id = "m:sync", kind = "manual", area = "Battle.net friends", why = "a friend who runs the ledger on the same client appears on the Friends tab after Sync now, with their data; nothing crosses Forever/retail", test = "both run /fl sync; check Friends tab and /fl comms on both sides" },
     { id = "C_ChatInfo.RegisterAddonMessagePrefix", kind = "api", area = "Character friends", why = "register FLDGF / FLDGR" },
     { id = "C_ChatInfo.IsAddonMessagePrefixRegistered", kind = "api", area = "Character friends", why = "confirm registration" },
     { id = "C_ChatInfo.SendAddonMessage", kind = "api", area = "Character friends", why = "whisper addon messages to character friends" },

@@ -74,15 +74,16 @@ function M.new(opts)
     env.time = function(t) if t then return os.time(t) end return state.now end
     env.date = function(fmt, t) return os.date(fmt, t or state.now) end
     env.C_Timer = {
-        After = function(_, fn) state.timers[#state.timers + 1] = fn end,
+        After = function(delay, fn) state.timers[#state.timers + 1] = { at = state.now + (tonumber(delay) or 0), fn = fn } end,
         NewTicker = function(seconds, fn)
             local t = { seconds = seconds, fn = fn, Cancel = function() end }
             state.tickers[#state.tickers + 1] = t
             return t
         end,
     }
-    env.UnitFullName = function(unit) if unit == "player" then return "Tester", "TestRealm" end end
-    env.GetNormalizedRealmName = function() return "TestRealm" end
+    state.name, state.realm = opts.playerName or "Tester", opts.realm or "TestRealm"
+    env.UnitFullName = function(unit) if unit == "player" then return state.name, state.realm end end
+    env.GetNormalizedRealmName = function() return state.realm end
     env.UnitClass = function(unit)
         if unit == "player" then return "Mage", "MAGE" end
         local u = state.units[unit]
@@ -183,7 +184,10 @@ function M.new(opts)
     env.UnitXP = function() return state.xp end
     env.UnitXPMax = function() return state.xpMax end
     env.GetMoney = function() return state.money end
-    env.UnitName = function() return "Tester" end
+    env.UnitName = function(unit)
+        if unit == "player" then return state.name end
+        return state.units[unit] and state.units[unit].name
+    end
     env.GetRealmName = function() return "Test Realm" end
     env.C_Map = {
         GetBestMapForUnit = function() return 1429 end,
@@ -210,28 +214,55 @@ function M.new(opts)
     end
     env.GetProfessions = function() return 1, nil end
     env.GetProfessionInfo = function() return "Mining", 0, 15, 75 end
-    env.Enum = { SendAddonMessageResult = { Success = 0, AddOnMessageLockdown = 9, TargetOffline = 3,
-        AddonMessageThrottle = 4, ChannelThrottle = 8 } }
+    -- Real retail values (verify report 2026-11-04).
+    env.Enum = { SendAddonMessageResult = { Success = 0, InvalidPrefix = 1, InvalidMessage = 2, AddonMessageThrottle = 3,
+        InvalidChatType = 4, NotInGroup = 5, TargetRequired = 6, InvalidChannel = 7, ChannelThrottle = 8, GeneralError = 9,
+        NotInGuild = 10, AddOnMessageLockdown = 11, TargetOffline = 12 } }
+    -- Comms: every send is recorded in state.sent; state.sendResult overrides the result.
+    state.sent = {}
+    state.combat = false
+    env.InCombatLockdown = function() return state.combat end
+    env.GetTime = function() return state.now end
+    env.IsTrialAccount = function() return state.trial == true end
+    env.IsVeteranTrialAccount = function() return false end
+    env.BNET_CLIENT_WOW = "WoW"
     local registered = {}
     env.C_ChatInfo = {
         RegisterAddonMessagePrefix = function(p) registered[p] = true return 0 end,
         IsAddonMessagePrefixRegistered = function(p) return registered[p] == true end,
-        SendAddonMessage = function() return 0 end,
+        SendAddonMessage = function(prefix, text, channel, target)
+            state.sent[#state.sent + 1] = { kind = "addon", prefix = prefix, text = text, channel = channel, target = target }
+            return state.sendResult or 0
+        end,
+        InChatMessagingLockdown = function() return state.chatLockdown == true end,
     }
-    env.BNGetNumFriends = function() return 1, 1 end
+    -- Battle.net friends: state.bnFriends = { { battleTag, games = { { gameAccountID, characterName, realmName, wowProjectID, clientProgram } } } }
+    state.bnFriends = opts.bnFriends or { { battleTag = "Secret#1234",
+        games = { { clientProgram = "WoW", wowProjectID = 99, characterName = "Hidden", gameAccountID = 5 } } } }
+    env.BNGetNumFriends = function() return #state.bnFriends, #state.bnFriends end
     env.C_BattleNet = {
-        SendGameData = function() return 0 end,
-        GetFriendAccountInfo = function() return { battleTag = "Secret#1234", isFriend = true } end,
-        GetFriendNumGameAccounts = function() return 1 end,
-        GetFriendGameAccountInfo = function()
-            return { clientProgram = "WoW", wowProjectID = 99, characterName = "Hidden", gameAccountID = 5 }
+        SendGameData = function(gameAccountID, prefix, text)
+            state.sent[#state.sent + 1] = { kind = "bn", prefix = prefix, text = text, target = gameAccountID }
+            return state.sendResult or 0
+        end,
+        GetFriendAccountInfo = function(i)
+            local f = state.bnFriends[i]
+            return f and { battleTag = f.battleTag, isFriend = true } or nil
+        end,
+        GetFriendNumGameAccounts = function(i) return state.bnFriends[i] and #state.bnFriends[i].games or 0 end,
+        GetFriendGameAccountInfo = function(i, j)
+            local g = state.bnFriends[i] and state.bnFriends[i].games[j]
+            if not g then return nil end
+            return { clientProgram = g.clientProgram or "WoW", wowProjectID = g.wowProjectID or 99, characterName = g.characterName,
+                realmName = g.realmName, gameAccountID = g.gameAccountID, isOnline = g.isOnline ~= false }
         end,
     }
+    state.charFriends = opts.charFriends or { { name = "HiddenFriend", connected = true } }
     env.C_FriendList = {
-        GetNumFriends = function() return 1 end,
-        GetFriendInfoByIndex = function() return { name = "HiddenFriend", connected = true } end,
+        GetNumFriends = function() return #state.charFriends end,
+        GetFriendInfoByIndex = function(i) return state.charFriends[i] end,
     }
-    env.WOW_PROJECT_ID = 99
+    env.WOW_PROJECT_ID = opts.projectID or 99
     env.WOW_PROJECT_MAINLINE = 1
 
     for _, name in ipairs(opts.missing or {}) do env[name] = nil end
@@ -271,7 +302,21 @@ function M.runTimers(env)
         local queue = st.timers
         if #queue == 0 then return end
         st.timers = {}
-        for _, fn in ipairs(queue) do fn() end
+        for _, t in ipairs(queue) do t.fn() end
+    end
+end
+
+-- Run only the C_Timer.After callbacks whose delay has passed (for clock-driven tests).
+function M.runDueTimers(env)
+    local st = env.__state
+    for _ = 1, 10 do
+        local due, later = {}, {}
+        for _, t in ipairs(st.timers) do
+            if t.at <= st.now then due[#due + 1] = t else later[#later + 1] = t end
+        end
+        if #due == 0 then return end
+        st.timers = later
+        for _, t in ipairs(due) do t.fn() end
     end
 end
 

@@ -12,7 +12,7 @@ local MeModel, FriendsModel = ns.MeModel, ns.FriendsModel
 local FriendsTab = {}
 ns.FriendsTab = FriendsTab
 
-local state = { range = "week" }
+local state = { range = "week", weekly = false }
 local ui = {}
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
@@ -34,10 +34,24 @@ function FriendsTab.Block(tag)
     ns.MainWindow.Refresh()
 end
 
+local function weeklyLines()
+    local out = { { kind = "group", text = L.WEEKLY_TITLE } }
+    local list = ns.Merge.Weekly(ns.Data.Friends(), ns.db.blocklist, ns.Store.Today(), time, date)
+    for _, t in ipairs(list) do
+        out[#out + 1] = { kind = "detail", indent = true, text = string.format(L.WEEKLY_LINE, t.name, t.levels, t.quests,
+            t.dungeons, ns.Format.Duration(t.active)) }
+    end
+    if #list == 0 then out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_EMPTY } end
+    return out
+end
+
 local function lines()
     local now = time()
     local rows, hidden = FriendsModel.Build(ns.Data.Friends(), ns.db.blocklist, state.range, ns.Store.Today(), time, date)
     local out = {}
+    if state.weekly then
+        for _, l in ipairs(weeklyLines()) do out[#out + 1] = l end
+    end
     for _, r in ipairs(rows) do
         if r.header then
             local f = r.friend
@@ -68,6 +82,15 @@ end
 function FriendsTab.Refresh()
     if not ui.table then return end
     for range, b in pairs(ui.rangeButtons) do b:SetSelected(range == state.range) end
+    ui.weeklyButton:SetSelected(state.weekly)
+    if ns.Data.IsFake() then
+        ui.status:SetText(L.SYNC_STATUS_FAKE)
+    else
+        local online = 0
+        for _, peer in pairs(ns.Friends and ns.Friends.peers or {}) do if peer.online then online = online + 1 end end
+        ui.status:SetText(string.format(L.SYNC_STATUS, online, ns.Sync and ns.Sync.lastSyncAt and FriendsModel.Ago(time(), ns.Sync.lastSyncAt) or L.NEVER,
+            ns.Transport and #ns.Transport.queue or 0))
+    end
     local list, count = lines()
     ui.table:SetLines(list)
     ui.empty:SetShown(count == 0)
@@ -86,6 +109,19 @@ local function build(panel)
         x = x + 86
         ui.rangeButtons[range] = b
     end
+    ui.weeklyButton = W.Button(panel, L.WEEKLY_BUTTON, 100, 20, function()
+        state.weekly = not state.weekly
+        FriendsTab.Refresh()
+    end)
+    ui.weeklyButton:SetPoint("TOPLEFT", x + 12, -2)
+    local syncNow = W.Button(panel, L.SYNC_NOW, 100, 20, function()
+        if ns.Sync and not ns.Data.IsFake() then ns.Sync.SyncAll(true) end
+        FriendsTab.Refresh()
+    end)
+    syncNow:SetPoint("TOPRIGHT", -4, -2)
+    ui.status = W.Text(panel, "small", "muted")
+    ui.status:SetPoint("RIGHT", syncNow, "LEFT", -8, 0)
+    ui.status:SetJustifyH("RIGHT")
     local columns = {}
     for _, col in ipairs(COLUMNS) do columns[#columns + 1] = { label = L[col.label], width = col.width } end
     ui.table = ns.Table.New(panel, columns, { top = 30, actions = true })
@@ -95,4 +131,8 @@ local function build(panel)
     ui.empty:SetWordWrap(true)
 end
 
-ns.MainWindow.RegisterTab("friends", build, function() FriendsTab.Refresh() end)
+-- Opening the Friends tab also starts a sync (rate-limited inside Sync).
+ns.MainWindow.RegisterTab("friends", build, function()
+    if ns.Sync and ns.tracking and not ns.Data.IsFake() then pcall(ns.Sync.SyncAll, false) end
+    FriendsTab.Refresh()
+end)

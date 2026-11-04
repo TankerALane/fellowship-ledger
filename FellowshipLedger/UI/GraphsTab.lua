@@ -1,7 +1,7 @@
 -- UI/GraphsTab.lua
 -- Graphs tab: pick a character (yours or a friend's) and a chart: levels per
 -- session, time per level, quests per day, gold per session, XP per hour.
--- The compare overlay arrives with sharing in Phase 3.
+-- Compare overlay: a second character as paired bars (Time per level, Quests per day).
 
 local _, ns = ...
 local L = ns.L
@@ -11,7 +11,7 @@ local GraphModel = ns.GraphModel
 local GraphsTab = {}
 ns.GraphsTab = GraphsTab
 
-local state = { chart = "timePerLevel", index = 1, days = 30 }
+local state = { chart = "timePerLevel", index = 1, days = 30, compare = nil }
 local ui = {}
 
 local function characters()
@@ -33,7 +33,21 @@ function GraphsTab.Refresh()
     local points = GraphModel.Build(state.chart, entry.char, ns.Store.Today(), time, date, state.days)
     local series = 1
     for i, id in ipairs(GraphModel.CHARTS) do if id == state.chart then series = i end end
-    ui.graph:SetData(points, state.chart, series, L.GRAPH_EMPTY)
+    -- Compare overlay
+    local other = state.compare and list[state.compare]
+    if other == entry then other = nil end
+    local compare
+    if other and GraphModel.CanCompare(state.chart) then
+        compare = { points = GraphModel.Build(state.chart, other.char, ns.Store.Today(), time, date, state.days),
+            nameA = entry.label, nameB = other.label }
+        ui.legend:SetText(string.format(L.COMPARE_LEGEND, entry.label, other.label))
+    elseif other then
+        ui.legend:SetText(L.COMPARE_NOT_THIS_CHART)
+    else
+        ui.legend:SetText("")
+    end
+    ui.compareButton.text:SetText(other and string.format(L.COMPARE_WITH, other.label) or L.COMPARE_OFF)
+    ui.graph:SetData(points, state.chart, series, L.GRAPH_EMPTY, compare)
 end
 
 local function build(panel)
@@ -64,6 +78,18 @@ local function build(panel)
     ui.charLabel:SetPoint("LEFT", nextB, "RIGHT", 8, 0)
     ui.title = W.Text(panel, "small", "muted")
     ui.title:SetPoint("TOPLEFT", 4, -54)
+    -- Compare: cycles Off -> each other character -> Off.
+    ui.compareButton = W.Button(panel, L.COMPARE_OFF, 240, 20, function()
+        local n = #characters()
+        local nextIndex = (state.compare or 0) + 1
+        if nextIndex == state.index then nextIndex = nextIndex + 1 end
+        if nextIndex > n then state.compare = nil else state.compare = nextIndex end
+        GraphsTab.Refresh()
+    end)
+    ui.compareButton:SetPoint("TOPRIGHT", -4, -28)
+    ui.legend = W.Text(panel, "small", "text")
+    ui.legend:SetPoint("TOPRIGHT", -4, -54)
+    ui.legend:SetJustifyH("RIGHT")
 
     local area = CreateFrame("Frame", nil, panel)
     area:SetPoint("TOPLEFT", 0, -72)

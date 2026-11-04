@@ -81,6 +81,7 @@ H.PURE_FILES = {
     "Locale/Locale.lua",
     "Locale/enUS.lua",
     "Locale/enUS_Phase2.lua",
+    "Locale/enUS_Phase3.lua",
     "Core/Migrations.lua",
     "Compat/FlavorLogic.lua",
     "Core/Clock.lua",
@@ -101,6 +102,9 @@ H.PURE_FILES = {
     "UI/GraphModel.lua",
     "UI/FriendsModel.lua",
     "Debug/FakeData.lua",
+    "Comms/Codec.lua",
+    "Comms/Merge.lua",
+    "Comms/RateLimit.lua",
     "Debug/VerifyChecks.lua",
     "Debug/VerifyReport.lua",
 }

@@ -46,6 +46,21 @@ What is covered today:
   - profession skill-ups with timing
   - every slash command, the Me tab model, and an unsupported client or newer database
 
+- **Protocol** (`test_codec.lua`): escaping, the share filter (unshared trackers, pause), HELLO, REQUEST, DATA and NAME round trips, forward compatibility, chunk size limits, out-of-order and duplicate pieces, timeouts, merge and milestones, the weekly summary, the rate limiter and compare alignment.
+- **Sync** (`test_sync.lua`): two or three mock clients on a fake network:
+  - ledgers exchanged both ways
+  - unshared fields, paused sharing and fake data never sent
+  - blocked friends, both directions
+  - Forever and retail never mixing, including a forged flavor code
+  - friends on another project never messaged
+  - combat holding the queue
+  - throttle retries and offline drops
+  - character friends by whisper, and strangers ignored
+  - milestone notices
+  - dungeon-name opt-in
+  - `/fl commtest` and `/fl comms`
+  - the compare overlay
+
 Installed interpreter: LuaJIT 2.1 (`winget install --id DEVCOM.LuaJIT`).
 
 ## In-game checks

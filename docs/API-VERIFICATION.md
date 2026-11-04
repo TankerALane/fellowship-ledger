@@ -369,6 +369,21 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `WOW_PROJECT_ID` | api | our project ID, compared with friends' wowProjectID so only same-flavor friends are messaged | `/dump type(WOW_PROJECT_ID)` -> "number" | pending | ? |
+| `BNET_CLIENT_WOW` | api | the clientProgram value of a friend playing WoW | `/dump type(BNET_CLIENT_WOW)` -> "string" | pending | ? |
+| `LE_PARTY_CATEGORY_INSTANCE` | api | tell finder groups (INSTANCE_CHAT) from home parties for the dungeon-name note | `/dump type(LE_PARTY_CATEGORY_INSTANCE)` -> "number" | pending | ? |
+| `m:commtest` | manual | addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types | `/fl commtest, then paste the report` | pending | ? |
+
+### Battle.net friends
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:sync` | manual | a friend who runs the ledger on the same client appears on the Friends tab after Sync now, with their data; nothing crosses Forever/retail | both run /fl sync; check Friends tab and /fl comms on both sides | pending | ? |
+
+### Character friends
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
 | `C_ChatInfo.RegisterAddonMessagePrefix` | api | register FLDGF / FLDGR | `/dump type(C_ChatInfo.RegisterAddonMessagePrefix)` -> "function" | pending | PASS |
 | `C_ChatInfo.IsAddonMessagePrefixRegistered` | api | confirm registration | `/dump type(C_ChatInfo.IsAddonMessagePrefixRegistered)` -> "function" | pending | PASS |
 | `C_ChatInfo.SendAddonMessage` | api | whisper addon messages to character friends | `/dump type(C_ChatInfo.SendAddonMessage)` -> "function" | pending | PASS |

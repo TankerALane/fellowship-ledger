@@ -56,28 +56,45 @@ function Obj:Bar(i)
 end
 
 -- points: from GraphModel; chart: id (for value formatting); seriesIndex: palette slot.
-function Obj:SetData(points, chart, seriesIndex, emptyText)
+-- compare (optional): { points = second series, nameA, nameB } - drawn as paired bars,
+-- A on the left of each pair and B on the right (position, not just color, tells them apart).
+function Obj:SetData(points, chart, seriesIndex, emptyText, compare)
     self.points = points or {}
     self.chart = chart
     self.seriesIndex = seriesIndex or 1
     self.emptyText = emptyText
+    self.compare = compare
     self:Render()
 end
 
+local function rowsFor(self)
+    if self.compare then return GraphModel.Align(self.points, self.compare.points) end
+    local rows = {}
+    for i, p in ipairs(self.points) do
+        rows[i] = { label = p.label, note = p.note, a = p.value, partialA = p.partial }
+    end
+    return rows
+end
+
 function Obj:Render()
-    local points = self.points or {}
     local w, h = size(self.plot, 700, 300)
     for _, b in ipairs(self.bars) do b:Hide() end
     for _, g in ipairs(self.grid) do g.line:Hide(); g.label:Hide() end
     for _, x in pairs(self.xlabels) do x:Hide() end
-    local hasData = false
-    for _, p in ipairs(points) do if p.value ~= 0 then hasData = true end end
+    local rows = rowsFor(self)
+    local values, hasData = {}, false
+    for _, r in ipairs(rows) do
+        for _, v in ipairs({ r.a or 0, r.b or 0 }) do
+            values[#values + 1] = { value = v }
+            if v ~= 0 then hasData = true end
+        end
+    end
     self.empty:SetShown(not hasData)
     self.empty:SetText(self.emptyText or "")
     self.zero:SetShown(hasData)
     if not hasData then return end
 
-    local layout = GraphModel.Layout(points, h, GraphModel.IsInteger(self.chart))
+    local layout = GraphModel.Layout(values, h, GraphModel.IsInteger(self.chart))
     -- Gridlines and value labels.
     local i = 0
     local v = layout.lo
@@ -107,26 +124,43 @@ function Obj:Render()
     self.zero:SetPoint("BOTTOMLEFT", self.plot, "BOTTOMLEFT", 0, layout.zeroY)
     self.zero:SetPoint("BOTTOMRIGHT", self.plot, "BOTTOMRIGHT", 0, layout.zeroY)
 
-    local n = #points
+    local n = #rows
     local slot = w / n
-    local barW = math.max(2, math.floor(slot * 0.7))
+    local pair = self.compare ~= nil
+    local barW = math.max(2, math.floor(slot * (pair and 0.4 or 0.7)))
     local colorblind = ns.db.settings.colorblind ~= false
-    local color = ns.Palette.Series(colorblind, self.seriesIndex)
-    local negColor = ns.Palette.Series(colorblind, self.seriesIndex + 1)
+    local colorA = ns.Palette.Series(colorblind, pair and 1 or self.seriesIndex)
+    local colorB = ns.Palette.Series(colorblind, 2)
+    local negColor = ns.Palette.Series(colorblind, (pair and 1 or self.seriesIndex) + 2)
     local labelEvery = GraphModel.LabelEvery(n, w)
-    for idx, p in ipairs(points) do
-        local b = self:Bar(idx)
-        local y, bh = layout.bar(p.value)
+    local k = 0
+    local function bar(idx, offset, value, partial, color, text, row)
+        k = k + 1
+        local b = self:Bar(k)
+        local y, bh = layout.bar(value)
         b:ClearAllPoints()
-        b:SetPoint("BOTTOMLEFT", self.plot, "BOTTOMLEFT", (idx - 1) * slot + (slot - barW) / 2, 0)
+        b:SetPoint("BOTTOMLEFT", self.plot, "BOTTOMLEFT", (idx - 1) * slot + offset, 0)
         b:SetSize(barW, h)
         b.fill:ClearAllPoints()
         b.fill:SetPoint("BOTTOMLEFT", b, "BOTTOMLEFT", 0, y)
         b.fill:SetSize(barW, math.max(1, bh))
-        W.FillRGB(b.fill, p.value < 0 and negColor or color, p.partial and 0.45 or 1)
-        b.point = p
-        b.valueText = GraphModel.FormatValue(self.chart, p.value) .. (p.partial and (" " .. ns.L.PARTIAL) or "")
+        W.FillRGB(b.fill, value < 0 and negColor or color, partial and 0.45 or 1)
+        b.point = { label = row.label, note = row.note }
+        b.valueText = text
         b:Show()
+    end
+    for idx, row in ipairs(rows) do
+        if pair then
+            local text = string.format("%s: %s   %s: %s", self.compare.nameA,
+                row.a and GraphModel.FormatValue(self.chart, row.a) or "-", self.compare.nameB,
+                row.b and GraphModel.FormatValue(self.chart, row.b) or "-")
+            local left = (slot - 2 * barW - 2) / 2
+            if row.a then bar(idx, left, row.a, row.partialA, colorA, text, row) end
+            if row.b then bar(idx, left + barW + 2, row.b, row.partialB, colorB, text, row) end
+        else
+            local text = GraphModel.FormatValue(self.chart, row.a) .. (row.partialA and (" " .. ns.L.PARTIAL) or "")
+            bar(idx, (slot - barW) / 2, row.a, row.partialA, colorA, text, row)
+        end
         if (idx - 1) % labelEvery == 0 then
             local x = self.xlabels[idx]
             if not x then
@@ -136,7 +170,7 @@ function Obj:Render()
             end
             x:ClearAllPoints()
             x:SetPoint("TOP", self.plot, "BOTTOMLEFT", (idx - 0.5) * slot, -4)
-            x:SetText(p.label)
+            x:SetText(row.label)
             x:Show()
         end
     end

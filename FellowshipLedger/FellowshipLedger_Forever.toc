@@ -16,6 +16,7 @@ Core\Namespace.lua
 Locale\Locale.lua
 Locale\enUS.lua
 Locale\enUS_Phase2.lua
+Locale\enUS_Phase3.lua
 Core\Log.lua
 Core\Migrations.lua
 Compat\FlavorLogic.lua
@@ -37,6 +38,9 @@ UI\MeModel.lua
 UI\GraphModel.lua
 UI\FriendsModel.lua
 Debug\FakeData.lua
+Comms\Codec.lua
+Comms\Merge.lua
+Comms\RateLimit.lua
 Compat\Compat.lua
 Debug\VerifyChecks.lua
 Debug\VerifyReport.lua
@@ -55,6 +59,9 @@ Trackers\Professions.lua
 Trackers\Dungeons.lua
 Trackers\Extras.lua
 Trackers\QuestChains.lua
+Comms\Friends.lua
+Comms\Transport.lua
+Comms\Sync.lua
 UI\Widgets.lua
 UI\Table.lua
 UI\MainWindow.lua

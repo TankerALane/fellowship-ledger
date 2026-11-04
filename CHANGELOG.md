@@ -17,6 +17,16 @@
 - Active time now drops a whole idle stretch once 5 minutes pass without activity, so AFK time shows (D-024).
 - Real zone discoveries ("Discovered: <area>"); reputation read by faction ID, so gains under collapsed headers count; follower companions are no longer counted as party level-ups; dungeon difficulty is taken from the boss events; quest money is matched by amount.
 - `/fl export` adds P lines (per profession: rank, max, points logged), boss count and how a dungeon counted as completed, and the partial-level flag.
+- Phase 3: sharing with friends who run the ledger:
+  - Battle.net and character friends, flavor-separated, with friends-only messaging.
+  - Per-tracker and per-character sharing, honoured on send.
+  - The block list.
+  - The send queue with a rate limit and retries, holding during combat and boss fights.
+  - The Friends tab with real data, a This week summary and Sync now.
+  - The compare overlay on Graphs.
+  - Friend milestone notices.
+  - The dungeon-name opt-in.
+  - `/fl sync`, `/fl comms` and `/fl commtest`.
 - Phase 2:
   - `/fl fake` preview data.
   - The Friends and Graphs tabs.

@@ -18,10 +18,14 @@ local function partySnapshot()
             local class = T.Plain(select(2, UnitClass(unit)))
             local okRole, role = ns.Compat.Call("dungeons", "UnitGroupRolesAssigned", unit)
             local okPlayer, isPlayer = ns.Compat.Call("dungeons", "UnitIsPlayer", unit)
+            -- A name is stored ONLY if that player runs the ledger and sent us their
+            -- "share my name in dungeon records" opt-in (Comms/Sync.lua NAME note).
+            local name = T.Plain(UnitName(unit))
             party[#party + 1] = {
                 class = class,
                 role = okRole and T.Plain(role) or nil,
                 npc = (okPlayer and T.Plain(isPlayer) == false) or nil, -- follower-dungeon companion
+                name = (ns.Sync and ns.Sync.IsOptedIn(name)) and name or nil,
             }
         end
     end
@@ -110,13 +114,15 @@ end
 Dungeons.events.PLAYER_ENTERING_WORLD = function() check() end
 Dungeons.events.ZONE_CHANGED_NEW_AREA = function() check() end
 
-Dungeons.events.GROUP_ROSTER_UPDATE = function()
-    local run = Store.char.currentRun
+local function refreshParty()
+    local run = Store.char and Store.char.currentRun
     if run then
         local party = partySnapshot()
         if #party > 0 then run.party = party end
     end
 end
+Dungeons.events.GROUP_ROSTER_UPDATE = refreshParty
+ns.DungeonsRefreshParty = refreshParty -- called when a party member's name opt-in arrives
 
 -- GetInstanceInfo reported difficulty 0 on entry in the retail run; the encounter
 -- events carry the real difficulty, so fill it in from them.

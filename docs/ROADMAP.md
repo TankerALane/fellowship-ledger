@@ -40,8 +40,16 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Ledger and Plain skins (restyle in place), the welcome panel, our own minimap button, the Options > AddOns page and the addon compartment entry
 - [ ] Done when: Austin confirms with `/fl fake` that every table and graph renders correctly on both clients
 
-## Phase 3: Friends and sharing
-The protocol, friend discovery, sync with retries, grouping by Battle.net name, share toggles, the block list, the compare overlay, the weekly summary, milestone toasts, and the dungeon name opt-in.
+## Phase 3: Friends and sharing (built and tested against two mock clients; waiting on in-game tests)
+- [x] Protocol v1: HELLO, REQUEST, DATA, NAME and TEST; compact escaped text; 200-byte pieces; reassembly (`docs/PROTOCOL.md`)
+- [x] Friend discovery: Battle.net friends on the same `wowProjectID`, and character friends
+- [x] Send queue with a rate limit, back-off and lockdown pause; nothing sent in combat or encounters
+- [x] Share filter: per character and per tracker, pause all, never fake data; block list on send and receive
+- [x] Friends tab with real data: grouped by Battle.net name, last updated, This week summary, Sync now, status line
+- [x] Compare overlay on Graphs; friend milestone notices; dungeon-name opt-in (NAME note to the party)
+- [x] `/fl sync`, `/fl comms`, `/fl comms size N`, `/fl commtest`
+- [ ] Austin: `/fl commtest` on both clients (sizes and argument shapes)
+- [ ] Done when: two characters (or Austin and a friend) see each other's data on the same client, and nothing crosses between Forever and retail
 
 ## Phase 4: Polish and release
 Accessibility and performance, the full verification pass, a README with screenshots, `.pkgmeta` and a GitHub Actions workflow for CurseForge, the name check, v0.1.0.

@@ -33,7 +33,7 @@ ns.Locale.Set({
     BLOCK = "Block",
     UNBLOCK = "Unblock",
     BLOCKED_HIDDEN = "%d blocked friend(s) hidden. Manage the block list in Settings.",
-    NO_FRIENDS_YET = "No friends' ledgers yet. Sharing with friends who also run Fellowship Ledger arrives in the next chapter (Phase 3). Try /fl fake to preview this view.",
+    NO_FRIENDS_YET = "No friends' ledgers yet. When a Battle.net or character friend who also runs Fellowship Ledger is online on this game client, their ledger appears here (try Sync now). /fl fake previews this view.",
     NO_FRIENDS_FAKE = "No fake friends to show (all blocked?).",
 
     -- Graphs tab
@@ -78,7 +78,7 @@ ns.Locale.Set({
     SHARING_ON_CHARACTER = "Turn on all sharing for this character",
     SHARING_PAUSE_ALL = "Pause all sharing (every character)",
     SHARE_NAME_DUNGEONS = "Share my name in friends' dungeon records",
-    SHARING_NOT_LIVE = "Sharing itself arrives in the next chapter (Phase 3); these choices are saved now and honoured then.",
+    SHARING_NOT_LIVE = "Shared data goes only to Battle.net and character friends who also run Fellowship Ledger on this same game client, and never to anyone on your block list.",
     SETTINGS_APPEARANCE = "Appearance",
     SETTINGS_SKIN = "Look",
     SKIN_LEDGER = "Ledger",

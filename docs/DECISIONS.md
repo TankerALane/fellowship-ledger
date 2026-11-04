@@ -143,3 +143,24 @@ The welcome panel is queued 3 seconds after the first `PLAYER_ENTERING_WORLD` in
 
 ## D-044 Welcome panel at every load, with an opt-out box (replaces the show-once rule of D-037)
 At Austin's request, the welcome panel shows after every loading screen (login and `/reload`) while "Show the welcome panel every time I log in" is ticked. It is ticked by default, and the box is on the panel and in Settings > Notices. Its sharing button is now a switch ("Turn off all sharing" / "Turn sharing back on"), like the per-character one. It probably never appeared before because pressing a button after `/fl welcome` had marked it as seen.
+
+## D-045 Peers are friends only, identified by BattleTag or Name-Realm
+Battle.net friends are `bn:<BattleTag>`, shown under the BattleTag's name part (the account's real-ID name is never used). Character friends are `ch:<Name-Realm>`. A character friend who is also a Battle.net friend's current character is handled as the Battle.net friend. Messages from anyone else are ignored, except party NAME notes and your own `/fl commtest` whispers.
+
+## D-046 "Pause all sharing" still says hello
+While sharing is paused, HELLO announces no characters and no DATA is sent. The client still greets friends and asks for their data, so their ledgers keep arriving. If you would rather go fully silent, that is a small change.
+
+## D-047 Played and active time travel with any shared tracker
+Time has no tracker of its own. Played and active seconds are shared whenever the character shares at least one tracker, and not at all when it shares none.
+
+## D-048 Friends' data is theirs
+For each day, level and session a friend sends, their version replaces ours. Data older than 90 days is pruned on arrival. A friend's ledger stays visible while they are offline, with "last updated".
+
+## D-049 Compare overlay on aligned charts only
+Compare draws paired bars, one character on the left and the other on the right, with a text legend and a tooltip giving both values. It works on Time per level (aligned by level) and Quests per day (aligned by date). Per-session charts have no shared x axis, so the overlay says it doesn't apply there.
+
+## D-050 Friend milestone notices every 10 levels
+A notice appears when a friend's character crosses a multiple of 10 between two syncs ("Bob (Bob) reached level 20!"). There is no notice the first time a character is seen. The "Friend milestones" option in Settings > Notices turns them off.
+
+## D-051 Gentle default rate
+The send queue allows 2 messages a second, in bursts of 4, with 200-byte pieces, until in-game tests show what the clients really allow. `/fl comms size N` changes the piece size.

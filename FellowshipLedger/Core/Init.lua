@@ -97,6 +97,7 @@ function handlers.PLAYER_LOGIN()
         local ok, err = pcall(fn)
         if not ok then Log.Warn(L.STARTUP_STEP_FAILED, name, tostring(err)) end
     end
+    step("sharing", ns.Sync.Start)
     step("minimap button", ns.MinimapButton.Update)
     step("options page", ns.OptionsPanel.Register)
     ns.welcomeStep = function() step("welcome panel", ns.Welcome.MaybeShow) end
@@ -139,7 +140,7 @@ ns.pewRegistered = pcall(frame.RegisterEvent, frame, "PLAYER_ENTERING_WORLD") --
 -- Slash commands ------------------------------------------------------------
 
 local HELP = { "HELP_OPEN", "HELP_SUMMARY", "HELP_FAKE", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
-    "HELP_TEST", "HELP_WELCOME", "HELP_RESTORE", "HELP_VERSION" }
+    "HELP_SYNC", "HELP_COMMS", "HELP_COMMTEST", "HELP_TEST", "HELP_WELCOME", "HELP_RESTORE", "HELP_VERSION" }
 
 local function printHelp()
     Log.Info(L.HELP_HEADER)
@@ -197,6 +198,31 @@ function commands.fake(rest)
         ns.MainWindow.Open("me")
     end
     ns.MainWindow.Refresh()
+end
+
+function commands.sync()
+    if not ns.tracking then return end
+    local n = ns.Sync.SyncAll(true)
+    Log.Info(L.SYNC_STARTED, n)
+end
+
+function commands.comms(rest)
+    local size = rest and tonumber(rest:match("^size%s+(%d+)$"))
+    if size then
+        ns.db.settings.commsChunk = math.max(ns.Codec.MIN_CHUNK, math.min(ns.Codec.MAX_CHUNK, size))
+        Log.Info(L.COMMS_SIZE_SET, ns.db.settings.commsChunk)
+        return
+    end
+    local T = ns.Transport
+    local online = 0
+    for _, p in pairs(ns.Friends.peers) do if p.online then online = online + 1 end end
+    Log.Info(L.COMMS_STATUS, tostring(T.Prefix()), T.ChunkSize(), #T.queue, T.stats.sent, T.stats.retried, T.stats.failed,
+        T.stats.received, T.stats.dropped, online, tostring(T.Blocked() or "-"))
+end
+
+function commands.commtest()
+    if not ns.tracking then return end
+    ns.Sync.CommTest()
 end
 
 function commands.welcome()
