@@ -25,7 +25,17 @@
   - `SKILL_LINES_CHANGED` fired 28 times in a few minutes, so it is throttled.
   - `ZONE_CHANGED`, `PLAYER_TARGET_CHANGED`, `PLAYER_REGEN_*`, `PLAYER_STARTED/STOPPED_MOVING` and `PLAYER_FLAGS_CHANGED` ("player") also fired.
   - Third report (11:30, after another /reload): `PLAYER_ENTERING_WORLD` passes (isInitialLogin=false, isReloadingUi=true) on a reload. `PLAYER_LEAVING_WORLD` and `PLAYER_LOGOUT` **both fire on /reload**, so the logout save also runs then. Persistence still holds (loads=3). `UPDATE_INSTANCE_INFO` fires on load.
-  - **Not yet seen firing:** `QUEST_TURNED_IN`, `QUEST_ACCEPTED`, `ZONE_CHANGED_NEW_AREA`, the merchant, mail and auction events, `ENCOUNTER_END`, `PLAYER_DEAD`, `UPDATE_FACTION`, `TAXIMAP_OPENED` and `ACHIEVEMENT_EARNED`. The trackers that use them are built defensively and stay on the in-game checklist.
+  - Fourth check (12:01, in-game `/fl test` 9/9 and `/fl export` after about 16 minutes of play): end-to-end tracking works on retail.
+    - `QUEST_TURNED_IN` fires, and titles come from the quest-log cache (3 turn-ins logged once each). `QUEST_ACCEPTED` fires too.
+    - Gold: `MERCHANT_SHOW` makes vendor money; `QUEST_TURNED_IN` makes quest money. Loot, quest and vendor add up exactly to money in, with no "other".
+    - `PARTY_KILL` was counted 29 times.
+    - Profession skill-ups: 6, via the throttled `SKILL_LINES_CHANGED` rescan.
+    - `ZONE_CHANGED_NEW_AREA`: 2 new zones.
+    - `PLAYER_LEVEL_UP` recorded 14 -> 15, partial because the ledger joined mid-level.
+    - Played 958 s and active 870 s.
+    - No feature disabled itself.
+    - Saved as `docs/verify-reports/retail-2026-11-04-export.txt`, with the character name redacted.
+  - **Not yet seen firing:** the mail and auction events, `ENCOUNTER_END`, `PLAYER_DEAD`, `UPDATE_FACTION`, `TAXIMAP_OPENED` and `ACHIEVEMENT_EARNED`. The trackers that use them are built defensively and stay on the in-game checklist.
 - **Event arguments** used by the trackers come from retail documentation and memory until the probe confirms them. Every tracker reads state from APIs (for example `UnitLevel`) rather than trusting event arguments wherever it can.
 
 Every WoW API, event and value Fellowship Ledger plans to use, with a way to test it in each client. Nothing here counts as verified until Austin runs it in-game and marks it.

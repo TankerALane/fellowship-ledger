@@ -5,7 +5,7 @@
 --
 --   FLX1 | <flavor> | <exported at>
 --   C | key | class | race | faction | level | played | active
---   L | key | from | to | active | total | at | zone
+--   L | key | from | to | active | total | at | zone | partial (1 = the ledger joined mid-level)
 --   D | key | day | field=value,field=value,...
 --   S | key | start | stop | played | active | levelStart | levelEnd
 --   Q | key | at | questID | title
@@ -45,7 +45,7 @@ function Export.Build(db, flavor, exportedAt)
         table.sort(levels)
         for _, to in ipairs(levels) do
             local r = c.levels[to]
-            out[#out + 1] = line("L", key, r.from, r.to, r.active, r.total, r.at, r.zone)
+            out[#out + 1] = line("L", key, r.from, r.to, r.active, r.total, r.at, r.zone, r.partial and 1 or 0)
         end
         for _, day in ipairs(sortedKeys(c.days or {})) do
             local fields = {}

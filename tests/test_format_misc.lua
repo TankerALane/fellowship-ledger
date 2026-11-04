@@ -102,6 +102,7 @@ H.test("export lists every record type", function()
     local c = ns.Character.Ensure({ class = "MAGE", race = "Human", faction = "Alliance", level = 3 }, 0)
     c.clock = { played = 100, active = 80 }
     c.levels[2] = { from = 1, to = 2, active = 60, total = 70, at = 50, zone = "Elwynn | Forest" }
+    c.levels[3] = { from = 2, to = 3, active = 5, total = 9, at = 60, partial = true }
     c.days["2026-11-04"] = { quests = 2, levels = 1 }
     c.sessions[1] = { start = 1, stop = 100, played = 99, active = 80, levelStart = 1, levelEnd = 3 }
     c.questLog[1] = { at = 40, id = 7, title = "A Threat Within" }
@@ -109,7 +110,8 @@ H.test("export lists every record type", function()
     local text = ns.Export.Build({ characters = { ["Tess-Realm"] = c } }, "Retail", "2026-11-04 12:00")
     H.ok(text:find("^FLX1 | Retail | 2026%-11%-04 12:00"))
     H.ok(text:find("\nC | Tess-Realm | MAGE | Human | Alliance | 3 | 100 | 80", 1, true))
-    H.ok(text:find("\nL | Tess-Realm | 1 | 2 | 60 | 70 | 50 | Elwynn / Forest", 1, true), "pipes are escaped")
+    H.ok(text:find("\nL | Tess-Realm | 1 | 2 | 60 | 70 | 50 | Elwynn / Forest | 0", 1, true), "pipes are escaped")
+    H.ok(text:find("\nL | Tess-Realm | 2 | 3 | 5 | 9 | 60 |  | 1", 1, true), "partial flag exported")
     H.ok(text:find("\nD | Tess-Realm | 2026-11-04 | levels=1,quests=2", 1, true))
     H.ok(text:find("\nS | Tess-Realm | 1 | 100 | 99 | 80 | 1 | 3", 1, true))
     H.ok(text:find("\nQ | Tess-Realm | 40 | 7 | A Threat Within", 1, true))

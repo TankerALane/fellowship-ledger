@@ -1,0 +1,26 @@
+In-game results, retail, 2026-11-04 12:01 (character name and realm redacted as <char>)
+
+/fl test
+Fellowship Ledger self-test 0.0.1-dev | Retail | 9/9 passed
+PASS schema migrates a fresh table
+PASS clock: 10m 23s active of 14m 02s
+PASS client date math (time/date tables)
+PASS session split rule
+PASS flavor detected
+PASS current character loaded
+PASS export builds
+PASS Me tab model builds
+PASS UI: main window opens and closes
+disabled features: none
+
+/fl export (before the partial flag was added to L lines)
+FLX1 | Retail | 2026-11-04 12:01
+C | <char> | HUNTER | BloodElf | Horde | 15 | 958 | 870
+L | <char> | 14 | 15 | 492 | 492 | 1793822039 | Northern Stranglethorn
+D | <char> | 2026-11-04 | active=870,kills=29,levels=1,moneyIn=162803,moneyNet=162803,money_loot=1525,money_quest=156200,money_vendor=5078,played=958,quests=3,questsAccepted=2,skillUps=6,xp=19524,zonesNew=2
+S | <char> | 1793821542 | 1793822505 | 958 | 870 | 14 | 15
+Q | <char> | 1793822039 | 26338 | Population Con-Troll
+Q | <char> | 1793822048 | 26330 | Who's a Big Troll?
+Q | <char> | 1793822053 | 26300 | Nezzliok Will Know
+
+Checks by hand: money_loot + money_quest + money_vendor = 1525 + 156200 + 5078 = 162803 = moneyIn = moneyNet.
