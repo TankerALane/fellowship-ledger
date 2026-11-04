@@ -23,11 +23,14 @@ param(
     [string]$Target = 'Both',
     [switch]$DryRun,
     # Alternate config file (used to test the safety checks).
-    [string]$ConfigPath = (Join-Path $PSScriptRoot 'sync.config.json')
+    [string]$ConfigPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path -Parent $PSScriptRoot
+# $PSScriptRoot is empty inside param() defaults on Windows PowerShell 5.1, so resolve here.
+$scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+if (-not $ConfigPath) { $ConfigPath = Join-Path $scriptDir 'sync.config.json' }
+$repoRoot = Split-Path -Parent $scriptDir
 $config = Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json
 
 $addonName = $config.addonFolderName

@@ -13,7 +13,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] `docs/API-VERIFICATION.md`
 - [x] unit tests and runtime smoke tests: 54 passing under LuaJIT 2.1
 - [x] first real sync to both clients
-- [ ] Austin: first real sync, then `/fl verify` in Forever and retail, with reports pasted back
+- [ ] Austin: `/fl verify` in Forever and retail (plus `/reload` and verify again), reports pasted back
 
 ### Step 1.1 onward (after the verify reports)
 - [ ] DB per character, backup every 10 minutes and at logout, restore prompt, `/fl export`
