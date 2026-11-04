@@ -28,6 +28,8 @@ function Graph.New(parent)
     self.zero:SetHeight(1)
     self.empty = W.Text(parent, "body", "muted")
     self.empty:SetPoint("CENTER", self.plot, "CENTER")
+    -- Redraw at the real size whenever the plot is resized.
+    self.plot:SetScript("OnSizeChanged", function() if self.points then self:Render() end end)
     return self
 end
 
@@ -65,7 +67,7 @@ function Obj:Render()
     local w, h = size(self.plot, 700, 300)
     for _, b in ipairs(self.bars) do b:Hide() end
     for _, g in ipairs(self.grid) do g.line:Hide(); g.label:Hide() end
-    for _, x in ipairs(self.xlabels) do x:Hide() end
+    for _, x in pairs(self.xlabels) do x:Hide() end
     local hasData = false
     for _, p in ipairs(points) do if p.value ~= 0 then hasData = true end end
     self.empty:SetShown(not hasData)
@@ -73,7 +75,7 @@ function Obj:Render()
     self.zero:SetShown(hasData)
     if not hasData then return end
 
-    local layout = GraphModel.Layout(points, h)
+    local layout = GraphModel.Layout(points, h, GraphModel.IsInteger(self.chart))
     -- Gridlines and value labels.
     local i = 0
     local v = layout.lo
@@ -109,7 +111,7 @@ function Obj:Render()
     local colorblind = ns.db.settings.colorblind ~= false
     local color = ns.Palette.Series(colorblind, self.seriesIndex)
     local negColor = ns.Palette.Series(colorblind, self.seriesIndex + 1)
-    local labelEvery = math.max(1, math.ceil(n / 12))
+    local labelEvery = GraphModel.LabelEvery(n, w)
     for idx, p in ipairs(points) do
         local b = self:Bar(idx)
         local y, bh = layout.bar(p.value)

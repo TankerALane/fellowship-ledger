@@ -15,7 +15,8 @@ GraphModel.KIND = {
 GraphModel.MAX_POINTS = 40
 
 -- "Nice" axis: a round maximum (1, 2, 2.5, 5 x 10^k) and tick step covering [lo, hi].
-function GraphModel.NiceScale(lo, hi, ticks)
+-- integer = true keeps the step a whole number (for counts), so labels never repeat.
+function GraphModel.NiceScale(lo, hi, ticks, integer)
     ticks = ticks or 4
     lo, hi = math.min(lo or 0, 0), math.max(hi or 0, 0)
     if hi == lo then hi = lo + 1 end
@@ -26,6 +27,7 @@ function GraphModel.NiceScale(lo, hi, ticks)
         step = m * mag
         if step >= raw then break end
     end
+    if integer then step = math.max(1, math.ceil(step)) end
     local niceLo = math.floor(lo / step) * step
     local niceHi = math.ceil(hi / step) * step
     if niceHi == niceLo then niceHi = niceLo + step end
@@ -105,6 +107,18 @@ function GraphModel.Build(chart, char, todayKey, timeFn, dateFn, days)
     return {}
 end
 
+-- Count charts (whole numbers) get whole-number axis steps.
+function GraphModel.IsInteger(chart)
+    return chart == "levelsPerSession" or chart == "questsPerDay"
+end
+
+-- How many x labels fit: at least LABEL_PX pixels per label.
+GraphModel.LABEL_PX = 48
+function GraphModel.LabelEvery(n, width)
+    local fit = math.max(1, math.floor((width or 0) / GraphModel.LABEL_PX))
+    return math.max(1, math.ceil(n / fit))
+end
+
 function GraphModel.FormatValue(chart, v)
     local kind = GraphModel.KIND[chart]
     if kind == "duration" then return ns.Format.Duration(v) end
@@ -113,13 +127,13 @@ function GraphModel.FormatValue(chart, v)
 end
 
 -- Bar geometry for a plot `height` pixels tall: returns zeroY and a function value -> (y, h).
-function GraphModel.Layout(points, height)
+function GraphModel.Layout(points, height, integer)
     local lo, hi = 0, 0
     for _, p in ipairs(points) do
         if p.value < lo then lo = p.value end
         if p.value > hi then hi = p.value end
     end
-    local niceLo, niceHi, step = GraphModel.NiceScale(lo, hi)
+    local niceLo, niceHi, step = GraphModel.NiceScale(lo, hi, 4, integer)
     local span = niceHi - niceLo
     local zeroY = (0 - niceLo) / span * height
     local function bar(v)

@@ -51,9 +51,20 @@ local function readOnlyBox(parent, text, width)
     return box
 end
 
+-- True if any tracker of this character has Share on.
+function SettingsTab.AnySharing(char)
+    for _, f in pairs(char.flags or {}) do
+        if f.share ~= false then return true end
+    end
+    return false
+end
+
 function SettingsTab.Refresh()
     if not ui.content then return end
     local char, key, count = selectedChar()
+    if char then
+        ui.shareAll.text:SetText(SettingsTab.AnySharing(char) and L.SHARING_OFF_CHARACTER or L.SHARING_ON_CHARACTER)
+    end
     ui.charLabel:SetText(char and string.format(L.SETTINGS_CHARACTER, key, state.charIndex, count) or L.SETTINGS_NO_CHARACTER)
     for _, row in ipairs(ui.trackerRows) do
         local t = ns.TrackerList.byId[row.id]
@@ -173,15 +184,16 @@ local function build(panel)
         ui.toggles[#ui.toggles + 1] = row.share
         y = y - 22
     end
-    local offChar = W.Button(content, L.SHARING_OFF_CHARACTER, 260, 22, function()
+    ui.shareAll = W.Button(content, L.SHARING_OFF_CHARACTER, 280, 22, function()
         local c = selectedChar()
         if c then
             ns.TrackerList.EnsureFlags(c)
-            for _, f in pairs(c.flags) do f.share = false end
+            local turnOn = not SettingsTab.AnySharing(c)
+            for _, f in pairs(c.flags) do f.share = turnOn end
         end
         SettingsTab.Refresh()
     end)
-    offChar:SetPoint("TOPLEFT", 8, y - 4)
+    ui.shareAll:SetPoint("TOPLEFT", 8, y - 4)
     y = y - 32
     toggle(L.SHARING_PAUSE_ALL, "sharingPaused")
     toggle(L.SHARE_NAME_DUNGEONS, "shareNameInDungeons")

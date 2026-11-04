@@ -6,6 +6,8 @@ local _, ns = ...
 
 ns.Locale.Set({
     HELP_SUMMARY = "/fl summary - show the summary of your last session (/fl summary now: this session so far)",
+    HELP_WELCOME = "/fl welcome - show the welcome panel again",
+    STARTUP_STEP_FAILED = "The %s could not start: %s. Please send this line along with /fl verify.",
     HELP_FAKE = "/fl fake - fill the window with a separate set of made-up data to try every view (/fl fake off removes it)",
     FAKE_ON = "Fake data is on: a separate made-up ledger is shown. Your real data is untouched and nothing fake is ever shared. /fl fake off removes it.",
     FAKE_OFF = "Fake data removed. The window shows your real ledger again.",
@@ -73,6 +75,7 @@ ns.Locale.Set({
     TRACKER_partyLevels = "Party level-ups",
     TRACKER_items = "Notable items",
     SHARING_OFF_CHARACTER = "Turn off all sharing for this character",
+    SHARING_ON_CHARACTER = "Turn on all sharing for this character",
     SHARING_PAUSE_ALL = "Pause all sharing (every character)",
     SHARE_NAME_DUNGEONS = "Share my name in friends' dungeon records",
     SHARING_NOT_LIVE = "Sharing itself arrives in the next chapter (Phase 3); these choices are saved now and honoured then.",

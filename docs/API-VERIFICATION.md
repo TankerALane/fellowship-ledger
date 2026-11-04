@@ -47,6 +47,10 @@
     - **Battle.net friends in WoW** expose `characterName, realmName, realmDisplayName, realmID, wowProjectID, classFilename, characterLevel, factionName, areaName, playerGuid`. `wowProjectID` was 1 for retail.
     - `x:rep.fields` and `x:ui.frame` pass (`SetResizeBounds` yes, `SetMinResize` no).
     - Manual checks confirmed on retail: `/fl` works, the window works and the report copies.
+  - Sixth check (13:03, Phase 2 build, `retail-2026-11-04-1303.txt`):
+    - `AddonCompartmentFrame:RegisterAddon`, `GameTooltip`, `UnitIsPlayer`, `GetGameMessageInfo` and both `ERR_ZONE_EXPLORED` strings pass.
+    - Questie is not installed on retail, so `x:questie.db` is a Forever check.
+    - `m:fakeviews` failed by eye: overlapping date labels, labels outside the window, repeated axis numbers, and a font halo. All are fixed in the next build and need re-checking.
   - **Not yet seen firing:** the mail and auction events, `PLAYER_DEAD`, and a real reputation gain or flight path learned. The trackers that use them are built defensively and stay on the in-game checklist.
 - **Event arguments** used by the trackers come from retail documentation and memory until the probe confirms them. Every tracker reads state from APIs (for example `UnitLevel`) rather than trusting event arguments wherever it can.
 
@@ -197,9 +201,9 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetRealZoneText` | api | zone name inside instances | `/dump type(GetRealZoneText)` -> "function" | pending | PASS |
 | `GetSubZoneText` | api | subzone name | `/dump type(GetSubZoneText)` -> "function" | pending | PASS |
 | `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` | api | zones discovered | `/dump type(C_MapExplorationInfo.GetExploredAreaIDsAtPosition)` -> "function" | pending | PASS |
-| `GetGameMessageInfo` | api | name of a UI info message type (ERR_ZONE_EXPLORED = discovered an area) | `/dump type(GetGameMessageInfo)` -> "function" | pending | ? |
-| `ERR_ZONE_EXPLORED` | api | client's own 'Discovered: %s' format, to recognise discoveries in any language | `/dump type(ERR_ZONE_EXPLORED)` -> "string" | pending | ? |
-| `ERR_ZONE_EXPLORED_XP` | api | same, for discoveries that give experience | `/dump type(ERR_ZONE_EXPLORED_XP)` -> "string" | pending | ? |
+| `GetGameMessageInfo` | api | name of a UI info message type (ERR_ZONE_EXPLORED = discovered an area) | `/dump type(GetGameMessageInfo)` -> "function" | pending | PASS |
+| `ERR_ZONE_EXPLORED` | api | client's own 'Discovered: %s' format, to recognise discoveries in any language | `/dump type(ERR_ZONE_EXPLORED)` -> "string" | pending | PASS |
+| `ERR_ZONE_EXPLORED_XP` | api | same, for discoveries that give experience | `/dump type(ERR_ZONE_EXPLORED_XP)` -> "string" | pending | PASS |
 | `ev:ZONE_CHANGED` | event | subzone change | `/dump C_EventUtils.IsEventValid("ZONE_CHANGED")` -> true | pending | PASS |
 | `ev:ZONE_CHANGED_NEW_AREA` | event | zone change | `/dump C_EventUtils.IsEventValid("ZONE_CHANGED_NEW_AREA")` -> true | pending | PASS |
 | `ev:UI_INFO_MESSAGE` | event | possible signal for 'discovered' and 'flight path learned' | `/dump C_EventUtils.IsEventValid("UI_INFO_MESSAGE")` -> true | pending | PASS |
@@ -232,7 +236,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetInstanceInfo` | api | dungeon name, type, difficulty, instance ID | `/dump type(GetInstanceInfo)` -> "function" | pending | PASS |
 | `GetDifficultyInfo` | api | difficulty name | `/dump type(GetDifficultyInfo)` -> "function" | pending | PASS |
 | `IsInGroup` | api | group make-up | `/dump type(IsInGroup)` -> "function" | pending | PASS |
-| `UnitIsPlayer` | api | tell real players from follower-dungeon companions | `/dump type(UnitIsPlayer)` -> "function" | pending | ? |
+| `UnitIsPlayer` | api | tell real players from follower-dungeon companions | `/dump type(UnitIsPlayer)` -> "function" | pending | PASS |
 | `GetNumGroupMembers` | api | group make-up | `/dump type(GetNumGroupMembers)` -> "function" | pending | PASS |
 | `UnitGroupRolesAssigned` | api | party member role | `/dump type(UnitGroupRolesAssigned)` -> "function" | pending | PASS |
 | `EJ_GetInstanceForMap` | api | find a dungeon's journal entry (to know the last boss) | `/dump type(EJ_GetInstanceForMap)` -> "function" | pending | PASS |
@@ -401,9 +405,9 @@ These come from addons already installed in Austin's game folders. They are good
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | pending | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | pending | PASS |
 | `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture) | `/dump CreateFrame("Frame").SetResizeBounds` | pending | PASS |
-| `GameTooltip` | api | hover tooltips on graphs and the minimap button | `/dump type(GameTooltip)` -> "table" | pending | ? |
-| `x:ui.compartment` | custom | AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap) | `/dump AddonCompartmentFrame.RegisterAddon` | pending | ? |
-| `x:questie.db` | custom | Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback) | `/dump QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle` | pending | ? |
+| `GameTooltip` | api | hover tooltips on graphs and the minimap button | `/dump type(GameTooltip)` -> "table" | pending | PASS |
+| `x:ui.compartment` | custom | AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap) | `/dump AddonCompartmentFrame.RegisterAddon` | pending | PASS |
+| `x:questie.db` | custom | Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback) | `/dump QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle` | pending | INFO |
 | `m:minimap` | manual | minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered | look at the minimap; click, right-click, drag, /reload | pending | ? |
 | `m:options` | manual | Options > AddOns lists Fellowship Ledger and its button opens Settings | Esc > Options > AddOns > Fellowship Ledger | pending | ? |
 | `m:fakeviews` | manual | with /fl fake every table and all five graphs draw, tooltips show, both skins and all text sizes look right | `/fl fake, visit every tab and chart, switch skin and text size, /fl fake off` | pending | ? |

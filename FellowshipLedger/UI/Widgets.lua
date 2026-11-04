@@ -43,6 +43,14 @@ local function style(fs, fontRole, colorRole)
     if fo then fs:SetFontObject(fo) end
     local c = W.Color(colorRole)
     fs:SetTextColor(c[1], c[2], c[3], c[4])
+    -- The game's fonts carry a black drop shadow, which reads as a halo on parchment.
+    if skin() == "plain" then
+        fs:SetShadowColor(0, 0, 0, 1)
+        fs:SetShadowOffset(1, -1)
+    else
+        fs:SetShadowColor(0, 0, 0, 0)
+        fs:SetShadowOffset(0, 0)
+    end
 end
 
 -- Paint a texture with a color role (remembered for skin changes).

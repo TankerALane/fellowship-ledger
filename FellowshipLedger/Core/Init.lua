@@ -92,10 +92,14 @@ function handlers.PLAYER_LOGIN()
     ns.tracking = true
     offerRestore()
 
-    -- Window extras: each is optional and guarded.
-    pcall(ns.MinimapButton.Update)
-    pcall(ns.OptionsPanel.Register)
-    pcall(ns.Welcome.MaybeShow)
+    -- Window extras: each is optional and guarded, and says so in chat if it fails.
+    local function step(name, fn)
+        local ok, err = pcall(fn)
+        if not ok then Log.Warn(L.STARTUP_STEP_FAILED, name, tostring(err)) end
+    end
+    step("minimap button", ns.MinimapButton.Update)
+    step("options page", ns.OptionsPanel.Register)
+    step("welcome panel", ns.Welcome.MaybeShow)
     if ns.Store.newSession and ns.Store.previousSession and ns.db.settings.sessionSummary then
         local title, lines = ns.Summary.Session(ns.Store.previousSession, L, date)
         ns.Toast.Show(title, lines)
@@ -123,7 +127,7 @@ frame:RegisterEvent("PLAYER_LOGOUT")
 -- Slash commands ------------------------------------------------------------
 
 local HELP = { "HELP_OPEN", "HELP_SUMMARY", "HELP_FAKE", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
-    "HELP_TEST", "HELP_RESTORE", "HELP_VERSION" }
+    "HELP_TEST", "HELP_WELCOME", "HELP_RESTORE", "HELP_VERSION" }
 
 local function printHelp()
     Log.Info(L.HELP_HEADER)
@@ -181,6 +185,10 @@ function commands.fake(rest)
         ns.MainWindow.Open("me")
     end
     ns.MainWindow.Refresh()
+end
+
+function commands.welcome()
+    ns.Welcome.Show()
 end
 
 function commands.test()

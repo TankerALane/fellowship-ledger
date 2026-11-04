@@ -1,0 +1,17 @@
+Fellowship Ledger verify report (trimmed: only lines that changed since 12:35; probe identical apart from counts; player GUID redacted)
+addon=0.0.1-dev flavor=Retail toc=Retail interface=120105 client=12.1.5 build=70783 at=2026-11-04 13:03
+summary pass=182 fail=7 error=0 info=9 manual=7
+-- details
+PASS x:sv.persist: loads=10 lastLogoutSaved=2026-11-04 13:01 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=10 lastLogoutSaved=2026-11-04 13:01 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:ui.compartment: RegisterAddon is function
+INFO x:questie.db: Questie not loaded
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:minimap, m:options, m:fakeviews, m:copywindow
+-- api pass
+GetGameMessageInfo, ERR_ZONE_EXPLORED, ERR_ZONE_EXPLORED_XP, UnitIsPlayer, GameTooltip
+-- in-game observations (Austin, screenshots)
+Graphs drew with fake data. Bug: x-axis date labels overlapped and some sat outside the window after resizing
+(stale labels were never hidden), and count axes read "2, 1, 1, 0, 0" (half steps printed as whole numbers).
+Font shadow showed as a halo on parchment. The welcome panel did not appear after /reload (cause not found;
+startup steps now report errors and /fl welcome opens it).

@@ -169,3 +169,58 @@ H.test("self-test still passes with Phase 2 loaded", function()
     Mock.slash(env, "test")
     H.ok(Mock.chatContains(env, "Self-test: 9 of 9 passed."))
 end)
+
+H.test("graph labels: old labels never linger after a redraw", function()
+    local env, ns = boot()
+    local area = ns.MainWindow.Ensure() and ns.MainWindow.frame
+    local g = ns.Graph.New(area)
+    local many, few = {}, {}
+    for i = 1, 40 do many[i] = { label = "L" .. i, value = i % 3 } end
+    for i = 1, 10 do few[i] = { label = "S" .. i, value = 1 } end
+    g.plot:SetWidth(1900)
+    g:SetData(many, "levelsPerSession", 1, "")
+    g.plot:SetWidth(500)
+    g:SetData(few, "levelsPerSession", 1, "")
+    local shown = 0
+    for idx, x in pairs(g.xlabels) do
+        if x:IsShown() then
+            shown = shown + 1
+            H.ok(idx <= 10, "label from the old chart still shown at " .. idx)
+            H.ok(x:GetText():find("^S"), "stale text " .. tostring(x:GetText()))
+        end
+    end
+    H.ok(shown >= 1 and shown <= math.floor(500 / ns.GraphModel.LABEL_PX), "labels fit the width: " .. shown)
+    local values = {}
+    for _, grid in ipairs(g.grid) do
+        if grid.label:IsShown() then
+            local t = grid.label:GetText()
+            H.ok(not values[t], "repeated axis label " .. t)
+            values[t] = true
+        end
+    end
+end)
+
+H.test("per-character sharing button switches all off, then all on", function()
+    local env, ns = boot()
+    ns.MainWindow.Open("settings")
+    local c = env.FellowshipLedgerDB.characters["Tester-TestRealm"]
+    H.ok(ns.SettingsTab.AnySharing(c))
+    for _, f in pairs(c.flags) do f.share = false end
+    H.ok(not ns.SettingsTab.AnySharing(c))
+    c.flags.levels.share = true
+    H.ok(ns.SettingsTab.AnySharing(c))
+end)
+
+H.test("/fl welcome reopens the panel; startup failures are reported", function()
+    local env, ns = boot()
+    env.FellowshipLedgerWelcome:Hide()
+    Mock.slash(env, "welcome")
+    H.ok(env.FellowshipLedgerWelcome:IsShown())
+    -- a failing startup step says so in chat instead of failing silently
+    local env2 = Mock.new(RETAIL)
+    local ns2 = Mock.loadToc(H, env2, "FellowshipLedger_Mainline.toc")
+    ns2.Welcome.MaybeShow = function() error("boom") end
+    Mock.fire(env2, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env2, "PLAYER_LOGIN")
+    H.ok(Mock.chatContains(env2, "The welcome panel could not start: "), table.concat(env2.__state.chat, "\n"))
+end)

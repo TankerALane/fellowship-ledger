@@ -122,3 +122,9 @@ At login, if a new session started, a notice summarises the previous session: pl
 
 ## D-037 Welcome panel shows once, including for existing installs
 `settings.welcomeSeen` starts false, so Austin's existing characters see the panel once after this update. "Turn off all sharing" sets the master pause, and the per-character toggles live in Settings.
+
+## D-038 Ledger skin text has no drop shadow
+The game's standard fonts draw a 1-pixel black shadow. It reads as a halo on parchment (Austin, 2026-11-04), so the Ledger skin turns the shadow off and the Plain skin keeps it. If the font face itself is still unwelcome, a font choice can be added in Settings.
+
+## D-039 The per-character sharing button is a switch
+It reads "Turn off all sharing for this character" while any tracker shares, and "Turn on all sharing for this character" once none do. The master "Pause all sharing" toggle stays separate.
