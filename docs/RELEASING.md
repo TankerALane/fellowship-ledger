@@ -26,4 +26,6 @@ Releases are built by `tools/build_release.py` and published by `.github/workflo
 
 `tools/release.config.json` lists the CurseForge game-version names to attach: "12.1.5" for retail and "1.60.1" for Forever. The script looks them up in CurseForge's game-versions list. Any name CurseForge does not list yet (Forever may be missing) is reported as a warning and skipped. When a client patches, update the TOC `## Interface` line and this file.
 
+Check the token and game versions (read-only, uploads nothing): Actions tab > "CurseForge check" > Run workflow.
+
 Dry run with no token needed: `python tools/build_release.py --tag v<version> --upload --dry-run --project <id>`.

@@ -61,4 +61,4 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [ ] Two-client sharing test (Austin and a friend, or two accounts)
 - [x] GitHub repository https://github.com/TankerALane/fellowship-ledger (public), CI green, `v0.1.0` published as a pre-release (2026-11-04)
 - [x] CurseForge project created by Austin (ID 1784128), ID in both TOCs
-- [ ] First file uploaded by hand (0.1.0) and approved; `CF_API_KEY` secret added for automatic uploads
+- [x] 0.1.0 uploaded to CurseForge by hand; `CF_API_KEY` secret added and checked (token accepted; 12.1.5 and Forever 1.60.1 both listed)
