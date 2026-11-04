@@ -52,6 +52,7 @@ local function startOrContinueSession(char, t)
         char.sessions[#char.sessions + 1] = s
         Sessions.Prune(char.sessions, t)
         Store.newSession = true
+        Store.previousSession = char.sessions[#char.sessions - 1]
     else
         Store.newSession = false
     end

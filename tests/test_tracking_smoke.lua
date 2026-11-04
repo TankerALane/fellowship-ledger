@@ -76,7 +76,7 @@ H.test("level up records active and total time with zone and toast", function()
     H.eq(r.total, 842)
     H.eq(r.zone, "Elwynn Forest")
     H.eq(r.partial, nil)
-    H.ok(Mock.chatContains(env, "Level up! 13 -> 14: 10m 23s (total 14m 02s)"))
+    H.ok(Mock.chatContains(env, "Level 14! - 13 -> 14: 10m 23s (total 14m 02s)"))
     H.eq(today(env).levels, 2)
     H.eq(c.sessions[1].levelEnd, 14)
     Mock.fire(env, "PLAYER_LEVEL_UP", 14, 87) -- duplicate event is ignored

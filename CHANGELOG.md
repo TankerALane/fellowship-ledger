@@ -17,4 +17,13 @@
 - Active time now drops a whole idle stretch once 5 minutes pass without activity, so AFK time shows (D-024).
 - Real zone discoveries ("Discovered: <area>"); reputation read by faction ID, so gains under collapsed headers count; follower companions are no longer counted as party level-ups; dungeon difficulty is taken from the boss events; quest money is matched by amount.
 - `/fl export` adds P lines (per profession: rank, max, points logged), boss count and how a dungeon counted as completed, and the partial-level flag.
+- Phase 2:
+  - `/fl fake` preview data.
+  - The Friends and Graphs tabs.
+  - Totals and a quest-chains view on the Me tab.
+  - The Settings tab.
+  - Ledger and Plain skins, text size, scale and the colorblind palette.
+  - Level-up and session-summary notices, plus `/fl summary`.
+  - The welcome panel, the minimap button, the Options page and the addon compartment entry.
+  - Questie quest-chain lookup.
 - The ledger window (`/fl`) with Me, Friends, Graphs and Settings tabs. The Me tab has ranges, a sortable table and per-level times.

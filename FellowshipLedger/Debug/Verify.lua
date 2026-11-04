@@ -267,6 +267,31 @@ custom["x:ui.frame"] = function()
     return ok and "PASS" or "FAIL", table.concat(have, " ")
 end
 
+custom["x:ui.compartment"] = function()
+    local f = _G.AddonCompartmentFrame
+    if type(f) ~= "table" then return "FAIL", "AddonCompartmentFrame missing" end
+    return type(f.RegisterAddon) == "function" and "PASS" or "FAIL", "RegisterAddon is " .. type(f.RegisterAddon)
+end
+
+custom["x:questie.db"] = function()
+    local okLoaded, loaded = Compat.Try("C_AddOns.IsAddOnLoaded", "Questie")
+    if not (okLoaded and loaded) then return "INFO", "Questie not loaded" end
+    local state = ns.QuestChains.QuestieState()
+    local detail = "state=" .. state
+    if state == "ready" then
+        local okN, n = Compat.Try("C_QuestLog.GetNumQuestLogEntries")
+        for i = 1, okN and n or 0 do
+            local ok, info = Compat.Try("C_QuestLog.GetInfo", i)
+            if ok and type(info) == "table" and not info.isHeader and info.questID then
+                local e = ns.QuestChains.Lookup(info.questID)
+                detail = detail .. string.format("; quest %d chain %s", info.questID, e and (e.step .. "/" .. e.total .. " via " .. e.source) or "none")
+                break
+            end
+        end
+    end
+    return state == "ready" and "PASS" or (state == "loading" and "INFO" or "FAIL"), detail
+end
+
 local function runCheck(check)
     if check.kind == "api" then
         local value = Compat.Resolve(check.id)

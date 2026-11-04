@@ -1,0 +1,171 @@
+-- Pure Phase 2 models: fake data, graph scaling and series, friends grouping,
+-- settings defaults, session summary, quest-chain logic, palettes, totals.
+local H = ...
+
+local NOW = os.time({ year = 2026, month = 11, day = 4, hour = 12 })
+
+local function fake(ns) return ns.FakeData.Generate(NOW, os.time, os.date) end
+
+H.test("fake data is deterministic, separate and complete", function()
+    local ns = H.pureNamespace()
+    local a, b = fake(ns), fake(ns)
+    H.eq(ns.Export.Build(a, "x", "t"), ns.Export.Build(b, "x", "t"), "same seed, same world")
+    local mine = 0
+    for _, c in pairs(a.characters) do
+        mine = mine + 1
+        H.eq(c.fake, true)
+        H.ok(#c.sessions > 10, "plenty of sessions")
+        H.ok(next(c.levels), "levels recorded")
+    end
+    H.eq(mine, 3)
+    local bnet, charOnly = 0, 0
+    for _, f in pairs(a.friends) do
+        H.eq(f.fake, true)
+        local n = 0
+        for _, c in pairs(f.characters) do n = n + 1; H.eq(c.fake, true) end
+        if f.kind == "bnet" then
+            bnet = bnet + 1
+            H.ok(n >= 2, "several characters per Battle.net friend")
+        else
+            charOnly = charOnly + 1
+        end
+    end
+    H.eq(bnet, 3)
+    H.eq(charOnly, 1)
+end)
+
+H.test("fake data covers 90 days and its numbers add up", function()
+    local ns = H.pureNamespace()
+    local c = fake(ns).characters["Aelwyn-Fakerealm"]
+    local oldest, newest = "9999", "0000"
+    for key in pairs(c.days) do
+        if key < oldest then oldest = key end
+        if key > newest then newest = key end
+    end
+    H.ok(oldest >= ns.Days.Shift("2026-11-04", -89, os.time, os.date), "no older than 90 days: " .. oldest)
+    H.ok(newest <= "2026-11-04")
+    local dayPlayed, sessPlayed = 0, 0
+    for _, d in pairs(c.days) do dayPlayed = dayPlayed + (d.played or 0) end
+    for _, s in ipairs(c.sessions) do sessPlayed = sessPlayed + s.played end
+    H.eq(dayPlayed, sessPlayed)
+    local prev = 0
+    for to = 2, c.level do
+        H.ok(c.levels[to], "level " .. to .. " recorded")
+        H.ok(c.levels[to].at >= prev, "levels in time order")
+        prev = c.levels[to].at
+    end
+end)
+
+H.test("nice axis scales", function()
+    local G = H.pureNamespace().GraphModel
+    local lo, hi, step = G.NiceScale(0, 7)
+    H.eq(lo, 0); H.eq(hi, 8); H.eq(step, 2)
+    lo, hi, step = G.NiceScale(-350, 1200)
+    H.ok(lo <= -350 and hi >= 1200 and step > 0)
+    H.eq((hi - lo) % step, 0)
+    lo, hi = G.NiceScale(0, 0)
+    H.ok(hi > lo, "empty data still has an axis")
+    local layout = G.Layout({ { value = -50 }, { value = 150 } }, 200)
+    H.ok(layout.zeroY > 0 and layout.zeroY < 200)
+    local y, h = layout.bar(-50)
+    H.ok(y < layout.zeroY and math.abs(y + h - layout.zeroY) < 1e-6, "negative bars hang below zero")
+end)
+
+H.test("graph series for every chart", function()
+    local ns = H.pureNamespace()
+    local c = fake(ns).characters["Aelwyn-Fakerealm"]
+    for _, chart in ipairs(ns.GraphModel.CHARTS) do
+        local pts = ns.GraphModel.Build(chart, c, "2026-11-04", os.time, os.date, 30)
+        H.ok(#pts > 0 and #pts <= math.max(30, ns.GraphModel.MAX_POINTS), chart)
+        for _, p in ipairs(pts) do H.ok(type(p.value) == "number" and p.label, chart .. " point shape") end
+        H.ok(ns.GraphModel.FormatValue(chart, pts[1].value))
+    end
+    H.eq(#ns.GraphModel.QuestsPerDay(c, "2026-11-04", 30, os.time, os.date), 30)
+    local tpl = ns.GraphModel.TimePerLevel({ levels = { [3] = { from = 2, to = 3, active = 60, total = 70, partial = true } } })
+    H.eq(tpl[1].partial, true)
+    H.eq(tpl[1].label, "3")
+end)
+
+H.test("friends are grouped, ordered and blockable", function()
+    local ns = H.pureNamespace()
+    local friends = fake(ns).friends
+    local rows, hidden = ns.FriendsModel.Build(friends, {}, "all", "2026-11-04", os.time, os.date)
+    H.eq(hidden, 0)
+    H.ok(rows[1].header, "Battle.net friends come first, under a header")
+    local headers, standalone = 0, 0
+    for _, r in ipairs(rows) do
+        if r.header then headers = headers + 1 elseif not r.indent then standalone = standalone + 1 end
+    end
+    H.eq(headers, 3)
+    H.eq(standalone, 1, "the character-only friend stands alone")
+    local blocked = { ["Fennick#0001"] = true, ["Wren-Fakerealm"] = true }
+    local rows2, hidden2 = ns.FriendsModel.Build(friends, blocked, "all", "2026-11-04", os.time, os.date)
+    H.eq(hidden2, 2)
+    for _, r in ipairs(rows2) do
+        H.ok(not (r.header and r.friend.name == "Fennick"), "blocked friend hidden")
+        H.ok(r.name ~= "Wren", "blocked character friend hidden")
+    end
+    H.eq(ns.FriendsModel.Ago(1000, nil), "never")
+    H.eq(ns.FriendsModel.Ago(1000, 990), "just now")
+    H.eq(ns.FriendsModel.Ago(10000, 10000 - 7200), "2h ago")
+end)
+
+H.test("settings defaults fill gaps and keep choices", function()
+    local D = H.pureNamespace().SettingsDefaults
+    local s = D.Ensure({ skin = "plain", colorblind = false })
+    H.eq(s.skin, "plain")
+    H.eq(s.colorblind, false)
+    H.eq(s.levelToast, true)
+    H.eq(s.shareNameInDungeons, false, "name sharing is opt-in")
+    H.eq(s.sharingPaused, false)
+    H.eq(s.minimap.angle, 225)
+    H.eq(D.ClampScale(0.2), 0.7)
+    H.eq(D.ClampScale(9), 1.5)
+    H.eq(D.ClampScale(1.04), 1.0)
+end)
+
+H.test("session summary lines", function()
+    local ns = H.pureNamespace()
+    local s = { start = NOW, played = 3600, active = 3000, levelStart = 10, levelEnd = 12,
+        counts = { levels = 2, quests = 5, moneyNet = 12345, dungeonsEntered = 1, dungeonsCompleted = 1 } }
+    local title, lines = ns.Summary.Session(s, ns.L, os.date)
+    H.ok(title:find("Session of 2026-11-04", 1, true), title)
+    local text = table.concat(lines, "\n")
+    H.ok(text:find("Played 1h 00m, active 50m 00s", 1, true), text)
+    H.ok(text:find("2 level(s): 10 -> 12", 1, true))
+    H.ok(text:find("+1g 23s 45c", 1, true))
+    H.ok(text:find("1 completed of 1 entered", 1, true))
+    H.ok(not text:find("death"), "zero counts are left out")
+end)
+
+H.test("quest chain steps and walking", function()
+    local Q = H.pureNamespace().QuestChainLogic
+    H.eq(select(1, Q.StepOf({ 5, 6, 7 }, 6)), 2)
+    H.eq(select(2, Q.StepOf({ 5, 6, 7 }, 6)), 3)
+    H.eq(Q.StepOf({ 5 }, 9), nil)
+    local links = { [1] = { n = 2 }, [2] = { p = 1, n = 3 }, [3] = { p = 2 } }
+    local chain = Q.Walk(2, function(id) return links[id].p end, function(id) return links[id].n end)
+    H.eq(table.concat(chain, ","), "1,2,3")
+    local loop = Q.Walk(1, function() return 1 end, function(id) return id == 1 and 2 or 1 end)
+    H.eq(table.concat(loop, ","), "1,2", "loops stop")
+end)
+
+H.test("palettes cover every role; series cycle", function()
+    local P = H.pureNamespace().Palette
+    for name, set in pairs(P.SKINS) do
+        for _, role in ipairs(P.ROLES) do H.ok(set[role], name .. " lacks " .. role) end
+    end
+    H.ok(P.Series(true, 1) ~= P.Series(true, 2))
+    H.eq(P.Series(true, 7), P.Series(true, 1))
+    H.eq(P.Color("nonsense", "text"), P.SKINS.ledger.text)
+end)
+
+H.test("totals line sums every character", function()
+    local ns = H.pureNamespace()
+    local rows = { { key = "a", level = 10, quests = 3, moneyNet = 50, dungeons = 1, dungeonsEntered = 2 },
+                   { key = "b", level = 20, quests = 4, moneyNet = -20, dungeons = 0, dungeonsEntered = 1 } }
+    local t = ns.MeModel.Totals(rows)
+    H.eq(t.quests, 7)
+    H.eq(t.moneyNet, 30)
+    H.eq(ns.MeModel.FormatCell({ field = "dungeons", kind = "pair" }, t), "1/3")
+end)

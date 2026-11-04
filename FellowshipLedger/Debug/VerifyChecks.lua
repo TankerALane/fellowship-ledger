@@ -260,5 +260,11 @@ ns.VerifyChecks = {
     { id = "PlaySound", kind = "api", area = "UI", why = "toast sound" },
     { id = "SOUNDKIT", kind = "api", area = "UI", why = "sound IDs", expect = "table" },
     { id = "x:ui.frame", kind = "custom", area = "UI", why = "frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture)", test = "/dump CreateFrame(\"Frame\").SetResizeBounds" },
+    { id = "GameTooltip", kind = "api", area = "UI", why = "hover tooltips on graphs and the minimap button", expect = "table" },
+    { id = "x:ui.compartment", kind = "custom", area = "UI", why = "AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap)", test = "/dump AddonCompartmentFrame.RegisterAddon" },
+    { id = "x:questie.db", kind = "custom", area = "UI", why = "Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback)", test = "/dump QuestieLoader:ImportModule(\"QuestieDB\").QueryQuestSingle" },
+    { id = "m:minimap", kind = "manual", area = "UI", why = "minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered", test = "look at the minimap; click, right-click, drag, /reload" },
+    { id = "m:options", kind = "manual", area = "UI", why = "Options > AddOns lists Fellowship Ledger and its button opens Settings", test = "Esc > Options > AddOns > Fellowship Ledger" },
+    { id = "m:fakeviews", kind = "manual", area = "UI", why = "with /fl fake every table and all five graphs draw, tooltips show, both skins and all text sizes look right", test = "/fl fake, visit every tab and chart, switch skin and text size, /fl fake off" },
     { id = "m:copywindow", kind = "manual", area = "UI", why = "the verify report window opens, scrolls, copies and closes with Escape", test = "/fl verify, then Ctrl+A, Ctrl+C, Escape" },
 }

@@ -70,8 +70,11 @@ Levels.events.PLAYER_LEVEL_UP = function(_, newLevel)
         end
     end)
 
+    local line = Format.LevelLine(rec) .. (rec.partial and (" " .. L.PARTIAL) or "")
     if ns.db.settings.levelToast ~= false then
-        ns.Log.Info(L.LEVEL_UP_TOAST, Format.LevelLine(rec) .. (rec.partial and (" " .. L.PARTIAL) or ""))
+        ns.Toast.Show(string.format(L.LEVEL_UP_TITLE, newLevel), { line })
+    else
+        ns.Log.Info(L.LEVEL_UP_TOAST, line)
     end
 end
 

@@ -1,35 +1,73 @@
 -- UI/Widgets.lua
--- Small builders shared by the windows: colors, bordered panels, text buttons and a
--- yes/no dialog. Parchment-and-gold palette from assets/README.md. Gold is used for
--- lines and fills only; body text is ink or dark gold, which pass contrast on parchment.
+-- Builders shared by every window. Colors come from color ROLES (UI/Palette.lua) and
+-- fonts from font ROLES, and every styled region is remembered, so changing the
+-- skin, palette or font size restyles the open windows in place (W.ApplySkin).
 
 local _, ns = ...
+local Palette = ns.Palette
 
 local W = {}
 ns.Widgets = W
 
-local function rgb(hex, a)
-    return { tonumber(hex:sub(1, 2), 16) / 255, tonumber(hex:sub(3, 4), 16) / 255, tonumber(hex:sub(5, 6), 16) / 255, a or 1 }
-end
+local fills = {}  -- { region, role, alpha }
+local texts = {}  -- { fontString, fontRole, colorRole }
 
-W.COLORS = {
-    parchment = rgb("F1E4C3"),
-    ink = rgb("3B2A1A"),
-    gold = rgb("C99A2E"),
-    darkGold = rgb("7A560F"),
-    night = rgb("2B1E12"),
-    glass = rgb("F6EBD0"),
+-- Font roles -> Blizzard font objects, per font-size setting.
+local FONTS = {
+    small = { small = "GameFontHighlightSmall", body = "GameFontHighlightSmall", large = "GameFontHighlight", heading = "GameFontNormal" },
+    normal = { small = "GameFontHighlightSmall", body = "GameFontHighlight", large = "GameFontHighlightLarge", heading = "GameFontNormalLarge" },
+    large = { small = "GameFontHighlight", body = "GameFontHighlightLarge", large = "GameFontHighlightLarge", heading = "GameFontNormalLarge" },
 }
 
-function W.Fill(region, color, alpha)
-    region:SetColorTexture(color[1], color[2], color[3], alpha or color[4])
+local function skin()
+    return ns.db and ns.db.settings and ns.db.settings.skin or "ledger"
 end
 
-function W.Border(frame, color, size)
+function W.Color(role)
+    return Palette.Color(skin(), role)
+end
+
+local function fontObject(role)
+    local size = ns.db and ns.db.settings and ns.db.settings.fontSize or "normal"
+    local name = (FONTS[size] or FONTS.normal)[role] or FONTS.normal.body
+    return _G[name]
+end
+
+local function paint(region, role, alpha)
+    local c = W.Color(role)
+    region:SetColorTexture(c[1], c[2], c[3], alpha or c[4])
+end
+
+local function style(fs, fontRole, colorRole)
+    local fo = fontObject(fontRole)
+    if fo then fs:SetFontObject(fo) end
+    local c = W.Color(colorRole)
+    fs:SetTextColor(c[1], c[2], c[3], c[4])
+end
+
+-- Paint a texture with a color role (remembered for skin changes).
+function W.Fill(region, role, alpha)
+    fills[#fills + 1] = { region, role, alpha }
+    paint(region, role, alpha)
+    return region
+end
+
+-- Paint with a fixed color table (graph series); not restyled by skins.
+function W.FillRGB(region, c, alpha)
+    region:SetColorTexture(c[1], c[2], c[3], alpha or c[4] or 1)
+end
+
+function W.Background(frame, role, alpha)
+    local bg = frame:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    return W.Fill(bg, role or "bg", alpha)
+end
+
+function W.Border(frame, role, size)
     size = size or 1
     local function edge(p1, p2, w, h)
         local t = frame:CreateTexture(nil, "BORDER")
-        W.Fill(t, color)
+        W.Fill(t, role or "border")
         t:SetPoint(p1); t:SetPoint(p2)
         if w then t:SetWidth(w) end
         if h then t:SetHeight(h) end
@@ -40,56 +78,112 @@ function W.Border(frame, color, size)
     edge("TOPRIGHT", "BOTTOMRIGHT", size, nil)
 end
 
-function W.Background(frame, color, alpha)
-    local bg = frame:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    W.Fill(bg, color, alpha)
-    return bg
+function W.Rule(parent, role)
+    local t = parent:CreateTexture(nil, "ARTWORK")
+    t:SetHeight(1)
+    return W.Fill(t, role or "rule")
 end
 
-function W.Text(parent, template, color)
-    local fs = parent:CreateFontString(nil, "OVERLAY", template or "GameFontNormal")
-    if color then fs:SetTextColor(color[1], color[2], color[3], color[4]) end
+-- fontRole: "small" | "body" | "large" | "heading"; colorRole: a Palette role.
+function W.Text(parent, fontRole, colorRole)
+    local fs = parent:CreateFontString(nil, "OVERLAY")
+    texts[#texts + 1] = { fs, fontRole or "body", colorRole or "text" }
+    style(fs, fontRole or "body", colorRole or "text")
+    fs:SetJustifyH("LEFT")
     return fs
 end
 
--- A flat text button. `selected` state draws a stronger fill.
+-- Change a text's color role later (for example to show a disabled toggle).
+function W.SetTextRole(fs, colorRole)
+    for _, t in ipairs(texts) do
+        if t[1] == fs then t[3] = colorRole end
+    end
+    local c = W.Color(colorRole)
+    fs:SetTextColor(c[1], c[2], c[3], c[4])
+end
+
+-- A flat text button. b:SetSelected(on) draws a stronger fill.
 function W.Button(parent, label, width, height, onClick)
     local b = CreateFrame("Button", nil, parent)
     b:SetSize(width or 90, height or 22)
-    b.bg = W.Background(b, W.COLORS.gold, 0.25)
-    W.Border(b, W.COLORS.darkGold, 1)
-    b.text = W.Text(b, "GameFontNormalSmall", W.COLORS.ink)
+    b.bg = W.Background(b, "buttonBg")
+    W.Border(b, "buttonBorder", 1)
+    b.text = W.Text(b, "small", "buttonText")
     b.text:SetPoint("CENTER")
+    b.text:SetJustifyH("CENTER")
     b.text:SetText(label)
     b:SetScript("OnClick", onClick)
-    b:SetScript("OnEnter", function(self) if not self.selected then W.Fill(self.bg, W.COLORS.gold, 0.45) end end)
-    b:SetScript("OnLeave", function(self) if not self.selected then W.Fill(self.bg, W.COLORS.gold, 0.25) end end)
+    b:SetScript("OnEnter", function(self) if not self.selected then paint(self.bg, "buttonBg", 0.6) end end)
+    b:SetScript("OnLeave", function(self) if not self.selected then paint(self.bg, "buttonBg") end end)
     function b:SetSelected(on)
         self.selected = on
-        W.Fill(self.bg, W.COLORS.gold, on and 0.75 or 0.25)
+        paint(self.bg, on and "accent" or "buttonBg", on and 0.55 or nil)
     end
     return b
 end
 
--- Simple modal-style dialog: text plus two buttons.
+-- A toggle drawn as "[x] Label" / "[ ] Label" (text, not color, shows the state).
+-- get() returns the current value; set(v) stores it. t:Refresh() redraws.
+function W.Toggle(parent, label, get, set, width)
+    local t = CreateFrame("Button", nil, parent)
+    t:SetSize(width or 220, 20)
+    t.text = W.Text(t, "body", "text")
+    t.text:SetPoint("LEFT")
+    function t:Refresh()
+        local on = get()
+        self.text:SetText((on and "[x] " or "[ ] ") .. label)
+        W.SetTextRole(self.text, self.disabled and "muted" or "text")
+    end
+    function t:SetDisabled(off)
+        self.disabled = off
+        self:Refresh()
+    end
+    t:SetScript("OnClick", function(self)
+        if self.disabled then return end
+        set(not get())
+        self:Refresh()
+    end)
+    t:Refresh()
+    return t
+end
+
+-- Show a tooltip with a title and lines, if GameTooltip exists.
+function W.Tooltip(owner, title, lines)
+    local tip = _G.GameTooltip
+    if not tip then return end
+    tip:SetOwner(owner, "ANCHOR_RIGHT")
+    tip:SetText(title or "", 1, 1, 1)
+    for _, l in ipairs(lines or {}) do tip:AddLine(l, 0.9, 0.9, 0.9, true) end
+    tip:Show()
+end
+
+function W.HideTooltip()
+    if _G.GameTooltip then _G.GameTooltip:Hide() end
+end
+
+-- Restyle everything after a skin, palette or font change.
+function W.ApplySkin()
+    for _, f in ipairs(fills) do paint(f[1], f[2], f[3]) end
+    for _, t in ipairs(texts) do style(t[1], t[2], t[3]) end
+end
+
+-- Simple confirm dialog: text plus two buttons.
 local dialog
 function W.Confirm(text, yesLabel, noLabel, onYes, onNo)
     if not dialog then
         dialog = CreateFrame("Frame", "FellowshipLedgerDialog", UIParent)
-        dialog:SetSize(420, 150)
+        dialog:SetSize(440, 160)
         dialog:SetPoint("CENTER", 0, 120)
         dialog:SetFrameStrata("FULLSCREEN_DIALOG")
         dialog:EnableMouse(true)
-        W.Background(dialog, W.COLORS.parchment, 0.98)
-        W.Border(dialog, W.COLORS.gold, 2)
-        dialog.text = W.Text(dialog, "GameFontNormal", W.COLORS.ink)
+        W.Background(dialog, "bg")
+        W.Border(dialog, "border", 2)
+        dialog.text = W.Text(dialog, "body", "text")
         dialog.text:SetPoint("TOPLEFT", 16, -16)
         dialog.text:SetPoint("TOPRIGHT", -16, -16)
-        dialog.text:SetJustifyH("LEFT")
-        dialog.yes = W.Button(dialog, "", 150, 24)
+        dialog.yes = W.Button(dialog, "", 170, 24)
         dialog.yes:SetPoint("BOTTOMLEFT", 16, 14)
-        dialog.no = W.Button(dialog, "", 150, 24)
+        dialog.no = W.Button(dialog, "", 170, 24)
         dialog.no:SetPoint("BOTTOMRIGHT", -16, 14)
     end
     dialog.text:SetText(text)
@@ -99,4 +193,23 @@ function W.Confirm(text, yesLabel, noLabel, onYes, onNo)
     dialog.no:SetScript("OnClick", function() dialog:Hide(); if onNo then onNo() end end)
     dialog:Show()
     return dialog
+end
+
+-- A vertical scroll area: returns scrollFrame, content (put children on content and
+-- set its height). Mouse wheel scrolls.
+function W.ScrollArea(parent)
+    local scroll = CreateFrame("ScrollFrame", nil, parent)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(10, 10)
+    scroll:SetScrollChild(content)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(self, delta)
+        local range = self:GetVerticalScrollRange() or 0
+        local new = (self:GetVerticalScroll() or 0) - delta * 40
+        if new < 0 then new = 0 end
+        if new > range then new = range end
+        self:SetVerticalScroll(new)
+    end)
+    scroll:SetScript("OnSizeChanged", function(self, w) content:SetWidth(w or 10) end)
+    return scroll, content
 end

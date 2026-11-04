@@ -33,8 +33,10 @@ function handlers.ADDON_LOADED(name)
     local _, migrateStatus = ns.Migrations.Migrate(FellowshipLedgerDB)
     ns.db = FellowshipLedgerDB
     ns.dbIsNewer = migrateStatus == "newer"
-    ns.db.settings = ns.db.settings or {}
+    ns.db.settings = ns.SettingsDefaults.Ensure(ns.db.settings or {})
     ns.db.characters = ns.db.characters or {}
+    ns.db.friends = ns.db.friends or {}
+    ns.db.blocklist = ns.db.blocklist or {}
     ns.db.dev = ns.db.dev or {}
 
     touchPersistProbe(ns.db.dev, "persistProbe")
@@ -89,6 +91,15 @@ function handlers.PLAYER_LOGIN()
     end
     ns.tracking = true
     offerRestore()
+
+    -- Window extras: each is optional and guarded.
+    pcall(ns.MinimapButton.Update)
+    pcall(ns.OptionsPanel.Register)
+    pcall(ns.Welcome.MaybeShow)
+    if ns.Store.newSession and ns.Store.previousSession and ns.db.settings.sessionSummary then
+        local title, lines = ns.Summary.Session(ns.Store.previousSession, L, date)
+        ns.Toast.Show(title, lines)
+    end
 end
 
 function handlers.PLAYER_LOGOUT()
@@ -111,7 +122,7 @@ frame:RegisterEvent("PLAYER_LOGOUT")
 
 -- Slash commands ------------------------------------------------------------
 
-local HELP = { "HELP_OPEN", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
+local HELP = { "HELP_OPEN", "HELP_SUMMARY", "HELP_FAKE", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
     "HELP_TEST", "HELP_RESTORE", "HELP_VERSION" }
 
 local function printHelp()
@@ -149,6 +160,27 @@ function commands.export()
     if ns.tracking then ns.Store.Tick() end
     local text = ns.Export.Build(ns.db, tostring(Compat.flavor), date("%Y-%m-%d %H:%M"))
     ns.CopyWindow:Show(L.EXPORT_TITLE, text)
+end
+
+function commands.summary(rest)
+    if not ns.tracking then return end
+    ns.Store.Tick()
+    local s = ns.Store.previousSession or ns.Store.session
+    if rest == "now" then s = ns.Store.session end
+    local title, lines = ns.Summary.Session(s, L, date)
+    ns.Toast.Show(title, lines)
+end
+
+function commands.fake(rest)
+    if rest == "off" then
+        ns.Data.DisableFake()
+        Log.Info(L.FAKE_OFF)
+    else
+        ns.Data.EnableFake()
+        Log.Info(L.FAKE_ON)
+        ns.MainWindow.Open("me")
+    end
+    ns.MainWindow.Refresh()
 end
 
 function commands.test()

@@ -49,6 +49,10 @@ Also pure: `Core/Clock.lua` (played and active time), `Core/Days.lua` (date buck
 - `Debug/*.lua`: verify, probe, copy and text windows, the event log and the self-test.
 - `Compat/Compat.lua` and `Core/Init.lua`.
 
+Phase 2 adds:
+- **Pure:** `Core/SettingsDefaults.lua`, `Core/Summary.lua`, `Core/QuestChainLogic.lua`, `UI/Palette.lua` (skins and graph palettes), `UI/GraphModel.lua` (series and axis scaling), `UI/FriendsModel.lua` and `Debug/FakeData.lua`.
+- **Runtime:** `Core/Data.lua` (real or fake data for the windows), `Trackers/QuestChains.lua`, `UI/Widgets.lua` (role-based styling), `UI/Table.lua`, `UI/Graph.lua`, the four tab files, `UI/Toast.lua`, `UI/MinimapButton.lua`, `UI/Welcome.lua` and `UI/OptionsPanel.lua`.
+
 Every tracker writes numbers through `Store.Count(field, n)`, which adds them to today's bucket and to the current session at the same time.
 
 Planned pure modules: time math (active and total time, idle cut-off, session splitting), daily buckets and retention, aggregation by range, protocol encode/decode and chunking, and graph scaling.

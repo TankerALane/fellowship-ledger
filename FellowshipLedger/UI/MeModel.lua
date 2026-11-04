@@ -83,3 +83,18 @@ function MeModel.FormatCell(col, row)
     if col.kind == "pair" then return tostring(row.dungeons) .. "/" .. tostring(row.dungeonsEntered) end
     return tostring(v)
 end
+
+-- Sum of every numeric column over the rows (the "All characters" line).
+function MeModel.Totals(rows)
+    local total = { name = "", level = 0 }
+    for _, r in ipairs(rows) do
+        for k, v in pairs(r) do
+            if type(v) == "number" and k ~= "level" then total[k] = (total[k] or 0) + v end
+        end
+    end
+    for _, col in ipairs(MeModel.COLUMNS) do
+        if col.kind ~= "text" and total[col.field] == nil then total[col.field] = 0 end
+    end
+    total.dungeonsEntered = total.dungeonsEntered or 0
+    return total
+end

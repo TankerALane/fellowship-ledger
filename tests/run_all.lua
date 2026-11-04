@@ -23,6 +23,9 @@ local FILES = {
     "test_toc",
     "test_runtime_smoke",
     "test_tracking_smoke",
+    "test_locale_keys",
+    "test_phase2_models",
+    "test_phase2_ui",
 }
 
 for _, name in ipairs(FILES) do

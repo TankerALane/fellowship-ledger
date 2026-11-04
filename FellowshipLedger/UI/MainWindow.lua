@@ -1,7 +1,7 @@
 -- UI/MainWindow.lua
 -- The one tabbed window: Me, Friends, Graphs, Settings. Movable, resizable, closes
--- with Escape, position and size saved. Phase 1 fills the Me tab; the others say
--- when they arrive.
+-- with Escape, scales; position and size are saved. Shows a banner while fake
+-- data is on.
 
 local _, ns = ...
 local L = ns.L
@@ -11,21 +11,25 @@ local Main = {}
 ns.MainWindow = Main
 
 Main.TABS = { "me", "friends", "graphs", "settings" }
-Main.tabs = {}     -- id -> { button, panel, OnShow }
+Main.tabs = {}
 Main.current = nil
 
 local FRAME_NAME = "FellowshipLedgerMainWindow"
 
 local function savePosition(f)
-    local s = ns.db.settings
     local point, _, relPoint, x, y = f:GetPoint(1)
-    s.window = { point = point, relPoint = relPoint, x = x, y = y, w = f:GetWidth(), h = f:GetHeight() }
+    ns.db.settings.window = { point = point, relPoint = relPoint, x = x, y = y, w = f:GetWidth(), h = f:GetHeight() }
+end
+
+local function refreshCurrent()
+    local tab = Main.current and Main.tabs[Main.current]
+    if tab and tab.OnShow then tab.OnShow() end
 end
 
 local function build()
     local f = CreateFrame("Frame", FRAME_NAME, UIParent)
     local saved = ns.db.settings.window
-    f:SetSize(saved and saved.w or 820, saved and saved.h or 500)
+    f:SetSize(saved and saved.w or 860, saved and saved.h or 540)
     if saved and saved.point then
         f:SetPoint(saved.point, UIParent, saved.relPoint, saved.x, saved.y)
     else
@@ -43,30 +47,33 @@ local function build()
     end)
     f:SetScale(ns.db.settings.scale or 1)
 
-    -- Resizing (SetResizeBounds on retail; older clients use SetMinResize).
     f:SetResizable(true)
     if f.SetResizeBounds then
-        f:SetResizeBounds(640, 360, 1400, 900)
+        f:SetResizeBounds(700, 420, 1500, 1000)
     elseif f.SetMinResize then
-        f:SetMinResize(640, 360)
+        f:SetMinResize(700, 420)
     end
     local grip = CreateFrame("Button", nil, f)
     grip:SetSize(14, 14)
     grip:SetPoint("BOTTOMRIGHT", -2, 2)
-    W.Background(grip, W.COLORS.gold, 0.8)
+    W.Background(grip, "accent", 0.8)
     grip:SetScript("OnMouseDown", function() f:StartSizing("BOTTOMRIGHT") end)
     grip:SetScript("OnMouseUp", function()
         f:StopMovingOrSizing()
         savePosition(f)
-        if Main.current and Main.tabs[Main.current].OnShow then Main.tabs[Main.current].OnShow() end
+        refreshCurrent()
     end)
 
-    W.Background(f, W.COLORS.parchment, 0.98)
-    W.Border(f, W.COLORS.gold, 2)
+    W.Background(f, "bg")
+    W.Border(f, "border", 2)
 
-    local title = W.Text(f, "GameFontNormalLarge", W.COLORS.ink)
+    local title = W.Text(f, "heading", "heading")
     title:SetPoint("TOPLEFT", 16, -12)
     title:SetText(L.ADDON_TITLE)
+
+    Main.fakeBanner = W.Text(f, "small", "bad")
+    Main.fakeBanner:SetPoint("LEFT", title, "RIGHT", 16, 0)
+    Main.fakeBanner:SetText(L.FAKE_BANNER)
 
     local close = W.Button(f, "X", 22, 22, function() f:Hide() end)
     close:SetPoint("TOPRIGHT", -8, -8)
@@ -83,23 +90,22 @@ local function build()
         tab.panel:SetPoint("BOTTOMRIGHT", -12, 20)
         tab.panel:Hide()
         if tab.Build then
-            tab.Build(tab.panel)
+            local ok, err = pcall(tab.Build, tab.panel)
+            if not ok then ns.Log.Warn(L.WINDOW_FAILED, id .. ": " .. tostring(err)) end
         else
-            local msg = W.Text(tab.panel, "GameFontNormal", W.COLORS.darkGold)
+            local msg = W.Text(tab.panel, "body", "muted")
             msg:SetPoint("TOPLEFT", 8, -8)
             msg:SetText(L["TAB_" .. id:upper() .. "_SOON"])
         end
     end
 
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, FRAME_NAME) end
-    f:SetScript("OnShow", function()
-        if Main.current and Main.tabs[Main.current].OnShow then Main.tabs[Main.current].OnShow() end
-    end)
+    f:SetScript("OnShow", function() Main.Refresh() end)
+    f:SetScript("OnSizeChanged", function() refreshCurrent() end)
     f:Hide()
     return f
 end
 
--- Tabs register their builder before the window is first built.
 function Main.RegisterTab(id, buildFn, onShow)
     Main.tabs[id] = Main.tabs[id] or {}
     Main.tabs[id].Build = buildFn
@@ -118,6 +124,13 @@ function Main.Ensure()
     return true
 end
 
+-- Redraw the visible tab and the fake-data banner.
+function Main.Refresh()
+    if not Main.frame then return end
+    Main.fakeBanner:SetShown(ns.Data.IsFake())
+    refreshCurrent()
+end
+
 function Main.Select(id)
     Main.current = id
     if not Main.frame then return end
@@ -125,8 +138,7 @@ function Main.Select(id)
         if tab.panel then tab.panel:SetShown(tabId == id) end
         if tab.button then tab.button:SetSelected(tabId == id) end
     end
-    local tab = Main.tabs[id]
-    if tab and tab.OnShow then tab.OnShow() end
+    Main.Refresh()
 end
 
 function Main.Toggle(tabId)
@@ -137,4 +149,14 @@ function Main.Toggle(tabId)
         Main.frame:Show()
         Main.Select(tabId or Main.current or "me")
     end
+end
+
+function Main.Open(tabId)
+    if not Main.Ensure() then return end
+    Main.frame:Show()
+    Main.Select(tabId or Main.current or "me")
+end
+
+function Main.ApplyScale()
+    if Main.frame then Main.frame:SetScale(ns.db.settings.scale or 1) end
 end

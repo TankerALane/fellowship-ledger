@@ -401,6 +401,12 @@ These come from addons already installed in Austin's game folders. They are good
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | pending | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | pending | PASS |
 | `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture) | `/dump CreateFrame("Frame").SetResizeBounds` | pending | PASS |
+| `GameTooltip` | api | hover tooltips on graphs and the minimap button | `/dump type(GameTooltip)` -> "table" | pending | ? |
+| `x:ui.compartment` | custom | AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap) | `/dump AddonCompartmentFrame.RegisterAddon` | pending | ? |
+| `x:questie.db` | custom | Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback) | `/dump QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle` | pending | ? |
+| `m:minimap` | manual | minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered | look at the minimap; click, right-click, drag, /reload | pending | ? |
+| `m:options` | manual | Options > AddOns lists Fellowship Ledger and its button opens Settings | Esc > Options > AddOns > Fellowship Ledger | pending | ? |
+| `m:fakeviews` | manual | with /fl fake every table and all five graphs draw, tooltips show, both skins and all text sizes look right | `/fl fake, visit every tab and chart, switch skin and text size, /fl fake off` | pending | ? |
 | `m:copywindow` | manual | the verify report window opens, scrolls, copies and closes with Escape | `/fl verify, then Ctrl+A, Ctrl+C, Escape` | pending | PASS |
 
 <!-- GENERATED:END -->

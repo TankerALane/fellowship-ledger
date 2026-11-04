@@ -30,13 +30,30 @@ local function makeFrame(kind, name)
     end
     function f:UnregisterEvent(event) self._events[event] = nil end
     function f:UnregisterAllEvents() self._events = {} end
-    function f:IsShown() return self._shown == true end
+    function f:IsShown() return rawget(self, "_shown") == true end
     function f:Show() self._shown = true end
     function f:Hide() self._shown = false end
+    function f:SetShown(v) self._shown = v and true or false end
     function f:SetText(t) self._text = t end
-    function f:GetText() return self._text end
+    function f:GetText() return rawget(self, "_text") end
+    -- Sizes are numbers so layout math runs (defaults stand in for a real layout pass).
+    function f:SetSize(w, h) self._w, self._h = w, h end
+    function f:SetWidth(w) self._w = w end
+    function f:SetHeight(h) self._h = h end
+    function f:GetWidth() return rawget(self, "_w") or 600 end
+    function f:GetHeight() return rawget(self, "_h") or 400 end
+    function f:GetCenter() return 300, 300 end
+    function f:GetEffectiveScale() return 1 end
+    function f:GetScale() return 1 end
+    function f:GetPoint() return "CENTER", nil, "CENTER", 0, 0 end
+    function f:GetVerticalScroll() return 0 end
+    function f:GetVerticalScrollRange() return 0 end
+    function f:SetAlpha(a) self._alpha = a end
+    function f:CreateFontString() return makeFrame("FontString") end
+    function f:CreateTexture() return makeFrame("Texture") end
     return f
 end
+M.makeFrame = makeFrame
 
 -- Build a fresh environment. opts: { interface, tocFlavor, missing = { "Name", ... } }
 function M.new(opts)
@@ -92,6 +109,37 @@ function M.new(opts)
             end
         end,
     }
+    env.GameTooltip = makeFrame("GameTooltip", "GameTooltip")
+    env.GetCursorPosition = function() return 0, 0 end
+    state.settingsCategories = {}
+    env.Settings = {
+        RegisterCanvasLayoutCategory = function(frame, name)
+            local cat = { frame = frame, name = name, ID = #state.settingsCategories + 1 }
+            state.settingsCategories[#state.settingsCategories + 1] = cat
+            return cat
+        end,
+        RegisterAddOnCategory = function(cat) cat.registered = true end,
+        OpenToCategory = function() end,
+    }
+    state.compartment = {}
+    env.AddonCompartmentFrame = { RegisterAddon = function(_, info) state.compartment[#state.compartment + 1] = info end }
+    for _, font in ipairs({ "GameFontHighlightSmall", "GameFontHighlight", "GameFontHighlightLarge", "GameFontNormal",
+        "GameFontNormalLarge", "GameFontNormalSmall" }) do env[font] = { name = font } end
+    -- Optional fake Questie (set state.questie = { [questID] = { pre = id, next = id, name = "..." } }).
+    env.Questie = { API = { isReady = true } }
+    env.QuestieLoader = {
+        ImportModule = function(_, name)
+            if state.questieBroken then error("no such module") end
+            if name ~= "QuestieDB" then return nil end
+            return { QueryQuestSingle = function(id, field)
+                local q = state.questie and state.questie[id]
+                if not q then return nil end
+                if field == "preQuestSingle" then return q.pre and { q.pre } or nil end
+                if field == "nextQuestInChain" then return q.next end
+                if field == "name" then return q.name end
+            end }
+        end,
+    }
     env.UnitIsPlayer = function(unit)
         if unit == "player" then return true end
         local u = state.units[unit]
@@ -124,7 +172,7 @@ function M.new(opts)
             if addon == "FellowshipLedger" then return meta[field] end
             return nil
         end,
-        IsAddOnLoaded = function() return false end,
+        IsAddOnLoaded = function(name) return name == "Questie" and state.questieLoaded == true end,
     }
     env.C_EventUtils = { IsEventValid = function(e) return M.knownEvents == nil or M.knownEvents[e] == true end }
 
@@ -150,7 +198,7 @@ function M.new(opts)
         end,
     }
     env.C_QuestLine = {
-        GetQuestLineInfo = function() return { questLineID = 7, questLineName = "Chain" } end,
+        GetQuestLineInfo = function() if state.noQuestLines then return nil end return { questLineID = 7, questLineName = "Chain" } end,
         GetQuestLineQuests = function() return { 54, 55, 56 } end,
     }
     env.GetInstanceInfo = function() return unpack(state.instance, 1, 8) end

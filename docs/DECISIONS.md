@@ -93,3 +93,32 @@ In follower dungeons the AI companions are party units that level up with you. P
 
 ## D-029 Dungeon difficulty from the encounter events
 `GetInstanceInfo` reported difficulty 0 on entering a follower dungeon on retail. When the run's difficulty is 0, it is filled from `ENCOUNTER_START` and `ENCOUNTER_END`, which carried difficulty 1.
+
+## D-030 Fake data is a separate, deterministic saved set
+`/fl fake` writes `FellowshipLedgerDB.fake` (`{ characters, friends }`) from a fixed seed, so every run shows the same world. The set holds 3 of "your" characters, 3 Battle.net friends with 2 to 4 characters each, and 1 character-only friend, with 90 days of history. The windows read through `Core/Data.lua`, which returns the fake set while it exists. Trackers always write to `db.characters`, export and backup read only real data, and Phase 3 sharing will read only real data. A red "FAKE DATA" banner shows in the window. `/fl fake off` deletes the set.
+
+## D-031 Skins are color and font roles
+Every texture and text asks for a role ("bg", "text", "accent", ... and "small", "body", "large", "heading"). The two skins map the roles to colors: "Ledger" is parchment, ink and gold, and "Plain" is the default dark game look. Changing the skin, the text size or the palette restyles open windows in place, with no `/reload`. Scale applies with `SetScale`.
+
+## D-032 Graph colors and accessibility
+The colorblind-safe palette (Okabe-Ito) is **on by default**; the brand palette is optional. No graph relies on color alone:
+- Every bar has a tooltip with its exact value.
+- Losses hang below the zero line.
+- Partial levels are faded and labelled "(partial)".
+- Toggles read "[x]" or "[ ]".
+- Table sort direction shows as "v" or "^".
+
+## D-033 Questie is used through its internal database, fully guarded
+Questie has no public quest-chain API, so the ledger reads Questie 12.5.1's own source: `QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle(id, "preQuestSingle" | "nextQuestInChain" | "name")`, and only after `Questie.API.isReady`. Any error marks Questie as "broken" for the session. The chain view then falls back to "no chain information", Settings says Questie's data could not be read, and `/fl verify` has `x:questie.db`. Game data (`C_QuestLine`) is always tried first.
+
+## D-034 Friends tab before sharing exists
+Real friend data arrives with Phase 3. Until then the Friends tab explains that and offers `/fl fake`. Block and Unblock already work: blocked BattleTags or `Name-Realm` keys are hidden from the Friends tab and the Graphs character list, and Phase 3 will never send to them.
+
+## D-035 Graphs per character; compare overlay in Phase 3
+The Graphs tab cycles through your characters and your friends' characters, one chart at a time. "XP per hour" is per session (XP over active hours). "Quests per day" covers the last 30 days. The compare overlay waits for Phase 3 (where the brief lists it), because it needs friend data.
+
+## D-036 Session summary
+At login, if a new session started, a notice summarises the previous session: played and active time, levels, quests, dungeons, gold, skill-ups and deaths. `/fl summary` shows it again, and `/fl summary now` shows the current session so far. Every notice is also written to chat. Whether chat output works during logout is unverified, which is why the summary is shown at the next login instead.
+
+## D-037 Welcome panel shows once, including for existing installs
+`settings.welcomeSeen` starts false, so Austin's existing characters see the panel once after this update. "Turn off all sharing" sets the master pause, and the per-character toggles live in Settings.

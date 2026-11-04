@@ -29,8 +29,16 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] `/fl debug` event log window, `/fl test` in-game self-tests
 - [ ] Phase 1 done when: Austin confirms no Lua errors on both clients and level times recorded correctly (see the checklist in the session report)
 
-## Phase 2: Views, graphs and quest chains
-Summary tables with ranges, every graph, quest chains (game data first, then Questie), the recommended-addons panel, toasts, settings, the own and plain skins, the welcome panel, the minimap button, and `/fl fake`.
+## Phase 2: Views, graphs and quest chains (built, waiting on in-game checks)
+- [x] `/fl fake` and `/fl fake off`: a separate deterministic fake set (3 own characters, 3 Battle.net friends, 1 character friend, 90 days)
+- [x] Me tab: ranges, an all-characters totals line, a sortable table, per-level times, and a quest-chains view
+- [x] Friends tab: Battle.net friends grouped with their characters, character friends alone, ranges, last updated, Block
+- [x] Graphs tab: levels per session, time per level, quests per day, gold per session and XP per hour, with tooltips
+- [x] Quest chains: game data first, then Questie (guarded), else a plain answer; the recommended-addons panel
+- [x] Notices: level-up, last-session summary at login, `/fl summary`
+- [x] Settings tab: per-character Track/Share, pause all sharing, the dungeon-name opt-in, skin, scale, text size, colorblind palette, minimap toggle, notice options, block list, recommended addons, about
+- [x] Ledger and Plain skins (restyle in place), the welcome panel, our own minimap button, the Options > AddOns page and the addon compartment entry
+- [ ] Done when: Austin confirms with `/fl fake` that every table and graph renders correctly on both clients
 
 ## Phase 3: Friends and sharing
 The protocol, friend discovery, sync with retries, grouping by Battle.net name, share toggles, the block list, the compare overlay, the weekly summary, milestone toasts, and the dungeon name opt-in.
