@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 - 2026-11-04 (pre-release)
+
+Phase 5. Tested on retail; WoW Forever testing still to come.
 
 ### Added
 - Friends' quest chains: chains your friends are on that you haven't started, and where each begins. Chains are shared only when you share Quests.
@@ -10,6 +12,7 @@
 
 ### Fixed
 - The "install Questie" hint showed even when Questie was loaded.
+- Graph axes: gold labels no longer wrap (+6g, -2g), and time axes use round steps (30m, 1h, 1h 30m).
 
 ## 0.1.0 - 2026-11-04 (pre-release)
 
