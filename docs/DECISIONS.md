@@ -194,3 +194,6 @@ The Mainline TOC lists `## Interface: 120105, 120107`, and the release attaches 
 
 ## D-061 The Questie hint shows only when Questie is missing
 A bug made the "install Questie" hint show even with Questie loaded: it compared Questie's state with a value it never takes. It now shows only when Questie is not installed.
+
+## D-062 Names are compared without spaces or case
+On Forever, `/fl commtest` whispers to yourself arrived but were dropped as "not a friend", because the sender's name did not exactly match the character key. Realm names can be spelt "Some Realm" or "SomeRealm" depending on the API. `Friends.IsSelf` now ignores spaces and case, and treats a sender with no realm as being on your own realm. If a test whisper is still rejected, the commtest report shows both spellings.

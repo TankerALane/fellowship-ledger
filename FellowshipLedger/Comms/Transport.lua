@@ -172,7 +172,11 @@ local function receive(transport, prefix, text, channel, sender)
         Transport.stats.dropped = Transport.stats.dropped + 1
         return -- another flavor's data never mixes in
     end
-    local isSelf = transport == "whisper" and ns.Friends.FullName(sender) == ns.Store.key
+    local isSelf = transport == "whisper" and ns.Friends.IsSelf(sender)
+    if chunk.type == "T" and not isSelf then
+        -- Diagnostics for /fl commtest: what the sender looked like versus my key.
+        Transport.selfMismatch = { sender = tostring(sender), key = tostring(ns.Store.key) }
+    end
     local peer
     if chunk.type == "N" then
         if channel ~= "PARTY" and channel ~= "INSTANCE_CHAT" and channel ~= "RAID" then return end

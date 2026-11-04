@@ -155,3 +155,40 @@ H.test("/fl verify: death recap check", function()
     Mock.slash(env, "verify")
     H.ok(env.FellowshipLedgerDB.verify.text:find("PASS x:death.recap: recap 3: 1 events", 1, true), env.FellowshipLedgerDB.verify.text)
 end)
+
+H.test("commtest: self-whispers are recognised when realm spelling differs (Forever)", function()
+    local env, ns = boot({ interface = 16001, tocFlavor = "Forever", realm = "Test Realm" })
+    env.GetNormalizedRealmName = function() return "TestRealm" end
+    H.eq(ns.Store.key, "Tester-Test Realm")
+    for _, sender in ipairs({ "Tester-TestRealm", "Tester-Test Realm", "Tester", "tester-testrealm" }) do
+        H.ok(ns.Friends.IsSelf(sender), sender)
+    end
+    H.ok(not ns.Friends.IsSelf("Tester-OtherRealm"), "same name on another realm is not me")
+    H.ok(not ns.Friends.IsSelf("Someone-TestRealm"))
+    Mock.slash(env, "commtest")
+    local sent = env.__state.sent
+    env.__state.sent = {}
+    for _, m in ipairs(sent) do
+        if m.kind == "addon" and m.channel == "WHISPER" then
+            Mock.fire(env, "CHAT_MSG_ADDON", m.prefix, m.text, "WHISPER", "Tester-TestRealm")
+        end
+    end
+    ns.Sync.CommTestReport()
+    local text = ns.CopyWindow.text
+    H.ok(text:find("received sizes: 60/WHISPER", 1, true), text)
+    H.ok(not text:find("NOT recognised", 1, true), text)
+end)
+
+H.test("commtest reports a self mismatch clearly", function()
+    local env, ns = boot()
+    Mock.slash(env, "commtest")
+    local sent = env.__state.sent
+    env.__state.sent = {}
+    for _, m in ipairs(sent) do
+        if m.kind == "addon" and m.channel == "WHISPER" then
+            Mock.fire(env, "CHAT_MSG_ADDON", m.prefix, m.text, "WHISPER", "Imposter-Elsewhere")
+        end
+    end
+    ns.Sync.CommTestReport()
+    H.ok(ns.CopyWindow.text:find("NOT recognised as self: sender 'Imposter-Elsewhere' vs key 'Tester-TestRealm'", 1, true), ns.CopyWindow.text)
+end)

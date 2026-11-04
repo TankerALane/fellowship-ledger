@@ -185,6 +185,10 @@ function Sync.CommTestReport()
     for _, r in ipairs(t.received) do got[#got + 1] = r.wire .. (r.channel and ("/" .. tostring(r.channel)) or "") end
     lines[#lines + 1] = "received sizes: " .. (#got > 0 and table.concat(got, ", ") or "none")
     for event, shape in pairs(Transport.seen) do lines[#lines + 1] = "args " .. event .. ": " .. shape end
+    lines[#lines + 1] = "self key: " .. tostring(ns.Store.key) .. " | own realm: " .. tostring(ns.Friends.OwnRealm())
+    if Transport.selfMismatch then
+        lines[#lines + 1] = "NOT recognised as self: sender '" .. Transport.selfMismatch.sender .. "' vs key '" .. Transport.selfMismatch.key .. "'"
+    end
     local results = {}
     for name, n in pairs(Transport.stats.results) do results[#results + 1] = name .. "=" .. n end
     table.sort(results)

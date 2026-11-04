@@ -37,6 +37,26 @@ function Friends.Self()
     return ns.Store.key
 end
 
+-- Character names compared without spaces or case: realm names can come back as
+-- "Some Realm" from one API and "SomeRealm" from another (seen on Forever, where
+-- /fl commtest whispers to yourself were not recognised).
+function Friends.Normalize(full)
+    return (tostring(full or ""):gsub("%s", ""):lower())
+end
+
+-- Is this whisper sender me? A sender without a realm is on my realm.
+function Friends.IsSelf(sender)
+    local key = ns.Store.key
+    if type(sender) ~= "string" or sender == "" or not key then return false end
+    if Friends.Normalize(Friends.FullName(sender)) == Friends.Normalize(key) then return true end
+    local sName, sRealm = sender:match("^([^%-]+)%-?(.*)$")
+    local myName, myRealm = key:match("^([^%-]+)%-(.*)$")
+    if not sName or sName:lower() ~= (myName or ""):lower() then return false end
+    if sRealm == "" then return true end
+    sRealm = Friends.Normalize(sRealm)
+    return sRealm == Friends.Normalize(myRealm) or sRealm == Friends.Normalize(Friends.OwnRealm())
+end
+
 local function sameFlavor(projectID)
     local ours = _G.WOW_PROJECT_ID
     projectID = plain(projectID)
