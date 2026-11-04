@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 - 2026-11-04 (pre-release)
+
+Verified in-game on WoW Forever.
+
+### Fixed
+- WoW Forever: messages from friends and from yourself were ignored, because Forever names the sender "Name Realm" (a space, not a hyphen) and reports realms by an internal ID. Names are now read in any form and compared without spaces or capitals, so sharing works on Forever.
+- Character friends are whispered by the exact name the game lists.
+
 ## 0.2.0 - 2026-11-04 (pre-release)
 
 Phase 5. Tested on retail; WoW Forever testing still to come.
