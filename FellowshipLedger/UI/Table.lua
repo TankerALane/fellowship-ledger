@@ -5,7 +5,8 @@
 -- buttons (opts.actions) keep a column of space for them on the right.
 -- Lines are tables:
 --   { cells = { "text", ... }, kind = "row"|"total"|"group"|"detail", indent = bool,
---     text = "..." (group/detail lines), onClick = fn, action = { label, onClick } }
+--     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
+--     tooltip = fn() -> title, lines (shown on hover) }
 
 local _, ns = ...
 local W = ns.Widgets
@@ -115,6 +116,13 @@ function Obj:Line(i)
     w:SetScript("OnClick", function(btn)
         if btn.line and btn.line.onClick then btn.line.onClick() end
     end)
+    w:SetScript("OnEnter", function(btn)
+        local tip = btn.line and btn.line.tooltip
+        if not tip then return end
+        local ok, title, lines = pcall(tip)
+        if ok and title then W.Tooltip(btn, title, lines) end
+    end)
+    w:SetScript("OnLeave", function() W.HideTooltip() end)
     self.widgets[i] = w
     return w
 end

@@ -77,6 +77,33 @@ function FriendsModel.Build(friends, blocklist, range, todayKey, timeFn, dateFn,
     return rows, hidden
 end
 
+-- Readable class and race from the tokens UnitClass/UnitRace return ("DEATHKNIGHT",
+-- "NightElf"): a locale string when there is one, else the token split into words.
+local function tokenText(L, prefix, token)
+    if type(token) ~= "string" or token == "" then return nil end
+    local s = L and rawget(L, prefix .. token:upper())
+    if s then return s end
+    s = token:gsub("(%l)(%u)", "%1 %2")
+    if s == s:upper() then s = s:sub(1, 1) .. s:sub(2):lower() end
+    return s
+end
+FriendsModel.TokenText = tokenText
+
+-- Tooltip for a friend's character row: title and lines.
+-- row: from Build; char: the stored character; friend: the friend record.
+function FriendsModel.Tooltip(row, char, friend, now, L, factionText)
+    char, friend = char or {}, friend or {}
+    local lines = {}
+    local race, class = tokenText(L, "RACE_", char.race), tokenText(L, "CLASS_", char.class)
+    local who = (race and class) and (race .. " " .. class) or race or class or ""
+    lines[#lines + 1] = (string.format(L.TIP_LEVEL, char.level or row.level or 0, who):gsub("%s+$", ""))
+    if factionText and factionText ~= "" then lines[#lines + 1] = string.format(L.TIP_FACTION, factionText) end
+    lines[#lines + 1] = string.format(L.TIP_LAST_PLAYED, FriendsModel.Ago(now, char.lastSeen))
+    lines[#lines + 1] = string.format(L.TIP_UPDATED, FriendsModel.Ago(now, friend.lastUpdated))
+    if friend.version then lines[#lines + 1] = string.format(L.TIP_VERSION, friend.version) end
+    return row.name, lines
+end
+
 -- "5m ago", "3h ago", "2d ago"; "never" when nil.
 function FriendsModel.Ago(now, at)
     if not at then return "never" end

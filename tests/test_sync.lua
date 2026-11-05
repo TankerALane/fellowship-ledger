@@ -315,3 +315,23 @@ H.test("a friend on a newer release gives one update notice; test builds never d
     H.eq(M.CompareVersions("1.0.1-dev", "1.0.0"), nil)
     H.eq(M.CompareVersions(nil, "1.0.0"), nil)
 end)
+
+H.test("Friends tab: says who is online before anyone shares, then rows carry tooltips", function()
+    local A, nsA = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    nsA.Friends.Refresh()
+    nsA.MainWindow.Open("friends")
+    H.ok(nsA.FriendsTab.ui.empty:GetText():find("1 of your friends are online", 1, true), nsA.FriendsTab.ui.empty:GetText())
+    giveData(B, 3)
+    network({ A, B }, 60)
+    nsA.FriendsTab.Refresh()
+    H.ok(not nsA.FriendsTab.ui.empty:IsShown(), "explanation hidden once a ledger arrived")
+    local found
+    for _, line in ipairs((nsA.FriendsTab.Lines())) do
+        if line.kind == "row" and line.tooltip then found = line end
+    end
+    H.ok(found, "character rows have a tooltip")
+    local title, lines = found.tooltip()
+    H.eq(title, "Bob")
+    H.ok(lines[1]:find("^Level 12"), lines[1])
+end)

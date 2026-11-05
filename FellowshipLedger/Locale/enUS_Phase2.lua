@@ -34,7 +34,6 @@ ns.Locale.Set({
     BLOCK = "Block",
     UNBLOCK = "Unblock",
     BLOCKED_HIDDEN = "%d blocked friend(s) hidden. Manage the block list in Settings.",
-    NO_FRIENDS_YET = "No friends' ledgers yet. When a Battle.net or character friend who also runs Fellowship Ledger is online on this game client, their ledger appears here (try Sync now). /fl fake previews this view.",
     NO_FRIENDS_FAKE = "No fake friends to show (all blocked?).",
 
     -- Graphs tab

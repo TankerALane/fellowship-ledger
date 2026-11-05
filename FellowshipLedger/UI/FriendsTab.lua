@@ -76,13 +76,19 @@ local function lines()
                 end
             end
             local friend = ns.Data.Friends()[r.friendId]
+            local char = friend and friend.characters and friend.characters[r.key]
+            local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
             out[#out + 1] = { kind = "row", cells = cells, indent = r.indent,
+                tooltip = function() return FriendsModel.Tooltip(r, char, friend, time(), L, factionText) end,
                 action = (not r.indent) and { label = L.BLOCK, onClick = function() FriendsTab.Block(friend.tag or r.key) end } or nil }
         end
     end
     if hidden > 0 then out[#out + 1] = { kind = "detail", text = string.format(L.BLOCKED_HIDDEN, hidden) } end
     return out, #rows
 end
+
+FriendsTab.Lines = lines -- for tests
+FriendsTab.ui = ui
 
 function FriendsTab.Refresh()
     if not ui.table then return end
@@ -106,7 +112,14 @@ function FriendsTab.Refresh()
     ui.table:SetLines(list)
     -- "This week" has its own empty line; the long explanation would sit on top of it.
     ui.empty:SetShown(count == 0 and not state.weekly)
-    ui.empty:SetText(ns.Data.IsFake() and L.NO_FRIENDS_FAKE or L.NO_FRIENDS_YET)
+    if ns.Data.IsFake() then
+        ui.empty:SetText(L.NO_FRIENDS_FAKE)
+    else
+        -- Sharing works on its own, so say what it is waiting for.
+        local online = 0
+        for _, peer in pairs(ns.Friends and ns.Friends.peers or {}) do if peer.online then online = online + 1 end end
+        ui.empty:SetText(online > 0 and string.format(L.NO_FRIENDS_ONLINE_SOME, online) or L.NO_FRIENDS_ONLINE_NONE)
+    end
 end
 
 local function build(panel)

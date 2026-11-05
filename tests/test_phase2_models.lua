@@ -92,6 +92,25 @@ H.test("the friends table sorts by any column and keeps characters under their f
     H.eq(order(nil), "[Ann] High Low [Bea] Mid [Empty] Solo", "default: Battle.net first, by name")
 end)
 
+H.test("friend row tooltip: level, race and class, faction, times and their version", function()
+    local ns = H.pureNamespace()
+    local now = 100000
+    local title, lines = ns.FriendsModel.Tooltip({ name = "Mid", level = 30 },
+        { level = 30, race = "NightElf", class = "DEATHKNIGHT", lastSeen = now - 7200 },
+        { lastUpdated = now - 300, version = "1.0.1" }, now, ns.L, "Alliance")
+    H.eq(title, "Mid")
+    H.eq(lines[1], "Level 30 Night Elf Death Knight")
+    H.eq(lines[2], "Faction: Alliance")
+    H.eq(lines[3], "Last played: 2h ago")
+    H.eq(lines[4], "Shared with you: 5m ago")
+    H.eq(lines[5], "Their Fellowship Ledger: 1.0.1")
+    H.eq(ns.FriendsModel.TokenText(ns.L, "RACE_", "Scourge"), "Undead")
+    H.eq(ns.FriendsModel.TokenText(ns.L, "CLASS_", "WARRIOR"), "Warrior")
+    local _, few = ns.FriendsModel.Tooltip({ name = "X", level = 3 }, nil, nil, now, ns.L, "")
+    H.eq(few[1], "Level 3")
+    H.eq(#few, 3, "no faction or version lines when unknown")
+end)
+
 H.test("graph series for every chart", function()
     local ns = H.pureNamespace()
     local c = fake(ns).characters["Aelwyn-Fakerealm"]
