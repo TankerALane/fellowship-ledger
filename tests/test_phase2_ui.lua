@@ -380,7 +380,7 @@ end)
 
 H.test("class-colored names get an outline; other cells and clients without SetFont are left alone", function()
     local env, ns = boot(RETAIL)
-    local fs = { font = { "Fonts\FRIZQT__.TTF", 12, "" } }
+    local fs = { font = { "Fonts/FRIZQT__.TTF", 12, "" } }
     function fs:GetFont() return self.font[1], self.font[2], self.font[3] end
     function fs:SetFont(f, s, flags) self.font = { f, s, flags } end
     ns.Widgets.SetOutline(fs, true)
