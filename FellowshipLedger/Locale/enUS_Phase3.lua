@@ -72,7 +72,7 @@ ns.Locale.Set({
     CLASS_DEMONHUNTER = "Demon Hunter",
     RACE_SCOURGE = "Undead",
     REMOVE = "Remove",
-    REMOVE_LINE = "Not playing this character any more? Remove it from the ledger (and from friends' Friends tabs).",
+    REMOVE_LINE = "Not playing this character any more?",
     REMOVE_CONFIRM = "Remove %s from Fellowship Ledger? Its history is deleted here, and friends drop it when they next sync with you. Logging into it again starts a new ledger for it (and offers its own backup, if one exists).",
     REMOVE_YES = "Remove",
     REMOVE_NO = "Keep",

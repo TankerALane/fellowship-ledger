@@ -55,7 +55,7 @@ local function characterLines()
                 lines[#lines + 1] = { kind = "detail", text = text, indent = true }
             end
             if not ns.Data.IsFake() and key ~= ns.Store.key then
-                lines[#lines + 1] = { kind = "detail", indent = true, text = L.REMOVE_LINE,
+                lines[#lines + 1] = { kind = "detail", align = "right", text = L.REMOVE_LINE,
                     action = { label = L.REMOVE, onClick = function() Me.ConfirmRemove(key, row.name) end } }
             end
         end

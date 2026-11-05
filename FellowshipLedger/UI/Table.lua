@@ -6,7 +6,8 @@
 -- Lines are tables:
 --   { cells = { "text", ... }, kind = "row"|"total"|"group"|"detail", indent = bool,
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
---     tooltip = fn() -> title, lines (shown on hover) }
+--     tooltip = fn() -> title, lines (shown on hover),
+--     align = "right" (group/detail text next to its action button) }
 
 local _, ns = ...
 local W = ns.Widgets
@@ -197,6 +198,7 @@ function Obj:Render()
             else
                 for c = 1, #self.columns do w.cells[c]:Hide() end
                 w.full:SetText((line.indent and "    " or "") .. (line.text or ""))
+                w.full:SetJustifyH(line.align == "right" and "RIGHT" or "LEFT")
                 W.SetTextRole(w.full, line.kind == "group" and "heading" or "muted")
                 w.full:Show()
             end

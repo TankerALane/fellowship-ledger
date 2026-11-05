@@ -1,0 +1,20 @@
+Fellowship Ledger verify report
+addon=1.0.0 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70790 at=2026-11-05 06:55
+summary pass=191 fail=7 error=0 info=9 manual=9
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+-- details
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes SetTexCoord=yes SetVertexColor=yes GetStringWidth=yes
+
+Notes (2026-11-05, unreleased 1.0.1 build, which still reports 1.0.0 by design, D-069):
+- Same results as forever-2026-11-04-2034.txt apart from x:ui.frame, which now also confirms the
+  sort-arrow methods (SetTexCoord, SetVertexColor, GetStringWidth) on Forever.
+- Screenshot confirmed on Forever: arrow image beside the sorted column, Faction column (Horde),
+  class-colored names on parchment, and the Remove line in a character's expanded row.
+- Only the changed line is kept here; the full report is in Austin's message of 2026-11-05.
