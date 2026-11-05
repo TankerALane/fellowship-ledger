@@ -20,9 +20,11 @@ Friends.byCharacter = {}   -- "Name-Realm" -> peer
 
 local function plain(v) return T.Plain(v) end
 
--- My realm as players see it. Taken from my own character key (UnitFullName),
--- because on Forever GetNormalizedRealmName returns an internal ID such as
--- "CAMWOWUS1Realm3PvE" instead of the realm's name.
+-- The second half of my character key. On retail that is my realm. On Forever
+-- it is my last name (D-064): Forever characters are "First Last", the game uses
+-- "First-Last" where retail uses "Name-Realm", and the real realm is an internal
+-- ID such as "CAMWOWUS1Realm3PvE" that never appears in names. Either way it is
+-- what a one-word sender name is completed with.
 function Friends.OwnRealm()
     local key = ns.Store and ns.Store.key
     local fromKey = key and key:match("^[^%-]+%-(.+)$")
@@ -31,8 +33,9 @@ function Friends.OwnRealm()
     return ok and plain(realm) or ((GetRealmName() or ""):gsub("%s", ""))
 end
 
--- Split "Name-Realm", "Name Realm" (how Forever names addon-message senders) or
--- "Name" into name, realm. Character names never contain spaces or hyphens.
+-- Split "Name-Realm", "Name Realm" or "Name" into two parts. On Forever these are
+-- "First-Last" / "First Last" (how addon-message senders and Battle.net
+-- characterName look there). Neither part contains a space or hyphen.
 function Friends.SplitName(full)
     if type(full) ~= "string" then return nil end
     local name, realm = full:match("^%s*([^%-%s]+)[%-%s]+(.-)%s*$")

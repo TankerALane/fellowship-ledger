@@ -29,7 +29,7 @@ function QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)
                 for key, chain in pairs(c.chains or {}) do
                     if not mine[key] and not seen[key] and not started(chain.firstQuestID) then
                         seen[key] = true
-                        out[#out + 1] = { friend = f.name or "?", character = c.name or charKey, chain = chain, key = key }
+                        out[#out + 1] = { friend = f.name or "?", character = c.display or c.name or charKey, chain = chain, key = key }
                     end
                 end
             end

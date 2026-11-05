@@ -212,6 +212,7 @@ local started = false
 function Sync.Start()
     if started then return end
     started = true
+    Merge.firstLastNames = ns.Compat.flavor == "Forever"
     Transport.Start()
     if ns.Compat.IsDisabled("comms") then return end
     Friends.Refresh()

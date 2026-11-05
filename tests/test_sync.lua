@@ -270,3 +270,16 @@ H.test("/fl friends reports each friend and whether they will be messaged", func
     H.ok(text:find("skipped: other game version", 1, true), text)
     H.ok(not text:find("#2", 1, true), "BattleTag number left out")
 end)
+
+H.test("Forever shows first and last names for me and for friends", function()
+    local fo = { interface = 16001, tocFlavor = "Forever", projectID = 18, friendProjectID = 18 }
+    local a, nsA = client("Ned", 1, "Tara#2", 2, "Tara Hallow", fo)
+    local b, nsB = client("Tara", 2, "Ned#1", 1, "Ned Row", fo)
+    nsA.Sync.SyncAll(true)
+    network({ a, b }, 120)
+    local f = nsB.db.friends["bn:Ned#1"]
+    H.ok(f, "Ned's ledger arrived on Forever")
+    local key = next(f.characters)
+    H.eq(f.characters[key].display, f.characters[key].name .. " " .. f.characters[key].realm)
+    H.eq(nsA.Store.char.display, "Ned " .. nsA.Store.char.realm, "own display name is First Last")
+end)

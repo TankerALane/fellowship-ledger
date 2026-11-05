@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.2 - 2026-11-04 (pre-release)
+
+Sharing fixes found while testing with friends on WoW Forever. Everyone sharing should update: friends on 0.2.1 or older may not answer.
+
+### Fixed
+- One failed send could switch sharing off for the rest of the session, so messages sat "waiting" and Sync now did nothing. A failed send now affects only that message.
+- WoW Forever: characters show their first and last name ("Tarahallow Soldecouple"), for you and for friends.
+- The Friends tab no longer draws its empty-state text over "This week".
+
+### Added
+- `/fl friends`: what the game reports about each friend and whether the ledger will message them, or why not.
+- The Friends tab refreshes itself while open and says what is holding messages back. Sync now says how many friends it greeted.
+- `/fl comms` lists anything switched off, the last send error, send results and the online friends it would message.
+
 ## 0.2.1 - 2026-11-04 (pre-release)
 
 Verified in-game on WoW Forever.

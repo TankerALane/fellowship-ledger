@@ -31,7 +31,7 @@ function MeModel.Build(characters, range, todayKey, timeFn, dateFn)
         local sum = Days.Sum(c.days or {}, from, todayKey)
         rows[#rows + 1] = {
             key = key,
-            name = c.name or key,
+            name = c.display or c.name or key,
             class = c.class,
             level = c.level or 0,
             levels = sum.levels or 0,

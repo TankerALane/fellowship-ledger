@@ -81,6 +81,9 @@ function Store.Login()
     local char = Character.Ensure(db.characters[Store.key] or {}, t)
     db.characters[Store.key] = char
     char.name, char.realm = name, realm
+    -- On Forever characters have a first and a last name, and UnitFullName returns
+    -- them in its name and realm slots (D-064): show both.
+    char.display = ns.Compat.flavor == "Forever" and realm and realm ~= "" and (name .. " " .. realm) or nil
     refreshCharInfo(char)
 
     char.clock = char.clock or Clock.New(t)

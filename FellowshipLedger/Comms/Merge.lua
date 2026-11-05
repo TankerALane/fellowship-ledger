@@ -54,6 +54,8 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     local oldLevel = c.level
     c.name = data.key:match("^([^%-]+)") or data.key
     c.realm = data.key:match("%-(.+)$")
+    -- Forever: the key is "First-Last" (D-064), so show "First Last".
+    c.display = Merge.firstLastNames and c.realm and (c.name .. " " .. c.realm) or nil
     c.class, c.race, c.faction = data.class, data.race, data.faction
     c.level, c.lastSeen, c.mask = data.level, data.lastSeen, data.mask
     c.days = c.days or {}
@@ -84,7 +86,7 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     end
     friend.syncedThrough = latest
     if isNew then return {} end
-    return milestones(c.name, oldLevel, c.level)
+    return milestones(c.display or c.name, oldLevel, c.level)
 end
 
 -- Weekly summary per friend (last 7 days): { name, levels, quests, dungeons, active }.

@@ -200,3 +200,9 @@ On Forever, `/fl commtest` whispers to yourself arrived but were dropped as "not
 
 ## D-063 Character names in any form (Forever)
 On Forever, `CHAT_MSG_ADDON` names the sender "Name Realm", with a space instead of a hyphen, and `GetNormalizedRealmName` returns an internal ID (`CAMWOWUS1Realm3PvE`) rather than the realm's name. Names are now parsed from "Name-Realm", "Name Realm" or "Name", and compared without spaces or case. Your own realm comes from your character key (`UnitFullName`). Battle.net characters use `realmDisplayName` when it is present. Character friends are whispered by the exact name the game lists.
+
+## D-064 Forever characters have a first and a last name
+The `/fl friends` report showed Battle.net characters on Forever as "Ned Row" with the realm separately as "CAMWOW US2 Realm 5 PvE", and Austin confirmed that Forever characters have first and last names. So on Forever `UnitFullName` returns the first name and the last name in its name and realm slots, and the "Name Realm" sender in D-063 is really "First Last". Character keys stay "First-Last" (the same shape as retail's "Name-Realm"), so no saved data moves and every path builds the same key: your own key, addon-message senders, Battle.net `characterName` and character friends. Only the display changes: on Forever a character's `display` is "First Last". The real realm (an internal ID) is not part of the key. Two Forever characters with the same first and last name on different realms would share a key; whether Forever allows that is not known.
+
+## D-065 A failed send fails one message, not all of sharing
+Sends went through `Compat.Call`, which disables the whole feature when a call errors. One failed `C_BattleNet.SendGameData` (for example to a game account that just went offline) switched sharing off until reload, so messages sat waiting. Sends now disable sharing only when the API is missing; an error fails that message and is shown by `/fl comms`.

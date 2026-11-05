@@ -31,7 +31,7 @@ function Data.GraphableCharacters()
     table.sort(mine)
     for _, key in ipairs(mine) do
         local c = Data.Characters()[key]
-        list[#list + 1] = { key = key, label = c.name or key, char = c }
+        list[#list + 1] = { key = key, label = c.display or c.name or key, char = c }
     end
     local friendIds = {}
     for id in pairs(Data.Friends() or {}) do friendIds[#friendIds + 1] = id end
@@ -44,7 +44,7 @@ function Data.GraphableCharacters()
             table.sort(keys)
             for _, key in ipairs(keys) do
                 local c = f.characters[key]
-                list[#list + 1] = { key = id .. "/" .. key, label = (c.name or key) .. " (" .. (f.name or id) .. ")", char = c, owner = f.name }
+                list[#list + 1] = { key = id .. "/" .. key, label = (c.display or c.name or key) .. " (" .. (f.name or id) .. ")", char = c, owner = f.name }
             end
         end
     end
