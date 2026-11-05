@@ -87,6 +87,13 @@ end
 Transport.handlers.H = function(peer, body)
     local hello = Codec.DecodeHello(body)
     Merge.Hello(friendRecord(peer), hello, now())
+    -- A friend runs a newer release: say so once per session. Versions only change
+    -- in the release commit, which goes to CurseForge straight away, so a build
+    -- being tested still carries the last released number (D-069).
+    if not Sync.updateNoticeShown and Merge.CompareVersions(hello.version, ns.VERSION) == 1 then
+        Sync.updateNoticeShown = hello.version
+        ns.Log.Info(L.UPDATE_AVAILABLE, hello.version, ns.VERSION)
+    end
     if hello.wantReply then Sync.SendHello(peer, false, true) end
     Sync.RequestFrom(peer)
 end

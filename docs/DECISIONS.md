@@ -216,6 +216,9 @@ A first reading of the 20:34 verify report concluded that Forever keeps no death
 ## Result 2026-11-04: sharing works on Forever
 With 0.2.3, Austin and a Battle.net friend on Forever shared ledgers both ways. The friend's game account was one the game reports with project id 0 and no character (D-066). This confirms on Forever: `C_BattleNet.SendGameData` delivery, `BN_CHAT_MSG_ADDON` with the sender's game account ID as the fourth argument, chunk reassembly, HELLO, REQUEST and DATA, and the merge into the Friends tab. Character-friend sharing by whisper is still untested with a second player (whispers to yourself work).
 
-## D-068: workflows run on ubuntu-24.04
+## D-068 Workflows run on ubuntu-24.04
 GitHub noted that `ubuntu-latest` moves to Ubuntu 26 from 2026-10-19. The workflows only need LuaJIT, Python 3 and `gh`, so they are pinned to `ubuntu-24.04` to keep releases predictable. Move to a newer image deliberately, with a test run, before 24.04 is retired.
 
+
+## D-069 Update notice comes from friends' versions
+An addon cannot reach CurseForge, so the only signal is the version a friend sends in HELLO. When it is a newer `x.y.z` than ours, one chat line per session says so; the friend's header on the Friends tab says "old version" when theirs is older. A version only changes in the release commit, which is published to CurseForge minutes later, so builds being tested still report the last released number and never cause a notice. The wording says "when it shows there" to cover CurseForge's review delay. Anything that is not plain `x.y.z` (a test build, or nonsense from a peer) is ignored.

@@ -55,3 +55,9 @@ ns.Locale.Set({
     QUALITY_6 = "Artifact",
     QUALITY_7 = "Heirloom",
 })
+
+-- 1.0.1
+ns.Locale.Set({
+    UPDATE_AVAILABLE = "A friend is running Fellowship Ledger %s (you have %s). Update through CurseForge when it shows there.",
+    FRIEND_OLD_VERSION = "old version %s",
+})

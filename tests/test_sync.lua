@@ -295,3 +295,23 @@ H.test("Forever shows first and last names for me and for friends", function()
     H.eq(f.characters[key].display, f.characters[key].name .. " " .. f.characters[key].realm)
     H.eq(nsA.Store.char.display, "Ned " .. nsA.Store.char.realm, "own display name is First Last")
 end)
+
+H.test("a friend on a newer release gives one update notice; test builds never do", function()
+    local A, nsA = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B, nsB = client("Bob", 2, "Alice#1", 1, "Alice")
+    nsA.VERSION, nsB.VERSION = "1.0.1", "1.0.2"
+    network({ A, B }, 60)
+    nsA.Sync.SyncAll(true)
+    network({ A, B }, 60)
+    local n = 0
+    for _, line in ipairs(A.__state.chat) do if line:find("Fellowship Ledger 1.0.2", 1, true) then n = n + 1 end end
+    H.eq(n, 1, "one notice per session")
+    H.ok(not Mock.chatContains(B, "A friend is running"), "nothing for the friend with the newer version")
+    H.eq(B.FellowshipLedgerDB.friends["bn:Alice#1"].version, "1.0.1")
+    local M = nsA.Merge
+    H.eq(M.CompareVersions("1.0.10", "1.0.9"), 1)
+    H.eq(M.CompareVersions("0.2.3", "1.0.0"), -1)
+    H.eq(M.CompareVersions("1.0.0", "1.0.0"), 0)
+    H.eq(M.CompareVersions("1.0.1-dev", "1.0.0"), nil)
+    H.eq(M.CompareVersions(nil, "1.0.0"), nil)
+end)

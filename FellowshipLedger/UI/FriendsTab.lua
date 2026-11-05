@@ -57,6 +57,9 @@ local function lines()
         if r.header then
             local f = r.friend
             local status = f.online and L.ONLINE or L.OFFLINE
+            if ns.Merge.CompareVersions(f.version, ns.VERSION) == -1 then
+                status = status .. ", " .. string.format(L.FRIEND_OLD_VERSION, f.version)
+            end
             out[#out + 1] = { kind = "group", text = string.format(r.count == 1 and L.FRIEND_HEADER_ONE or L.FRIEND_HEADER, f.name or r.id, status, r.count,
                 FriendsModel.Ago(now, f.lastUpdated)),
                 action = { label = L.BLOCK, onClick = function() FriendsTab.Block(f.tag or r.id) end } }

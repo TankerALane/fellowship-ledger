@@ -24,6 +24,27 @@ function Merge.Friend(friends, peer)
     return f
 end
 
+-- "1.2.3" -> 1, 2, 3. Anything else (a test build such as "1.2.3-dev", text,
+-- nil) gives nil, so it never triggers an update notice.
+function Merge.ParseVersion(v)
+    if type(v) ~= "string" then return nil end
+    local a, b, c = v:match("^(%d+)%.(%d+)%.(%d+)$")
+    if not a then return nil end
+    return tonumber(a), tonumber(b), tonumber(c)
+end
+
+-- 1 if a is newer than b, -1 if older, 0 if the same, nil if either is not x.y.z.
+function Merge.CompareVersions(a, b)
+    local a1, a2, a3 = Merge.ParseVersion(a)
+    local b1, b2, b3 = Merge.ParseVersion(b)
+    if not a1 or not b1 then return nil end
+    for _, pair in ipairs({ { a1, b1 }, { a2, b2 }, { a3, b3 } }) do
+        if pair[1] > pair[2] then return 1 end
+        if pair[1] < pair[2] then return -1 end
+    end
+    return 0
+end
+
 function Merge.Hello(friend, hello, now)
     friend.version = hello.version
     friend.nameOptIn = hello.nameOptIn
