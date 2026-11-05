@@ -305,6 +305,19 @@ H.test("dungeons: the boss list is retried during the run when it was not known 
     H.eq(run.lastBossID, 2735, "found on a later tick")
 end)
 
+H.test("dungeons: loose journal name, and a last boss known only by name", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.ejList = { { id = 226, name = "Ragefire Chasm (Orgrimmar)" } }
+    st.ejBosses = { { name = "Oggleflint" }, { name = "Bazzalan" } } -- no encounter IDs from the journal
+    st.instance = { "Ragefire Chasm", "party", 1, "Normal", 5, 0, false, 389 }
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", false, false)
+    local run = char(env).currentRun
+    H.eq(run.lastBossID, nil); H.eq(run.lastBossName, "Bazzalan")
+    Mock.fire(env, "ENCOUNTER_END", 2735, "Bazzalan", 1, 5, 1)
+    H.ok(run.completed, "completed by the boss's name")
+end)
+
 H.test("dungeons: a saved run without a boss list is repaired at login", function()
     local env = boot(RETAIL)
     local st = env.__state
@@ -322,7 +335,7 @@ H.test("dungeons: a saved run without a boss list is repaired at login", functio
     H.ok(rfc.completed, "repaired"); H.eq(rfc.completedAt, killAt)
     H.eq(c.days[os.date("%Y-%m-%d", killAt)].dungeonsCompleted, 1, "counted on the day of the kill")
     H.ok(not other.completed, "a dungeon the journal does not know stays as it was")
-    H.eq(other.repairTried, true)
+    H.eq(other.repairTried, 2)
 end)
 
 H.test("kills: only your own, with type and rare/elite when targeted", function()

@@ -370,12 +370,25 @@ custom["x:dungeon.journal"] = function()
     if not run then return "INFO", "no dungeon runs yet; run one, then /fl verify" end
     local detail = string.format("%s: %d bosses killed, completed=%s, lastBossID=%s via %s, lookups=%s", tostring(run.name),
         #(run.bosses or {}), tostring(run.completed == true), tostring(run.lastBossID), tostring(run.lookup), tostring(run.lookups))
+    detail = detail .. ", lastBossName=" .. tostring(run.lastBossName)
+    -- What the journal holds: how many instances, the first few names, and this dungeon's bosses.
+    local list = ns.DungeonJournalList and ns.DungeonJournalList() or {}
+    local names = {}
+    for i = 1, math.min(6, #list) do names[i] = tostring(list[i].name) end
+    detail = detail .. string.format("; journal: %d instances (%s)", #list, table.concat(names, ", "))
     local journalID = ns.DungeonJournalByName and ns.DungeonJournalByName(run.name)
-    local last, count, how = nil, nil, nil
-    if ns.DungeonFindLastBoss then last, count, how = ns.DungeonFindLastBoss(run.name) end
-    detail = detail .. string.format("; journal by name: %s; now: last=%s of %s via %s", tostring(journalID), tostring(last),
-        tostring(count), tostring(how))
-    return last and "PASS" or "FAIL", detail
+    detail = detail .. "; by name: " .. tostring(journalID)
+    if journalID then
+        local bosses = {}
+        for _, b in ipairs(ns.DungeonJournalBosses(journalID)) do
+            bosses[#bosses + 1] = string.format("%s[%s/%s]", tostring(b.name), tostring(b.encounterID), tostring(b.journalID))
+        end
+        detail = detail .. " bosses " .. table.concat(bosses, " ")
+    end
+    local last, count, how, lastName = nil, nil, nil, nil
+    if ns.DungeonFindLastBoss then last, count, how, lastName = ns.DungeonFindLastBoss(run.name) end
+    detail = detail .. string.format("; now: last=%s (%s) of %s via %s", tostring(last), tostring(lastName), tostring(count), tostring(how))
+    return (last ~= nil) and "PASS" or "FAIL", detail
 end
 
 custom["x:death.recap"] = function()
