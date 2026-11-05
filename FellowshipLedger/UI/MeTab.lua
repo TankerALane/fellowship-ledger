@@ -1,6 +1,6 @@
 -- UI/MeTab.lua
 -- Me tab: ranges, a totals line, a sortable table with one row per character
--- (click a row for its per-level times), and a "Quest chains" view of the quests
+-- (click a row for its levels, deaths and loot: UI/DetailModel.lua), and a "Quest chains" view of the quests
 -- in your log.
 
 local _, ns = ...
@@ -11,8 +11,9 @@ local MeModel = ns.MeModel
 local Me = {}
 ns.MeTab = Me
 
-local state = { range = "today", sort = "level", desc = true, expanded = {}, mode = "characters" }
+local state = { range = "today", sort = "level", desc = true, expanded = {}, showAll = {}, mode = "characters" }
 local ui = {}
+Me.state, Me.ui = state, ui -- for tests
 
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
@@ -24,6 +25,25 @@ local function cellsFor(row)
         cells[c] = text
     end
     return cells
+end
+
+-- The opened character: summary card or list (Settings), D-075. "Show all" is
+-- remembered per character and list until the window is reloaded.
+function Me.DetailLines(key, char, name)
+    local all = state.showAll[key] or {}
+    local skin = ns.db.settings.skin
+    local data = ns.DetailModel.Data(char, L, date, all)
+    local removable = not ns.Data.IsFake() and key ~= ns.Store.key
+    return ns.DetailModel.Lines(data, ns.db.settings.detailsLayout, L, {
+        skin = skin,
+        valueCode = ns.Palette.Code(ns.Palette.Color(skin, "text")),
+        onToggle = function(kind)
+            state.showAll[key] = state.showAll[key] or {}
+            state.showAll[key][kind] = not state.showAll[key][kind] or nil
+            Me.Refresh()
+        end,
+        onRemove = removable and function() Me.ConfirmRemove(key, name) end or nil,
+    })
 end
 
 local function characterLines()
@@ -48,16 +68,7 @@ local function characterLines()
             Me.Refresh()
         end }
         if state.expanded[key] then
-            local levelLines = MeModel.LevelLines(chars[key], L)
-            if #levelLines == 0 then levelLines = { L.NO_LEVELS_YET } end
-            for _, text in ipairs(levelLines) do lines[#lines + 1] = { kind = "detail", text = text, indent = true } end
-            for _, text in ipairs(MeModel.RecentLines(chars[key], L, date)) do
-                lines[#lines + 1] = { kind = "detail", text = text, indent = true }
-            end
-            if not ns.Data.IsFake() and key ~= ns.Store.key then
-                lines[#lines + 1] = { kind = "detail", align = "right", text = L.REMOVE_LINE,
-                    action = { label = L.REMOVE, onClick = function() Me.ConfirmRemove(key, row.name) end } }
-            end
+            for _, line in ipairs(Me.DetailLines(key, chars[key], row.name)) do lines[#lines + 1] = line end
         end
     end
     return lines, #rows

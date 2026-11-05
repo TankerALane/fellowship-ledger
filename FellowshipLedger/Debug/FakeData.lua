@@ -126,14 +126,20 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
         c.chains["fake:" .. name] = { name = name, step = rng.int(1, total), total = total, firstQuestID = 990000 + i,
             firstName = "Into " .. ZONES[rng.int(1, #ZONES)], startZone = ZONES[rng.int(1, #ZONES)], source = "game" }
     end
-    for i = 1, rng.int(1, 3) do
-        c.deathLog[#c.deathLog + 1] = { at = now - rng.int(1, 20) * 86400 + i, zone = ZONES[rng.int(1, #ZONES)],
-            level = level, killer = rng.float() < 0.7 and ("Gnoll " .. ({ "Brute", "Mystic", "Poacher" })[rng.int(1, 3)]) or nil,
-            killerSpell = "Melee" }
+    -- Oldest first, as the trackers append them. Enough of each that "Show all" appears.
+    local deaths = rng.int(2, 9)
+    for i = 1, deaths do
+        local killed = rng.float() < 0.7
+        local dLevel = math.max(1, level - (deaths - i))
+        c.deathLog[#c.deathLog + 1] = { at = now - (deaths - i + 1) * 86400 - rng.int(0, 80000), zone = ZONES[rng.int(1, #ZONES)],
+            level = dLevel, killer = killed and ("Gnoll " .. ({ "Brute", "Mystic", "Poacher" })[rng.int(1, 3)]) or nil,
+            killerSpell = killed and "Melee" or nil, killerStatus = killed and "ok" or "none",
+            killerLevel = killed and rng.float() < 0.6 and (dLevel + rng.int(0, 3)) or nil }
     end
-    for i = 1, rng.int(2, 5) do
-        c.items[#c.items + 1] = { at = now - rng.int(1, 20) * 86400 + i, name = ({ "Gnoll Hide Belt", "Cutthroat's Mantle",
-            "Seer's Robe", "Ironforge Breastplate" })[rng.int(1, 4)], quality = rng.int(2, 4) }
+    local loot = rng.int(3, 8)
+    for i = 1, loot do
+        c.items[#c.items + 1] = { at = now - (loot - i + 1) * 86400 - rng.int(0, 80000), name = ({ "Gnoll Hide Belt", "Cutthroat's Mantle",
+            "Seer's Robe", "Ironforge Breastplate" })[rng.int(1, 4)], quality = rng.int(2, 4), zone = ZONES[rng.int(1, #ZONES)] }
     end
     return c
 end

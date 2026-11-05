@@ -62,22 +62,6 @@ function MeModel.Sort(rows, field, descending)
     return rows
 end
 
--- Per-level lines for the expanded row, lowest level first.
-function MeModel.LevelLines(char, L)
-    local levels = {}
-    for to in pairs(char.levels or {}) do levels[#levels + 1] = to end
-    table.sort(levels)
-    local lines = {}
-    for _, to in ipairs(levels) do
-        local r = char.levels[to]
-        local text = ns.Format.LevelLine(r)
-        if r.zone then text = text .. "  " .. r.zone end
-        if r.partial then text = text .. "  " .. (L and L.PARTIAL or "(partial)") end
-        lines[#lines + 1] = text
-    end
-    return lines
-end
-
 -- UnitFactionGroup's English token -> locale key. Anything else (an old record
 -- without a faction, or a faction we do not know) shows as-is or blank.
 local FACTION_KEYS = { Horde = "FACTION_HORDE", Alliance = "FACTION_ALLIANCE", Neutral = "FACTION_NEUTRAL" }
@@ -108,33 +92,4 @@ function MeModel.Totals(rows)
     end
     total.dungeonsEntered = total.dungeonsEntered or 0
     return total
-end
-
--- Recent deaths (with what killed you, when known) and notable loot, newest first,
--- for a character's expanded row. At most `limit` (default 5) of each.
-function MeModel.RecentLines(char, L, dateFn, limit)
-    limit = limit or 5
-    local lines = {}
-    local deaths = char.deathLog or {}
-    for i = #deaths, math.max(1, #deaths - limit + 1), -1 do
-        local d = deaths[i]
-        local when = dateFn("%m-%d %H:%M", d.at or 0)
-        local text
-        if d.killer then
-            text = string.format(L.RECENT_DEATH_BY, when, d.killer .. (d.killerSpell and (" (" .. d.killerSpell .. ")") or ""), d.zone or "?")
-        elseif d.killerStatus == "hidden" then
-            text = string.format(L.RECENT_DEATH_HIDDEN, when, d.zone or "?")
-        else
-            text = string.format(L.RECENT_DEATH, when, d.zone or "?")
-        end
-        lines[#lines + 1] = text
-    end
-    local items = char.items or {}
-    for i = #items, math.max(1, #items - limit + 1), -1 do
-        local it = items[i]
-        local quality = L["QUALITY_" .. tostring(it.quality)]
-        lines[#lines + 1] = string.format(L.RECENT_ITEM, dateFn("%m-%d %H:%M", it.at or 0), it.name or it.link or "?",
-            type(quality) == "string" and quality or tostring(it.quality))
-    end
-    return lines
 end

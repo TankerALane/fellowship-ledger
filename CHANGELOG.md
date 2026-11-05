@@ -9,8 +9,10 @@
 - The Friends table sorts by any column; each friend's characters stay together under them.
 - Hover a friend's character for level, race and class, faction, when they last played, when it was shared, and their addon version.
 - Remove characters you no longer play: a Remove button in a character's expanded row on the Me tab, and on a new character a prompt listing characters you haven't played for 30 days. Friends drop removed characters at the next sync (friends on 1.0.1 or later).
+- Deaths record the killer's level when the killer was your target when you died (otherwise "?").
 
 ### Changed
+- Clicking a character on the Me tab opens a tidy summary card: levels recorded, average, fastest and slowest level, then the last 10 levels, last 5 deaths (with your level and theirs) and last 5 notable loot, each newest first with column headers and a **Show all** / **Show less** button. Prefer everything in one column? Settings > Character details > **List**.
 - A new **Leather** look in Settings: dark leather with parchment-colored text and gold, so class colors show at nearly full strength. Ledger (parchment) stays the default.
 - Sort direction is shown with a small arrow instead of "v" and "^".
 - With no friends' ledgers yet, the Friends tab says how many friends are online on this version of WoW.

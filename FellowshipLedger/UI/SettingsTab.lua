@@ -80,6 +80,7 @@ function SettingsTab.Refresh()
     for _, t in ipairs(ui.toggles) do t:Refresh() end
     for skin, b in pairs(ui.skinButtons) do b:SetSelected(S().skin == skin) end
     for size, b in pairs(ui.fontButtons) do b:SetSelected(S().fontSize == size) end
+    for layout, b in pairs(ui.detailButtons) do b:SetSelected((S().detailsLayout or "card") == layout) end
     ui.scaleLabel:SetText(string.format(L.SETTINGS_SCALE_VALUE, S().scale or 1))
     -- Block list
     local tags = {}
@@ -248,6 +249,22 @@ local function build(panel)
         b:SetPoint("TOPLEFT", sx, y)
         sx = sx + 86
         ui.fontButtons[size] = b
+    end
+    y = y - 26
+    ui.detailButtons = {}
+    local detailLabel = W.Text(content, "body", "text")
+    detailLabel:SetPoint("TOPLEFT", 8, y - 2)
+    detailLabel:SetText(L.SETTINGS_DETAILS)
+    sx = 140
+    for _, layout in ipairs({ "card", "list" }) do
+        local b = W.Button(content, L["DETAILS_" .. layout:upper()], 80, 20, function()
+            S().detailsLayout = layout
+            SettingsTab.Refresh()
+            ns.MainWindow.Refresh()
+        end)
+        b:SetPoint("TOPLEFT", sx, y)
+        sx = sx + 86
+        ui.detailButtons[layout] = b
     end
     y = y - 28
     toggle(L.SETTINGS_COLORBLIND, "colorblind", function() ns.MainWindow.Refresh() end)

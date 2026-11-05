@@ -58,8 +58,9 @@ H.test("what killed you: newest recap, killing blow by latest timestamp", functi
     H.eq(d.killer, "Gnoll Mystic")
     H.eq(d.killerSpell, "Lightning Bolt")
     H.eq(d.killerStatus, "ok")
-    local lines = env.__ns.MeModel.RecentLines(char(env), env.__ns.L, os.date)
-    H.ok(lines[1]:find("to Gnoll Mystic (Lightning Bolt) in Elwynn Forest", 1, true), lines[1])
+    local row = env.__ns.DetailModel.Data(char(env), env.__ns.L, os.date).deaths.rows[1]
+    H.eq(row.killer, "Gnoll Mystic")
+    H.eq(row.zone, "Elwynn Forest")
 end)
 
 H.test("what killed you: secret values are stored as hidden, never guessed", function()
@@ -71,7 +72,7 @@ H.test("what killed you: secret values are stored as hidden, never guessed", fun
     local d = char(env).deathLog[1]
     H.eq(d.killer, nil)
     H.eq(d.killerStatus, "hidden")
-    H.ok(env.__ns.MeModel.RecentLines(char(env), env.__ns.L, os.date)[1]:find("hides what killed you", 1, true))
+    H.eq(env.__ns.DetailModel.Data(char(env), env.__ns.L, os.date).deaths.rows[1].killer, "Hidden by the game")
 end)
 
 H.test("no recap at all: the death is still counted", function()

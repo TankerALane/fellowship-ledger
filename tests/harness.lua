@@ -99,6 +99,7 @@ H.PURE_FILES = {
     "UI/Palette.lua",
     "UI/Layout.lua",
     "UI/MeModel.lua",
+    "UI/DetailModel.lua",
     "UI/GraphModel.lua",
     "UI/FriendsModel.lua",
     "Debug/FakeData.lua",

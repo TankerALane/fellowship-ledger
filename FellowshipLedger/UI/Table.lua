@@ -8,6 +8,8 @@
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
 --     tooltip = fn() -> title, lines (shown on hover),
 --     align = "right" (group/detail text next to its action button) }
+-- or a "grid" line (UI/DetailModel.lua): text placed at fractions of the width,
+-- with optional small buttons, rules and a shaded box spanning several lines.
 
 local _, ns = ...
 local W = ns.Widgets
@@ -20,6 +22,7 @@ local GAP = 4
 local ACTION_W = 80
 local ARROW = "Interface\\AddOns\\FellowshipLedger\\media\\sort-arrow"
 local ARROW_SIZE = 10
+local SEG_BTN_W = 96
 local Obj = {}
 Obj.__index = Obj
 
@@ -112,6 +115,16 @@ function Obj:Line(i)
     w.full:SetPoint("LEFT", 0, 0)
     w.full:SetPoint("RIGHT", -(ACTION_W + GAP), 0)
     w.full:SetWordWrap(false)
+    w.segs, w.segButtons, w.rules = {}, {}, {}
+    -- The shaded box of a "card" (UI/DetailModel.lua): fill plus edges.
+    w.box = w:CreateTexture(nil, "BACKGROUND", nil, 1)
+    W.Fill(w.box, "panel")
+    w.boxEdges = {}
+    for _, name in ipairs({ "top", "bottom", "left", "right" }) do
+        local t = w:CreateTexture(nil, "BORDER")
+        W.Fill(t, "rule", 0.6)
+        w.boxEdges[name] = t
+    end
     w.action = W.Button(w, "", ACTION_W, ROW_H - 2)
     w.action:SetPoint("RIGHT", 0, 0)
     w:SetScript("OnClick", function(btn)
@@ -166,6 +179,94 @@ function Obj:ShowSort(h, label, sorted, desc, width)
     arrow:Show()
 end
 
+-- Width a line has to lay out in (falls back when the client has no size yet).
+function Obj:LineWidth()
+    local width = self.fittedFor or 800
+    return math.max(100, width - 8)
+end
+
+local function hideGrid(w)
+    for _, fs in ipairs(w.segs) do fs:Hide() end
+    for _, b in ipairs(w.segButtons) do b:Hide() end
+    for _, r in ipairs(w.rules) do r:Hide() end
+    w.box:Hide()
+    for _, t in pairs(w.boxEdges) do t:Hide() end
+end
+
+function Obj:RenderGrid(w, line)
+    local inset = line.inset or 0
+    local span = self:LineWidth() - inset - (line.action and (ACTION_W + GAP) or 0)
+    local nText, nBtn = 0, 0
+    for _, sg in ipairs(line.segments or {}) do
+        local x, width = inset + span * sg.x, span * sg.w
+        if sg.button then
+            nBtn = nBtn + 1
+            local b = w.segButtons[nBtn]
+            if not b then
+                b = W.Button(w, "", SEG_BTN_W, ROW_H - 4)
+                w.segButtons[nBtn] = b
+            end
+            b.text:SetText(sg.button.label)
+            b:SetScript("OnClick", sg.button.onClick)
+            b:ClearAllPoints()
+            b:SetPoint("RIGHT", w, "LEFT", x + width, 0)
+            b:Show()
+        else
+            nText = nText + 1
+            local fs = w.segs[nText]
+            if not fs then
+                fs = W.Text(w, "body", "text")
+                fs:SetWordWrap(false)
+                w.segs[nText] = fs
+            end
+            W.SetTextStyle(fs, sg.font or "body", sg.role or "text")
+            fs:ClearAllPoints()
+            fs:SetPoint("LEFT", x, 0)
+            fs:SetWidth(math.max(1, width - 2))
+            fs:SetJustifyH(sg.align or "LEFT")
+            fs:SetText(sg.text or "")
+            fs:Show()
+        end
+    end
+    for i = nText + 1, #w.segs do w.segs[i]:Hide() end
+    for i = nBtn + 1, #w.segButtons do w.segButtons[i]:Hide() end
+    local nRule = 0
+    for _, r in ipairs(line.rules or {}) do
+        nRule = nRule + 1
+        local t = w.rules[nRule]
+        if not t then
+            t = w:CreateTexture(nil, "ARTWORK")
+            t:SetHeight(1)
+            W.Fill(t, "rule", 0.5)
+            w.rules[nRule] = t
+        end
+        t:ClearAllPoints()
+        t:SetPoint("BOTTOMLEFT", w, "BOTTOMLEFT", inset + span * r[1], 1)
+        t:SetWidth(math.max(1, span * r[2] - 4))
+        t:Show()
+    end
+    for i = nRule + 1, #w.rules do w.rules[i]:Hide() end
+    -- The card box: a fill from (inset - 6) to the right edge, with edges by position.
+    local box = line.box
+    w.box:SetShown(box ~= nil)
+    for _, t in pairs(w.boxEdges) do t:Hide() end
+    if box then
+        local left = inset - 6
+        w.box:ClearAllPoints()
+        w.box:SetPoint("TOPLEFT", left, 0)
+        w.box:SetPoint("BOTTOMRIGHT", 0, 0)
+        local e = w.boxEdges
+        e.left:ClearAllPoints(); e.left:SetPoint("TOPLEFT", left, 0); e.left:SetPoint("BOTTOMLEFT", left, 0); e.left:SetWidth(1); e.left:Show()
+        e.right:ClearAllPoints(); e.right:SetPoint("TOPRIGHT", 0, 0); e.right:SetPoint("BOTTOMRIGHT", 0, 0); e.right:SetWidth(1); e.right:Show()
+        if box == "top" or box == "single" then
+            e.top:ClearAllPoints(); e.top:SetPoint("TOPLEFT", left, 0); e.top:SetPoint("TOPRIGHT", 0, 0); e.top:SetHeight(1); e.top:Show()
+        end
+        if box == "bottom" or box == "single" then
+            e.bottom:ClearAllPoints(); e.bottom:SetPoint("BOTTOMLEFT", left, 0); e.bottom:SetPoint("BOTTOMRIGHT", 0, 0); e.bottom:SetHeight(1); e.bottom:Show()
+        end
+    end
+end
+
 function Obj:Render()
     self:Fit()
     local field, desc = nil, nil
@@ -184,8 +285,13 @@ function Obj:Render()
             local w = self:Line(i)
             w.line = line
             w:Show()
-            w.alt:SetShown(line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0)
-            if line.cells then
+            w.alt:SetShown(line.kind ~= "grid" and (line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0))
+            if line.kind == "grid" then
+                for c = 1, #self.columns do w.cells[c]:Hide() end
+                w.full:Hide()
+                self:RenderGrid(w, line)
+            elseif line.cells then
+                hideGrid(w)
                 w.full:Hide()
                 for c = 1, #self.columns do
                     local shown = self.widths[c] ~= nil
@@ -196,6 +302,7 @@ function Obj:Render()
                     w.cells[c]:SetShown(shown)
                 end
             else
+                hideGrid(w)
                 for c = 1, #self.columns do w.cells[c]:Hide() end
                 w.full:SetText((line.indent and "    " or "") .. (line.text or ""))
                 w.full:SetJustifyH(line.align == "right" and "RIGHT" or "LEFT")

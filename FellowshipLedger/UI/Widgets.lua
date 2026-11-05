@@ -11,6 +11,7 @@ ns.Widgets = W
 
 local fills = {}  -- { region, role, alpha }
 local texts = {}  -- { fontString, fontRole, colorRole }
+local textEntry = {} -- fontString -> its entry in texts
 
 -- Font roles -> Blizzard font objects, per font-size setting.
 local FONTS = {
@@ -95,7 +96,9 @@ end
 -- fontRole: "small" | "body" | "large" | "heading"; colorRole: a Palette role.
 function W.Text(parent, fontRole, colorRole)
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    texts[#texts + 1] = { fs, fontRole or "body", colorRole or "text" }
+    local entry = { fs, fontRole or "body", colorRole or "text" }
+    texts[#texts + 1] = entry
+    textEntry[fs] = entry
     style(fs, fontRole or "body", colorRole or "text")
     fs:SetJustifyH("LEFT")
     return fs
@@ -103,11 +106,20 @@ end
 
 -- Change a text's color role later (for example to show a disabled toggle).
 function W.SetTextRole(fs, colorRole)
-    for _, t in ipairs(texts) do
-        if t[1] == fs then t[3] = colorRole end
-    end
+    local t = textEntry[fs]
+    if t then t[3] = colorRole end
     local c = W.Color(colorRole)
     fs:SetTextColor(c[1], c[2], c[3], c[4])
+end
+
+-- Change a font string's font role and color role (kept on skin or size changes).
+function W.SetTextStyle(fs, fontRole, colorRole)
+    local t = textEntry[fs]
+    if t then
+        if t[2] == fontRole and t[3] == colorRole then return end
+        t[2], t[3] = fontRole, colorRole
+    end
+    style(fs, fontRole, colorRole)
 end
 
 -- A flat text button. b:SetSelected(on) draws a stronger fill.

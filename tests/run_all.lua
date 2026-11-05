@@ -29,6 +29,7 @@ local FILES = {
     "test_codec",
     "test_sync",
     "test_phase5",
+    "test_details",
 }
 
 for _, name in ipairs(FILES) do

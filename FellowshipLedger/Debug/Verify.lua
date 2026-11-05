@@ -315,6 +315,19 @@ custom["x:death.recap"] = function()
         table.concat(keysOf(e), ","), secret and "SECRET" or "readable")
 end
 
+-- The newest death on this character: was the killer's level kept? (D-075)
+custom["x:death.killerlevel"] = function()
+    if Compat.disabled and Compat.disabled.killerLevel then return "FAIL", "turned off: " .. tostring(Compat.disabled.killerLevel) end
+    local log = ns.Store and ns.Store.char and ns.Store.char.deathLog
+    local d = log and log[#log]
+    if not d then return "INFO", "no deaths on this character yet; target a monster, let it kill you, then run /fl verify" end
+    if type(d.killerLevel) == "number" then
+        return "PASS", string.format("newest death: killer %s, level %d", tostring(d.killer), d.killerLevel)
+    end
+    if not d.killer then return "INFO", "newest death has no killer (" .. tostring(d.killerStatus) .. "), so no level" end
+    return "INFO", "newest death: killer " .. tostring(d.killer) .. " was not your target, so no level; try again with it targeted"
+end
+
 local function runCheck(check)
     if check.kind == "api" then
         local value = Compat.Resolve(check.id)

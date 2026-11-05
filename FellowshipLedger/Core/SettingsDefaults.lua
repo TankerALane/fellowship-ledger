@@ -11,6 +11,7 @@ SettingsDefaults.VALUES = {
     scale = 1.0,              -- window scale, 0.7 to 1.5
     fontSize = "normal",      -- "small" | "normal" | "large"
     classColors = true,       -- names in class colors (made readable on every skin)
+    detailsLayout = "card",   -- an opened character on the Me tab: "card" (summary card) or "list" (sections)
     colorblind = true,        -- colorblind-safe graph palette (on by default: it costs nothing)
     levelToast = true,
     sessionSummary = true,    -- show last session's summary at login

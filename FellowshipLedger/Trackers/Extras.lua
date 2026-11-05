@@ -41,6 +41,17 @@ function Deaths.FindKiller()
     return { source = source, spell = spell, amount = T.Plain(blow.amount) }, "ok"
 end
 
+-- Name and level of your target, or nil (no target, or the values are secret).
+function Deaths.TargetNow()
+    local okE, exists = ns.Compat.Call("killerLevel", "UnitExists", "target")
+    if not okE or not T.Plain(exists) then return nil end
+    local okN, name = ns.Compat.Call("killerLevel", "UnitName", "target")
+    local okL, level = ns.Compat.Call("killerLevel", "UnitLevel", "target")
+    name, level = okN and T.Plain(name) or nil, okL and T.Plain(level) or nil
+    if type(name) ~= "string" or type(level) ~= "number" then return nil end
+    return name, level
+end
+
 Deaths.events.PLAYER_DEAD = function()
     if T.Dedupe("death", 5) then return end
     local char = Store.char
@@ -50,12 +61,16 @@ Deaths.events.PLAYER_DEAD = function()
     char.deathLog[#char.deathLog + 1] = entry
     Days.PruneList(char.deathLog, "at", Store.Now(), Character.LIST_KEEP_SECONDS)
     Store.Count("deaths")
+    -- The recap has no level, so note your target now; if it turns out to be the
+    -- killer, keep its level (D-075). -1 means skull level.
+    local targetName, targetLevel = Deaths.TargetNow()
     -- The recap is built a moment after the death.
     ns.Events.After(1, function()
         local killer, status = Deaths.FindKiller()
         entry.killerStatus = status
         if killer then
             entry.killer, entry.killerSpell = killer.source, killer.spell
+            if targetName and targetName == killer.source then entry.killerLevel = targetLevel end
         end
     end)
 end

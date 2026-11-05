@@ -1,5 +1,5 @@
 -- UI/Palette.lua
--- PURE: no WoW globals. Color roles for the two skins and the graph palettes.
+-- PURE: no WoW globals. Color roles for the skins, class and item quality colors, and the graph palettes.
 -- Widgets ask for a role ("bg", "text", ...) and the skin decides the color, so
 -- switching skins recolors everything in place.
 
@@ -96,6 +96,21 @@ end
 function Palette.ClassColor(classToken, skin)
     local hex = type(classToken) == "string" and Palette.CLASS[classToken]
     if not hex then return nil end
+    return Palette.Readable(hex, skin)
+end
+
+-- Item quality colors (our own copy of the usual values), made readable the same way.
+Palette.QUALITY = { [2] = "1EFF00", [3] = "0070DD", [4] = "A335EE", [5] = "FF8000", [6] = "E6CC80", [7] = "00CCFF" }
+
+function Palette.QualityColor(quality, skin)
+    local hex = Palette.QUALITY[quality]
+    if not hex then return nil end
+    return Palette.Readable(hex, skin)
+end
+
+-- A hex color moved toward black (light skins) or white (dark skins) until it
+-- reaches MIN_CONTRAST against the skin's background.
+function Palette.Readable(hex, skin)
     local c = rgb(hex)
     local bg = Palette.Color(skin, "bg")
     local target = Palette.Luminance(bg) > 0.4 and 0 or 1

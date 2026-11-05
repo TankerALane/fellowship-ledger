@@ -180,6 +180,7 @@ ns.VerifyChecks = {
     { id = "C_DeathRecap.HasRecapEvents", kind = "api", area = "Deaths", why = "is a death recap available" },
     { id = "GetDeathRecapLink", kind = "api", area = "Deaths", why = "death recap fallback" },
     { id = "x:death.recap", kind = "custom", area = "Deaths", why = "the newest death recap can be found and its killing blow (source, spell) is readable, not secret", test = "die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1))" },
+    { id = "x:death.killerlevel", kind = "custom", area = "Deaths", why = "killer's level (1.0.1): your target's name and level are read when you die and kept if the target was the killer", test = "target a monster, let it kill you, then /fl verify" },
 
     -- Extras: reputation
     { id = "C_Reputation.GetNumFactions", kind = "api", area = "Reputation", why = "walk factions" },

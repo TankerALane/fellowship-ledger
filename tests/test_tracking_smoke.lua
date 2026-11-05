@@ -314,8 +314,8 @@ H.test("Me tab model sums ranges per character", function()
     H.eq(rows[1].quests, 1)
     rows = ns.MeModel.Build(env.FellowshipLedgerDB.characters, "all", ns.Store.Today(), env.time, env.date)
     H.eq(rows[1].quests, 6)
-    local lines = ns.MeModel.LevelLines({ levels = { [3] = { from = 2, to = 3, active = 60, total = 90, zone = "Elwynn" } } })
-    H.eq(lines[1], "2 -> 3: 1m 00s (total 1m 30s)  Elwynn")
+    local lv = ns.DetailModel.Data({ levels = { [3] = { from = 2, to = 3, active = 60, total = 90, zone = "Elwynn" } } }, ns.L, os.date).levels.rows[1]
+    H.eq(lv.level, "2 -> 3"); H.eq(lv.active, "1m 00s"); H.eq(lv.played, "1m 30s"); H.eq(lv.zone, "Elwynn")
 end)
 
 H.test("retail findings: follower companions, difficulty 0 on entry, discoveries", function()
