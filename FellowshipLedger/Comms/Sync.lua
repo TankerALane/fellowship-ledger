@@ -52,8 +52,11 @@ function Sync.SendHello(peer, wantReply, force)
     local t = now()
     if not force and Sync.lastHello[peer.id] and t - Sync.lastHello[peer.id] < Sync.HELLO_GAP then return end
     Sync.lastHello[peer.id] = t
+    local removed = {}
+    for key in pairs(ns.db.removed or {}) do removed[#removed + 1] = key end
+    table.sort(removed)
     local body = Codec.EncodeHello({ version = ns.VERSION, nameOptIn = ns.db.settings.shareNameInDungeons,
-        wantReply = wantReply, characters = Sync.MyCharacters() })
+        wantReply = wantReply, characters = Sync.MyCharacters(), removed = removed })
     Transport.Send(destFor(peer), "H", body)
 end
 

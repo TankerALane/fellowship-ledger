@@ -335,3 +335,21 @@ H.test("Friends tab: says who is online before anyone shares, then rows carry to
     H.eq(title, "Bob")
     H.ok(lines[1]:find("^Level 12"), lines[1])
 end)
+
+H.test("a character removed by a friend disappears from my Friends tab at the next sync", function()
+    local A, nsA = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B, nsB = client("Bob", 2, "Alice#1", 1, "Alice")
+    giveData(B, 3)
+    local alt = nsB.Character.Ensure({ name = "Bobalt", realm = "Realm", level = 9, class = "MAGE" }, NOW)
+    alt.days[os.date("%Y-%m-%d", NOW)] = { quests = 1 }
+    nsB.db.characters["Bobalt-Realm"] = alt
+    network({ A, B }, 60)
+    local f = nsA.db.friends["bn:Bob#1"]
+    H.ok(f.characters["Bobalt-Realm"] and f.characters["Bob-Realm"], "both of Bob's characters arrived")
+    nsB.MeTab.Remove("Bobalt-Realm")
+    network({ A, B }, 60)
+    H.eq(f.characters["Bobalt-Realm"], nil, "the removed character is gone")
+    H.ok(f.characters["Bob-Realm"], "the other one stays")
+    local hello = nsA.Codec.DecodeHello(nsA.Codec.EncodeHello({ version = "1.0.1", characters = {}, removed = { "X-Y", "A,b~c" } }))
+    H.eq(hello.removed[2], "A,b~c", "removed keys are escaped")
+end)

@@ -19,7 +19,8 @@ SettingsDefaults.VALUES = {
     shareNameInDungeons = false, -- opt-in: party members who also run the ledger may see your name
     welcomeSeen = false,
     welcomeEveryLogin = true, -- show the welcome panel after every loading screen
-    rememberTab = false,      -- open the window on the last tab used (default: always Me)
+    rememberTab = false,
+    askStale = true,          -- on a new character, offer to remove characters not played for 30 days      -- open the window on the last tab used (default: always Me)
     debug = false,
 }
 

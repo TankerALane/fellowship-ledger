@@ -54,6 +54,10 @@ local function characterLines()
             for _, text in ipairs(MeModel.RecentLines(chars[key], L, date)) do
                 lines[#lines + 1] = { kind = "detail", text = text, indent = true }
             end
+            if not ns.Data.IsFake() and key ~= ns.Store.key then
+                lines[#lines + 1] = { kind = "detail", indent = true, text = L.REMOVE_LINE,
+                    action = { label = L.REMOVE, onClick = function() Me.ConfirmRemove(key, row.name) end } }
+            end
         end
     end
     return lines, #rows
@@ -92,6 +96,24 @@ local function chainLines()
     end
     if #suggestions == 0 then lines[#lines + 1] = { kind = "detail", indent = true, text = L.CHAIN_FRIENDS_NONE } end
     return lines
+end
+
+-- Remove one of my characters (never the one I am on), after a confirm. Friends
+-- are told at the next hello, which is sent now.
+function Me.ConfirmRemove(key, name)
+    W.Confirm(string.format(L.REMOVE_CONFIRM, name or key), L.REMOVE_YES, L.REMOVE_NO, function()
+        Me.Remove(key)
+    end)
+end
+
+function Me.Remove(key)
+    if key == ns.Store.key then return end
+    if ns.Character.Remove(ns.db, key, time()) then
+        state.expanded[key] = nil
+        ns.Log.Info(L.REMOVED_CHARACTER, key)
+        if ns.Sync and ns.tracking then pcall(ns.Sync.SyncAll, true) end
+    end
+    ns.MainWindow.Refresh()
 end
 
 function Me.Refresh()

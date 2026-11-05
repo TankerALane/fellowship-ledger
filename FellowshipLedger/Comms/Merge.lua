@@ -49,6 +49,10 @@ function Merge.Hello(friend, hello, now)
     friend.version = hello.version
     friend.nameOptIn = hello.nameOptIn
     friend.helloAt = now
+    -- Characters the friend removed from their own ledger.
+    for _, key in ipairs(hello.removed or {}) do
+        if friend.characters then friend.characters[key] = nil end
+    end
     friend.announced = {}
     for _, c in ipairs(hello.characters) do
         friend.announced[c.key] = { class = c.class, level = c.level, mask = c.mask, lastSeen = c.lastSeen }

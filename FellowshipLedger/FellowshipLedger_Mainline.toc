@@ -75,6 +75,7 @@ UI\SettingsTab.lua
 UI\Toast.lua
 UI\MinimapButton.lua
 UI\Welcome.lua
+UI\StalePrompt.lua
 UI\OptionsPanel.lua
 Debug\EventLog.lua
 Debug\SelfTest.lua

@@ -3,7 +3,17 @@
 ## Unreleased
 
 ### Added
-- Faction column (Horde or Alliance) on the Me and Friends tables, next to Lvl. On the Me tab, click its header to sort by faction.
+- Faction column (Horde or Alliance) on the Me and Friends tables, next to Lvl.
+- Class-colored character names. On the parchment look, colors are darkened just enough to read (priest white shows as grey). Turn them off in Settings.
+- Update reminder: when a friend runs a newer Fellowship Ledger, one chat line per session says so. Friends on an older version are marked on the Friends tab.
+- The Friends table sorts by any column; each friend's characters stay together under them.
+- Hover a friend's character for level, race and class, faction, when they last played, when it was shared, and their addon version.
+- Remove characters you no longer play: a Remove button in a character's expanded row on the Me tab, and on a new character a prompt listing characters you haven't played for 30 days. Friends drop removed characters at the next sync (friends on 1.0.1 or later).
+
+### Changed
+- Sort direction is shown with a small arrow instead of "v" and "^".
+- With no friends' ledgers yet, the Friends tab says how many friends are online on this version of WoW.
+- Release workflows run on Ubuntu 24.04.
 
 ## 1.0.0 - 2026-11-04
 

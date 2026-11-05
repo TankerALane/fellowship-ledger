@@ -100,7 +100,10 @@ function handlers.PLAYER_LOGIN()
     step("sharing", ns.Sync.Start)
     step("minimap button", ns.MinimapButton.Update)
     step("options page", ns.OptionsPanel.Register)
-    ns.welcomeStep = function() step("welcome panel", ns.Welcome.MaybeShow) end
+    ns.welcomeStep = function()
+        step("welcome panel", ns.Welcome.MaybeShow)
+        ns.Events.After(4, function() step("new character check", ns.StalePrompt.MaybeShow) end)
+    end
     if not ns.pewRegistered then ns.Events.After(3, ns.welcomeStep) end
     if ns.Store.newSession and ns.Store.previousSession and ns.db.settings.sessionSummary then
         local title, lines = ns.Summary.Session(ns.Store.previousSession, L, date)

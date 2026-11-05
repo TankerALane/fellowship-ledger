@@ -81,6 +81,10 @@ function Welcome.Show()
     ns.Log.Debug("welcome panel shown")
 end
 
+function Welcome.IsShown()
+    return frame ~= nil and frame:IsShown()
+end
+
 function Welcome.MaybeShow()
     if ns.db.settings.welcomeEveryLogin ~= false then Welcome.Show() end
 end

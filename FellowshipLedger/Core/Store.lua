@@ -78,6 +78,10 @@ function Store.Login()
     local backup = FellowshipLedgerBackupDB
     Store.backupState = BackupLogic.Assess(db.characters[Store.key], backup, Store.key)
 
+    -- A character the ledger has never seen (and with no backup to restore): the
+    -- new-character prompt may offer to remove characters not played for a while.
+    Store.isNewCharacter = db.characters[Store.key] == nil and Store.backupState == "nobackup"
+    if db.removed then Character.PruneRemoved(db.removed, t, Store.key) end
     local char = Character.Ensure(db.characters[Store.key] or {}, t)
     db.characters[Store.key] = char
     char.name, char.realm = name, realm

@@ -33,9 +33,12 @@ Payloads are records separated by `~`, fields by `,`. Any `% | , ; ~ = newline` 
 ```
 h,<addonVersion>,<nameOptIn 0|1>,<wantReply 0|1>
 c,<Name-Realm>,<CLASS>,<level>,<shareMask>,<lastSeen>      (one per sharing character)
+x,<Name-Realm>                                             (1.0.1: one per character I removed)
 ```
 
 `shareMask` has one `0` or `1` per tracker, in `Core/TrackerList.lua` order.
+
+`x` lists characters removed from the sender's ledger in the last 90 days; the receiver deletes them from that friend's record (D-071). Receivers older than 1.0.1 skip record types they do not know, so this needs no protocol version change. The sender's version in `h` also drives the update notice (D-069).
 
 ### REQUEST (`Q`)
 

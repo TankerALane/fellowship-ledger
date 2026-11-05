@@ -25,8 +25,8 @@ Every tracker has its own **Track** and **Share** switch for each character, and
 
 Type **`/fl`**, or click the minimap button.
 
-- **Me:** your characters for Today, 7 days, 30 days or All. Click a character to see its time per level. The **Quest chains** view shows where you are in each chain in your quest log.
-- **Friends:** friends who run the ledger, grouped under their Battle.net name. **This week** gives a summary, and **Sync now** shares right away.
+- **Me:** your characters for Today, 7 days, 30 days or All, with faction and class-colored names. Click a column to sort, and click a character to see its time per level, recent deaths and loot, and a **Remove** button for characters you no longer play. The **Quest chains** view shows where you are in each chain in your quest log.
+- **Friends:** friends who run the ledger, grouped under their Battle.net name, sortable by any column; hover a character for details. **This week** gives a summary, and **Sync now** shares right away. If a friend runs a newer version, you get one reminder to update.
 - **Graphs:** levels per session, time per level, quests per day, gold per session and XP per hour, with tooltips. **Compare** pairs any two characters, yours or a friend's.
 - **Settings:** tracking and sharing switches, the Ledger or Plain look, text size, scale, colorblind-safe colors (on by default), notices, the block list and recommended addons.
 

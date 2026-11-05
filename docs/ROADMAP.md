@@ -72,15 +72,15 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] CurseForge project created by Austin (ID 1784128), ID in both TOCs
 - [x] 0.1.0 uploaded to CurseForge by hand; `CF_API_KEY` secret added and checked (token accepted; 12.1.5 and Forever 1.60.1 both listed)
 
-## 1.0.1 (in progress)
+## 1.0.1 (built; waiting on Austin's in-game check)
 - [x] Faction column on the Me and Friends tables
-- [ ] Update notice from friends' versions, and an "old version" mark on the Friends tab
-- [ ] Class-colored names (Settings toggle, on by default; readable on the parchment skin)
-- [ ] Sortable Friends table, characters kept under their friend
-- [ ] Arrow images for the sort direction
-- [ ] Tooltip on a friend's character row
-- [ ] Friends tab empty state that says how many friends are online on this version
-- [ ] Remove characters you no longer play: a Remove button, a prompt on a new character, and removal on friends' copies
+- [x] Update notice from friends' versions, and an "old version" mark on the Friends tab
+- [x] Class-colored names (Settings toggle, on by default; readable on the parchment skin)
+- [x] Sortable Friends table, characters kept under their friend
+- [x] Arrow images for the sort direction
+- [x] Tooltip on a friend's character row
+- [x] Friends tab empty state that says how many friends are online on this version
+- [x] Remove characters you no longer play: a Remove button, a prompt on a new character, and removal on friends' copies
 - [x] Roadmap cleanup; release runner pinned to Ubuntu 24.04
 
 ## Still open (needs a second player or a retail session)

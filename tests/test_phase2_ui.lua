@@ -310,3 +310,70 @@ H.test("resizing defers redraws until the corner is let go", function()
     H.eq(calls, 1)
     ns.MeTab.Refresh = original
 end)
+
+H.test("a new character offers to remove characters not played for 30 days; Done keeps the rest", function()
+    local now = os.time({ year = 2026, month = 11, day = 4, hour = 12 })
+    local day = 86400
+    -- The welcome panel is off here; with it on, the prompt waits for it to close.
+    local db = { settings = { welcomeEveryLogin = false }, characters = {
+        ["Gone-TestRealm"] = { name = "Gone", level = 20, class = "PRIEST", lastSeen = now - 90 * day },
+        ["Old-TestRealm"] = { name = "Old", level = 10, class = "ROGUE", lastSeen = now - 40 * day },
+        ["Recent-TestRealm"] = { name = "Recent", level = 30, lastSeen = now - 5 * day },
+        ["Kept-TestRealm"] = { name = "Kept", level = 5, lastSeen = now - 60 * day, keep = true },
+    } }
+    local env, ns = boot(RETAIL, db)
+    local f
+    for _, frame in pairs(env.__state.frames) do if frame._name == "FellowshipLedgerStalePrompt" then f = frame end end
+    H.ok(f and f:IsShown(), "prompt shown on the new character")
+    H.ok(f.rows[1]:IsShown() and f.rows[2]:IsShown() and not f.rows[3]:IsShown(), "two stale characters listed")
+    H.ok(f.rows[1].text:GetText():find("Gone", 1, true), "longest first: " .. f.rows[1].text:GetText())
+    f.rows[1].button:GetScript("OnClick")()
+    H.eq(ns.db.characters["Gone-TestRealm"], nil, "removed")
+    H.ok(ns.db.removed["Gone-TestRealm"], "remembered for friends")
+    f.done:GetScript("OnClick")()
+    H.ok(not f:IsShown())
+    H.eq(ns.db.characters["Old-TestRealm"].keep, true, "the rest are kept and not asked about again")
+    H.eq(#ns.Character.Stale(ns.db.characters, ns.Store.key, now), 0)
+end)
+
+H.test("no prompt on a character the ledger already knows, or with the setting off", function()
+    local now = os.time({ year = 2026, month = 11, day = 4, hour = 12 })
+    local db = { characters = {
+        ["Tester-TestRealm"] = { name = "Tester", level = 12, lastSeen = now - 100 },
+        ["Old-TestRealm"] = { name = "Old", level = 10, lastSeen = now - 40 * 86400 },
+    } }
+    local env = boot(RETAIL, db)
+    for _, frame in pairs(env.__state.frames) do
+        H.ok(not (frame._name == "FellowshipLedgerStalePrompt" and frame:IsShown()), "not shown for a known character")
+    end
+    local env2 = boot(RETAIL, { settings = { askStale = false }, characters = {
+        ["Old-TestRealm"] = { name = "Old", level = 10, lastSeen = now - 40 * 86400 } } })
+    for _, frame in pairs(env2.__state.frames) do
+        H.ok(not (frame._name == "FellowshipLedgerStalePrompt" and frame:IsShown()), "not shown when turned off")
+    end
+end)
+
+H.test("Remove on the Me tab: confirm first, never the current character", function()
+    local now = os.time({ year = 2026, month = 11, day = 4, hour = 12 })
+    local env, ns = boot(RETAIL, { settings = { askStale = false }, characters = {
+        ["Alt-TestRealm"] = { name = "Alt", level = 3, lastSeen = now - 86400 } } })
+    ns.MeTab.Remove(ns.Store.key)
+    H.ok(ns.db.characters[ns.Store.key], "the character you are on is never removed")
+    ns.MeTab.ConfirmRemove("Alt-TestRealm", "Alt")
+    H.ok(ns.db.characters["Alt-TestRealm"], "nothing removed before the confirm")
+    local dialog = env.FellowshipLedgerDialog
+    for _, frame in pairs(env.__state.frames) do if frame._name == "FellowshipLedgerDialog" then dialog = frame end end
+    dialog.yes:GetScript("OnClick")()
+    H.eq(ns.db.characters["Alt-TestRealm"], nil)
+    H.ok(Mock.chatContains(env, "Removed Alt-TestRealm"))
+end)
+
+H.test("the new-character prompt waits for the welcome panel to close", function()
+    local now = os.time({ year = 2026, month = 11, day = 4, hour = 12 })
+    local env, ns = boot(RETAIL, { characters = { ["Old-TestRealm"] = { name = "Old", level = 10, lastSeen = now - 40 * 86400 } } })
+    H.ok(ns.Welcome.IsShown(), "welcome panel up")
+    H.ok(not ns.StalePrompt.IsShown(), "prompt waits")
+    for _, frame in pairs(env.__state.frames) do if frame._name == "FellowshipLedgerWelcome" then frame:Hide() end end
+    Mock.runTimers(env)
+    H.ok(ns.StalePrompt.IsShown(), "prompt after the welcome panel closes")
+end)

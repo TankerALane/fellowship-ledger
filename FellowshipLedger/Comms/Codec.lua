@@ -114,11 +114,14 @@ function Codec.EncodeHello(info)
         recs[#recs + 1] = table.concat({ "c", Codec.Escape(c.key), Codec.Escape(c.class), tostring(c.level or 0),
             c.mask, tostring(c.lastSeen or 0) }, ",")
     end
+    -- Characters I removed from my ledger: friends drop them (1.0.1; older
+    -- versions ignore record types they do not know).
+    for _, key in ipairs(info.removed or {}) do recs[#recs + 1] = "x," .. Codec.Escape(key) end
     return table.concat(recs, "~")
 end
 
 function Codec.DecodeHello(body)
-    local out = { characters = {} }
+    local out = { characters = {}, removed = {} }
     for _, rec in ipairs(split(body, "~")) do
         local f = split(rec, ",")
         if f[1] == "h" then
@@ -126,6 +129,8 @@ function Codec.DecodeHello(body)
         elseif f[1] == "c" and f[2] and f[2] ~= "" then
             out.characters[#out.characters + 1] = { key = Codec.Unescape(f[2]), class = Codec.Unescape(f[3]),
                 level = tonumber(f[4]) or 0, mask = f[5] or "", lastSeen = tonumber(f[6]) or 0 }
+        elseif f[1] == "x" and f[2] and f[2] ~= "" then
+            out.removed[#out.removed + 1] = Codec.Unescape(f[2])
         end
     end
     return out
