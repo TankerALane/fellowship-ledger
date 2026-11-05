@@ -30,6 +30,7 @@ ns.Locale.Set({
     ONLINE = "online",
     OFFLINE = "offline",
     FRIEND_HEADER = "%s  (%s, %d characters, updated %s)",
+    FRIEND_HEADER_ONE = "%s  (%s, %d character, updated %s)",
     BLOCK = "Block",
     UNBLOCK = "Unblock",
     BLOCKED_HIDDEN = "%d blocked friend(s) hidden. Manage the block list in Settings.",
