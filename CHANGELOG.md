@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.1 - 2026-11-05
 
 ### Added
 - Faction column (Horde or Alliance) on the Me and Friends tables, next to Lvl.

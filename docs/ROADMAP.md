@@ -72,7 +72,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] CurseForge project created by Austin (ID 1784128), ID in both TOCs
 - [x] 0.1.0 uploaded to CurseForge by hand; `CF_API_KEY` secret added and checked (token accepted; 12.1.5 and Forever 1.60.1 both listed)
 
-## 1.0.1 (built; waiting on Austin's in-game check)
+## 1.0.1 (released 2026-11-05)
 - [x] Faction column on the Me and Friends tables
 - [x] Update notice from friends' versions, and an "old version" mark on the Friends tab
 - [x] Class-colored names (Settings toggle, on by default; readable on the parchment skin)
