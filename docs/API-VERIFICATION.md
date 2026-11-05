@@ -294,8 +294,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | INFO | ? |
-| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | ? | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
+| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | PASS | ? |
 
 ### Reputation
 
