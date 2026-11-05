@@ -264,6 +264,22 @@ H.test("tables fit the window; the Block button has its own space", function()
     H.ok(used <= 450 - 80, "space kept for the Block button: " .. used)
 end)
 
+H.test("the sorted column shows an arrow image, not a letter", function()
+    local env, ns = boot()
+    ns.MainWindow.Open("me")
+    local panel = ns.MainWindow.tabs.me.panel
+    local sort = { field = "level", desc = true }
+    local tbl = ns.Table.New(panel, { { label = "Name", width = 100, field = "name" }, { label = "Lvl", width = 40, field = "level" } },
+        { top = 30, sortState = function() return sort.field, sort.desc end })
+    tbl:SetLines({})
+    H.eq(tbl.headers[2].text:GetText(), "Lvl")
+    H.ok(tbl.headers[2].arrow:IsShown(), "arrow on the sorted column")
+    H.ok(not tbl.headers[1].arrow:IsShown(), "no arrow elsewhere")
+    sort.field = "name"
+    tbl:SetLines({})
+    H.ok(tbl.headers[1].arrow:IsShown() and not tbl.headers[2].arrow:IsShown(), "arrow follows the sort")
+end)
+
 H.test("the window opens on Me unless 'open on the last tab' is on", function()
     local env, ns = boot()
     ns.MainWindow.Open("graphs")

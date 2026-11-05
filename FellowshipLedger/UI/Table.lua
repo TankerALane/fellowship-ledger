@@ -16,6 +16,8 @@ ns.Table = Table
 local ROW_H = 20
 local GAP = 4
 local ACTION_W = 80
+local ARROW = "Interface\\AddOns\\FellowshipLedger\\media\\sort-arrow"
+local ARROW_SIZE = 10
 local Obj = {}
 Obj.__index = Obj
 
@@ -30,6 +32,11 @@ function Table.New(parent, columns, opts)
         h.text = W.Text(h, "small", "muted")
         h.text:SetPoint("LEFT")
         h.text:SetWordWrap(false)
+        -- Sort direction: our arrow image (points down; flipped for up), tinted like the label.
+        h.arrow = h:CreateTexture(nil, "OVERLAY")
+        h.arrow:SetSize(ARROW_SIZE, ARROW_SIZE)
+        h.arrow:SetTexture(ARROW)
+        h.arrow:Hide()
         h:SetScript("OnClick", function()
             if self.opts.onSort and col.field then self.opts.onSort(col.field) end
         end)
@@ -123,14 +130,39 @@ function Obj:Visible()
     return math.max(1, math.floor((h - (self.opts.top or 0) - ROW_H - (self.opts.bottom or 0)) / ROW_H) - 1)
 end
 
+-- Header label plus the sort arrow beside it. Falls back to " v" / " ^" text if
+-- this client's textures cannot be flipped or tinted.
+function Obj:ShowSort(h, label, sorted, desc, width)
+    local arrow = h.arrow
+    local canDraw = type(arrow.SetTexCoord) == "function" and type(arrow.SetVertexColor) == "function"
+    if not sorted then
+        h.text:SetText(label)
+        arrow:Hide()
+        return
+    end
+    if not canDraw then
+        h.text:SetText(label .. (desc and " v" or " ^"))
+        arrow:Hide()
+        return
+    end
+    h.text:SetText(label)
+    local textW = type(h.text.GetStringWidth) == "function" and h.text:GetStringWidth() or nil
+    if type(textW) ~= "number" then textW = 0 end
+    local x = math.max(0, math.min(textW + 2, (width or textW + 12) - ARROW_SIZE))
+    arrow:ClearAllPoints()
+    arrow:SetPoint("LEFT", h, "LEFT", x, 0)
+    if desc then arrow:SetTexCoord(0, 1, 0, 1) else arrow:SetTexCoord(0, 1, 1, 0) end
+    local m = W.Color("muted")
+    arrow:SetVertexColor(m[1], m[2], m[3], 1)
+    arrow:Show()
+end
+
 function Obj:Render()
     self:Fit()
     local field, desc = nil, nil
     if self.opts.sortState then field, desc = self.opts.sortState() end
     for c, col in ipairs(self.columns) do
-        local label = col.label
-        if field and col.field == field then label = label .. (desc and " v" or " ^") end
-        self.headers[c].text:SetText(label)
+        self:ShowSort(self.headers[c], col.label, field ~= nil and col.field == field, desc, self.widths[c])
     end
     local visible = self:Visible()
     local maxOffset = math.max(0, #self.lines - visible)

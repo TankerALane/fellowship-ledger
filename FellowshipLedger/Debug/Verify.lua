@@ -262,6 +262,11 @@ custom["x:ui.frame"] = function()
         have[#have + 1] = m .. "=" .. (type(f[m]) == "function" and "yes" or "no")
     end
     have[#have + 1] = "SetColorTexture=" .. (type(t.SetColorTexture) == "function" and "yes" or "no")
+    -- Sort arrows (1.0.1): optional, the arrow is skipped without them.
+    local fs = f:CreateFontString()
+    have[#have + 1] = "SetTexCoord=" .. (type(t.SetTexCoord) == "function" and "yes" or "no")
+    have[#have + 1] = "SetVertexColor=" .. (type(t.SetVertexColor) == "function" and "yes" or "no")
+    have[#have + 1] = "GetStringWidth=" .. (type(fs.GetStringWidth) == "function" and "yes" or "no")
     local ok = type(f.StartSizing) == "function" and type(f.SetShown) == "function" and type(t.SetColorTexture) == "function"
         and (type(f.SetResizeBounds) == "function" or type(f.SetMinResize) == "function")
     return ok and "PASS" or "FAIL", table.concat(have, " ")
