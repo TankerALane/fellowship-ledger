@@ -69,7 +69,7 @@ end)
 H.test("skins, text sizes and scale apply without errors", function()
     local env, ns = boot()
     Mock.slash(env, "fake")
-    for _, skin in ipairs({ "plain", "ledger" }) do
+    for _, skin in ipairs({ "plain", "ledger", "leather" }) do
         for _, size in ipairs({ "small", "normal", "large" }) do
             env.FellowshipLedgerDB.settings.skin = skin
             env.FellowshipLedgerDB.settings.fontSize = size

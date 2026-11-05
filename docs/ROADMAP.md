@@ -76,6 +76,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Faction column on the Me and Friends tables
 - [x] Update notice from friends' versions, and an "old version" mark on the Friends tab
 - [x] Class-colored names (Settings toggle, on by default; readable on the parchment skin)
+- [x] Leather look (dark) as a Settings choice; Ledger parchment stays the default
 - [x] Sortable Friends table, characters kept under their friend
 - [x] Arrow images for the sort direction
 - [x] Tooltip on a friend's character row

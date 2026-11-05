@@ -7,10 +7,10 @@ local SettingsDefaults = {}
 ns.SettingsDefaults = SettingsDefaults
 
 SettingsDefaults.VALUES = {
-    skin = "ledger",          -- "ledger" (dark leather and gold), "parchment" (light, the 1.0.0 look) or "plain"
+    skin = "ledger",          -- "ledger" (parchment and gold), "leather" (dark leather and gold) or "plain"
     scale = 1.0,              -- window scale, 0.7 to 1.5
     fontSize = "normal",      -- "small" | "normal" | "large"
-    classColors = true,       -- names in class colors (made readable on the parchment skin)
+    classColors = true,       -- names in class colors (made readable on every skin)
     colorblind = true,        -- colorblind-safe graph palette (on by default: it costs nothing)
     levelToast = true,
     sessionSummary = true,    -- show last session's summary at login
@@ -19,8 +19,8 @@ SettingsDefaults.VALUES = {
     shareNameInDungeons = false, -- opt-in: party members who also run the ledger may see your name
     welcomeSeen = false,
     welcomeEveryLogin = true, -- show the welcome panel after every loading screen
-    rememberTab = false,
-    askStale = true,          -- on a new character, offer to remove characters not played for 30 days      -- open the window on the last tab used (default: always Me)
+    rememberTab = false,      -- open the window on the last tab used (default: always Me)
+    askStale = true,          -- on a new character, offer to remove characters not played for 30 days
     debug = false,
 }
 
@@ -32,6 +32,8 @@ function SettingsDefaults.Ensure(settings)
     for k, v in pairs(SettingsDefaults.VALUES) do
         if settings[k] == nil then settings[k] = v end
     end
+    -- 1.0.1 development builds briefly had a "parchment" skin; it is "ledger" again.
+    if settings.skin == "parchment" then settings.skin = "ledger" end
     settings.minimap = settings.minimap or {}
     if settings.minimap.angle == nil then settings.minimap.angle = 225 end
     if settings.minimap.hide == nil then settings.minimap.hide = false end

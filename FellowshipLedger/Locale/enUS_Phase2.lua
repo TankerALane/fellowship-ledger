@@ -82,7 +82,7 @@ ns.Locale.Set({
     SETTINGS_APPEARANCE = "Appearance",
     SETTINGS_SKIN = "Look",
     SKIN_LEDGER = "Ledger",
-    SKIN_PARCHMENT = "Parchment",
+    SKIN_LEATHER = "Leather",
     SKIN_PLAIN = "Plain",
     SETTINGS_SCALE = "Window scale",
     SETTINGS_SCALE_VALUE = "%.1f",

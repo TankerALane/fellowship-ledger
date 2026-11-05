@@ -228,7 +228,7 @@ H.test("faction column: Horde or Alliance per character, blank on the totals lin
     H.eq(ns.MeModel.FormatCell(col, ns.MeModel.Totals(rows)), "")
 end)
 
-H.test("class colors are readable on every skin; priest is grey on parchment, white on the dark looks", function()
+H.test("class colors are readable on every skin; priest is grey on ledger, white on the dark looks", function()
     local P = H.pureNamespace().Palette
     for class in pairs(P.CLASS) do
         for skin in pairs(P.SKINS) do
@@ -236,11 +236,15 @@ H.test("class colors are readable on every skin; priest is grey on parchment, wh
             H.ok(P.Contrast(c, P.Color(skin, "bg")) >= P.MIN_CONTRAST, class .. " on " .. skin)
         end
     end
-    local priest = P.ClassColor("PRIEST", "parchment")
-    H.ok(priest[1] < 0.6 and math.abs(priest[1] - priest[3]) < 0.01, "priest is a grey on parchment")
+    local priest = P.ClassColor("PRIEST", "ledger")
+    H.ok(priest[1] < 0.6 and math.abs(priest[1] - priest[3]) < 0.01, "priest is a grey on ledger")
     H.eq(P.Code(P.ClassColor("PRIEST", "plain")), "|cffffffff")
-    H.eq(P.Code(P.ClassColor("PRIEST", "ledger")), "|cffffffff", "dark leather: priest stays white")
-    H.ok(not P.IsLight("ledger") and P.IsLight("parchment") and not P.IsLight("plain"))
+    H.eq(P.Code(P.ClassColor("PRIEST", "leather")), "|cffffffff", "dark leather: priest stays white")
+    H.ok(P.IsLight("ledger") and not P.IsLight("leather") and not P.IsLight("plain"))
+    local S = H.pureNamespace().SettingsDefaults
+    H.eq(S.Ensure({}).skin, "ledger", "the light look is the default")
+    H.eq(S.Ensure({ skin = "parchment" }).skin, "ledger", "dev-build parchment becomes ledger")
+    H.eq(S.Ensure({ skin = "leather" }).skin, "leather")
     H.eq(P.Code(P.ClassColor("MAGE", "plain")), "|cff3fc7eb", "already readable: unchanged")
     H.eq(P.ClassColor("NOTACLASS", "ledger"), nil)
     H.eq(P.ClassColor(nil, "ledger"), nil)

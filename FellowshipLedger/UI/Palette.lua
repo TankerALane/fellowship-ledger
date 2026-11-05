@@ -23,20 +23,20 @@ Palette.ROLES = { "bg", "panel", "border", "text", "muted", "heading", "accent",
     "buttonText", "rule", "rowAlt", "good", "bad" }
 
 Palette.SKINS = {
-    -- "Ledger" (default since 1.0.1, D-073): dark leather with parchment-colored
-    -- text and gold, so class colors show at (nearly) full strength.
+    -- "Ledger" (the default): parchment, ink and gold, as in 1.0.0.
     ledger = {
-        bg = rgb("2B1E12", 0.97), panel = rgb("3A2918", 1), border = rgb("C99A2E"), text = rgb("F1E4C3"),
-        muted = rgb("E0B34A"), heading = rgb("E0B34A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
-        buttonBorder = rgb("C99A2E"), buttonText = rgb("F1E4C3"), rule = rgb("C99A2E"), rowAlt = rgb("E0B34A", 0.06),
-        good = rgb("7FD08F"), bad = rgb("FF8A70"),
-    },
-    -- "Parchment": the light look of 1.0.0.
-    parchment = {
         bg = rgb("F1E4C3", 0.98), panel = rgb("F6EBD0", 1), border = rgb("C99A2E"), text = rgb("3B2A1A"),
         muted = rgb("7A560F"), heading = rgb("3B2A1A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
         buttonBorder = rgb("7A560F"), buttonText = rgb("3B2A1A"), rule = rgb("C99A2E"), rowAlt = rgb("C99A2E", 0.08),
         good = rgb("1F5F3A"), bad = rgb("8A2A12"),
+    },
+    -- "Leather" (1.0.1, D-074): dark leather with parchment-colored text and gold,
+    -- so class colors show at (nearly) full strength.
+    leather = {
+        bg = rgb("2B1E12", 0.97), panel = rgb("3A2918", 1), border = rgb("C99A2E"), text = rgb("F1E4C3"),
+        muted = rgb("E0B34A"), heading = rgb("E0B34A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
+        buttonBorder = rgb("C99A2E"), buttonText = rgb("F1E4C3"), rule = rgb("C99A2E"), rowAlt = rgb("E0B34A", 0.06),
+        good = rgb("7FD08F"), bad = rgb("FF8A70"),
     },
     plain = {
         bg = { 0.05, 0.05, 0.06, 0.92 }, panel = { 0.1, 0.1, 0.12, 0.9 }, border = { 0.45, 0.45, 0.5, 1 },
@@ -56,7 +56,7 @@ Palette.SERIES = {
     brandDark = { rgb("E0B34A"), rgb("F1E4C3"), rgb("C99A2E"), rgb("7FD08F"), rgb("FF8A70"), rgb("8FB8DE") },
 }
 
--- Light skins (parchment) get dark text and no drop shadow; dark ones the reverse.
+-- Light skins (ledger) get dark text and no drop shadow; dark ones the reverse.
 function Palette.IsLight(skin)
     return Palette.Luminance(Palette.Color(skin, "bg")) > 0.4
 end
@@ -92,7 +92,7 @@ end
 
 -- A class's color for this skin, moved toward black (light skins) or white (dark
 -- skins) just far enough to be readable on the skin's background: priest white
--- becomes grey on parchment, rogue yellow a dark gold. Nil for unknown classes.
+-- becomes grey on the light ledger look, rogue yellow a dark gold. Nil for unknown classes.
 function Palette.ClassColor(classToken, skin)
     local hex = type(classToken) == "string" and Palette.CLASS[classToken]
     if not hex then return nil end
