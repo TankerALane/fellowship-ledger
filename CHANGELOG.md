@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Faction column (Horde or Alliance) on the Me and Friends tables, next to Lvl. On the Me tab, click its header to sort by faction.
+
 ## 1.0.0 - 2026-11-04
 
 First full release. Verified in-game on WoW Forever, the main target: tracking, quest chains with Questie, notable loot, deaths with what killed you, and sharing between friends over Battle.net, including friends that Forever's friends list shows with no character. Retail is verified too, except whether it shows or hides what killed you.

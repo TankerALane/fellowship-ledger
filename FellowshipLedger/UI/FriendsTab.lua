@@ -19,6 +19,7 @@ local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE
 local COLUMNS = {
     { field = "name", label = "COL_CHARACTER", width = 170 },
     { field = "level", label = "COL_LEVEL", width = 40 },
+    { field = "faction", label = "COL_FACTION", width = 62 },
     { field = "levels", label = "COL_LEVELS", width = 52 },
     { field = "quests", label = "COL_QUESTS", width = 54 },
     { field = "dungeons", label = "COL_DUNGEONS", width = 70 },
@@ -27,7 +28,7 @@ local COLUMNS = {
     { field = "lastUpdated", label = "COL_UPDATED", width = 90 },
 }
 
-local KIND = { level = "number", levels = "number", quests = "number", dungeons = "pair", moneyNet = "money", active = "duration" }
+local KIND = { level = "number", faction = "faction", levels = "number", quests = "number", dungeons = "pair", moneyNet = "money", active = "duration" }
 
 function FriendsTab.Block(tag)
     ns.db.blocklist[tag] = true

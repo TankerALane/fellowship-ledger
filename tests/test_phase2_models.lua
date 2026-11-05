@@ -170,6 +170,24 @@ H.test("totals line sums every character", function()
     H.eq(ns.MeModel.FormatCell({ field = "dungeons", kind = "pair" }, t), "1/3")
 end)
 
+H.test("faction column: Horde or Alliance per character, blank on the totals line", function()
+    local ns = H.pureNamespace()
+    local rows = ns.MeModel.Build({
+        h = { name = "Grak", faction = "Horde", days = {} },
+        a = { name = "Lia", faction = "Alliance", days = {} },
+        old = { name = "Old", days = {} },
+    }, "all", "2026-11-05", os.time, os.date)
+    local col
+    for _, c in ipairs(ns.MeModel.COLUMNS) do if c.field == "faction" then col = c end end
+    H.ok(col, "the Me table has a Faction column")
+    local byKey = {}
+    for _, r in ipairs(rows) do byKey[r.key] = ns.MeModel.FormatCell(col, r) end
+    H.eq(byKey.h, "Horde")
+    H.eq(byKey.a, "Alliance")
+    H.eq(byKey.old, "")
+    H.eq(ns.MeModel.FormatCell(col, ns.MeModel.Totals(rows)), "")
+end)
+
 H.test("count charts use whole-number steps; labels are spaced to fit", function()
     local G = H.pureNamespace().GraphModel
     local lo, hi, step = G.NiceScale(0, 2, 4, true)

@@ -11,6 +11,7 @@ ns.MeModel = MeModel
 MeModel.COLUMNS = {
     { field = "name", label = "COL_CHARACTER", kind = "text", width = 150 },
     { field = "level", label = "COL_LEVEL", kind = "number", width = 42 },
+    { field = "faction", label = "COL_FACTION", kind = "faction", width = 62 },
     { field = "levels", label = "COL_LEVELS", kind = "number", width = 52 },
     { field = "quests", label = "COL_QUESTS", kind = "number", width = 54 },
     { field = "dungeons", label = "COL_DUNGEONS", kind = "pair", width = 70 },
@@ -33,6 +34,7 @@ function MeModel.Build(characters, range, todayKey, timeFn, dateFn)
             key = key,
             name = c.display or c.name or key,
             class = c.class,
+            faction = c.faction,
             level = c.level or 0,
             levels = sum.levels or 0,
             quests = sum.quests or 0,
@@ -76,8 +78,17 @@ function MeModel.LevelLines(char, L)
     return lines
 end
 
+-- UnitFactionGroup's English token -> locale key. Anything else (an old record
+-- without a faction, or a faction we do not know) shows as-is or blank.
+local FACTION_KEYS = { Horde = "FACTION_HORDE", Alliance = "FACTION_ALLIANCE", Neutral = "FACTION_NEUTRAL" }
+
 function MeModel.FormatCell(col, row)
     local v = row[col.field]
+    if col.kind == "faction" then
+        if type(v) ~= "string" then return "" end
+        local key = FACTION_KEYS[v]
+        return (key and ns.L and ns.L[key]) or v
+    end
     if col.kind == "money" then return ns.Format.Money(v, true) end
     if col.kind == "duration" then return ns.Format.Duration(v) end
     if col.kind == "pair" then return tostring(row.dungeons) .. "/" .. tostring(row.dungeonsEntered) end
@@ -93,7 +104,7 @@ function MeModel.Totals(rows)
         end
     end
     for _, col in ipairs(MeModel.COLUMNS) do
-        if col.kind ~= "text" and total[col.field] == nil then total[col.field] = 0 end
+        if col.kind ~= "text" and col.kind ~= "faction" and total[col.field] == nil then total[col.field] = 0 end
     end
     total.dungeonsEntered = total.dungeonsEntered or 0
     return total
