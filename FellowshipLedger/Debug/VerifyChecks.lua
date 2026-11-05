@@ -270,7 +270,7 @@ ns.VerifyChecks = {
     { id = "CreateColor", kind = "api", area = "UI", why = "colors" },
     { id = "PlaySound", kind = "api", area = "UI", why = "toast sound" },
     { id = "SOUNDKIT", kind = "api", area = "UI", why = "sound IDs", expect = "table" },
-    { id = "x:ui.frame", kind = "custom", area = "UI", why = "frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth)", test = "/dump CreateFrame(\"Frame\").SetResizeBounds" },
+    { id = "x:ui.frame", kind = "custom", area = "UI", why = "frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth; for outlined names GetFont, SetFont)", test = "/dump CreateFrame(\"Frame\").SetResizeBounds" },
     { id = "GameTooltip", kind = "api", area = "UI", why = "hover tooltips on graphs and the minimap button", expect = "table" },
     { id = "x:ui.compartment", kind = "custom", area = "UI", why = "AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap)", test = "/dump AddonCompartmentFrame.RegisterAddon" },
     { id = "x:questie.db", kind = "custom", area = "UI", why = "Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback)", test = "/dump QuestieLoader:ImportModule(\"QuestieDB\").QueryQuestSingle" },

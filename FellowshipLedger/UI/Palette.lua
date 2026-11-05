@@ -23,12 +23,13 @@ Palette.ROLES = { "bg", "panel", "border", "text", "muted", "heading", "accent",
     "buttonText", "rule", "rowAlt", "good", "bad" }
 
 Palette.SKINS = {
-    -- Background and panel are a shade darker than the brand parchment (1.0.1).
+    -- "Aged parchment" (1.0.1, D-072): darker than the brand parchment, with text and
+    -- labels darkened to match so everything stays at 4.5:1 or better.
     ledger = {
-        bg = rgb("E8D8B0", 0.98), panel = rgb("EFE3C4", 1), border = rgb("C99A2E"), text = rgb("3B2A1A"),
-        muted = rgb("7A560F"), heading = rgb("3B2A1A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
-        buttonBorder = rgb("7A560F"), buttonText = rgb("3B2A1A"), rule = rgb("C99A2E"), rowAlt = rgb("C99A2E", 0.08),
-        good = rgb("1F5F3A"), bad = rgb("8A2A12"),
+        bg = rgb("C9AF7C", 0.98), panel = rgb("D6C092", 1), border = rgb("C99A2E"), text = rgb("1E140A"),
+        muted = rgb("4A3308"), heading = rgb("1E140A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
+        buttonBorder = rgb("4A3308"), buttonText = rgb("1E140A"), rule = rgb("C99A2E"), rowAlt = rgb("C99A2E", 0.08),
+        good = rgb("174A2C"), bad = rgb("6E200C"),
     },
     plain = {
         bg = { 0.05, 0.05, 0.06, 0.92 }, panel = { 0.1, 0.1, 0.12, 0.9 }, border = { 0.45, 0.45, 0.5, 1 },

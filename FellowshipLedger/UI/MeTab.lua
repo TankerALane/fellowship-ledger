@@ -43,7 +43,7 @@ local function characterLines()
     end
     for _, row in ipairs(rows) do
         local key = row.key
-        lines[#lines + 1] = { kind = "row", cells = cellsFor(row), onClick = function()
+        lines[#lines + 1] = { kind = "row", cells = cellsFor(row), outlineName = W.HasClassColor(row.class), onClick = function()
             state.expanded[key] = not state.expanded[key] or nil
             Me.Refresh()
         end }

@@ -78,7 +78,7 @@ local function lines()
             local friend = ns.Data.Friends()[r.friendId]
             local char = friend and friend.characters and friend.characters[r.key]
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
-            out[#out + 1] = { kind = "row", cells = cells, indent = r.indent,
+            out[#out + 1] = { kind = "row", cells = cells, indent = r.indent, outlineName = W.HasClassColor(r.class),
                 tooltip = function() return FriendsModel.Tooltip(r, char, friend, time(), L, factionText) end,
                 action = (not r.indent) and { label = L.BLOCK, onClick = function() FriendsTab.Block(friend.tag or r.key) end } or nil }
         end

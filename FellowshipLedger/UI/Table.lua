@@ -7,7 +7,8 @@
 --   { cells = { "text", ... }, kind = "row"|"total"|"group"|"detail", indent = bool,
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
 --     tooltip = fn() -> title, lines (shown on hover),
---     align = "right" (group/detail text next to its action button) }
+--     align = "right" (group/detail text next to its action button),
+--     outlineName = bool (outline the first cell: a class-colored name) }
 
 local _, ns = ...
 local W = ns.Widgets
@@ -193,6 +194,7 @@ function Obj:Render()
                     if c == 1 and line.indent then text = "    " .. text end
                     w.cells[c]:SetText(text)
                     W.SetTextRole(w.cells[c], line.kind == "total" and "heading" or (line.muted and "muted" or "text"))
+                    if c == 1 then W.SetOutline(w.cells[c], line.outlineName == true) end
                     w.cells[c]:SetShown(shown)
                 end
             else

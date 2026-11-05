@@ -165,6 +165,23 @@ function W.ClassName(text, classToken)
     return Palette.Code(c) .. text .. "|r"
 end
 
+-- True when W.ClassName would color this class (colors on and the class known).
+function W.HasClassColor(classToken)
+    return ns.db ~= nil and ns.db.settings ~= nil and ns.db.settings.classColors == true
+        and Palette.ClassColor(classToken, skin()) ~= nil
+end
+
+-- Thin dark outline on a font string (the game's OUTLINE font flag), so
+-- class-colored names stand out. Re-applied on every table render, after a skin
+-- or text-size change has reset the font. Skipped if the client lacks the methods.
+function W.SetOutline(fs, on)
+    if type(fs.GetFont) ~= "function" or type(fs.SetFont) ~= "function" then return end
+    local file, size, flags = fs:GetFont()
+    if type(file) ~= "string" or type(size) ~= "number" then return end
+    local want = on and "OUTLINE" or ""
+    if (flags or "") ~= want then fs:SetFont(file, size, want) end
+end
+
 -- Show a tooltip with a title and lines, if GameTooltip exists.
 function W.Tooltip(owner, title, lines)
     local tip = _G.GameTooltip
