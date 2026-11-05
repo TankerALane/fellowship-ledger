@@ -183,6 +183,7 @@ H.test("quest chain drop-down: Questie levels, starters and zones in the Me tab"
     local q = view.mine[1].details.quests
     H.eq(q[1].status, "done"); H.eq(q[2].status, "log"); H.eq(q[3].status, nil)
     H.eq(q[1].start.name, "Gryan Stoutmantle"); H.eq(q[1].start.zone, "Westfall")
+    H.eq(q[1].start.x, 56); H.eq(q[1].start.y, 47)
     H.eq(q[3].start.kind, "item"); H.eq(q[3].req, 13)
     H.eq(view.mine[1].details.also[1].name, "Side Quest")
     ns.MeTab.Refresh()

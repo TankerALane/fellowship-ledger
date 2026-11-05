@@ -315,7 +315,7 @@ custom["x:questie.details"] = function()
     local q = ns.QuestChains.QuestInfo(pick)
     local s = q.start
     local detail = string.format("quest %d \"%s\": level %s, needs %s; starts %s%s%s", pick, tostring(q.name), tostring(q.level),
-        tostring(q.req), s and s.kind or "unknown", s and (" " .. tostring(s.name)) or "", s and s.zone and (" in " .. s.zone) or "")
+        tostring(q.req), s and s.kind or "unknown", s and (" " .. tostring(s.name)) or "", s and s.zone and (" in " .. s.zone) or "") .. (s and s.x and string.format(" at %.1f, %.1f", s.x, s.y) or "")
     local good = q.name and type(q.level) == "number" and s and s.name
     return good and "PASS" or "FAIL", detail
 end

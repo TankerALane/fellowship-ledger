@@ -140,8 +140,9 @@ local function questieOther(kind, id, field)
     return nil
 end
 
--- The zone where an NPC or object stands: Questie's spawns are { [zoneID] = { coords } };
--- the zone with the most spawn points wins.
+-- Where an NPC or object stands: Questie's spawns are { [zoneID] = { { x, y }, ... } }
+-- with x and y in map percent (-1 inside instances). The zone with the most spawn
+-- points wins; its first point gives the coordinates. Returns zone name, x, y.
 local function zoneOf(spawns)
     if type(spawns) ~= "table" then return nil end
     local best, most = nil, 0
@@ -151,7 +152,16 @@ local function zoneOf(spawns)
     end
     if not best then return nil end
     local ok, name = ns.Compat.Try("C_Map.GetAreaInfo", best)
-    return ok and type(T.Plain(name)) == "string" and name or nil
+    name = ok and type(T.Plain(name)) == "string" and name or nil
+    local pt = type(spawns[best]) == "table" and spawns[best][1]
+    local x, y = type(pt) == "table" and pt[1], type(pt) == "table" and pt[2]
+    if type(x) ~= "number" or type(y) ~= "number" or x < 0 or y < 0 then x, y = nil, nil end
+    return name, x, y
+end
+
+local function spot(kind, name, spawns)
+    local zone, x, y = zoneOf(spawns)
+    return { kind = kind, name = name, zone = zone, x = x, y = y }
 end
 
 -- startedBy / finishedBy: { npcIDs, objectIDs, itemIDs }. Returns { kind, name, zone } or nil.
@@ -160,12 +170,12 @@ local function placeOf(by)
     local npc = type(by[1]) == "table" and by[1][1]
     if npc then
         local name = questieOther("NPC", npc, "name")
-        if type(name) == "string" then return { kind = "npc", name = name, zone = zoneOf(questieOther("NPC", npc, "spawns")) } end
+        if type(name) == "string" then return spot("npc", name, questieOther("NPC", npc, "spawns")) end
     end
     local obj = type(by[2]) == "table" and by[2][1]
     if obj then
         local name = questieOther("Object", obj, "name")
-        if type(name) == "string" then return { kind = "object", name = name, zone = zoneOf(questieOther("Object", obj, "spawns")) } end
+        if type(name) == "string" then return spot("object", name, questieOther("Object", obj, "spawns")) end
     end
     local item = type(by[3]) == "table" and by[3][1]
     if item then

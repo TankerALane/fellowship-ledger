@@ -124,6 +124,7 @@ ns.Locale.Set({
     CHAIN_COL_STARTS = "Starts at",
     CHAIN_IN_LOG = "in your quest log",
     CHAIN_PLACE = "%s, %s", -- who, zone
+    CHAIN_COORDS = " (%.1f, %.1f)", -- map coordinates
     CHAIN_FROM_ITEM = "item: %s",
     CHAIN_START_UNKNOWN_SHORT = "?",
     CHAIN_PICK_UP = "Pick up next: \"%s\" from %s",

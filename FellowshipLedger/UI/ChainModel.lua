@@ -9,7 +9,7 @@
 --   { quests = { { id, name, level, req, start = place, finish = place, status = "done"|"log"|nil } },
 --     current = index of the quest you are on (nil for a friend's chain),
 --     also = { { name, done } } (prerequisites outside the chain) }
--- place = { kind = "npc"|"object"|"item", name, zone } or nil.
+-- place = { kind = "npc"|"object"|"item", name, zone, x, y (map percent) } or nil.
 
 local _, ns = ...
 
@@ -21,7 +21,7 @@ ChainModel.BEFORE, ChainModel.AFTER = 2, 3 -- quests shown around your step unti
 
 -- Column positions (fractions of the line after the inset).
 ChainModel.COLS = {
-    mark = { .00, .04 }, num = { .04, .05 }, quest = { .09, .40 }, lvl = { .50, .06 }, req = { .56, .06 }, starts = { .63, .37 },
+    mark = { .00, .04 }, num = { .04, .05 }, quest = { .09, .33 }, lvl = { .43, .06 }, req = { .49, .06 }, starts = { .56, .44 },
 }
 -- The chain's own line: name, step, zone.
 ChainModel.HEAD = { sign = { .00, .03 }, name = { .03, .52 }, step = { .56, .20 }, zone = { .77, .23 } }
@@ -41,8 +41,9 @@ end
 function ChainModel.PlaceText(place, L)
     if type(place) ~= "table" or not place.name then return L.CHAIN_START_UNKNOWN_SHORT end
     if place.kind == "item" then return string.format(L.CHAIN_FROM_ITEM, place.name) end
-    if place.zone then return string.format(L.CHAIN_PLACE, place.name, place.zone) end
-    return place.name
+    local text = place.zone and string.format(L.CHAIN_PLACE, place.name, place.zone) or place.name
+    if type(place.x) == "number" and type(place.y) == "number" then text = text .. string.format(L.CHAIN_COORDS, place.x, place.y) end
+    return text
 end
 
 local function levelText(v)
