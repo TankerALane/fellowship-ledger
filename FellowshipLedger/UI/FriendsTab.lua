@@ -146,8 +146,20 @@ local function build(panel)
     ui.empty:SetWordWrap(true)
 end
 
+-- While the Friends tab is on screen, keep its status and rows current.
+local ticking = false
+local function startTicker()
+    if ticking then return end
+    ticking = true
+    ns.Events.Every(2, "ui", function()
+        local f = ns.MainWindow.frame
+        if f and f:IsShown() and ns.MainWindow.current == "friends" then FriendsTab.Refresh() end
+    end)
+end
+
 -- Opening the Friends tab also starts a sync (rate-limited inside Sync).
 ns.MainWindow.RegisterTab("friends", build, function()
     if ns.Sync and ns.tracking and not ns.Data.IsFake() then pcall(ns.Sync.SyncAll, false) end
+    startTicker()
     FriendsTab.Refresh()
 end)

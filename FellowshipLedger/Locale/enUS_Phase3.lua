@@ -5,6 +5,8 @@ local _, ns = ...
 
 ns.Locale.Set({
     HELP_SYNC = "/fl sync - share with online friends now",
+    HELP_FRIENDS = "/fl friends - what the game reports about your friends and who the ledger will message",
+    FRIENDS_REPORT_TITLE = "Fellowship Ledger - friends report",
     HELP_COMMS = "/fl comms - sharing status (/fl comms size 200 sets the message size, 60-255)",
     HELP_COMMTEST = "/fl commtest - send test messages to yourself and report what arrived",
     SYNC_STARTED = "Saying hello to %d online friend(s) who might run the ledger.",

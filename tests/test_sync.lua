@@ -261,3 +261,12 @@ H.test("a send that errors fails that message only; sharing stays on", function(
     network({ a, b }, 120)
     H.ok(nsA.db.friends["bn:Bob#2"], "Bob's ledger arrived after the failed send")
 end)
+
+H.test("/fl friends reports each friend and whether they will be messaged", function()
+    local a, nsA = client("Alice", 1, "Bob#2", 2, "Bob", { friendProjectID = 2 })
+    Mock.slash(a, "friends")
+    local text = nsA.CopyWindow.text
+    H.ok(text:find("game 1: client", 1, true), text)
+    H.ok(text:find("skipped: other game version", 1, true), text)
+    H.ok(not text:find("#2", 1, true), "BattleTag number left out")
+end)

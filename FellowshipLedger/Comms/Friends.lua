@@ -155,3 +155,74 @@ end
 function Friends.IsBlocked(peer)
     return ns.FriendsModel.IsBlocked(ns.db.blocklist, { tag = peer.tag }, peer.character)
 end
+
+-- /fl friends: what the game reports about each friend and whether the ledger
+-- would message them. Never sends anything. BattleTag numbers are left out.
+function Friends.Report()
+    local function show(v)
+        v = plain(v)
+        if v == nil then return "nil" end
+        return ns.Compat.Describe(v)
+    end
+    local lines = { "Fellowship Ledger friends report | " .. tostring(ns.Compat.flavor) .. " | " .. date("%Y-%m-%d %H:%M"),
+        "me: " .. tostring(ns.Store.key) .. " | WOW_PROJECT_ID " .. show(_G.WOW_PROJECT_ID)
+            .. " | BNET_CLIENT_WOW " .. show(_G.BNET_CLIENT_WOW) }
+    local wowClient = _G.BNET_CLIENT_WOW or "WoW"
+    local okN, total = ns.Compat.Try("BNGetNumFriends")
+    lines[#lines + 1] = "Battle.net friends: " .. (okN and show(total) or "BNGetNumFriends unavailable")
+    for i = 1, okN and (tonumber(plain(total)) or 0) or 0 do
+        local okA, acc = ns.Compat.Try("C_BattleNet.GetFriendAccountInfo", i)
+        local tag = okA and type(acc) == "table" and plain(acc.battleTag)
+        local name = type(tag) == "string" and (tag:match("^([^#]+)") or tag) or ("#" .. i)
+        local okC, count = ns.Compat.Try("C_BattleNet.GetFriendNumGameAccounts", i)
+        local n = okC and tonumber(plain(count)) or 0
+        if okA and type(acc) == "table" then
+            local g0 = type(acc.gameAccountInfo) == "table" and acc.gameAccountInfo or nil
+            lines[#lines + 1] = string.format("%d. %s | online %s | game accounts %s%s", i, name, show(acc.isOnline),
+                okC and show(count) or "?", g0 and (" | current: client " .. show(g0.clientProgram) .. ", project "
+                .. show(g0.wowProjectID) .. ", id " .. show(g0.gameAccountID)) or "")
+        else
+            lines[#lines + 1] = string.format("%d. (no account info)", i)
+        end
+        for j = 1, n do
+            local okG, g = ns.Compat.Try("C_BattleNet.GetFriendGameAccountInfo", i, j)
+            if okG and type(g) == "table" then
+                local why = {}
+                if plain(g.clientProgram) ~= wowClient then why[#why + 1] = "not WoW" end
+                if g.isOnline == false then why[#why + 1] = "offline" end
+                if not sameFlavor(g.wowProjectID) then why[#why + 1] = "other game version" end
+                if not plain(g.gameAccountID) then why[#why + 1] = "no gameAccountID" end
+                lines[#lines + 1] = string.format("   game %d: client %s, project %s, online %s, id %s, char %s, realm %s / %s -> %s",
+                    j, show(g.clientProgram), show(g.wowProjectID), show(g.isOnline), show(g.gameAccountID),
+                    show(g.characterName), show(g.realmName), show(g.realmDisplayName),
+                    #why == 0 and "WILL MESSAGE" or ("skipped: " .. table.concat(why, ", ")))
+            else
+                lines[#lines + 1] = string.format("   game %d: no info", j)
+            end
+        end
+    end
+    local okF, nf = ns.Compat.Try("C_FriendList.GetNumFriends")
+    lines[#lines + 1] = "Character friends: " .. (okF and show(nf) or "C_FriendList.GetNumFriends unavailable")
+    for i = 1, okF and (tonumber(plain(nf)) or 0) or 0 do
+        local okI, info = ns.Compat.Try("C_FriendList.GetFriendInfoByIndex", i)
+        if okI and type(info) == "table" then
+            lines[#lines + 1] = string.format("%d. name %s, connected %s -> %s", i, show(info.name), show(info.connected),
+                plain(info.connected) == true and "WILL MESSAGE" or "skipped: offline")
+        else
+            lines[#lines + 1] = string.format("%d. no info", i)
+        end
+    end
+    Friends.Refresh()
+    local stored = 0
+    for id, f in pairs(ns.db.friends) do
+        stored = stored + 1
+        local nchar = 0
+        for _ in pairs(f.characters or {}) do nchar = nchar + 1 end
+        lines[#lines + 1] = string.format("ledger friend %s: version %s, hello %s, characters %d", tostring(f.name or id),
+            tostring(f.version), f.helloAt and date("%H:%M:%S", f.helloAt) or "never", nchar)
+    end
+    if stored == 0 then lines[#lines + 1] = "no ledger data from any friend yet" end
+    lines[#lines + 1] = "disabled: comms " .. tostring(ns.Compat.disabled.comms or "-") .. ", friends "
+        .. tostring(ns.Compat.disabled.friends or "-")
+    return table.concat(lines, "\n")
+end

@@ -1,4 +1,4 @@
-# Fellowship Ledger: notes for Claude Code sessions
+﻿# Fellowship Ledger: notes for Claude Code sessions
 
 A progress-tracking and friend-sharing addon for World of Warcraft, by Decoupled Lane Studio (Austin). It targets **WoW Forever** (primary, `_forever_`, interface 16001) and **retail** (`_retail_`, Mainline, interface 120105) from one codebase. The full original brief is in `CLAUDE_CODE_PROMPT.md`. Read it when you are unsure about scope.
 
@@ -51,7 +51,7 @@ python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 
 ## In-game commands so far
 
-`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl version`. `/fellowshipledger` is an alias.
+`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl friends`, `/fl comms`, `/fl commtest`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl version`. `/fellowshipledger` is an alias.
 
 ## Status
 
