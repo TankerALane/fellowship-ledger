@@ -1,0 +1,32 @@
+Fellowship Ledger verify report
+addon=1.0.1 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70790 at=2026-11-05 13:29
+summary pass=194 fail=7 error=0 info=8 manual=9
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+-- details
+PASS x:build.interface: 16001 -> Forever
+INFO x:build.version: 1.60.1 (70790)
+PASS x:build.tocflavor: loaded Forever TOC
+INFO x:build.projectid: WOW_PROJECT_ID=18; constants: CAMELOT=18 CLASSIC=2 ID=18 MAINLINE=1
+INFO x:addon.questie: loaded=true version=12.6.1
+PASS x:sv.persist: loads=34 lastLogoutSaved=2026-11-05 13:28 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=32 lastLogoutSaved=2026-11-05 13:28 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=1421 name readable
+INFO x:quest.questline: checked 8 quests, 0 returned a quest line. 
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 7 slots, 4 with readable rank
+PASS x:death.recap: recap 2: 10 events; fields amount,critical,crushing,currentHP,destFlags,destGUID,destName,destRaidFlags,event,glancing,hideCaster,isOffHand,overkill,school,sourceFlags,sourceGUID,sourceName,sourceRaidFlags,timestamp; source/spell readable
+PASS x:death.killerlevel: newest death: killer Vampiric Duskbat, level 8
+PASS x:comms.prefix: FLDGF register returned 1; registered=true
+INFO x:friends.charfields: no character friends to inspect
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes SetTexCoord=yes SetVertexColor=yes GetStringWidth=yes
+PASS x:ui.compartment: RegisterAddon is function
+PASS x:questie.db: state=ready; quest 449 chain 2/5 via questie
+PASS x:questie.details: quest 449 "The Deathstalkers' Report": level 11, needs 10; starts npc Rane Yorick in Silverpine Forest at 53.5, 13.4
