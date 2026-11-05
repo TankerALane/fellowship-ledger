@@ -1,0 +1,8 @@
+Fellowship Ledger verify report
+addon=1.1.0 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70790 at=2026-11-05 15:22
+summary pass=200 fail=8 error=0 info=10 manual=9
+-- details
+PASS x:dungeon.journal: Ragefire Chasm: 4 bosses killed, completed=true, lastBossID=nil via nil, lookups=nil, lastBossName=nil; final-boss list: Bazzalan; journal: 0 instances (); by name: nil; now: last=nil (nil) of nil via nil
+PASS x:flight.paths: known=3 counted=1 baseline=true; message this session=no; map this session=no; newest counted: Orgrimmar, Durotar at 11-05 15:07
+-- api pass
+EJ_GetNumTiers, EJ_SelectTier, EJ_GetInstanceByIndex

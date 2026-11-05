@@ -246,10 +246,10 @@ These come from addons already installed in Austin's game folders. They are good
 | `EJ_GetInstanceForMap` | api | find a dungeon's journal entry (to know the last boss) | `/dump type(EJ_GetInstanceForMap)` -> "function" | PASS | PASS |
 | `EJ_SelectInstance` | api | select journal instance before listing bosses | `/dump type(EJ_SelectInstance)` -> "function" | PASS | PASS |
 | `EJ_GetEncounterInfoByIndex` | api | list bosses in order (last one = completion) | `/dump type(EJ_GetEncounterInfoByIndex)` -> "function" | PASS | PASS |
-| `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | ? | ? |
-| `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | ? | ? |
-| `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | ? | ? |
-| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | ? | ? |
+| `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | PASS | ? |
+| `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | PASS | ? |
+| `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | PASS | ? |
+| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | PASS | ? |
 | `x:dungeon.instance` | custom | GetInstanceInfo returns readable values here | `/dump GetInstanceInfo()` | INFO | INFO |
 | `ev:ENCOUNTER_START` | event | boss pull: pause sending | `/dump C_EventUtils.IsEventValid("ENCOUNTER_START")` -> true | PASS | PASS |
 | `ev:ENCOUNTER_END` | event | boss kill (args: encounterID, name, difficulty, size, success) | `/dump C_EventUtils.IsEventValid("ENCOUNTER_END")` -> true | PASS | PASS |
@@ -331,7 +331,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | PASS | PASS |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | PASS | PASS |
 | `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | PASS | ? |
-| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | INFO | ? |
+| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | PASS | ? |
 
 ### Kills
 
