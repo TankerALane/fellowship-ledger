@@ -1,0 +1,7 @@
+Fellowship Ledger verify report
+addon=1.0.1 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70790 at=2026-11-05 14:01
+summary pass=197 fail=8 error=0 info=9 manual=9
+-- details
+PASS x:quest.completed: 110 completed via GetAllCompletedQuestIDs; quest 8 = A Rogue's Deal in Deathknell; 1 without a name (hidden)
+PASS x:questie.details: quest 421 "Prove Your Worth": level 10, needs 12; starts npc Dalar Dawnweaver in Silverpine Forest at 44.2, 39.8
+INFO x:flight.paths: known=2 counted=0 baseline=true; message this session=no; map this session=no; talk to a flight master you don't know yet, then /fl verify
