@@ -11,6 +11,7 @@
 - Remove characters you no longer play: a Remove button in a character's expanded row on the Me tab, and on a new character a prompt listing characters you haven't played for 30 days. Friends drop removed characters at the next sync (friends on 1.0.1 or later).
 
 ### Changed
+- The parchment look's background is a shade darker (text stays at 4.5:1 contrast or better).
 - Sort direction is shown with a small arrow instead of "v" and "^".
 - With no friends' ledgers yet, the Friends tab says how many friends are online on this version of WoW.
 - Release workflows run on Ubuntu 24.04.

@@ -244,6 +244,16 @@ H.test("class colors are readable on both skins; priest is grey on parchment, wh
     H.eq(P.ClassColor(nil, "ledger"), nil)
 end)
 
+H.test("every text color is readable on its skin background (4.5:1)", function()
+    local P = H.pureNamespace().Palette
+    for skin, set in pairs(P.SKINS) do
+        for _, role in ipairs({ "text", "muted", "heading", "good", "bad" }) do
+            local c = P.Contrast(set[role], set.bg)
+            H.ok(c >= P.MIN_CONTRAST, string.format("%s %s on bg: %.2f", skin, role, c))
+        end
+    end
+end)
+
 H.test("count charts use whole-number steps; labels are spaced to fit", function()
     local G = H.pureNamespace().GraphModel
     local lo, hi, step = G.NiceScale(0, 2, 4, true)
