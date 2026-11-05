@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 - 2026-11-05
 
 ### Added
 - Friends' characters open like yours: click one on the Friends tab for Overview (their levels, with Show all, and totals for the range: played, active, XP, quests, dungeons, deaths, kills, skill-ups, zones, reputation, flight paths, achievements, notable loot, party level-ups), Quests (counts and the chains they are on), Gold (by source), Kills and Professions. Parts a friend does not share say so.
