@@ -218,6 +218,16 @@ function commands.comms(rest)
     for _, p in pairs(ns.Friends.peers) do if p.online then online = online + 1 end end
     Log.Info(L.COMMS_STATUS, tostring(T.Prefix()), T.ChunkSize(), #T.queue, T.stats.sent, T.stats.retried, T.stats.failed,
         T.stats.received, T.stats.dropped, online, tostring(T.Blocked() or "-"))
+    if ns.Compat.disabled.comms then Log.Info(L.COMMS_OFF_WHY, "comms", tostring(ns.Compat.disabled.comms)) end
+    if ns.Compat.disabled.friends then Log.Info(L.COMMS_OFF_WHY, "friends", tostring(ns.Compat.disabled.friends)) end
+    if T.lastError then Log.Info(L.COMMS_LAST_ERROR, T.lastError) end
+    local results = {}
+    for name, n in pairs(T.stats.results) do results[#results + 1] = name .. "=" .. n end
+    table.sort(results)
+    if #results > 0 then Log.Info(L.COMMS_RESULTS, table.concat(results, " ")) end
+    for id, p in pairs(ns.Friends.peers) do
+        if p.online then Log.Info(L.COMMS_PEER_LINE, id, tostring(p.transport), tostring(p.target)) end
+    end
 end
 
 function commands.commtest()

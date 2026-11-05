@@ -240,3 +240,24 @@ H.test("graphs compare a friend's character with mine", function()
     local chat = table.concat(A.__state.chat, "\n")
     H.ok(not chat:find("failed"), chat)
 end)
+
+H.test("a send that errors fails that message only; sharing stays on", function()
+    local a, nsA = client("Alice", 1, "Bob#2", 2, "Bob")
+    local b, nsB = client("Bob", 2, "Alice#1", 1, "Alice")
+    local real = a.C_BattleNet.SendGameData
+    local calls = 0
+    a.C_BattleNet.SendGameData = function(...)
+        calls = calls + 1
+        if calls == 1 then error("game account went away") end
+        return real(...)
+    end
+    nsA.Sync.SyncAll(true)
+    network({ a, b }, 60)
+    H.ok(not nsA.Compat.IsDisabled("comms"), "comms still on: " .. tostring(nsA.Compat.disabled.comms))
+    H.ok(nsA.Transport.lastError and nsA.Transport.lastError:find("went away", 1, true), "error kept for /fl comms")
+    H.eq(#nsA.Transport.queue, 0, "queue drained")
+    nsA.Sync.lastHello, nsA.Sync.lastRequest = {}, {}
+    nsA.Sync.SyncAll(true)
+    network({ a, b }, 120)
+    H.ok(nsA.db.friends["bn:Bob#2"], "Bob's ledger arrived after the failed send")
+end)

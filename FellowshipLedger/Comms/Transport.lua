@@ -56,7 +56,7 @@ end
 function Transport.Blocked()
     if Transport.trial then return "trial account" end
     if ns.Compat.IsDisabled("comms") then return "comms disabled" end
-    local okC, combat = ns.Compat.Call("comms", "InCombatLockdown")
+    local okC, combat = ns.Compat.Try("InCombatLockdown")
     if okC and combat then return "combat" end
     if Transport.encounter then return "encounter" end
     if ns.Compat.Has("C_ChatInfo.InChatMessagingLockdown") then
@@ -88,15 +88,31 @@ local function resultName(res)
 end
 Transport.ResultName = resultName
 
+-- A missing send API turns sharing off (nothing could ever be sent). A send that
+-- merely errors (say, one friend's game account went away) only fails that
+-- message: it must not switch sharing off for everyone for the whole session.
+local function guardedSend(path, ...)
+    if not ns.Compat.Has(path) then
+        ns.Compat.Disable("comms", path .. " is missing")
+        return false
+    end
+    local ok, res = pcall(ns.Compat.Resolve(path), ...)
+    if not ok then
+        Transport.lastError = path .. ": " .. tostring(res)
+        return false
+    end
+    return true, res
+end
+
 local function rawSend(item)
     local prefix = Transport.Prefix()
     local d = item.dest
     if d.transport == "bn" then
-        return ns.Compat.Call("comms", "C_BattleNet.SendGameData", d.target, prefix, item.text)
+        return guardedSend("C_BattleNet.SendGameData", d.target, prefix, item.text)
     elseif d.transport == "whisper" then
-        return ns.Compat.Call("comms", "C_ChatInfo.SendAddonMessage", prefix, item.text, "WHISPER", d.target)
+        return guardedSend("C_ChatInfo.SendAddonMessage", prefix, item.text, "WHISPER", d.target)
     else
-        return ns.Compat.Call("comms", "C_ChatInfo.SendAddonMessage", prefix, item.text, d.target)
+        return guardedSend("C_ChatInfo.SendAddonMessage", prefix, item.text, d.target)
     end
 end
 

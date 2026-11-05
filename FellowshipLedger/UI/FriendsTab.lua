@@ -88,8 +88,14 @@ function FriendsTab.Refresh()
     else
         local online = 0
         for _, peer in pairs(ns.Friends and ns.Friends.peers or {}) do if peer.online then online = online + 1 end end
-        ui.status:SetText(string.format(L.SYNC_STATUS, online, ns.Sync and ns.Sync.lastSyncAt and FriendsModel.Ago(time(), ns.Sync.lastSyncAt) or L.NEVER,
-            ns.Transport and #ns.Transport.queue or 0))
+        local last = ns.Sync and ns.Sync.lastSyncAt and FriendsModel.Ago(time(), ns.Sync.lastSyncAt) or L.NEVER
+        local waiting = ns.Transport and #ns.Transport.queue or 0
+        local held = waiting > 0 and ns.Transport.Blocked()
+        if held then
+            ui.status:SetText(string.format(L.SYNC_STATUS_HELD, online, last, waiting, held))
+        else
+            ui.status:SetText(string.format(L.SYNC_STATUS, online, last, waiting))
+        end
     end
     local list, count = lines()
     ui.table:SetLines(list)
@@ -115,7 +121,16 @@ local function build(panel)
     end)
     ui.weeklyButton:SetPoint("TOPLEFT", x + 12, -2)
     local syncNow = W.Button(panel, L.SYNC_NOW, 100, 20, function()
-        if ns.Sync and not ns.Data.IsFake() then ns.Sync.SyncAll(true) end
+        if ns.Sync and ns.tracking and not ns.Data.IsFake() then
+            local n = ns.Sync.SyncAll(true)
+            ns.Log.Info(n > 0 and L.SYNC_WAITING_REPLY or L.SYNC_NONE_ONLINE, n)
+            -- Show the queue draining and any replies that arrive.
+            for _, delay in ipairs({ 1, 4, 10 }) do
+                ns.Events.After(delay, function()
+                    if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then FriendsTab.Refresh() end
+                end)
+            end
+        end
         FriendsTab.Refresh()
     end)
     syncNow:SetPoint("TOPRIGHT", -4, -2)
