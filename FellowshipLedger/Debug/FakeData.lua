@@ -171,7 +171,9 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
             lastUpdated = now - rng.int(5, 3 * 24 * 60) * 60, characters = {} }
         for _, cs in ipairs(f.chars) do
             local spec = { name = cs[1], class = cs[2], startLevel = cs[3], playChance = 0.2 + rng.float() * 0.4 }
-            friend.characters[ns.Character.Key(cs[1], FakeData.REALM)] = makeCharacter(rng, spec, now, timeFn, dateFn)
+            local fc = makeCharacter(rng, spec, now, timeFn, dateFn)
+            fc.mask = string.rep("1", #ns.TrackerList.ORDER) -- shares everything, so every friend view has data
+            friend.characters[ns.Character.Key(cs[1], FakeData.REALM)] = fc
         end
         out.friends[f.id] = friend
     end

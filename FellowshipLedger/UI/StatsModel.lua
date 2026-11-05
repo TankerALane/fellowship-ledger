@@ -27,10 +27,14 @@ local function pct(part, whole)
     return string.format("%d%%", math.floor(part / whole * 100 + 0.5))
 end
 
--- The tab buttons. current: a TABS id; onPick(id).
-function StatsModel.TabLine(current, L, onPick)
-    local segs, w = {}, 1 / #StatsModel.TABS
-    for i, id in ipairs(StatsModel.TABS) do
+-- A friend's character has no All completed (the game only lists your own).
+StatsModel.FRIEND_TABS = { "overview", "quests", "gold", "kills", "professions" }
+
+-- The tab buttons. current: a tab id; onPick(id); tabs: TABS (default) or FRIEND_TABS.
+function StatsModel.TabLine(current, L, onPick, tabs)
+    tabs = tabs or StatsModel.TABS
+    local segs, w = {}, 1 / #StatsModel.TABS -- same button width either way
+    for i, id in ipairs(tabs) do
         segs[i] = { x = (i - 1) * w, w = w, text = "", button = { label = L[StatsModel.TAB_LABEL[id]], fill = true,
             selected = id == current, onClick = function() onPick(id) end } }
     end
@@ -109,7 +113,7 @@ end
 
 -- Kills: sum over the range (kills, rareKills, eliteKills, killType:<type>); kills = char.kills (all time).
 -- For "all" the creature types come from the all-time table (it includes kills from before D-081).
-function StatsModel.Kills(sum, kills, range, L)
+function StatsModel.Kills(sum, kills, range, L, noTypes)
     local Format = ns.Format
     kills = kills or {}
     local types = {}
@@ -129,7 +133,10 @@ function StatsModel.Kills(sum, kills, range, L)
     local elite = range == "all" and (kills.elite or 0) or (sum.eliteKills or 0)
     local out = { { segs = { seg(0, 1, string.format(L.STATS_KILLS_SUM, Format.Number(inRange), Format.Number(rare), Format.Number(elite),
         Format.Number(kills.total or 0)), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
-    if #types == 0 then
+    if noTypes then
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_KILLS_TYPES_NOT_SHARED, "muted") } }
+        return out
+    elseif #types == 0 then
         out[#out + 1] = { segs = { seg(0, 1, L.STATS_NO_KILLS, "muted") } }
     else
         out[#out + 1] = { segs = { seg(0, .22, L.STATS_COL_TYPE, "muted", "small"), seg(.23, .08, L.STATS_COL_KILLS, "muted", "small", "RIGHT"),
@@ -253,6 +260,129 @@ function StatsModel.Completed(groups, total, questieMissing, L, open, onToggle, 
                 out[#out + 1] = { segs = segs }
             end
         end
+    end
+    return out
+end
+
+-- Friends (D-083) ------------------------------------------------------------------
+-- What a friend's character shares: day totals, level times, sessions, chains and
+-- (from 1.2.0) profession ranks. shared: set of tracker ids from its share mask.
+
+-- Totals listed in a friend's Overview: field, label, kind, owning tracker.
+StatsModel.FRIEND_TOTALS = {
+    { "played", "COL_PLAYED", "duration", "time" }, { "active", "COL_ACTIVE", "duration", "time" },
+    { "xp", "STATS_T_XP", "number", "levels" }, { "quests", "COL_QUESTS", "number", "quests" },
+    { "dungeonsCompleted", "STATS_T_DUNGEONS", "dungeons", "dungeons" }, { "deaths", "COL_DEATHS", "number", "deaths" },
+    { "kills", "COL_KILLS", "kills", "kills" }, { "skillUps", "COL_SKILLUPS", "number", "professions" },
+    { "zonesDiscovered", "STATS_T_ZONES", "number", "zones" }, { "repGained", "STATS_T_REP", "number", "reputation" },
+    { "flightPaths", "STATS_T_FLIGHT", "number", "flightPaths" }, { "achievements", "STATS_T_ACH", "number", "achievements" },
+    { "itemsNotable", "STATS_T_LOOT", "loot", "items" }, { "partyLevelUps", "STATS_T_PARTY", "number", "partyLevels" },
+}
+
+local function totalText(def, sum, L)
+    local Format, field, kind = ns.Format, def[1], def[3]
+    local v = sum[field] or 0
+    if kind == "duration" then return Format.Duration(v) end
+    if kind == "dungeons" then return string.format(L.STATS_T_OF, Format.Number(v), Format.Number(sum.dungeonsEntered or 0)) end
+    if kind == "kills" then return string.format(L.STATS_T_KILLS, Format.Number(v), Format.Number(sum.rareKills or 0), Format.Number(sum.eliteKills or 0)) end
+    if kind == "loot" then return string.format(L.STATS_T_LOOT_VALUE, Format.Number(v), Format.Number(sum.itemsEpic or 0)) end
+    return Format.Number(v)
+end
+
+-- A friend's Overview: summary, recent levels (left) and totals for the range (right).
+-- data: DetailModel.Data(char, ...) (levels and summary are used). rangeLabel: "Today", ...
+function StatsModel.FriendOverview(data, sum, shared, L, rangeLabel, onToggle, valueCode)
+    local out = { { segs = { seg(0, 1, ns.DetailModel.SummaryText(data.summary, L, valueCode), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
+    local left = {}
+    local heading = { segs = { seg(0, .22, L.DETAIL_LEVELS, "heading") }, rules = { { 0, .36 } } }
+    local limit = ns.DetailModel.LIMITS.levels
+    if data.levels.total > limit then
+        local label = (#data.levels.rows > limit) and L.DETAIL_SHOW_LESS or string.format(L.DETAIL_SHOW_ALL, data.levels.total)
+        heading.segs[#heading.segs + 1] = { x = 0, w = .36, text = "", button = { label = label, onClick = onToggle } }
+    end
+    left[1] = heading
+    if not shared.levels then
+        left[2] = { segs = { seg(0, .36, L.STATS_NOT_SHARED, "muted") } }
+    elseif #data.levels.rows == 0 then
+        left[2] = { segs = { seg(0, .36, L.NO_LEVELS_YET, "muted") } }
+    else
+        left[2] = { segs = { seg(0, .12, L.DETAIL_COL_LEVEL, "muted", "small"), seg(.13, .10, L.DETAIL_COL_ACTIVE, "muted", "small"),
+            seg(.24, .10, L.DETAIL_COL_PLAYED, "muted", "small") } }
+        for _, r in ipairs(data.levels.rows) do
+            left[#left + 1] = { segs = { seg(0, .12, r.level), seg(.13, .10, r.active), seg(.24, .10, r.played) } }
+        end
+    end
+    local right = { { segs = { seg(.42, .58, string.format(L.STATS_TOTALS, rangeLabel), "heading") }, rules = { { .42, .58 } } } }
+    for _, def in ipairs(StatsModel.FRIEND_TOTALS) do
+        local on = def[4] == "time" or shared[def[4]]
+        right[#right + 1] = { segs = { seg(.42, .30, L[def[2]], "muted"),
+            seg(.73, .27, on and totalText(def, sum, L) or L.STATS_NOT_SHARED_SHORT, on and "text" or "muted") } }
+    end
+    for i = 1, math.max(#left, #right) do
+        local a, b = left[i] or { segs = {} }, right[i] or { segs = {} }
+        local segs, rules = {}, {}
+        for _, s in ipairs(a.segs) do segs[#segs + 1] = s end
+        for _, s in ipairs(b.segs) do segs[#segs + 1] = s end
+        for _, r in ipairs(a.rules or {}) do rules[#rules + 1] = r end
+        for _, r in ipairs(b.rules or {}) do rules[#rules + 1] = r end
+        out[#out + 1] = { segs = segs, rules = #rules > 0 and rules or nil }
+    end
+    return out
+end
+
+-- A friend's Quests: counts for the range and the chains they are on (titles are not shared).
+function StatsModel.FriendQuests(sum, chains, shared, L)
+    local Format = ns.Format
+    if not shared.quests then return { { segs = { seg(0, 1, L.STATS_NOT_SHARED, "muted") } } } end
+    local out = { { segs = { seg(0, 1, string.format(L.STATS_FRIEND_QUESTS_SUM, Format.Number(sum.quests or 0),
+        Format.Number(sum.questsAccepted or 0), Format.Number(sum.xp or 0)), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
+    local list = {}
+    for key, c in pairs(chains or {}) do list[#list + 1] = { key = key, c = c } end
+    table.sort(list, function(a, b) return tostring(a.c.name) < tostring(b.c.name) end)
+    out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_CHAINS, "heading") }, rules = { { 0, 1 } } }
+    if #list == 0 then
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_NO_CHAINS, "muted") } }
+    else
+        out[#out + 1] = { segs = { seg(0, .40, L.STATS_COL_CHAIN, "muted", "small"), seg(.41, .14, L.STATS_COL_STEP, "muted", "small"),
+            seg(.56, .44, L.STATS_COL_STARTS_WITH, "muted", "small") } }
+        for _, e in ipairs(list) do
+            local c = e.c
+            local starts = c.firstName and (c.startZone and string.format(L.CHAIN_PLACE, c.firstName, c.startZone) or c.firstName) or ""
+            out[#out + 1] = { segs = { seg(0, .40, c.name or L.CHAIN_UNNAMED), seg(.41, .14, string.format(L.CHAIN_STEP_OF, c.step or 0, c.total or 0)),
+                seg(.56, .44, starts, "muted") } }
+        end
+    end
+    out[#out + 1] = { segs = {} }
+    out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_QUESTS_NOTE, "muted", "small") } }
+    return out
+end
+
+-- A friend's Professions: skill-ups in the range, and each profession's rank when the
+-- friend's version shares it (char.professions = { [key] = { name, rank, max, lastAt } }).
+function StatsModel.FriendProfessions(sum, profs, shared, L, dateFn)
+    local Format = ns.Format
+    if not shared.professions then return { { segs = { seg(0, 1, L.STATS_NOT_SHARED, "muted") } } } end
+    local out = { { segs = { seg(0, 1, string.format(L.STATS_PROF_FRIEND_SUM, Format.Number(sum.skillUps or 0)), "muted") }, rules = { { 0, 1 } } },
+        { segs = {} } }
+    if not profs then
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_PROF_FRIEND_OLD, "muted") } }
+        return out
+    end
+    local keys = {}
+    for key in pairs(profs) do keys[#keys + 1] = key end
+    table.sort(keys, function(a, b) return tostring(profs[a].name) < tostring(profs[b].name) end)
+    if #keys == 0 then
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_NO_PROF, "muted") } }
+        return out
+    end
+    out[#out + 1] = { segs = { seg(0, .22, L.STATS_COL_PROFESSION, "muted", "small"), seg(.23, .10, L.STATS_COL_RANK, "muted", "small", "CENTER"),
+        seg(.35, .25, L.STATS_COL_PROGRESS, "muted", "small"), seg(.62, .38, L.STATS_COL_LAST, "muted", "small") }, rules = { { 0, 1 } } }
+    for _, key in ipairs(keys) do
+        local p = profs[key]
+        local max = tonumber(p.max) or 0
+        out[#out + 1] = { segs = { seg(0, .22, p.name or key), seg(.23, .10, string.format(L.STATS_RANK, p.rank or 0, max), "text", nil, "CENTER"),
+            { x = .35, w = .25, bar = max > 0 and (p.rank or 0) / max or 0 },
+            seg(.62, .38, (p.lastAt or 0) > 0 and dateFn("%m-%d, %H:%M", p.lastAt) or "", "muted") } }
     end
     return out
 end

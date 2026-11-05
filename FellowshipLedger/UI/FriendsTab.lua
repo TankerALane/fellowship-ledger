@@ -12,7 +12,7 @@ local MeModel, FriendsModel = ns.MeModel, ns.FriendsModel
 local FriendsTab = {}
 ns.FriendsTab = FriendsTab
 
-local state = { range = "week", weekly = false, sort = nil, desc = false }
+local state = { range = "week", weekly = false, sort = nil, desc = false, expanded = {}, detailView = {}, showAll = {} }
 local ui = {}
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
@@ -25,10 +25,15 @@ local COLUMNS = {
     { field = "dungeons", label = "COL_DUNGEONS", width = 70 },
     { field = "moneyNet", label = "COL_GOLD", width = 104 },
     { field = "active", label = "COL_ACTIVE", width = 70 },
+    { field = "played", label = "COL_PLAYED", width = 70 },
+    { field = "deaths", label = "COL_DEATHS", width = 50 },
+    { field = "kills", label = "COL_KILLS", width = 50 },
+    { field = "skillUps", label = "COL_SKILLUPS", width = 54 },
     { field = "lastUpdated", label = "COL_UPDATED", width = 90 },
 }
 
-local KIND = { level = "number", faction = "faction", levels = "number", quests = "number", dungeons = "pair", moneyNet = "money", active = "duration" }
+local KIND = { level = "number", faction = "faction", levels = "number", quests = "number", dungeons = "pair", moneyNet = "money",
+    active = "duration", played = "duration", deaths = "number", kills = "number", skillUps = "number" }
 
 function FriendsTab.Block(tag)
     ns.db.blocklist[tag] = true
@@ -44,6 +49,44 @@ local function weeklyLines()
     end
     if #list == 0 then out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_EMPTY } end
     return out
+end
+
+-- An opened friend's character (D-083): the same tabs as the Me tab without All
+-- completed, built from what the character shares. id: "<friend id>|<character key>".
+function FriendsTab.DetailLines(id, char)
+    local S = ns.StatsModel
+    local view = state.detailView[id] or "overview"
+    local layout = ns.db.settings.detailsLayout
+    local tabs = S.TabLine(view, L, function(v)
+        state.detailView[id] = v
+        FriendsTab.Refresh()
+    end, S.FRIEND_TABS)
+    local shared = ns.Codec.MaskToSet(char.mask or "")
+    local today = ns.Store.Today()
+    local fromKey = ns.Days.RangeStart(state.range, today, time, date)
+    local sum = ns.Days.Sum(char.days or {}, fromKey, today)
+    local allSum = ns.Days.Sum(char.days or {}, nil, today)
+    local parts
+    if view == "overview" then
+        local skin = ns.db.settings.skin
+        local data = ns.DetailModel.Data(char, L, date, { levels = state.showAll[id] },
+            ns.DetailModel.ArrowCode(ns.Palette.Color(skin, "text")))
+        data.summary.deaths = allSum.deaths or 0
+        parts = S.FriendOverview(data, sum, shared, L, L[RANGE_LABEL[state.range]], function()
+            state.showAll[id] = not state.showAll[id] or nil
+            FriendsTab.Refresh()
+        end, ns.Palette.Code(ns.Palette.Color(skin, "text")))
+    elseif view == "quests" then
+        parts = S.FriendQuests(sum, char.chains, shared, L)
+    elseif view == "gold" then
+        parts = shared.gold and S.Gold(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
+    elseif view == "kills" then
+        parts = shared.kills and S.Kills(sum, { total = allSum.kills or 0, rare = allSum.rareKills or 0, elite = allSum.eliteKills or 0 },
+            state.range, L, true) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
+    else
+        parts = S.FriendProfessions(sum, char.professions, shared, L, date)
+    end
+    return S.Wrap(tabs, parts, layout)
 end
 
 local function lines()
@@ -66,11 +109,12 @@ local function lines()
                 action = { label = L.BLOCK, onClick = function() FriendsTab.Block(f.tag or r.id) end } }
         else
             local cells = {}
+            local openId = tostring(r.friendId) .. "|" .. tostring(r.key)
             for c, col in ipairs(COLUMNS) do
                 if col.field == "lastUpdated" then
                     cells[c] = FriendsModel.Ago(now, r.lastUpdated)
                 elseif col.field == "name" then
-                    cells[c] = W.ClassName(r.name, r.class)
+                    cells[c] = (state.expanded[openId] and "- " or "+ ") .. W.ClassName(r.name, r.class)
                 else
                     cells[c] = MeModel.FormatCell({ field = col.field, kind = KIND[col.field] }, r)
                 end
@@ -80,7 +124,14 @@ local function lines()
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
             out[#out + 1] = { kind = "row", cells = cells, indent = r.indent,
                 tooltip = function() return FriendsModel.Tooltip(r, char, friend, time(), L, factionText) end,
+                onClick = function()
+                    state.expanded[openId] = not state.expanded[openId] or nil
+                    FriendsTab.Refresh()
+                end,
                 action = (not r.indent) and { label = L.BLOCK, onClick = function() FriendsTab.Block(friend.tag or r.key) end } or nil }
+            if state.expanded[openId] and char then
+                for _, l in ipairs(FriendsTab.DetailLines(openId, char)) do out[#out + 1] = l end
+            end
         end
     end
     if hidden > 0 then out[#out + 1] = { kind = "detail", text = string.format(L.BLOCKED_HIDDEN, hidden) } end
@@ -89,6 +140,7 @@ end
 
 FriendsTab.Lines = lines -- for tests
 FriendsTab.ui = ui
+FriendsTab.state = state
 
 function FriendsTab.Refresh()
     if not ui.table then return end

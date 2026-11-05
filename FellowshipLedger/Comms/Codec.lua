@@ -177,6 +177,18 @@ function Codec.EncodeData(key, char, shared, since)
                 Codec.Escape(ch.source) }, ",")
         end
     end
+    -- Profession ranks (1.2.0, D-083): "p,<key>,<name>,<rank>,<max>,<lastAt>". Older
+    -- versions skip record types they do not know.
+    if shared.professions then
+        local keys = {}
+        for key in pairs(char.professions or {}) do keys[#keys + 1] = key end
+        table.sort(keys)
+        for _, key in ipairs(keys) do
+            local pr = char.professions[key]
+            recs[#recs + 1] = table.concat({ "p", Codec.Escape(key), Codec.Escape(pr.name), tostring(pr.rank or 0),
+                tostring(pr.max or 0), tostring(pr.lastAt or 0) }, ",")
+        end
+    end
     local sessions = {}
     for _, s in ipairs(char.sessions or {}) do
         if not since or (s.stop or s.start or 0) >= ns.Codec.SinceEpoch(since) then sessions[#sessions + 1] = s end
@@ -207,6 +219,7 @@ end
 
 function Codec.DecodeData(body)
     local out = { days = {}, levels = {}, sessions = {}, chains = {} }
+    local profs
     for _, rec in ipairs(split(body, "~")) do
         local f = split(rec, ",")
         if f[1] == "c" then
@@ -223,12 +236,18 @@ function Codec.DecodeData(body)
             out.chains[Codec.Unescape(f[2])] = { name = opt(f[3]), step = tonumber(f[4]), total = tonumber(f[5]),
                 firstQuestID = tonumber(f[6]) ~= 0 and tonumber(f[6]) or nil, firstName = opt(f[7]), startZone = opt(f[8]),
                 source = opt(f[9]) }
+        elseif f[1] == "p" and f[2] and f[2] ~= "" then
+            profs = profs or {}
+            local name = Codec.Unescape(f[3] or "")
+            profs[Codec.Unescape(f[2])] = { name = name ~= "" and name or nil, rank = tonumber(f[4]) or 0,
+                max = tonumber(f[5]) or 0, lastAt = tonumber(f[6]) or 0 }
         elseif f[1] == "s" and tonumber(f[2]) then
             out.sessions[#out.sessions + 1] = { start = tonumber(f[2]), played = tonumber(f[3]) or 0, active = tonumber(f[4]) or 0,
                 levelStart = tonumber(f[5]), levelEnd = tonumber(f[6]), counts = decodeCounts(f, 7) }
         end
     end
     if not out.key or out.key == "" then return nil end
+    out.professions = profs -- nil when the sender did not send any (older version or nothing shared)
     return out
 end
 
