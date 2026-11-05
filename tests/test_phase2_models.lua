@@ -71,6 +71,27 @@ H.test("nice axis scales", function()
     H.ok(y < layout.zeroY and math.abs(y + h - layout.zeroY) < 1e-6, "negative bars hang below zero")
 end)
 
+H.test("the friends table sorts by any column and keeps characters under their friend", function()
+    local ns = H.pureNamespace()
+    local friends = {
+        ["bn:A"] = { kind = "bnet", name = "Ann", characters = {
+            ["Low-R"] = { name = "Low", level = 5, days = {} }, ["High-R"] = { name = "High", level = 50, days = {} } } },
+        ["bn:B"] = { kind = "bnet", name = "Bea", characters = { ["Mid-R"] = { name = "Mid", level = 30, days = {} } } },
+        ["ch:Solo-R"] = { kind = "char", name = "Solo-R", characters = { ["Solo-R"] = { name = "Solo", level = 40, days = {} } } },
+        ["bn:E"] = { kind = "bnet", name = "Empty", characters = {} },
+    }
+    local function order(field, desc)
+        local rows = ns.FriendsModel.Build(friends, {}, "all", "2026-11-04", os.time, os.date, field, desc)
+        local out = {}
+        for _, r in ipairs(rows) do out[#out + 1] = r.header and ("[" .. r.friend.name .. "]") or r.name end
+        return table.concat(out, " ")
+    end
+    H.eq(order("level", true), "[Ann] High Low Solo [Bea] Mid [Empty]")
+    H.eq(order("level", false), "[Ann] Low High [Bea] Mid Solo [Empty]")
+    H.eq(order("name", false), "[Ann] High Low [Bea] Mid [Empty] Solo")
+    H.eq(order(nil), "[Ann] High Low [Bea] Mid [Empty] Solo", "default: Battle.net first, by name")
+end)
+
 H.test("graph series for every chart", function()
     local ns = H.pureNamespace()
     local c = fake(ns).characters["Aelwyn-Fakerealm"]

@@ -19,28 +19,15 @@ function FriendsModel.IsBlocked(blocklist, friend, charKey)
     return false
 end
 
-local function sortedKeys(t, by)
-    local keys = {}
-    for k in pairs(t or {}) do keys[#keys + 1] = k end
-    table.sort(keys, function(a, b)
-        local x, y = by and by(a) or tostring(a), by and by(b) or tostring(b)
-        if x == y then return tostring(a) < tostring(b) end
-        return x < y
-    end)
-    return keys
-end
-
 -- Returns a flat list of display rows: { header = true, friend, id } and
 -- { character row from MeModel, friendId, indent = bool }.
-function FriendsModel.Build(friends, blocklist, range, todayKey, timeFn, dateFn)
-    local rows = {}
-    local ids = sortedKeys(friends, function(id)
-        local f = friends[id]
-        return (f.kind == "bnet" and "0" or "1") .. string.lower(f.name or id)
-    end)
+-- sortField/desc (optional): sort characters by that column, and order friends by
+-- their best character (a friend's characters always stay together under them).
+-- Without a sort: Battle.net friends first, then by name; characters by level.
+function FriendsModel.Build(friends, blocklist, range, todayKey, timeFn, dateFn, sortField, desc)
+    local groups = {}
     local hidden = 0
-    for _, id in ipairs(ids) do
-        local f = friends[id]
+    for id, f in pairs(friends or {}) do
         if FriendsModel.IsBlocked(blocklist, f) then
             hidden = hidden + 1
         else
@@ -49,19 +36,42 @@ function FriendsModel.Build(friends, blocklist, range, todayKey, timeFn, dateFn)
                 if not FriendsModel.IsBlocked(blocklist, f, key) then chars[key] = c end
             end
             local charRows = ns.MeModel.Build(chars, range, todayKey, timeFn, dateFn)
-            ns.MeModel.Sort(charRows, "level", true)
-            if f.kind == "bnet" then
-                rows[#rows + 1] = { header = true, friend = f, id = id, count = #charRows }
-                for _, r in ipairs(charRows) do
-                    r.friendId, r.indent, r.lastUpdated = id, true, f.lastUpdated
-                    rows[#rows + 1] = r
-                end
-            else
-                for _, r in ipairs(charRows) do
-                    r.friendId, r.lastUpdated = id, f.lastUpdated
-                    rows[#rows + 1] = r
-                end
+            for _, r in ipairs(charRows) do r.friendId, r.lastUpdated = id, f.lastUpdated end
+            if sortField then ns.MeModel.Sort(charRows, sortField, desc) else ns.MeModel.Sort(charRows, "level", true) end
+            local order
+            if sortField == "name" then
+                order = string.lower(f.kind == "bnet" and (f.name or id) or (charRows[1] and charRows[1].name or id))
+            elseif sortField then
+                order = charRows[1] and charRows[1][sortField]
             end
+            groups[#groups + 1] = { id = id, friend = f, rows = charRows, order = order,
+                default = (f.kind == "bnet" and "0" or "1") .. string.lower(f.name or id) }
+        end
+    end
+    table.sort(groups, function(a, b)
+        if sortField then
+            local x, y = a.order, b.order
+            if x ~= y then
+                if x == nil then return false end -- friends with nothing to sort by go last
+                if y == nil then return true end
+                if type(x) ~= type(y) then x, y = tostring(x), tostring(y) end
+                if desc then return x > y end
+                return x < y
+            end
+        end
+        if a.default ~= b.default then return a.default < b.default end
+        return tostring(a.id) < tostring(b.id)
+    end)
+    local rows = {}
+    for _, g in ipairs(groups) do
+        if g.friend.kind == "bnet" then
+            rows[#rows + 1] = { header = true, friend = g.friend, id = g.id, count = #g.rows }
+            for _, r in ipairs(g.rows) do
+                r.indent = true
+                rows[#rows + 1] = r
+            end
+        else
+            for _, r in ipairs(g.rows) do rows[#rows + 1] = r end
         end
     end
     return rows, hidden

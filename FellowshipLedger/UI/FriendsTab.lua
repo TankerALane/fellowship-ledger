@@ -12,7 +12,7 @@ local MeModel, FriendsModel = ns.MeModel, ns.FriendsModel
 local FriendsTab = {}
 ns.FriendsTab = FriendsTab
 
-local state = { range = "week", weekly = false }
+local state = { range = "week", weekly = false, sort = nil, desc = false }
 local ui = {}
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
@@ -48,7 +48,8 @@ end
 
 local function lines()
     local now = time()
-    local rows, hidden = FriendsModel.Build(ns.Data.Friends(), ns.db.blocklist, state.range, ns.Store.Today(), time, date)
+    local rows, hidden = FriendsModel.Build(ns.Data.Friends(), ns.db.blocklist, state.range, ns.Store.Today(), time, date,
+        state.sort, state.desc)
     local out = {}
     if state.weekly then
         for _, l in ipairs(weeklyLines()) do out[#out + 1] = l end
@@ -143,8 +144,21 @@ local function build(panel)
     ui.status:SetPoint("RIGHT", syncNow, "LEFT", -8, 0)
     ui.status:SetJustifyH("RIGHT")
     local columns = {}
-    for _, col in ipairs(COLUMNS) do columns[#columns + 1] = { label = L[col.label], width = col.width } end
-    ui.table = ns.Table.New(panel, columns, { top = 30, actions = true })
+    for _, col in ipairs(COLUMNS) do columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field } end
+    ui.table = ns.Table.New(panel, columns, {
+        top = 30,
+        actions = true,
+        -- Click a header to sort (again to reverse). Text columns start A-Z, numbers high to low.
+        onSort = function(field)
+            if state.sort == field then
+                state.desc = not state.desc
+            else
+                state.sort, state.desc = field, field ~= "name" and field ~= "faction"
+            end
+            FriendsTab.Refresh()
+        end,
+        sortState = function() return state.sort, state.desc end,
+    })
     ui.empty = W.Text(panel, "body", "muted")
     ui.empty:SetPoint("TOPLEFT", 8, -80)
     ui.empty:SetPoint("RIGHT", -8, 0)
