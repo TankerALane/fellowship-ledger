@@ -377,20 +377,3 @@ H.test("the new-character prompt waits for the welcome panel to close", function
     Mock.runTimers(env)
     H.ok(ns.StalePrompt.IsShown(), "prompt after the welcome panel closes")
 end)
-
-H.test("class-colored names get an outline; other cells and clients without SetFont are left alone", function()
-    local env, ns = boot(RETAIL)
-    local fs = { font = { "Fonts/FRIZQT__.TTF", 12, "" } }
-    function fs:GetFont() return self.font[1], self.font[2], self.font[3] end
-    function fs:SetFont(f, s, flags) self.font = { f, s, flags } end
-    ns.Widgets.SetOutline(fs, true)
-    H.eq(fs.font[3], "OUTLINE")
-    H.eq(fs.font[2], 12, "size kept")
-    ns.Widgets.SetOutline(fs, false)
-    H.eq(fs.font[3], "")
-    ns.Widgets.SetOutline({}, true) -- no GetFont/SetFont: nothing happens, no error
-    H.ok(ns.Widgets.HasClassColor("PRIEST"))
-    H.ok(not ns.Widgets.HasClassColor("NOPE"))
-    ns.db.settings.classColors = false
-    H.ok(not ns.Widgets.HasClassColor("PRIEST"), "no outline when class colors are off")
-end)

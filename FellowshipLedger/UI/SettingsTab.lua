@@ -206,7 +206,7 @@ local function build(panel)
     skinLabel:SetPoint("TOPLEFT", 8, y - 2)
     skinLabel:SetText(L.SETTINGS_SKIN)
     local sx = 140
-    for _, skin in ipairs({ "ledger", "plain" }) do
+    for _, skin in ipairs({ "ledger", "parchment", "plain" }) do
         local b = W.Button(content, L["SKIN_" .. skin:upper()], 110, 20, function()
             S().skin = skin
             W.ApplySkin()

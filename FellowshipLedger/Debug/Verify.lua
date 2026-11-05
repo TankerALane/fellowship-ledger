@@ -267,9 +267,6 @@ custom["x:ui.frame"] = function()
     have[#have + 1] = "SetTexCoord=" .. (type(t.SetTexCoord) == "function" and "yes" or "no")
     have[#have + 1] = "SetVertexColor=" .. (type(t.SetVertexColor) == "function" and "yes" or "no")
     have[#have + 1] = "GetStringWidth=" .. (type(fs.GetStringWidth) == "function" and "yes" or "no")
-    -- Outlined class-colored names (1.0.1): optional, names are plain without them.
-    have[#have + 1] = "GetFont=" .. (type(fs.GetFont) == "function" and "yes" or "no")
-    have[#have + 1] = "SetFont=" .. (type(fs.SetFont) == "function" and "yes" or "no")
     local ok = type(f.StartSizing) == "function" and type(f.SetShown) == "function" and type(t.SetColorTexture) == "function"
         and (type(f.SetResizeBounds) == "function" or type(f.SetMinResize) == "function")
     return ok and "PASS" or "FAIL", table.concat(have, " ")

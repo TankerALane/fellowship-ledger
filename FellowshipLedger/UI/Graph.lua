@@ -129,9 +129,10 @@ function Obj:Render()
     local pair = self.compare ~= nil
     local barW = math.max(2, math.floor(slot * (pair and 0.4 or 0.7)))
     local colorblind = ns.db.settings.colorblind ~= false
-    local colorA = ns.Palette.Series(colorblind, pair and 1 or self.seriesIndex)
-    local colorB = ns.Palette.Series(colorblind, 2)
-    local negColor = ns.Palette.Series(colorblind, (pair and 1 or self.seriesIndex) + 2)
+    local skin = ns.db.settings.skin
+    local colorA = ns.Palette.Series(colorblind, pair and 1 or self.seriesIndex, skin)
+    local colorB = ns.Palette.Series(colorblind, 2, skin)
+    local negColor = ns.Palette.Series(colorblind, (pair and 1 or self.seriesIndex) + 2, skin)
     local labelEvery = GraphModel.LabelEvery(n, w)
     local k = 0
     local function bar(idx, offset, value, partial, color, text, row)

@@ -44,7 +44,7 @@ local function style(fs, fontRole, colorRole)
     local c = W.Color(colorRole)
     fs:SetTextColor(c[1], c[2], c[3], c[4])
     -- The game's fonts carry a black drop shadow, which reads as a halo on parchment.
-    if skin() == "plain" then
+    if not Palette.IsLight(skin()) then
         fs:SetShadowColor(0, 0, 0, 1)
         fs:SetShadowOffset(1, -1)
     else
@@ -163,23 +163,6 @@ function W.ClassName(text, classToken)
     local c = Palette.ClassColor(classToken, skin())
     if not c then return text end
     return Palette.Code(c) .. text .. "|r"
-end
-
--- True when W.ClassName would color this class (colors on and the class known).
-function W.HasClassColor(classToken)
-    return ns.db ~= nil and ns.db.settings ~= nil and ns.db.settings.classColors == true
-        and Palette.ClassColor(classToken, skin()) ~= nil
-end
-
--- Thin dark outline on a font string (the game's OUTLINE font flag), so
--- class-colored names stand out. Re-applied on every table render, after a skin
--- or text-size change has reset the font. Skipped if the client lacks the methods.
-function W.SetOutline(fs, on)
-    if type(fs.GetFont) ~= "function" or type(fs.SetFont) ~= "function" then return end
-    local file, size, flags = fs:GetFont()
-    if type(file) ~= "string" or type(size) ~= "number" then return end
-    local want = on and "OUTLINE" or ""
-    if (flags or "") ~= want then fs:SetFont(file, size, want) end
 end
 
 -- Show a tooltip with a title and lines, if GameTooltip exists.

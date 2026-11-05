@@ -23,13 +23,20 @@ Palette.ROLES = { "bg", "panel", "border", "text", "muted", "heading", "accent",
     "buttonText", "rule", "rowAlt", "good", "bad" }
 
 Palette.SKINS = {
-    -- "Aged parchment" (1.0.1, D-072): darker than the brand parchment, with text and
-    -- labels darkened to match so everything stays at 4.5:1 or better.
+    -- "Ledger" (default since 1.0.1, D-073): dark leather with parchment-colored
+    -- text and gold, so class colors show at (nearly) full strength.
     ledger = {
-        bg = rgb("C9AF7C", 0.98), panel = rgb("D6C092", 1), border = rgb("C99A2E"), text = rgb("1E140A"),
-        muted = rgb("4A3308"), heading = rgb("1E140A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
-        buttonBorder = rgb("4A3308"), buttonText = rgb("1E140A"), rule = rgb("C99A2E"), rowAlt = rgb("C99A2E", 0.08),
-        good = rgb("174A2C"), bad = rgb("6E200C"),
+        bg = rgb("2B1E12", 0.97), panel = rgb("3A2918", 1), border = rgb("C99A2E"), text = rgb("F1E4C3"),
+        muted = rgb("E0B34A"), heading = rgb("E0B34A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
+        buttonBorder = rgb("C99A2E"), buttonText = rgb("F1E4C3"), rule = rgb("C99A2E"), rowAlt = rgb("E0B34A", 0.06),
+        good = rgb("7FD08F"), bad = rgb("FF8A70"),
+    },
+    -- "Parchment": the light look of 1.0.0.
+    parchment = {
+        bg = rgb("F1E4C3", 0.98), panel = rgb("F6EBD0", 1), border = rgb("C99A2E"), text = rgb("3B2A1A"),
+        muted = rgb("7A560F"), heading = rgb("3B2A1A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
+        buttonBorder = rgb("7A560F"), buttonText = rgb("3B2A1A"), rule = rgb("C99A2E"), rowAlt = rgb("C99A2E", 0.08),
+        good = rgb("1F5F3A"), bad = rgb("8A2A12"),
     },
     plain = {
         bg = { 0.05, 0.05, 0.06, 0.92 }, panel = { 0.1, 0.1, 0.12, 0.9 }, border = { 0.45, 0.45, 0.5, 1 },
@@ -46,7 +53,13 @@ Palette.SKINS = {
 Palette.SERIES = {
     safe = { rgb("0072B2"), rgb("E69F00"), rgb("009E73"), rgb("CC79A7"), rgb("56B4E9"), rgb("D55E00") },
     brand = { rgb("C99A2E"), rgb("7A560F"), rgb("3B2A1A"), rgb("E0B34A"), rgb("8A2A12"), rgb("1F5F3A") },
+    brandDark = { rgb("E0B34A"), rgb("F1E4C3"), rgb("C99A2E"), rgb("7FD08F"), rgb("FF8A70"), rgb("8FB8DE") },
 }
+
+-- Light skins (parchment) get dark text and no drop shadow; dark ones the reverse.
+function Palette.IsLight(skin)
+    return Palette.Luminance(Palette.Color(skin, "bg")) > 0.4
+end
 
 function Palette.Color(skin, role)
     local set = Palette.SKINS[skin] or Palette.SKINS.ledger
@@ -99,7 +112,8 @@ function Palette.Code(c)
     return string.format("|cff%02x%02x%02x", byte(c[1]), byte(c[2]), byte(c[3]))
 end
 
-function Palette.Series(colorblind, index)
-    local set = colorblind and Palette.SERIES.safe or Palette.SERIES.brand
+function Palette.Series(colorblind, index, skin)
+    local set = colorblind and Palette.SERIES.safe
+        or (skin and not Palette.IsLight(skin) and Palette.SERIES.brandDark) or Palette.SERIES.brand
     return set[((index or 1) - 1) % #set + 1]
 end

@@ -11,7 +11,7 @@
 - Remove characters you no longer play: a Remove button in a character's expanded row on the Me tab, and on a new character a prompt listing characters you haven't played for 30 days. Friends drop removed characters at the next sync (friends on 1.0.1 or later).
 
 ### Changed
-- The parchment look is now an aged, darker parchment, with darker text and labels to match (everything stays at 4.5:1 contrast or better). Class-colored names get a thin dark outline so they stand out.
+- The Ledger look is now dark leather with parchment-colored text and gold, so class colors show at nearly full strength. The old light look is still there as **Parchment** in Settings.
 - Sort direction is shown with a small arrow instead of "v" and "^".
 - With no friends' ledgers yet, the Friends tab says how many friends are online on this version of WoW.
 - Release workflows run on Ubuntu 24.04.

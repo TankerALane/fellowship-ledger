@@ -7,7 +7,7 @@ local SettingsDefaults = {}
 ns.SettingsDefaults = SettingsDefaults
 
 SettingsDefaults.VALUES = {
-    skin = "ledger",          -- "ledger" (parchment and gold) or "plain" (default game look)
+    skin = "ledger",          -- "ledger" (dark leather and gold), "parchment" (light, the 1.0.0 look) or "plain"
     scale = 1.0,              -- window scale, 0.7 to 1.5
     fontSize = "normal",      -- "small" | "normal" | "large"
     classColors = true,       -- names in class colors (made readable on the parchment skin)
