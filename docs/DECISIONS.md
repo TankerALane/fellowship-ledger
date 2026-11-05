@@ -266,3 +266,6 @@ Austin asked where players can see kill details, skill-ups, gold details and com
 - All completed: the game's completed-quest list (`C_QuestLog.GetAllCompletedQuestIDs`, or `GetQuestsCompleted`) for the character you are playing, grouped by Questie's zone for each quest, with class, profession and other non-zone quests last. Without Questie the quests show by number. Unverified on Forever: check `x:quest.completed`.
 Lines come from the pure UI/StatsModel.lua. Table grid lines gained bars (`bar = fraction`) and buttons that fill their slot and show as selected.
 
+## D-082 All completed leaves out hidden game quests
+Forever's verify report (2026-11-05) showed C_QuestLog.GetAllCompletedQuestIDs works (110 quests; GetQuestsCompleted is missing there, so it stays only a fallback). The sample quest, 99582, had no name or zone in Questie: very high IDs like this are the game's hidden tracking quests, which the server marks completed. With Questie loaded, quests it does not know are left out of All completed, and the summary says how many ("N hidden game quests not listed"). Without Questie nothing can be named, so every quest shows by number. `x:quest.completed` now samples a named quest and reports how many have no name.
+

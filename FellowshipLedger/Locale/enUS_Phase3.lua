@@ -182,6 +182,7 @@ ns.Locale.Set({
     STATS_NO_PROF = "No professions seen yet.",
     STATS_NO_POINTS = "No points recorded yet.",
     STATS_COMPLETED_SUM = "%s quests completed on this character, grouped by zone",
+    STATS_COMPLETED_HIDDEN = "     (%s hidden game quests not listed)",
     STATS_COMPLETED_NO_API = "This version of WoW does not give addons the list of completed quests.",
     STATS_COMPLETED_NO_QUESTIE = "Install Questie to see quest names and zones. Without it, quests show by number.",
     STATS_COL_COMPLETED = "Completed",

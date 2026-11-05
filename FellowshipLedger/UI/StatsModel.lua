@@ -198,33 +198,42 @@ function StatsModel.Professions(profs, inRange, L, dateFn, open, onToggle, skill
 end
 
 -- Group completed quest IDs by zone. infoOf(id) -> { name, zone } (zone nil = other).
--- Returns { { zone, names = { sorted } } } sorted by zone, the "other" group last.
-function StatsModel.GroupCompleted(ids, infoOf, L)
-    local byZone, groups = {}, {}
+-- skipUnnamed: leave out quests with no name (with Questie loaded these are the
+-- game's hidden tracking quests, e.g. 99582 on Forever). Returns the groups
+-- ({ { zone, names = { sorted } } } sorted by zone, the "other" group last) and
+-- how many quests were left out.
+function StatsModel.GroupCompleted(ids, infoOf, L, skipUnnamed)
+    local byZone, groups, hidden = {}, {}, 0
     for _, id in ipairs(ids or {}) do
         local info = infoOf(id) or {}
-        local zone = info.zone or L.STATS_ZONE_OTHER
-        local g = byZone[zone]
-        if not g then
-            g = { zone = zone, names = {}, other = info.zone == nil }
-            byZone[zone] = g
-            groups[#groups + 1] = g
+        if skipUnnamed and not info.name then
+            hidden = hidden + 1
+        else
+            local zone = info.zone or L.STATS_ZONE_OTHER
+            local g = byZone[zone]
+            if not g then
+                g = { zone = zone, names = {}, other = info.zone == nil }
+                byZone[zone] = g
+                groups[#groups + 1] = g
+            end
+            g.names[#g.names + 1] = info.name or string.format(L.STATS_QUEST_NUM, id)
         end
-        g.names[#g.names + 1] = info.name or string.format(L.STATS_QUEST_NUM, id)
     end
     for _, g in ipairs(groups) do table.sort(g.names) end
     table.sort(groups, function(a, b)
         if a.other ~= b.other then return not a.other end
         return a.zone < b.zone
     end)
-    return groups
+    return groups, hidden
 end
 
 -- All completed quests: groups from GroupCompleted, or nil when the client has no list.
-function StatsModel.Completed(groups, total, questieMissing, L, open, onToggle)
+function StatsModel.Completed(groups, total, questieMissing, L, open, onToggle, hidden)
     local Format = ns.Format
     if not groups then return { { segs = { seg(0, 1, L.STATS_COMPLETED_NO_API, "muted") } } } end
-    local out = { { segs = { seg(0, 1, string.format(L.STATS_COMPLETED_SUM, Format.Number(total or 0)), "muted") }, rules = { { 0, 1 } } } }
+    local sum = string.format(L.STATS_COMPLETED_SUM, Format.Number((total or 0) - (hidden or 0)))
+    if (hidden or 0) > 0 then sum = sum .. string.format(L.STATS_COMPLETED_HIDDEN, Format.Number(hidden)) end
+    local out = { { segs = { seg(0, 1, sum, "muted") }, rules = { { 0, 1 } } } }
     if questieMissing then out[#out + 1] = { segs = { seg(0, 1, L.STATS_COMPLETED_NO_QUESTIE, "muted", "small") } } end
     out[#out + 1] = { segs = {} }
     out[#out + 1] = { segs = { seg(.03, .50, L.DETAIL_COL_ZONE, "muted", "small"), seg(.55, .10, L.STATS_COL_COMPLETED, "muted", "small", "CENTER") },

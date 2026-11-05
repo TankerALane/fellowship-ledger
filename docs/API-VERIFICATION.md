@@ -326,8 +326,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetTaxiMapID` | api | map ID of the open flight map | `/dump type(GetTaxiMapID)` -> "function" | PASS | PASS |
 | `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | PASS | PASS |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | PASS | PASS |
-| `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | ? | ? |
-| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | ? | ? |
+| `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | PASS | ? |
+| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | INFO | ? |
 
 ### Kills
 
@@ -440,9 +440,9 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `C_QuestLog.GetAllCompletedQuestIDs` | api | every quest this character completed (All completed view, D-081) | `/dump type(C_QuestLog.GetAllCompletedQuestIDs)` -> "function" | ? | ? |
-| `GetQuestsCompleted` | api | older form of the completed-quest list (a set of IDs) | `/dump type(GetQuestsCompleted)` -> "function" | ? | ? |
-| `x:quest.completed` | custom | the completed-quest list is readable, and Questie names and zones for it (D-081) | `/fl verify on a character that has done quests` | ? | ? |
+| `C_QuestLog.GetAllCompletedQuestIDs` | api | every quest this character completed (All completed view, D-081) | `/dump type(C_QuestLog.GetAllCompletedQuestIDs)` -> "function" | PASS | ? |
+| `GetQuestsCompleted` | api | older form of the completed-quest list (a set of IDs); only a fallback, missing on Forever (2026-11-05) | `/dump type(GetQuestsCompleted)` -> "function" | FAIL | ? |
+| `x:quest.completed` | custom | the completed-quest list is readable, and Questie names and zones for it (D-081) | `/fl verify on a character that has done quests` | PASS | ? |
 
 ### UI
 

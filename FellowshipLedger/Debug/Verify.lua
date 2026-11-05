@@ -349,11 +349,16 @@ custom["x:quest.completed"] = function()
     local ids = ns.QuestChains.CompletedIDs()
     if not ids then return "FAIL", "no completed-quest list (GetAllCompletedQuestIDs " .. tostring(okA) .. ", GetQuestsCompleted " .. tostring(okB) .. ")" end
     local detail = string.format("%d completed via %s", #ids, okA and "GetAllCompletedQuestIDs" or "GetQuestsCompleted")
-    local id = ids[#ids]
-    if id then
-        local info = ns.QuestChains.QuestInfo(id)
-        detail = detail .. string.format("; quest %d = %s in %s", id, tostring(info.name), tostring(info.zone))
+    -- A sample with a name (the highest IDs are often hidden tracking quests), and how many have none.
+    local unnamed, sample = 0, nil
+    for _, qid in ipairs(ids) do
+        local info = ns.QuestChains.QuestInfo(qid)
+        if info.name then sample = sample or { id = qid, info = info } else unnamed = unnamed + 1 end
     end
+    if sample then
+        detail = detail .. string.format("; quest %d = %s in %s", sample.id, tostring(sample.info.name), tostring(sample.info.zone))
+    end
+    detail = detail .. string.format("; %d without a name (hidden)", unnamed)
     return #ids > 0 and "PASS" or "INFO", detail
 end
 

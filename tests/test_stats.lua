@@ -101,6 +101,12 @@ H.test("stats: all completed grouped by zone, other last, opened zone lists name
     H.ok(text:find("- | Westfall | 2\nA Quest | B Quest", 1, true), text)
     H.ok(text:find("+ | Elwynn Forest | 1", 1, true), text)
     H.ok(textOf(S.Completed(nil, 0, false, L)):find("does not give addons the list", 1, true))
+    -- With Questie loaded, quests it does not know (hidden tracking quests) are left out and counted.
+    local named, hidden = S.GroupCompleted({ 1, 2, 3, 4, 5, 99582 }, function(id) return INFO[id] end, L, true)
+    H.eq(hidden, 2)
+    for _, g in ipairs(named) do for _, n in ipairs(g.names) do H.ok(not n:find("^Quest %d"), n) end end
+    text = textOf(S.Completed(named, 6, false, L, {}, function() end, hidden))
+    H.ok(text:find("4 quests completed on this character, grouped by zone     (2 hidden game quests not listed)", 1, true), text)
 end)
 
 H.test("stats: the box joins the tab row, in both layouts", function()

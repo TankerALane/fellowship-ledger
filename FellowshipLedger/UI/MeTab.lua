@@ -54,10 +54,10 @@ function Me.CompletedGroups()
     if state.completedCache then return state.completedCache end
     local ids = ns.QuestChains.CompletedIDs()
     local c = { total = ids and #ids or 0 }
-    if ids then
-        c.groups = ns.StatsModel.GroupCompleted(ids, ns.QuestChains.QuestInfo, L)
-    end
     c.questieMissing = ns.QuestChains.QuestieState() ~= "ready"
+    if ids then
+        c.groups, c.hidden = ns.StatsModel.GroupCompleted(ids, ns.QuestChains.QuestInfo, L, not c.questieMissing)
+    end
     state.completedCache = c
     return c
 end
@@ -101,7 +101,7 @@ function Me.DetailLines(key, char, name)
         else
             local c = Me.CompletedGroups()
             parts = S.Completed(c.groups, c.total, c.questieMissing, L, state.openZone[key],
-                function(zone) toggleIn(state.openZone, key, zone) end)
+                function(zone) toggleIn(state.openZone, key, zone) end, c.hidden)
         end
     end
     return S.Wrap(tabs, parts, layout)
