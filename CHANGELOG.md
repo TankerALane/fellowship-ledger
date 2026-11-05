@@ -6,6 +6,7 @@
 - Quest chains (Me tab > Quest chains) open into drop-downs. Click a chain for its quests with a check for done and an arrow for the one in your log, each quest's level and the level it needs (red if above yours), and who starts it, where and at which map coordinates. Hover a quest for where to turn it in. Long chains show the two quests before your step and three after, with Show all. Under the list: other quests the chain needs, and friends on the same chain and their step. Friends' chains you haven't started open to the quest to pick up next. The details come from Questie.
 
 ### Fixed
+- A flight path discovered on a character's first visit to a flight master (since installing the ledger) was saved as already known and not counted. The game's "New flight path discovered!" message is now counted too, once, whether it comes before or after the flight map opens.
 - The killer's level was missed when the game cleared your target as you died. Targets from the last 5 minutes are now remembered by name, so the level is found as long as you targeted the killer during the fight.
 
 ## 1.0.1 - 2026-11-05

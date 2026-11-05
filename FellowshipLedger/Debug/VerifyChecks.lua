@@ -200,6 +200,8 @@ ns.VerifyChecks = {
     { id = "GetTaxiMapID", kind = "api", area = "Flight paths", why = "map ID of the open flight map" },
     { id = "Enum.FlightPathState", kind = "api", area = "Flight paths", why = "which taxi nodes are known (Unreachable = unknown)", expect = "table" },
     { id = "ev:TAXIMAP_OPENED", kind = "event", area = "Flight paths", why = "flight map opened (diff known nodes)" },
+    { id = "ERR_NEWTAXIPATH", kind = "api", area = "Flight paths", why = "the client's \"New flight path discovered!\" text (D-080)", expect = "string" },
+    { id = "x:flight.paths", kind = "custom", area = "Flight paths", why = "flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080)", test = "talk to a flight master you don't know yet, then /fl verify" },
     { id = "UnitGUID", kind = "api", area = "Kills", why = "compare PARTY_KILL attacker/target with you and your target (equality only)" },
     { id = "UnitExists", kind = "api", area = "Kills", why = "target exists" },
     { id = "UnitIsDead", kind = "api", area = "Kills", why = "target died (no combat log allowed)" },

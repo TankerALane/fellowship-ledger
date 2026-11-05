@@ -240,6 +240,41 @@ H.test("deaths: killer level from the target, or a recent target if it was clear
     H.eq(log[#log].killerLevel, nil)
 end)
 
+H.test("flight paths: discovery message counts once, before or after the map, even on a first visit", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    local function fps() return char(env).flightPaths end
+    -- First visit ever, message first: the node you stand at is new, the rest a baseline.
+    st.taxiNodes = { { nodeID = 1, name = "Sentinel Hill", state = 0 }, { nodeID = 2, name = "Stormwind", state = 1 },
+        { nodeID = 3, name = "Far Away", state = 2 } }
+    Mock.fire(env, "UI_INFO_MESSAGE", 300, "New flight path discovered!")
+    Mock.fire(env, "TAXIMAP_OPENED")
+    H.eq(today(env).flightPaths, 1)
+    H.eq(fps()["1"].baseline, nil); H.eq(fps()["2"].baseline, true); H.eq(fps()["3"], nil)
+
+    -- Map first, then the message: still one.
+    Mock.advance(env, 60)
+    st.taxiNodes = { { nodeID = 4, name = "Lakeshire", state = 0 }, { nodeID = 1, name = "Sentinel Hill", state = 1 } }
+    Mock.fire(env, "TAXIMAP_OPENED")
+    Mock.fire(env, "UI_INFO_MESSAGE", 300, "New flight path discovered!")
+    H.eq(today(env).flightPaths, 2)
+
+    -- No message (missed): the map alone counts it; reopening counts nothing.
+    Mock.advance(env, 60)
+    st.taxiNodes = { { nodeID = 5, name = "Darkshire", state = 0 } }
+    Mock.fire(env, "TAXIMAP_OPENED")
+    Mock.fire(env, "TAXIMAP_OPENED")
+    H.eq(today(env).flightPaths, 3)
+end)
+
+H.test("flight paths: a first map visit without the message is only a baseline", function()
+    local env = boot(RETAIL)
+    env.__state.taxiNodes = { { nodeID = 1, name = "Sentinel Hill", state = 0 } }
+    Mock.fire(env, "TAXIMAP_OPENED")
+    H.eq(today(env).flightPaths, nil)
+    H.eq(char(env).flightPaths["1"].baseline, true)
+end)
+
 H.test("kills: only your own, with type and rare/elite when targeted", function()
     local env = boot(RETAIL)
     local st = env.__state

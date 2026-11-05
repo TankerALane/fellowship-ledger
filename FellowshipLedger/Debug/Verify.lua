@@ -320,6 +320,28 @@ custom["x:questie.details"] = function()
     return good and "PASS" or "FAIL", detail
 end
 
+-- Flight paths (D-080): what this character has saved, and what was seen this session.
+custom["x:flight.paths"] = function()
+    local char = ns.Store and ns.Store.char
+    if not char then return "INFO", "no character" end
+    local known, counted, newest = 0, 0, nil
+    for _, fp in pairs(char.flightPaths or {}) do
+        known = known + 1
+        if not fp.baseline then
+            counted = counted + 1
+            if not newest or (fp.at or 0) > (newest.at or 0) then newest = fp end
+        end
+    end
+    local fpT = ns.Trackers.byId.flightPaths
+    local c = fpT and fpT.lastCheck or {}
+    local detail = string.format("known=%d counted=%d baseline=%s; message this session=%s; map this session=%s",
+        known, counted, tostring(char.flightPathsBaseline == true), c.message and date("%H:%M", c.message) or "no",
+        c.open and string.format("%s (%d nodes, %d new)", date("%H:%M", c.open.at), c.open.nodes, c.open.added) or "no")
+    if newest then detail = detail .. string.format("; newest counted: %s at %s", tostring(newest.name), date("%m-%d %H:%M", newest.at or 0)) end
+    if counted > 0 then return "PASS", detail end
+    return "INFO", detail .. "; talk to a flight master you don't know yet, then /fl verify"
+end
+
 custom["x:death.recap"] = function()
     if not (Compat.Has("C_DeathRecap.HasRecapEvents") and Compat.Has("C_DeathRecap.GetRecapEvents")) then
         return "FAIL", "death recap functions missing"

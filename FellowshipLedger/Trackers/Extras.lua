@@ -291,8 +291,47 @@ Kills.events.PARTY_KILL = function(_, attacker, target)
     end
 end
 
--- Flight paths (diff of known taxi nodes when the flight map opens) ---------------
+-- Flight paths --------------------------------------------------------------------
+-- Two signals (D-080):
+-- 1. The game's on-screen "New flight path discovered!" (UI_INFO_MESSAGE, recognised by
+--    its error name ERR_NEWTAXIPATH or the client's own string). It is counted at once.
+-- 2. When the flight map opens, known taxi nodes are compared with the saved list. The
+--    first time on a character everything is a baseline (not counted), except the node
+--    you stand at if the discovery message just came; later new nodes are counted unless
+--    the message already counted them.
 local FlightPaths = T.Define({ id = "flightPaths" })
+FlightPaths.DISCOVERY_WINDOW = 120 -- seconds from the message to the flight map
+FlightPaths.lastCheck = {} -- for /fl verify (this session only)
+
+function FlightPaths.IsDiscovery(messageType, message)
+    if messageType and ns.Compat.Has("GetGameMessageInfo") then
+        local ok, errorName = ns.Compat.Try("GetGameMessageInfo", messageType)
+        if ok and T.Plain(errorName) == "ERR_NEWTAXIPATH" then return true end
+    end
+    local text = _G.ERR_NEWTAXIPATH
+    return type(text) == "string" and message == text
+end
+
+-- The message may come just before or just after the flight map opens; either
+-- way the new path is counted once.
+FlightPaths.events.UI_INFO_MESSAGE = function(_, messageType, message)
+    if not FlightPaths.IsDiscovery(T.Plain(messageType), T.Plain(message)) then return end
+    if T.Dedupe("flightPathMsg", 5) then return end
+    local now = Store.Now()
+    FlightPaths.lastCheck.message = now
+    local open = FlightPaths.recentOpen
+    if open and now - open.at <= 10 and open.currentNew then
+        local entry = Store.char.flightPaths[tostring(open.currentNew)]
+        if entry and entry.baseline then
+            entry.baseline = nil
+            Store.Count("flightPaths")
+        end
+        return -- the map already counted it
+    end
+    FlightPaths.pending = now
+    Store.Count("flightPaths")
+end
+
 FlightPaths.events.TAXIMAP_OPENED = function()
     local mapID
     if ns.Compat.Has("GetTaxiMapID") then mapID = T.Plain(GetTaxiMapID()) end
@@ -303,17 +342,36 @@ FlightPaths.events.TAXIMAP_OPENED = function()
     if not mapID then return end
     local ok, nodes = ns.Compat.Call("flightPaths", "C_TaxiMap.GetAllTaxiNodes", mapID)
     if not ok or type(nodes) ~= "table" then return end
-    local unreachable = _G.Enum and _G.Enum.FlightPathState and _G.Enum.FlightPathState.Unreachable
+    local states = _G.Enum and _G.Enum.FlightPathState
+    local unreachable, current = states and states.Unreachable, states and states.Current
     local char = Store.char
     local baseline = not char.flightPathsBaseline
+    local pending = FlightPaths.pending and Store.Now() - FlightPaths.pending <= FlightPaths.DISCOVERY_WINDOW
+    local added, currentNew = 0, nil
     for _, node in ipairs(nodes) do
         local id = T.Plain(node.nodeID)
-        if id and node.state ~= unreachable and not char.flightPaths[tostring(id)] then
-            char.flightPaths[tostring(id)] = { name = T.Plain(node.name), at = Store.Now(), baseline = baseline or nil }
-            if not baseline then Store.Count("flightPaths") end
+        local state = T.Plain(node.state)
+        if id and state ~= unreachable and not char.flightPaths[tostring(id)] then
+            local here = current ~= nil and state == current
+            -- The message already counted the node you stand at.
+            local claimed = pending and (here or current == nil)
+            local entry = { name = T.Plain(node.name), at = Store.Now() }
+            if claimed then
+                pending = false
+            elseif baseline then
+                entry.baseline = true
+            else
+                Store.Count("flightPaths")
+            end
+            char.flightPaths[tostring(id)] = entry
+            added = added + 1
+            if here then currentNew = id end
         end
     end
+    FlightPaths.pending = nil
     char.flightPathsBaseline = true
+    FlightPaths.recentOpen = { at = Store.Now(), currentNew = currentNew }
+    FlightPaths.lastCheck.open = { at = Store.Now(), nodes = #nodes, added = added, baseline = baseline }
 end
 
 -- Achievements -------------------------------------------------------------------

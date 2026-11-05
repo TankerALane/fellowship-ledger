@@ -176,7 +176,15 @@ function M.new(opts)
         local u = state.units[unit]
         return u ~= nil and not u.npc
     end
-    env.GetGameMessageInfo = function(t) if t == 408 then return "ERR_ZONE_EXPLORED" end return "ERR_OTHER" end
+    env.GetGameMessageInfo = function(t)
+        if t == 408 then return "ERR_ZONE_EXPLORED" end
+        if t == 300 then return "ERR_NEWTAXIPATH" end
+        return "ERR_OTHER"
+    end
+    env.ERR_NEWTAXIPATH = "New flight path discovered!"
+    -- Flight map: state.taxiNodes = { { nodeID, name, state } } (state 0 current, 1 reachable, 2 unreachable).
+    env.GetTaxiMapID = function() return 1415 end
+    env.C_TaxiMap = { GetAllTaxiNodes = function() return state.taxiNodes or {} end }
     env.ERR_ZONE_EXPLORED = "Discovered: %s"
     env.ERR_ZONE_EXPLORED_XP = "Discovered %s: %d experience gained"
 
@@ -249,7 +257,8 @@ function M.new(opts)
     -- Real retail values (verify report 2026-11-04).
     env.Enum = { SendAddonMessageResult = { Success = 0, InvalidPrefix = 1, InvalidMessage = 2, AddonMessageThrottle = 3,
         InvalidChatType = 4, NotInGroup = 5, TargetRequired = 6, InvalidChannel = 7, ChannelThrottle = 8, GeneralError = 9,
-        NotInGuild = 10, AddOnMessageLockdown = 11, TargetOffline = 12 } }
+        NotInGuild = 10, AddOnMessageLockdown = 11, TargetOffline = 12 },
+        FlightPathState = { Current = 0, Reachable = 1, Unreachable = 2 } }
     -- Comms: every send is recorded in state.sent; state.sendResult overrides the result.
     state.sent = {}
     state.combat = false
