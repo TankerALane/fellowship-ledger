@@ -246,5 +246,7 @@ function DetailModel.Lines(data, layout, L, opts)
             lines[#lines].box = "bottom"
         end
     end
+    -- A blank line after the details, so the next character stands apart.
+    lines[#lines + 1] = { kind = "grid", segments = {} }
     return lines
 end

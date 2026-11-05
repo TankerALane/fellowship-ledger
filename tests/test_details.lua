@@ -103,9 +103,12 @@ H.test("details: card layout is a box with levels left and deaths and loot right
     local toggled
     local lines = D.Lines(D.Data(sampleChar(21, 9, 8), L, DATE), "card", L,
         { skin = "ledger", onToggle = function(k) toggled = k end, onRemove = function() end })
+    local last = lines[#lines]
+    H.eq(#last.segments, 0, "a blank line after the card"); H.eq(last.box, nil, "outside the box")
+    table.remove(lines)
     H.eq(lines[1].box, "top"); H.eq(lines[#lines].box, "bottom")
     for i = 2, #lines - 1 do H.eq(lines[i].box, "mid") end
-    H.ok(lines[#lines].action, "Remove button on the last line")
+    H.ok(lines[#lines].action, "Remove button on the last line of the card")
     for _, line in ipairs(lines) do
         H.eq(line.kind, "grid")
         for _, s in ipairs(line.segments) do
@@ -136,7 +139,8 @@ H.test("details: list layout stacks the sections and has no box; Show less after
     local a, b, d = all:find("Recent levels", 1, true), all:find("Recent deaths", 1, true), all:find("Notable loot", 1, true)
     H.ok(a and b and d and a < b and b < d, "sections in order, one under another")
     H.ok(all:find("Recent deaths | [Show less]", 1, true), all)
-    H.eq(#lines, (2 + 10) + 1 + (2 + 9) + 1 + (2 + 5), "no Remove line without onRemove")
+    H.eq(#lines, (2 + 10) + 1 + (2 + 9) + 1 + (2 + 5) + 1, "no Remove line without onRemove; a blank line at the end")
+    H.eq(#lines[#lines].segments, 0)
 end)
 
 H.test("details: no Show all when everything already fits; empty sections say so", function()
@@ -237,7 +241,7 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.ok(shown:find("Recent levels", 1, true) and shown:find("[Show all (21)]", 1, true), shown)
     local grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 19)
+    H.eq(grid, 20)
     -- Show all on levels, then Show less.
     local function levelsButton()
         for _, line in ipairs(Me.ui.table.lines) do
@@ -248,7 +252,7 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, true)
     grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 3 + 2 + 21 + 1, "all 21 levels listed")
+    H.eq(grid, 3 + 2 + 21 + 1 + 1, "all 21 levels listed")
     H.eq(levelsButton().label, "Show less")
     levelsButton().onClick()
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, nil, "back to the last 10")
