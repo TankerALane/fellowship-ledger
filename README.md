@@ -6,7 +6,7 @@ Fellowship Ledger quietly records what each of your characters does: levels and 
 
 An addon for World of Warcraft. It supports **WoW Forever** and **retail**, and keeps their data completely separate.
 
-> Status: **0.2.2 pre-release**. Verified in-game on retail and WoW Forever; the friend-to-friend sharing test is still to come. See [CHANGELOG.md](CHANGELOG.md).
+> Status: **0.2.3 pre-release**. Verified in-game on retail and WoW Forever; the friend-to-friend sharing test is still to come. See [CHANGELOG.md](CHANGELOG.md).
 
 ## What it tracks
 

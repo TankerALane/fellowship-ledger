@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3 - 2026-11-04 (pre-release)
+
+### Fixed
+- WoW Forever: some Battle.net friends who are playing Forever show in the game's friends list with no character and level 0 (a known Forever friends-list problem), and the game reports their game version as unknown. They were skipped as "another game version". They are now included, so sharing can reach them. Forever and retail data still never mix.
+
 ## 0.2.2 - 2026-11-04 (pre-release)
 
 Sharing fixes found while testing with friends on WoW Forever. Everyone sharing should update: friends on 0.2.1 or older may not answer.
