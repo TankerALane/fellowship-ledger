@@ -85,7 +85,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Roadmap cleanup; release runner pinned to Ubuntu 24.04
 - [x] Character details on the Me tab: summary card (default) or list, last 10 levels / 5 deaths / 5 loot with Show all, killer level when targeted
 
-## Next release (unreleased)
+## 1.1.0 (released 2026-11-05)
 - [x] Killer level from recent targets (D-077)
 - [x] Quest chain drop-downs with levels, starters, zones and coordinates (D-078, D-079)
 - [x] Flight paths counted from the discovery message (D-080)

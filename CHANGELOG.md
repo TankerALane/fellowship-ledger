@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 - 2026-11-05
 
 ### Added
 - An opened character on the Me tab has views along the top: **Overview** (the card as before), **Quests** (turn-ins with XP, gold and zone, newest first), **Gold** (in, out and net, and net by source: loot, vendor, quest, mail, auction, other), **Kills** (kills, rare and elite, and kills by creature type), **Professions** (rank, progress, points gained, and each profession's recent points with the active time each took) and **All completed** (every quest the character you are playing has completed, grouped by zone, with names from Questie). The Today / Week / Month / All buttons apply to them.
