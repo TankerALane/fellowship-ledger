@@ -9,7 +9,7 @@
 --   { kind = "grid", inset = px, box = "top"|"mid"|"bottom"|"single"|nil,
 --     rules = { { x, w }, ... }   (thin lines under parts of the line),
 --     segments = { { x, w, text, role, font, align, button = { label, onClick } }, ... },
---     action = { label, onClick } (the table's right-hand button) }
+--     action = { label, onClick } (the table's right-hand button), height = px (default one row) }
 -- x and w are fractions of the line's width after the inset.
 
 local _, ns = ...
@@ -19,8 +19,9 @@ ns.DetailModel = DetailModel
 
 DetailModel.LIMITS = { levels = 10, deaths = 5, loot = 5 }
 DetailModel.INSET = 18
+DetailModel.HALF_LINE = 10 -- px: the small space above the card's summary
 
-local function when(dateFn, at) return dateFn("%m-%d %H:%M", at or 0) end
+local function when(dateFn, at) return dateFn("%m-%d, %H:%M", at or 0) end
 
 -- "9 -> 10" with our arrow image (media/level-arrow.tga) tinted to `c`, so it
 -- does not depend on the font having an arrow. Without a color: plain "->".
@@ -129,8 +130,8 @@ end
 local COLS = {
     card = {
         levels = { { .00, .09 }, { .095, .075 }, { .175, .075 }, { .255, .155 } }, levelsEnd = .41,
-        deaths = { { .44, .105 }, { .55, .19 }, { .745, .06 }, { .81, .06 }, { .875, .125 } },
-        loot = { { .44, .105 }, { .55, .23 }, { .785, .085 }, { .875, .125 } },
+        deaths = { { .44, .115 }, { .56, .18 }, { .745, .06 }, { .81, .06 }, { .875, .125 } },
+        loot = { { .44, .115 }, { .56, .22 }, { .785, .085 }, { .875, .125 } },
         rightStart = .44,
     },
     list = {
@@ -216,8 +217,9 @@ function DetailModel.Lines(data, layout, L, opts)
             for _, half in ipairs(part) do add(half) end
         end
     else
-        -- A blank line before the summary and before the headings, like the one before Notable loot.
-        add({ segs = {} })
+        -- A half line of space before the summary, and a blank line before the headings
+        -- like the one before Notable loot.
+        add({ segs = {} }, { height = DetailModel.HALF_LINE })
         add({ segs = { seg({ 0, 1 }, DetailModel.SummaryText(data.summary, L, opts.valueCode), "muted") }, rules = { { 0, 1 } } })
         add({ segs = {} })
         local right = {}

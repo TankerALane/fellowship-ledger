@@ -274,15 +274,31 @@ function Obj:Render()
     for c, col in ipairs(self.columns) do
         self:ShowSort(self.headers[c], col.label, field ~= nil and col.field == field, desc, self.widths[c])
     end
-    local visible = self:Visible()
-    local maxOffset = math.max(0, #self.lines - visible)
+    -- Lines are ROW_H tall unless they say otherwise (line.height, e.g. a half-height
+    -- spacer), so place them by accumulated height.
+    local avail = self:Visible() * ROW_H
+    local function heightOf(line) return line.height or ROW_H end
+    local maxOffset, used = #self.lines, 0
+    for n = #self.lines, 1, -1 do
+        used = used + heightOf(self.lines[n])
+        if used > avail then break end
+        maxOffset = n - 1
+    end
     if self.offset > maxOffset then self.offset = maxOffset end
-    for i = 1, math.max(visible, #self.widgets) do
-        local line = (i <= visible) and self.lines[i + self.offset] or nil
+    local y = 0
+    for i = 1, math.max(#self.lines, #self.widgets) do
+        local line = self.lines[i + self.offset]
+        if line and y + heightOf(line) > avail then line = nil end
         if not line then
             if self.widgets[i] then self.widgets[i]:Hide() end
         else
             local w = self:Line(i)
+            local h = heightOf(line)
+            w:ClearAllPoints()
+            w:SetPoint("TOPLEFT", 4, -(self.opts.top or 0) - ROW_H - 2 - y)
+            w:SetPoint("RIGHT", self.parent, "RIGHT", -4, 0)
+            w:SetHeight(h)
+            y = y + h
             w.line = line
             w:Show()
             w.alt:SetShown(line.kind ~= "grid" and (line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0))

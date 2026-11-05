@@ -165,7 +165,42 @@ H.test("details: loot names are in a readable quality color on every skin", func
     H.ok(texts(lines):find("|cff", 1, true) and texts(lines):find("Epic Thing|r", 1, true))
 end)
 
+H.test("details: dates read 'MM-DD, HH:MM'; the space above the summary is half a line", function()
+    local ns = H.pureNamespace()
+    local D, L = ns.DetailModel, ns.L
+    local d = D.Data({ deathLog = { { at = 0, killer = "A" } }, items = { { at = 0, name = "X", quality = 2 } } }, L, DATE)
+    H.eq(d.deaths.rows[1].when, "01-01, 00:00")
+    H.eq(d.loot.rows[1].when, "01-01, 00:00")
+    local lines = D.Lines(d, "card", L, {})
+    H.eq(lines[1].height, D.HALF_LINE)
+    H.eq(lines[3].height, nil, "the space before the headings is a full line")
+end)
+
 -- Runtime (mock game) ------------------------------------------------------------
+
+H.test("the table places lines by height: half-height lines take half the room", function()
+    local env = Mock.new(RETAIL)
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    local panel = env.CreateFrame("Frame")
+    local tbl = ns.Table.New(panel, { { label = "A", width = 100, field = "a" } }, { top = 0 })
+    local function shownCount(lines)
+        tbl:SetLines(lines)
+        local n = 0
+        for _, w in pairs(tbl.widgets) do if w:IsShown() then n = n + 1 end end
+        return n
+    end
+    local full, half = {}, {}
+    for i = 1, 60 do
+        full[i] = { kind = "grid", segments = {} }
+        half[i] = { kind = "grid", segments = {}, height = 10 }
+    end
+    local a = shownCount(full)
+    local b = shownCount(half)
+    H.ok(a > 0 and a < 60, "full lines: " .. a)
+    H.eq(b, a * 2, "twice as many half-height lines fit")
+end)
 
 local function boot(db)
     local env = Mock.new(RETAIL)
