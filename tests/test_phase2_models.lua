@@ -208,6 +208,8 @@ H.test("totals line sums every character", function()
     H.eq(t.quests, 7)
     H.eq(t.moneyNet, 30)
     H.eq(ns.MeModel.FormatCell({ field = "dungeons", kind = "pair" }, t), "1/3")
+    H.eq(ns.MeModel.FormatCell({ field = "dungeons", kind = "pair" }, { dungeons = 0, dungeonsEntered = 0 }), "-", "none entered")
+    H.eq(ns.MeModel.FormatCell({ field = "dungeons", kind = "pair" }, { dungeons = 0, dungeonsEntered = 2 }), "0/2")
 end)
 
 H.test("faction column: Horde or Alliance per character, blank on the totals line", function()

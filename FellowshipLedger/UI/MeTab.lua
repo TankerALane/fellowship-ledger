@@ -261,7 +261,10 @@ local function build(panel)
     ui.modeButton:SetPoint("TOPRIGHT", -4, -2)
 
     local columns = {}
-    for _, col in ipairs(MeModel.COLUMNS) do columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field } end
+    for _, col in ipairs(MeModel.COLUMNS) do
+        columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field,
+            tip = rawget(L, (col.label:gsub("^COL_", "COL_TIP_"))) }
+    end
     ui.table = ns.Table.New(panel, columns, {
         top = 30,
         onSort = function(field)

@@ -127,3 +127,27 @@ H.test("Friends tab: open a fake friend's character and go through every view", 
     local chat = table.concat(env.__state.chat, "\n")
     H.ok(not chat:find("failed") and not chat:find("problem"), chat)
 end)
+
+H.test("column headers explain themselves on hover (Me and Friends)", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false } }
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    for _, tab in ipairs({ "me", "friends" }) do
+        ns2.MainWindow.Open(tab)
+        local t = (tab == "me" and ns2.MeTab or ns2.FriendsTab).ui.table
+        local dungeons
+        for c, col in ipairs(t.columns) do if col.field == "dungeons" then dungeons = t.headers[c] end end
+        H.ok(dungeons and dungeons:GetScript("OnEnter"), tab .. ": Dungeons header has hover text")
+        local col
+        for _, cdef in ipairs(t.columns) do if cdef.field == "dungeons" then col = cdef end end
+        H.ok(col.tip:find("Completed / entered", 1, true), col.tip)
+        dungeons:GetScript("OnEnter")(dungeons)
+        local name
+        for _, c2 in ipairs(t.columns) do if c2.field == "name" then name = c2 end end
+        H.eq(name.tip, nil, "no hover text where nothing needs explaining")
+    end
+end)

@@ -6,6 +6,7 @@
 - Friends' characters open like yours: click one on the Friends tab for Overview (their levels, with Show all, and totals for the range: played, active, XP, quests, dungeons, deaths, kills, skill-ups, zones, reputation, flight paths, achievements, notable loot, party level-ups), Quests (counts and the chains they are on), Gold (by source), Kills and Professions. Parts a friend does not share say so.
 - Professions now share each profession's name and rank, so friends can see where you are (with the Professions share switch). Friends see ranks once both of you run 1.2.0 or later.
 - The Friends table has Played, Deaths, Kills and Skill-ups columns, like the Me tab.
+- Hover a column header on the Me or Friends table to see what it counts. Dungeons shows "-" instead of 0/0 when none were entered.
 
 ## 1.1.0 - 2026-11-05
 

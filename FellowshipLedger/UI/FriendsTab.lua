@@ -209,7 +209,10 @@ local function build(panel)
     ui.status:SetPoint("RIGHT", syncNow, "LEFT", -8, 0)
     ui.status:SetJustifyH("RIGHT")
     local columns = {}
-    for _, col in ipairs(COLUMNS) do columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field } end
+    for _, col in ipairs(COLUMNS) do
+        columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field,
+            tip = rawget(L, (col.label:gsub("^COL_", "COL_TIP_"))) }
+    end
     ui.table = ns.Table.New(panel, columns, {
         top = 30,
         actions = true,

@@ -75,7 +75,11 @@ function MeModel.FormatCell(col, row)
     end
     if col.kind == "money" then return ns.Format.Money(v, true) end
     if col.kind == "duration" then return ns.Format.Duration(v) end
-    if col.kind == "pair" then return tostring(row.dungeons) .. "/" .. tostring(row.dungeonsEntered) end
+    -- Dungeons: completed/entered; "-" when none was entered (D-084).
+    if col.kind == "pair" then
+        if (row.dungeonsEntered or 0) == 0 and (row.dungeons or 0) == 0 then return "-" end
+        return tostring(row.dungeons) .. "/" .. tostring(row.dungeonsEntered)
+    end
     return tostring(v)
 end
 

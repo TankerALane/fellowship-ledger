@@ -26,7 +26,7 @@ local SEG_BTN_W = 96
 local Obj = {}
 Obj.__index = Obj
 
--- columns: { { label, width, field }, ... }
+-- columns: { { label, width, field, tip }, ... } (tip: hover text for the header)
 -- opts: top, bottom, actions (bool), onSort(field), sortState() -> field, desc
 function Table.New(parent, columns, opts)
     local self = setmetatable({ parent = parent, columns = columns, opts = opts or {}, widgets = {}, offset = 0, lines = {} }, Obj)
@@ -45,6 +45,11 @@ function Table.New(parent, columns, opts)
         h:SetScript("OnClick", function()
             if self.opts.onSort and col.field then self.opts.onSort(col.field) end
         end)
+        -- col.tip: what the column means, shown when hovering the header (D-084).
+        if col.tip then
+            h:SetScript("OnEnter", function(btn) W.Tooltip(btn, col.label, { col.tip }) end)
+            h:SetScript("OnLeave", function() W.HideTooltip() end)
+        end
         self.headers[c] = h
     end
     local rule = W.Rule(parent, "rule")

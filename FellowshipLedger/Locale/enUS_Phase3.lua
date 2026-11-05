@@ -188,6 +188,18 @@ ns.Locale.Set({
     STATS_COL_COMPLETED = "Completed",
     STATS_ZONE_OTHER = "Other (class, profession and special quests)",
     STATS_QUEST_NUM = "Quest %d",
+    -- Column header hover text (D-084)
+    COL_TIP_LEVEL = "Current level. Click to sort.",
+    COL_TIP_LEVELS = "Levels gained in the chosen range. Click to sort.",
+    COL_TIP_QUESTS = "Quests turned in during the chosen range. Click to sort.",
+    COL_TIP_DUNGEONS = "Completed / entered: dungeons finished (last boss killed) out of dungeons entered in the chosen range. \"-\" means none entered. Click to sort.",
+    COL_TIP_GOLD = "Net gold gained or lost in the chosen range. Open a character and pick Gold for where it came from. Click to sort.",
+    COL_TIP_PLAYED = "Time logged in during the chosen range. Click to sort.",
+    COL_TIP_ACTIVE = "Time you were actually playing: played time minus idle stretches over 5 minutes and AFK. Click to sort.",
+    COL_TIP_DEATHS = "Deaths in the chosen range. Click to sort.",
+    COL_TIP_KILLS = "Kills in the chosen range (your own killing blows). Click to sort.",
+    COL_TIP_SKILLUPS = "Profession points gained in the chosen range. Click to sort.",
+    COL_TIP_UPDATED = "When this friend's ledger last reached you. Click to sort.",
     -- Friends' characters (D-083)
     STATS_NOT_SHARED = "This character does not share this.",
     STATS_NOT_SHARED_SHORT = "not shared",
