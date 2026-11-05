@@ -2,6 +2,7 @@
 tints them):
     FellowshipLedger/media/sort-arrow.tga   16x16 triangle pointing down (flipped for "up")
     FellowshipLedger/media/level-arrow.tga  16x16 arrow pointing right ("9 -> 10")
+    FellowshipLedger/media/check.tga        16x16 check mark (a quest you have done)
 Our own art, made here so nothing from the game is shipped. Run from the repo root:
     python tools/make_sort_arrow.py
 """
@@ -30,6 +31,18 @@ def level_arrow(x, y):
     return False
 
 
+def _near_segment(x, y, ax, ay, bx, by, r):
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)))
+    px, py = ax + t * dx - x, ay + t * dy - y
+    return px * px + py * py <= r * r
+
+
+def check_mark(x, y):
+    # Two strokes, 1.4 px from their centre line: (3, 8.5) to (6.5, 12) to (13, 4).
+    return _near_segment(x, y, 3, 8.5, 6.5, 12, 1.4) or _near_segment(x, y, 6.5, 12, 13, 4, 1.4)
+
+
 def write(path, inside):
     pixels = bytearray()
     for row in range(SIZE):  # top row first (descriptor bit 5 set below)
@@ -50,6 +63,7 @@ def write(path, inside):
 def main():
     write("FellowshipLedger/media/sort-arrow.tga", sort_arrow)
     write("FellowshipLedger/media/level-arrow.tga", level_arrow)
+    write("FellowshipLedger/media/check.tga", check_mark)
 
 
 if __name__ == "__main__":

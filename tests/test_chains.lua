@@ -1,0 +1,125 @@
+-- Quest chain drop-downs (D-078): chain details, the shown window, and the lines
+-- the Quest chains view draws. Pure logic; the in-game look is on Austin's checklist.
+local H = ...
+local ns = H.pureNamespace()
+local Logic, M, L = ns.QuestChainLogic, ns.ChainModel, ns.L
+
+-- A 7-quest chain: 1-2 done, 3 in the log; quest 5 also needs quest 99 (outside the chain).
+local INFO = {
+    [1] = { name = "One", level = 14, req = 9, start = { kind = "npc", name = "Gryan", zone = "Westfall" } },
+    [2] = { name = "Two", level = 14, req = 9 },
+    [3] = { name = "Three", level = 15, req = 10 },
+    [4] = { name = "Four", level = 16, req = 12, start = { kind = "item", name = "Torn Scroll" } },
+    [5] = { name = "Five", level = 18, req = 14, pre = { 4, 99 } },
+    [6] = { name = "Six", level = 20, req = 18, start = { kind = "npc", name = "Traitor" } },
+    [7] = { name = "Seven", level = 22, req = 18 },
+    [99] = { name = "Red Silk Bandanas" },
+}
+local STATUS = { [1] = "done", [2] = "done", [3] = "log" }
+local function details(anchor)
+    return Logic.Details({ 1, 2, 3, 4, 5, 6, 7 }, function(id) return INFO[id] end, function(id) return STATUS[id] end, anchor)
+end
+
+local function textOf(lines)
+    local out = {}
+    for _, l in ipairs(lines) do
+        local parts = {}
+        for _, s in ipairs(l.segments or {}) do parts[#parts + 1] = s.button and ("[" .. s.button.label .. "]") or s.text end
+        out[#out + 1] = l.text or table.concat(parts, " | ")
+    end
+    return table.concat(out, "\n")
+end
+
+H.test("chains: details mark done, in log, next, and outside prerequisites", function()
+    local d = details(3)
+    H.eq(d.current, 3); H.eq(d.next, 4)
+    H.eq(d.quests[1].status, "done"); H.eq(d.quests[3].status, "log"); H.eq(d.quests[4].status, nil)
+    H.eq(#d.also, 1); H.eq(d.also[1].name, "Red Silk Bandanas"); H.eq(d.also[1].done, false)
+    -- Without an anchor (a friend's chain), the quest in your log is "current".
+    H.eq(details(nil).current, 3)
+end)
+
+H.test("chains: two before and three after your step until Show all", function()
+    H.eq(select(1, M.Window(7, 3, false)), 1); H.eq(select(2, M.Window(7, 3, false)), 6)
+    H.eq(select(1, M.Window(12, 8, false)), 6); H.eq(select(2, M.Window(12, 8, false)), 11)
+    H.eq(select(2, M.Window(7, 3, true)), 7)
+    H.eq(select(2, M.Window(3, 1, false)), 3)
+end)
+
+H.test("chains: where a quest starts", function()
+    H.eq(M.PlaceText(INFO[1].start, L), "Gryan, Westfall")
+    H.eq(M.PlaceText(INFO[4].start, L), "item: Torn Scroll")
+    H.eq(M.PlaceText(INFO[6].start, L), "Traitor")
+    H.eq(M.PlaceText(nil, L), "?")
+    local title, tip = M.Tooltip(INFO[1], L)
+    H.eq(title, "One"); H.eq(tip[1], "Starts: Gryan, Westfall"); H.eq(tip[2], "Turn in: ?")
+    H.eq(tip[3], "Quest level 14, needs level 9")
+end)
+
+H.test("chains: an opened chain is a box with the quests, Show all, prerequisites and friends", function()
+    local toggled, all
+    local view = {
+        mine = {
+            { key = "q:1", name = "The Defias Brotherhood", step = 3, total = 7, zone = "Westfall", known = true, open = true,
+                details = details(3), friendsOn = { { friend = "Bob", character = "Bob Ironbeard", step = 5 } } },
+            { key = "q:50", name = "Closed", step = 1, total = 2, known = true },
+            { known = false, title = "Kill On Sight" },
+        },
+        friends = {},
+    }
+    local lines = M.Lines(view, L, { playerLevel = 16, checkCode = "OK", logCode = "NOW",
+        onToggle = function(k) toggled = k end, onShowAll = function(k) all = k end })
+    local text = textOf(lines)
+    H.ok(text:find("- | The Defias Brotherhood | step 3 of 7 | Westfall", 1, true), text)
+    H.ok(text:find("+ | Closed | step 1 of 2", 1, true), text)
+    H.ok(text:find("Kill On Sight | no chain information", 1, true), text)
+    H.ok(text:find("OK | 1 | One | 14 | 9 | Gryan, Westfall", 1, true), text)
+    H.ok(text:find("NOW | 3 | Three | 15 | 10 | in your quest log", 1, true), text)
+    H.ok(text:find(" | 4 | Four | 16 | 12 | item: Torn Scroll", 1, true), text)
+    H.ok(not text:find("Seven", 1, true), "step 7 is past the window")
+    H.ok(text:find("[Show all (7)]", 1, true), text)
+    H.ok(text:find("Also requires: \"Red Silk Bandanas\" (not done)", 1, true), text)
+    H.ok(text:find("Friends on this chain: Bob (Bob Ironbeard), step 5", 1, true), text)
+    H.ok(text:find("None right now", 1, true), "no friend chains")
+
+    -- Your step is shaded, too-high Req is red, the box is closed off, and clicks reach the callbacks.
+    local shaded, red, box, showAllBtn = 0, false, {}, nil
+    for _, l in ipairs(lines) do
+        if l.shade then shaded = shaded + 1 end
+        for _, s in ipairs(l.segments or {}) do
+            if s.role == "bad" and s.text == "18" then red = true end
+            if s.button then showAllBtn = s.button end
+        end
+        if l.box then box[#box + 1] = l.box end
+    end
+    H.eq(shaded, 1); H.ok(red, "Req 18 above level 16 is red")
+    H.eq(box[1], "top"); H.eq(box[#box], "bottom")
+    lines[2].onClick(); H.eq(toggled, "q:1")
+    showAllBtn.onClick(); H.eq(all, "q:1")
+    H.ok(lines[2].onClick ~= nil and lines[#lines].onClick == nil)
+end)
+
+H.test("chains: a friend's chain opens to the quest to pick up next", function()
+    local d = Logic.Details({ 1, 2, 3, 4 }, function(id) return INFO[id] end, function(id) return id == 1 and "done" or nil end)
+    local view = { mine = {}, emptyLog = true, friends = {
+        { key = "q:1", name = "Defias", friend = "Bob", character = "Bob Ironbeard", step = 2, total = 4, zone = "Westfall",
+            open = true, details = d, next = d.next } } }
+    local text = textOf(M.Lines(view, L, { playerLevel = 16 }))
+    H.ok(text:find("Your quest log is empty.", 1, true), text)
+    H.ok(text:find("Defias | Bob (Bob Ironbeard), step 2 of 4 | Westfall", 1, true), text)
+    H.ok(text:find("Pick up next: \"Two\" from ?, needs level 9", 1, true), text)
+    -- Nothing known about the chain: say so instead of an empty box.
+    view.friends[1].details = nil
+    text = textOf(M.Lines(view, L, {}))
+    H.ok(text:find("No details for this chain", 1, true), text)
+end)
+
+H.test("chains: friends on a chain, blocked friends left out", function()
+    local friends = {
+        a = { name = "Bob", characters = { x = { display = "Bob Ironbeard", chains = { ["q:1"] = { step = 5 } } } } },
+        b = { name = "Ann", blocked = true, characters = { y = { display = "Ann", chains = { ["q:1"] = { step = 2 } } } } },
+        c = { name = "Cy", characters = { z = { display = "Cy", chains = { ["q:9"] = { step = 1 } } } } },
+    }
+    local on = Logic.FriendsOn(friends, function(f) return f.blocked end, "q:1")
+    H.eq(#on, 1); H.eq(on[1].friend, "Bob"); H.eq(on[1].step, 5)
+end)

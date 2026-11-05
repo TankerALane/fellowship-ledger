@@ -297,6 +297,29 @@ custom["x:questie.db"] = function()
     return state == "ready" and "PASS" or (state == "loading" and "INFO" or "FAIL"), detail
 end
 
+-- The quest-chain drop-downs (D-078): a quest from your log with Questie's level,
+-- required level, who starts it and where. Quests whose chain is known are preferred.
+custom["x:questie.details"] = function()
+    if ns.QuestChains.QuestieState() ~= "ready" then return "INFO", "Questie not ready (" .. ns.QuestChains.QuestieState() .. ")" end
+    local okN, n = Compat.Try("C_QuestLog.GetNumQuestLogEntries")
+    local pick
+    for i = 1, okN and n or 0 do
+        local ok, info = Compat.Try("C_QuestLog.GetInfo", i)
+        if ok and type(info) == "table" and not info.isHeader and info.questID then
+            local e = ns.QuestChains.Lookup(info.questID)
+            if not pick or (e and e.step) then pick = info.questID end
+            if e and e.step then break end
+        end
+    end
+    if not pick then return "INFO", "quest log is empty; pick up a quest and run /fl verify again" end
+    local q = ns.QuestChains.QuestInfo(pick)
+    local s = q.start
+    local detail = string.format("quest %d \"%s\": level %s, needs %s; starts %s%s%s", pick, tostring(q.name), tostring(q.level),
+        tostring(q.req), s and s.kind or "unknown", s and (" " .. tostring(s.name)) or "", s and s.zone and (" in " .. s.zone) or "")
+    local good = q.name and type(q.level) == "number" and s and s.name
+    return good and "PASS" or "FAIL", detail
+end
+
 custom["x:death.recap"] = function()
     if not (Compat.Has("C_DeathRecap.HasRecapEvents") and Compat.Has("C_DeathRecap.GetRecapEvents")) then
         return "FAIL", "death recap functions missing"

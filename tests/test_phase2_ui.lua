@@ -156,6 +156,39 @@ H.test("quest chains: game data, then Questie, then a plain answer", function()
     noErrors(env)
 end)
 
+H.test("quest chain drop-down: Questie levels, starters and zones in the Me tab", function()
+    local env, ns = boot()
+    local st = env.__state
+    st.noQuestLines = true
+    st.questieLoaded = true
+    st.level = 12
+    st.areas = { [40] = "Westfall" }
+    st.questieNPCs = { [234] = { name = "Gryan Stoutmantle", spawns = { [40] = { { 56, 47 } } } } }
+    st.questieItems = { [1307] = { name = "Gold Pickup Schedule" } }
+    st.questie = {
+        [53] = { next = 54, name = "Start Here", level = 10, req = 8, startedBy = { { 234 } } },
+        [54] = { pre = 53, next = 60, name = "Middle", level = 12, req = 10, finishedBy = { { 234 } } },
+        [60] = { pre = 54, name = "The End", level = 15, req = 13, startedBy = { nil, nil, { 1307 } }, preGroup = { 88 } },
+        [88] = { name = "Side Quest" },
+    }
+    st.completed = { [53] = true }
+    ns.MainWindow.Open("me")
+    ns.MeTab.state.mode = "chains"
+    ns.MeTab.Refresh()
+    local view = ns.MeTab.ChainView()
+    H.eq(#view.mine, 1)
+    H.eq(view.mine[1].key, "q:53")
+    ns.MeTab.state.chainOpen["q:53"] = true
+    view = ns.MeTab.ChainView()
+    local q = view.mine[1].details.quests
+    H.eq(q[1].status, "done"); H.eq(q[2].status, "log"); H.eq(q[3].status, nil)
+    H.eq(q[1].start.name, "Gryan Stoutmantle"); H.eq(q[1].start.zone, "Westfall")
+    H.eq(q[3].start.kind, "item"); H.eq(q[3].req, 13)
+    H.eq(view.mine[1].details.also[1].name, "Side Quest")
+    ns.MeTab.Refresh()
+    noErrors(env)
+end)
+
 H.test("a broken Questie never breaks the ledger", function()
     local env, ns = boot()
     env.__state.noQuestLines = true

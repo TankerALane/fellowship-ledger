@@ -139,6 +139,20 @@ function M.new(opts)
                 if field == "nextQuestInChain" then return q.next end
                 if field == "name" then return q.name end
                 if field == "zoneOrSort" then return q.zone end
+                if field == "questLevel" then return q.level end
+                if field == "requiredLevel" then return q.req end
+                if field == "startedBy" then return q.startedBy end
+                if field == "finishedBy" then return q.finishedBy end
+                if field == "preQuestGroup" then return q.preGroup end
+            end,
+            -- state.questieNPCs = { [npcID] = { name, spawns = { [zoneID] = { {x, y} } } } }, same for Items (name only).
+            QueryNPCSingle = function(id, field)
+                local n = state.questieNPCs and state.questieNPCs[id]
+                return n and n[field]
+            end,
+            QueryItemSingle = function(id, field)
+                local n = state.questieItems and state.questieItems[id]
+                return n and n[field]
             end }
         end,
     }

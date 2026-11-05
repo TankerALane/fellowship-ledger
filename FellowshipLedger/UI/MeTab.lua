@@ -11,7 +11,8 @@ local MeModel = ns.MeModel
 local Me = {}
 ns.MeTab = Me
 
-local state = { range = "today", sort = "level", desc = true, expanded = {}, showAll = {}, mode = "characters" }
+local state = { range = "today", sort = "level", desc = true, expanded = {}, showAll = {}, mode = "characters",
+    chainOpen = {}, chainAll = {} }
 local ui = {}
 Me.state, Me.ui = state, ui -- for tests
 
@@ -74,39 +75,74 @@ local function characterLines()
     return lines, #rows
 end
 
-local function chainLines()
-    local lines = {}
+-- Quest chains (D-078): your chains, each opening to its quests, then chains
+-- friends are on that you have not started. Open and "Show all" are kept by
+-- chain key until reload.
+function Me.ChainView()
     local entries, source = ns.QuestChains.ForLog()
-    for _, e in ipairs(entries) do
-        local text
-        if e.step then
-            text = string.format(L.CHAIN_STEP, e.title, e.chainName or L.CHAIN_UNNAMED, e.step, e.total, L["CHAIN_SOURCE_" .. e.source:upper()])
-        else
-            text = string.format(L.CHAIN_NONE, e.title)
-        end
-        lines[#lines + 1] = { kind = "detail", text = text }
-    end
-    if #entries == 0 then lines[1] = { kind = "detail", text = L.CHAIN_EMPTY_LOG } end
-    if source == "missing" then lines[#lines + 1] = { kind = "group", text = L.CHAIN_QUESTIE_HINT } end
+    local friends = ns.Data.Friends()
+    local blocked = function(f) return ns.FriendsModel.IsBlocked(ns.db.blocklist, f) end
+    local logSet = {}
+    for _, e in ipairs(entries) do logSet[e.questID] = true end
+    local view = { mine = {}, friends = {}, emptyLog = #entries == 0, questieMissing = source == "missing" }
 
-    -- Chains friends are on that this character has not started.
-    lines[#lines + 1] = { kind = "group", text = L.CHAIN_FRIENDS_TITLE }
+    -- One line per chain (two quests of one chain in the log: the later step counts).
+    local byKey, unknown = {}, {}
+    for _, e in ipairs(entries) do
+        if e.step and e.key then
+            local c = byKey[e.key]
+            if not c then
+                c = { key = e.key, name = e.chainName, total = e.total, zone = e.startZone, known = true }
+                byKey[e.key] = c
+                view.mine[#view.mine + 1] = c
+            end
+            if not c.step or e.step > c.step then c.step, c.anchor = e.step, e.questID end
+        else
+            unknown[#unknown + 1] = { known = false, title = e.title }
+        end
+    end
+    table.sort(view.mine, function(a, b) return tostring(a.name) < tostring(b.name) end)
+    for _, c in ipairs(view.mine) do
+        c.open, c.showAll = state.chainOpen[c.key], state.chainAll[c.key]
+        if c.open then
+            c.details = ns.QuestChains.Details(c.key, c.anchor, logSet)
+            c.friendsOn = ns.QuestChainLogic.FriendsOn(friends, blocked, c.key)
+        end
+    end
+    for _, u in ipairs(unknown) do view.mine[#view.mine + 1] = u end
+
     local mine = {}
     local me = ns.Store.char
     for key in pairs(me and me.chains or {}) do mine[key] = true end
     local started = ns.Data.IsFake() and function() return false end or ns.QuestChains.HaveStarted
-    local suggestions = ns.QuestChainLogic.FriendSuggestions(ns.Data.Friends(),
-        function(f) return ns.FriendsModel.IsBlocked(ns.db.blocklist, f) end, mine, started)
-    for _, s in ipairs(suggestions) do
-        local c = s.chain
-        local where = c.firstName and c.startZone and string.format(L.CHAIN_STARTS_AT, c.firstName, c.startZone)
-            or c.firstName and string.format(L.CHAIN_STARTS_WITH, c.firstName)
-            or L.CHAIN_START_UNKNOWN
-        lines[#lines + 1] = { kind = "detail", indent = true, text = string.format(L.CHAIN_FRIEND_LINE, s.friend, s.character,
-            c.name or L.CHAIN_UNNAMED, c.step or 0, c.total or 0, where) }
+    for _, s in ipairs(ns.QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)) do
+        local c = { key = s.key, name = s.chain.name, friend = s.friend, character = s.character, step = s.chain.step,
+            total = s.chain.total, zone = s.chain.startZone, open = state.chainOpen[s.key], showAll = state.chainAll[s.key] }
+        if c.open then
+            c.details = ns.QuestChains.Details(s.key, nil, logSet)
+            c.next = c.details and c.details.next
+        end
+        view.friends[#view.friends + 1] = c
     end
-    if #suggestions == 0 then lines[#lines + 1] = { kind = "detail", indent = true, text = L.CHAIN_FRIENDS_NONE } end
-    return lines
+    return view
+end
+
+local function chainLines()
+    local skin = ns.db.settings.skin
+    local Palette = ns.Palette
+    return ns.ChainModel.Lines(Me.ChainView(), L, {
+        playerLevel = ns.Store.char and ns.Store.char.level,
+        checkCode = ns.DetailModel.IconCode("check", Palette.Color(skin, "good")),
+        logCode = ns.DetailModel.IconCode("level-arrow", Palette.Color(skin, "muted")),
+        onToggle = function(key)
+            state.chainOpen[key] = not state.chainOpen[key] or nil
+            Me.Refresh()
+        end,
+        onShowAll = function(key)
+            state.chainAll[key] = not state.chainAll[key] or nil
+            Me.Refresh()
+        end,
+    })
 end
 
 -- Remove one of my characters (never the one I am on), after a confirm. Friends
@@ -141,6 +177,7 @@ function Me.Refresh()
     else
         lines, count = characterLines()
     end
+    ui.table:SetHeadersShown(state.mode == "characters")
     ui.table:SetLines(lines)
     ui.empty:SetShown(count == 0)
 end

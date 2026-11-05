@@ -42,6 +42,60 @@ function QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)
     return out
 end
 
+-- Friends' characters on the chain `key`: { friend, character, step }, by friend then character.
+function QuestChainLogic.FriendsOn(friends, blocked, key)
+    local out = {}
+    for _, f in pairs(friends or {}) do
+        if not blocked(f) then
+            for charKey, c in pairs(f.characters or {}) do
+                local chain = c.chains and c.chains[key]
+                if chain then
+                    out[#out + 1] = { friend = f.name or "?", character = c.display or c.name or charKey, step = chain.step }
+                end
+            end
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.friend ~= b.friend then return a.friend < b.friend end
+        return a.character < b.character
+    end)
+    return out
+end
+
+-- A chain's details for the view (UI/ChainModel.lua).
+-- ids: the chain's quest IDs in order. infoOf(id) -> { name, level, req, start, finish, pre = { ids } }.
+-- statusOf(id) -> "done" | "log" | nil. anchor: the quest you are on (or nil).
+-- Returns { quests, current, next, also }: current = index of the anchor (or of the
+-- last quest in your log); next = the first quest not done and not in your log;
+-- also = prerequisites outside the chain for quests not yet done.
+function QuestChainLogic.Details(ids, infoOf, statusOf, anchor)
+    local inChain, quests = {}, {}
+    for _, id in ipairs(ids) do inChain[id] = true end
+    local current, nextIdx
+    for i, id in ipairs(ids) do
+        local info = infoOf(id) or {}
+        local q = { id = id, name = info.name, level = info.level, req = info.req, start = info.start,
+            finish = info.finish, pre = info.pre, status = statusOf(id) }
+        quests[i] = q
+        if id == anchor then current = i end
+        if q.status == "log" and not anchor then current = i end
+        if not nextIdx and q.status == nil then nextIdx = i end
+    end
+    local also, seen = {}, {}
+    for i, q in ipairs(quests) do
+        if q.status ~= "done" and (not current or i >= current) then
+            for _, p in ipairs(q.pre or {}) do
+                if not inChain[p] and not seen[p] then
+                    seen[p] = true
+                    local info = infoOf(p) or {}
+                    also[#also + 1] = { id = p, name = info.name, done = statusOf(p) == "done" }
+                end
+            end
+        end
+    end
+    return { quests = quests, current = current, next = nextIdx, also = also }
+end
+
 -- prevOf(id) -> previous quest ID or nil; nextOf(id) -> next quest ID or nil.
 -- Returns the ordered chain (first quest first). Stops on loops or MAX_STEPS.
 function QuestChainLogic.Walk(questID, prevOf, nextOf)

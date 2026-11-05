@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- Quest chains (Me tab > Quest chains) open into drop-downs. Click a chain for its quests with a check for done and an arrow for the one in your log, each quest's level and the level it needs (red if above yours), and who starts it and where. Hover a quest for where to turn it in. Long chains show the two quests before your step and three after, with Show all. Under the list: other quests the chain needs, and friends on the same chain and their step. Friends' chains you haven't started open to the quest to pick up next. The details come from Questie.
+
 ### Fixed
 - The killer's level was missed when the game cleared your target as you died. Targets from the last 5 minutes are now remembered by name, so the level is found as long as you targeted the killer during the fight.
 

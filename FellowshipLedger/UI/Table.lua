@@ -6,7 +6,7 @@
 -- Lines are tables:
 --   { cells = { "text", ... }, kind = "row"|"total"|"group"|"detail", indent = bool,
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
---     tooltip = fn() -> title, lines (shown on hover),
+--     tooltip = fn() -> title, lines (shown on hover), shade = true (grid lines: shaded background),
 --     align = "right" (group/detail text next to its action button) }
 -- or a "grid" line (UI/DetailModel.lua): text placed at fractions of the width,
 -- with optional small buttons, rules and a shaded box spanning several lines.
@@ -141,6 +141,11 @@ function Obj:Line(i)
     return w
 end
 
+-- Column headers off (e.g. the Quest chains view, which has its own headings).
+function Obj:SetHeadersShown(shown)
+    self.headersHidden = not shown
+end
+
 function Obj:SetLines(lines)
     self.lines = lines or {}
     self:Render()
@@ -273,6 +278,7 @@ function Obj:Render()
     if self.opts.sortState then field, desc = self.opts.sortState() end
     for c, col in ipairs(self.columns) do
         self:ShowSort(self.headers[c], col.label, field ~= nil and col.field == field, desc, self.widths[c])
+        self.headers[c]:SetShown(not self.headersHidden and self.widths[c] ~= nil)
     end
     -- Lines are ROW_H tall unless they say otherwise (line.height, e.g. a half-height
     -- spacer), so place them by accumulated height.
@@ -301,7 +307,8 @@ function Obj:Render()
             y = y + h
             w.line = line
             w:Show()
-            w.alt:SetShown(line.kind ~= "grid" and (line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0))
+            -- Grid lines are shaded only when they ask (line.shade: e.g. the quest you are on).
+            w.alt:SetShown(line.shade == true or (line.kind ~= "grid" and (line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0)))
             if line.kind == "grid" then
                 for c = 1, #self.columns do w.cells[c]:Hide() end
                 w.full:Hide()

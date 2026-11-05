@@ -25,11 +25,15 @@ local function when(dateFn, at) return dateFn("%m-%d, %H:%M", at or 0) end
 
 -- "9 -> 10" with our arrow image (media/level-arrow.tga) tinted to `c`, so it
 -- does not depend on the font having an arrow. Without a color: plain "->".
-local ARROW_PATH = "Interface\\AddOns\\FellowshipLedger\\media\\level-arrow"
+local MEDIA = "Interface\\AddOns\\FellowshipLedger\\media\\"
+-- One of our media images ("level-arrow", "check") inline in text, tinted to `c`.
+function DetailModel.IconCode(name, c)
+    local function byte(v) return math.floor(math.max(0, math.min(1, v)) * 255 + 0.5) end
+    return string.format("|T%s%s:0:0:0:0:16:16:0:16:0:16:%d:%d:%d|t", MEDIA, name, byte(c[1]), byte(c[2]), byte(c[3]))
+end
 function DetailModel.ArrowCode(c)
     if not c then return "->" end
-    local function byte(v) return math.floor(math.max(0, math.min(1, v)) * 255 + 0.5) end
-    return string.format("|T%s:0:0:0:0:16:16:0:16:0:16:%d:%d:%d|t", ARROW_PATH, byte(c[1]), byte(c[2]), byte(c[3]))
+    return DetailModel.IconCode("level-arrow", c)
 end
 
 function DetailModel.LevelText(L, from, to, arrow)
