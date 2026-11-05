@@ -292,6 +292,8 @@ custom["x:questie.db"] = function()
     return state == "ready" and "PASS" or (state == "loading" and "INFO" or "FAIL"), detail
 end
 
+-- Recap IDs restart at each login or reload, so only deaths since then count.
+local loadedAt = time()
 custom["x:death.recap"] = function()
     if not (Compat.Has("C_DeathRecap.HasRecapEvents") and Compat.Has("C_DeathRecap.GetRecapEvents")) then
         return "FAIL", "death recap functions missing"
@@ -301,7 +303,17 @@ custom["x:death.recap"] = function()
         local ok, has = Compat.Try("C_DeathRecap.HasRecapEvents", id)
         if ok and has == true then newest = id end
     end
-    if not newest then return "INFO", "no death recap this session; die once (a fall will do) and run /fl verify again" end
+    if not newest then
+        -- Was there a death this session? Then this client keeps no recap (Forever, D-067).
+        local log = ns.Store.char and ns.Store.char.deathLog or {}
+        local last = log[#log]
+        local since = loadedAt
+        if last and (last.at or 0) >= since then
+            return "INFO", string.format("died at %s but no recap ID had events: this client keeps no death recap, so deaths are recorded without a killer (status %s)",
+                date("%H:%M", last.at), tostring(last.killerStatus))
+        end
+        return "INFO", "no death recap this session; die once (a fall will do) and run /fl verify again"
+    end
     local ok, events = Compat.Try("C_DeathRecap.GetRecapEvents", newest)
     if not ok or type(events) ~= "table" or #events == 0 then return "FAIL", "recap " .. newest .. " has no readable events" end
     local e = events[1]

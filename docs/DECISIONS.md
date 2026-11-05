@@ -209,3 +209,6 @@ Sends went through `Compat.Call`, which disables the whole feature when a call e
 
 ## D-066 Project 0 means 'not reported', so those friends are messaged
 On Forever, `/fl friends` showed several Battle.net friends in WoW with `wowProjectID` 0 and no character name, including one known to be playing Forever. Friends on retail showed project 1 with a character, so 0 is not another game. Friends with project 0 are now messaged and listened to like friends on our project. Data still never mixes: each flavor has its own prefix and flavor code, and a client on another flavor ignores the message.
+
+## D-067 Forever keeps no death recap
+On Forever, after a death, `C_DeathRecap.HasRecapEvents` was false for every ID from 1 to 60, although the functions exist (report 2026-11-04 20:34). Deaths are still recorded with their time, zone and level, but there is no killer. The Me tab shows "Died … in …" without a killer. `/fl verify` now says so when you died since the last reload and no recap was found. Retail keeps recaps; whether its killer fields are readable or secret still needs one retail death.

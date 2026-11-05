@@ -1,0 +1,42 @@
+Fellowship Ledger verify report
+addon=0.2.2 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70790 at=2026-11-04 20:34
+summary pass=191 fail=7 error=0 info=9 manual=9
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+-- details
+PASS x:build.interface: 16001 -> Forever
+INFO x:build.version: 1.60.1 (70790)
+PASS x:build.tocflavor: loaded Forever TOC
+INFO x:build.projectid: WOW_PROJECT_ID=18; constants: CAMELOT=18 CLASSIC=2 ID=18 MAINLINE=1
+INFO x:addon.questie: loaded=true version=12.6.0
+PASS x:sv.persist: loads=15 lastLogoutSaved=2026-11-04 20:19 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=15 lastLogoutSaved=2026-11-04 20:19 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=1420 name readable
+INFO x:quest.questline: checked 15 quests, 0 returned a quest line.
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 7 slots, 4 with readable rank
+INFO x:death.recap: no death recap this session; die once (a fall will do) and run /fl verify again
+PASS x:rep.fields: fields: atWarWith,canSetInactive,canToggleAtWar,currentReactionThreshold,currentStanding,description,factionID,hasBonusRepGain,isAccountWide,isChild,isCollapsed,isHeader,isHeaderWithRep,isWatched,name,nextReactionThreshold,reaction
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=64 online=19; account fields: accountName,appearOffline,battleTag,bnetAccountID,customMessage,customMessageTime,friendLevel,friendTags,gameAccountInfo,isAFK,isBattleTagFriend,isDND,isFavorite,isFriend,lastOnlineTime,note,rafLinkType; game fields: areaName,canSummon,characterLevel,characterName,classFilename,classID,className,clientProgram,factionName,gameAccountID,hasFocus,isAppearOffline,isGameAFK,isGameBusy,isInCurrentRegion,isOnline,playerGuid,raceName,realmDisplayName,realmID,realmName,regionID,richPresence,subIcon,wowProjectID; online client/project: App/nil x16, BSAp/nil x8, WoW/0 x5, WoW/1 x2, WoW/18 x5
+PASS x:comms.prefix: FLDGF register returned 1; registered=true
+INFO x:friends.charfields: no character friends to inspect
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes
+PASS x:ui.compartment: RegisterAddon is function
+PASS x:questie.db: state=ready; quest 5482 chain 2/3 via questie
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:commtest, m:sync, m:minimap, m:options, m:fakeviews, m:copywindow
+
+Notes (2026-11-04 20:34, after looting a green item and dying once in the same session, last reload 20:19):
+- x:death.recap: C_DeathRecap functions exist on Forever but no recap ID 1-60 had events after a death.
+  Forever does not keep death recaps (D-067); deaths are recorded without a killer.
+- Battle.net: online client/project WoW/0 x5 are friends playing Forever whose details the game does not
+  pass on (known Forever friends-list problem); handled in 0.2.3 (D-066).
+- The API and event lists, and the probe section, are the same as forever-2026-11-04.txt and are left out.
