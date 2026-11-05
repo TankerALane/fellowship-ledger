@@ -236,6 +236,11 @@ function M.new(opts)
         GetNumQuestLogEntries = function() return 2 end,
         GetTitleForQuestID = function(id) return "Quest " .. id end,
         IsQuestFlaggedCompleted = function(id) return state.completed ~= nil and state.completed[id] == true end,
+        GetAllCompletedQuestIDs = function()
+            local ids = {}
+            for id, done in pairs(state.completed or {}) do if done then ids[#ids + 1] = id end end
+            return ids
+        end,
         GetInfo = function(i)
             if i == 1 then return { isHeader = true, title = "Elwynn" } end
             return { isHeader = false, questID = 54, title = "Report to Goldshire" }

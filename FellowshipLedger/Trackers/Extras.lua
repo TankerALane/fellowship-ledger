@@ -279,7 +279,12 @@ Kills.events.PARTY_KILL = function(_, attacker, target)
     if okT and targetGUID and targetGUID == target then
         local ctype = T.Plain(UnitCreatureType("target"))
         local class = T.Plain(UnitClassification("target"))
-        if ctype then char.kills.byType[ctype] = (char.kills.byType[ctype] or 0) + 1 end
+        if ctype then
+            char.kills.byType[ctype] = (char.kills.byType[ctype] or 0) + 1
+            -- Per day too, so the Kills view can follow the range (D-081). Local only:
+            -- these day fields are not in the share codec.
+            ns.Days.Add(char.days, Store.Today(), "killType:" .. ctype, 1)
+        end
         if class and RARE[class] then
             char.kills.rare = char.kills.rare + 1
             Store.Count("rareKills")

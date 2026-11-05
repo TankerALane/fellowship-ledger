@@ -342,6 +342,21 @@ custom["x:flight.paths"] = function()
     return "INFO", detail .. "; talk to a flight master you don't know yet, then /fl verify"
 end
 
+-- All completed quests (D-081): which list the client gives, how many, and a sample name and zone.
+custom["x:quest.completed"] = function()
+    local okA = Compat.Has("C_QuestLog.GetAllCompletedQuestIDs")
+    local okB = Compat.Has("GetQuestsCompleted")
+    local ids = ns.QuestChains.CompletedIDs()
+    if not ids then return "FAIL", "no completed-quest list (GetAllCompletedQuestIDs " .. tostring(okA) .. ", GetQuestsCompleted " .. tostring(okB) .. ")" end
+    local detail = string.format("%d completed via %s", #ids, okA and "GetAllCompletedQuestIDs" or "GetQuestsCompleted")
+    local id = ids[#ids]
+    if id then
+        local info = ns.QuestChains.QuestInfo(id)
+        detail = detail .. string.format("; quest %d = %s in %s", id, tostring(info.name), tostring(info.zone))
+    end
+    return #ids > 0 and "PASS" or "INFO", detail
+end
+
 custom["x:death.recap"] = function()
     if not (Compat.Has("C_DeathRecap.HasRecapEvents") and Compat.Has("C_DeathRecap.GetRecapEvents")) then
         return "FAIL", "death recap functions missing"

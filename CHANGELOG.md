@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- An opened character on the Me tab has views along the top: **Overview** (the card as before), **Quests** (turn-ins with XP, gold and zone, newest first), **Gold** (in, out and net, and net by source: loot, vendor, quest, mail, auction, other), **Kills** (kills, rare and elite, and kills by creature type), **Professions** (rank, progress, points gained, and each profession's recent points with the active time each took) and **All completed** (every quest the character you are playing has completed, grouped by zone, with names from Questie). The Today / Week / Month / All buttons apply to them.
+- Kills by creature type are now also counted per day, and quest turn-ins remember the zone.
+
 ### Changed
 - Quest chains (Me tab > Quest chains) open into drop-downs. Click a chain for its quests with a check for done and an arrow for the one in your log, each quest's level and the level it needs (red if above yours), and who starts it, where and at which map coordinates. Hover a quest for where to turn it in. Long chains show the two quests before your step and three after, with Show all. Under the list: other quests the chain needs, and friends on the same chain and their step. Friends' chains you haven't started open to the quest to pick up next. The details come from Questie.
 

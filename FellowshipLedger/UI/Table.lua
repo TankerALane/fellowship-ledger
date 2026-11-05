@@ -115,7 +115,7 @@ function Obj:Line(i)
     w.full:SetPoint("LEFT", 0, 0)
     w.full:SetPoint("RIGHT", -(ACTION_W + GAP), 0)
     w.full:SetWordWrap(false)
-    w.segs, w.segButtons, w.rules = {}, {}, {}
+    w.segs, w.segButtons, w.rules, w.bars = {}, {}, {}, {}
     -- The shaded box of a "card" (UI/DetailModel.lua): fill plus edges.
     w.box = w:CreateTexture(nil, "BACKGROUND", nil, 1)
     W.Fill(w.box, "panel")
@@ -194,6 +194,7 @@ local function hideGrid(w)
     for _, fs in ipairs(w.segs) do fs:Hide() end
     for _, b in ipairs(w.segButtons) do b:Hide() end
     for _, r in ipairs(w.rules) do r:Hide() end
+    for _, b in ipairs(w.bars) do b:Hide() end
     w.box:Hide()
     for _, t in pairs(w.boxEdges) do t:Hide() end
 end
@@ -201,7 +202,7 @@ end
 function Obj:RenderGrid(w, line)
     local inset = line.inset or 0
     local span = self:LineWidth() - inset - (line.action and (ACTION_W + GAP) or 0)
-    local nText, nBtn = 0, 0
+    local nText, nBtn, nBar = 0, 0, 0
     for _, sg in ipairs(line.segments or {}) do
         local x, width = inset + span * sg.x, span * sg.w
         if sg.button then
@@ -213,9 +214,25 @@ function Obj:RenderGrid(w, line)
             end
             b.text:SetText(sg.button.label)
             b:SetScript("OnClick", sg.button.onClick)
+            -- fill: as wide as the segment (tab buttons); selected: drawn pressed.
+            b:SetWidth(sg.button.fill and math.max(20, width - 4) or SEG_BTN_W)
+            if b.SetSelected then b:SetSelected(sg.button.selected == true) end
             b:ClearAllPoints()
             b:SetPoint("RIGHT", w, "LEFT", x + width, 0)
             b:Show()
+        elseif sg.bar then
+            -- A bar: sg.bar is the filled fraction (0 to 1) of the segment's width.
+            nBar = nBar + 1
+            local tex = w.bars[nBar]
+            if not tex then
+                tex = w:CreateTexture(nil, "ARTWORK")
+                W.Fill(tex, "accent", 0.8)
+                w.bars[nBar] = tex
+            end
+            tex:ClearAllPoints()
+            tex:SetPoint("LEFT", x, 0)
+            tex:SetSize(math.max(1, (width - 4) * math.max(0, math.min(1, sg.bar))), 8)
+            tex:Show()
         else
             nText = nText + 1
             local fs = w.segs[nText]
@@ -235,6 +252,7 @@ function Obj:RenderGrid(w, line)
     end
     for i = nText + 1, #w.segs do w.segs[i]:Hide() end
     for i = nBtn + 1, #w.segButtons do w.segButtons[i]:Hide() end
+    for i = nBar + 1, #w.bars do w.bars[i]:Hide() end
     local nRule = 0
     for _, r in ipairs(line.rules or {}) do
         nRule = nRule + 1

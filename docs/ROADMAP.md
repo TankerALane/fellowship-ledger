@@ -85,6 +85,12 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Roadmap cleanup; release runner pinned to Ubuntu 24.04
 - [x] Character details on the Me tab: summary card (default) or list, last 10 levels / 5 deaths / 5 loot with Show all, killer level when targeted
 
+## Next release (unreleased)
+- [x] Killer level from recent targets (D-077)
+- [x] Quest chain drop-downs with levels, starters, zones and coordinates (D-078, D-079)
+- [x] Flight paths counted from the discovery message (D-080)
+- [x] Character detail views: Quests, Gold, Kills, Professions, All completed (D-081)
+
 ## Still open (needs a second player or a retail session)
 - [ ] Retail: one death, to see whether the killer is readable or secret
 - [ ] Character-friend (whisper) sharing with a second player

@@ -241,18 +241,18 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.ok(shown:find("Recent levels", 1, true) and shown:find("[Show all (21)]", 1, true), shown)
     local grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 20)
+    H.eq(grid, 21, "the tab row plus the card")
     -- Show all on levels, then Show less.
     local function levelsButton()
         for _, line in ipairs(Me.ui.table.lines) do
-            for _, s in ipairs(line.segments or {}) do if s.button then return s.button end end
+            for _, s in ipairs(line.segments or {}) do if s.button and not s.button.fill then return s.button end end
         end
     end
     levelsButton().onClick()
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, true)
     grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 3 + 2 + 21 + 1 + 1, "all 21 levels listed")
+    H.eq(grid, 1 + 3 + 2 + 21 + 1 + 1, "all 21 levels listed")
     H.eq(levelsButton().label, "Show less")
     levelsButton().onClick()
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, nil, "back to the last 10")

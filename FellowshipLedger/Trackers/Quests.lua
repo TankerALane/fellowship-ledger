@@ -64,6 +64,7 @@ Quests.events.QUEST_TURNED_IN = function(_, questID, xpReward, moneyReward)
         at = Store.Now(),
         xp = T.Plain(xpReward),
         money = T.Plain(moneyReward),
+        zone = (Store.Zone()), -- where you turned it in (D-081)
     }
     Days.PruneList(char.questLog, "at", Store.Now(), Character.QUEST_LOG_SECONDS)
     Store.Count("quests")

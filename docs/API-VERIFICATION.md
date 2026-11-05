@@ -435,6 +435,19 @@ These come from addons already installed in Austin's game folders. They are good
 | `GameTooltip` | api | hover tooltips on graphs and the minimap button | `/dump type(GameTooltip)` -> "table" | PASS | PASS |
 | `x:ui.compartment` | custom | AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap) | `/dump AddonCompartmentFrame.RegisterAddon` | PASS | PASS |
 | `x:questie.db` | custom | Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback) | `/dump QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle` | PASS | INFO |
+
+### Quests
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `C_QuestLog.GetAllCompletedQuestIDs` | api | every quest this character completed (All completed view, D-081) | `/dump type(C_QuestLog.GetAllCompletedQuestIDs)` -> "function" | ? | ? |
+| `GetQuestsCompleted` | api | older form of the completed-quest list (a set of IDs) | `/dump type(GetQuestsCompleted)` -> "function" | ? | ? |
+| `x:quest.completed` | custom | the completed-quest list is readable, and Questie names and zones for it (D-081) | `/fl verify on a character that has done quests` | ? | ? |
+
+### UI
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
 | `x:questie.details` | custom | quest-chain drop-downs (D-078): Questie's questLevel, requiredLevel, startedBy, and QueryNPCSingle name/spawns with the zone from C_Map.GetAreaInfo and map coordinates (D-079) | have a quest in your log, then /fl verify (the line shows the quest, its levels and who starts it where, with coordinates; compare with Questie's map) | PASS | ? |
 | `m:minimap` | manual | minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered | look at the minimap; click, right-click, drag, /reload | pending | ? |
 | `m:options` | manual | Options > AddOns lists Fellowship Ledger and its button opens Settings | Esc > Options > AddOns > Fellowship Ledger | pending | ? |

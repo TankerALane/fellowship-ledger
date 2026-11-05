@@ -12,7 +12,7 @@ local Me = {}
 ns.MeTab = Me
 
 local state = { range = "today", sort = "level", desc = true, expanded = {}, showAll = {}, mode = "characters",
-    chainOpen = {}, chainAll = {} }
+    chainOpen = {}, chainAll = {}, detailView = {}, openProf = {}, openZone = {} }
 local ui = {}
 Me.state, Me.ui = state, ui -- for tests
 
@@ -28,9 +28,10 @@ local function cellsFor(row)
     return cells
 end
 
--- The opened character: summary card or list (Settings), D-075. "Show all" is
--- remembered per character and list until the window is reloaded.
-function Me.DetailLines(key, char, name)
+-- The opened character: a row of view tabs (D-081), then the view. Overview is the
+-- summary card or list (Settings, D-075); "Show all" is remembered per character
+-- and list until the window is reloaded.
+function Me.OverviewLines(key, char, name)
     local all = state.showAll[key] or {}
     local skin = ns.db.settings.skin
     local data = ns.DetailModel.Data(char, L, date, all, ns.DetailModel.ArrowCode(ns.Palette.Color(skin, "text")))
@@ -45,6 +46,65 @@ function Me.DetailLines(key, char, name)
         end,
         onRemove = removable and function() Me.ConfirmRemove(key, name) end or nil,
     })
+end
+
+-- All completed quests of the character you are on, grouped by zone (cached until
+-- the tab is picked again; the game only knows the current character's list).
+function Me.CompletedGroups()
+    if state.completedCache then return state.completedCache end
+    local ids = ns.QuestChains.CompletedIDs()
+    local c = { total = ids and #ids or 0 }
+    if ids then
+        c.groups = ns.StatsModel.GroupCompleted(ids, ns.QuestChains.QuestInfo, L)
+    end
+    c.questieMissing = ns.QuestChains.QuestieState() ~= "ready"
+    state.completedCache = c
+    return c
+end
+
+local function toggleIn(tbl, key, sub)
+    tbl[key] = tbl[key] or {}
+    tbl[key][sub] = not tbl[key][sub] or nil
+    Me.Refresh()
+end
+
+function Me.DetailLines(key, char, name)
+    local S = ns.StatsModel
+    local view = state.detailView[key] or "overview"
+    local layout = ns.db.settings.detailsLayout
+    local tabs = S.TabLine(view, L, function(id)
+        state.detailView[key] = id
+        state.completedCache = nil
+        Me.Refresh()
+    end)
+    if view == "overview" then return S.WithTabs(tabs, Me.OverviewLines(key, char, name), layout) end
+
+    local today = ns.Store.Today()
+    local fromKey = ns.Days.RangeStart(state.range, today, time, date)
+    local inRange = function(at) return type(at) == "number" and (not fromKey or date("%Y-%m-%d", at) >= fromKey) end
+    local sum = ns.Days.Sum(char.days or {}, fromKey, today)
+    local parts
+    if view == "quests" then
+        local zoneOf = function(id) return ns.QuestChains.QuestInfo(id).zone end
+        parts = S.Quests(char.questLog, inRange, L, date, state.showAll[key] and state.showAll[key].quests, zoneOf,
+            function() toggleIn(state.showAll, key, "quests") end)
+    elseif view == "gold" then
+        parts = S.Gold(sum, L)
+    elseif view == "kills" then
+        parts = S.Kills(sum, char.kills, state.range, L)
+    elseif view == "professions" then
+        parts = S.Professions(char.professions, inRange, L, date, state.openProf[key],
+            function(prof) toggleIn(state.openProf, key, prof) end, sum.skillUps)
+    else
+        if key ~= ns.Store.key or ns.Data.IsFake() then
+            parts = { { segs = { { x = 0, w = 1, text = L.STATS_COMPLETED_OTHER_CHAR, role = "muted", font = "body" } } } }
+        else
+            local c = Me.CompletedGroups()
+            parts = S.Completed(c.groups, c.total, c.questieMissing, L, state.openZone[key],
+                function(zone) toggleIn(state.openZone, key, zone) end)
+        end
+    end
+    return S.Wrap(tabs, parts, layout)
 end
 
 local function characterLines()

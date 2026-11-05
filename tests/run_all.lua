@@ -31,6 +31,7 @@ local FILES = {
     "test_phase5",
     "test_details",
     "test_chains",
+    "test_stats",
 }
 
 for _, name in ipairs(FILES) do

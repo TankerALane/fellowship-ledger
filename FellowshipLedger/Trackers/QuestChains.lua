@@ -205,6 +205,12 @@ function QuestChains.QuestInfo(id)
             if type(list) == "table" then for _, p in ipairs(list) do if type(p) == "number" then pre[#pre + 1] = p end end end
         end
         info.pre = pre
+        -- Questie's zoneOrSort: a positive value is the zone (area) the quest belongs to.
+        local area = questieQuery(id, "zoneOrSort")
+        if type(area) == "number" and area > 0 then
+            local okA, zname = ns.Compat.Try("C_Map.GetAreaInfo", area)
+            info.zone = okA and type(T.Plain(zname)) == "string" and zname or nil
+        end
         if not questieBroken and info.name then infoCache[id] = info end
     end
     if not info.name then
@@ -242,6 +248,23 @@ function QuestChains.Details(key, anchor, logSet)
         if QuestChains.HaveStarted(id) then return "done" end
         return nil
     end, anchor)
+end
+
+-- Every quest this character has ever completed (D-081): the game's list, from
+-- C_QuestLog.GetAllCompletedQuestIDs (a list) or GetQuestsCompleted (a set).
+-- Returns a sorted list of IDs, or nil when neither exists.
+function QuestChains.CompletedIDs()
+    local ok, list = ns.Compat.Try("C_QuestLog.GetAllCompletedQuestIDs")
+    local ids = {}
+    if ok and type(list) == "table" then
+        for _, id in ipairs(list) do if type(T.Plain(id)) == "number" then ids[#ids + 1] = id end end
+    else
+        local okS, set = ns.Compat.Try("GetQuestsCompleted")
+        if not (okS and type(set) == "table") then return nil end
+        for id, done in pairs(set) do if type(id) == "number" and done then ids[#ids + 1] = id end end
+    end
+    table.sort(ids)
+    return ids
 end
 
 -- Every quest in the log with its chain info. Returns entries, questieState.
