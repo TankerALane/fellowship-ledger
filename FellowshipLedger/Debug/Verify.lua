@@ -371,6 +371,8 @@ custom["x:dungeon.journal"] = function()
     local detail = string.format("%s: %d bosses killed, completed=%s, lastBossID=%s via %s, lookups=%s", tostring(run.name),
         #(run.bosses or {}), tostring(run.completed == true), tostring(run.lastBossID), tostring(run.lookup), tostring(run.lookups))
     detail = detail .. ", lastBossName=" .. tostring(run.lastBossName)
+    local finals = ns.DungeonBosses.For(run.name)
+    detail = detail .. "; final-boss list: " .. (finals and table.concat(finals, " / ") or "not listed")
     -- What the journal holds: how many instances, the first few names, and this dungeon's bosses.
     local list = ns.DungeonJournalList and ns.DungeonJournalList() or {}
     local names = {}
@@ -388,7 +390,8 @@ custom["x:dungeon.journal"] = function()
     local last, count, how, lastName = nil, nil, nil, nil
     if ns.DungeonFindLastBoss then last, count, how, lastName = ns.DungeonFindLastBoss(run.name) end
     detail = detail .. string.format("; now: last=%s (%s) of %s via %s", tostring(last), tostring(lastName), tostring(count), tostring(how))
-    return (last ~= nil) and "PASS" or "FAIL", detail
+    if run.completed then return "PASS", detail end
+    return (last ~= nil or finals) and "PASS" or "FAIL", detail
 end
 
 custom["x:death.recap"] = function()

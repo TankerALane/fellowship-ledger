@@ -318,6 +318,33 @@ H.test("dungeons: loose journal name, and a last boss known only by name", funct
     H.ok(run.completed, "completed by the boss's name")
 end)
 
+H.test("dungeons: empty journal (WoW Forever), the final-boss list completes the run", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.instance = { "Ragefire Chasm", "party", 1, "Normal", 5, 0, false, 389 }
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", false, false)
+    local run = char(env).currentRun
+    H.eq(run.lastBossID, nil); H.eq(run.lastBossName, nil)
+    Mock.fire(env, "ENCOUNTER_END", 2732, "Oggleflint", 1, 5, 1)
+    H.ok(not run.completed)
+    Mock.fire(env, "ENCOUNTER_END", 2735, "Bazzalan", 1, 5, 1)
+    H.ok(run.completed, "Bazzalan is Ragefire Chasm's final boss")
+    H.eq(today(env).dungeonsCompleted, 1)
+end)
+
+H.test("dungeons: a run an earlier repair already tried is completed from the list", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    local c = char(env)
+    local killAt = st.now - 600
+    c.dungeons[#c.dungeons + 1] = { name = "Ragefire Chasm", instanceID = 389, entered = killAt - 2000, repairTried = 2, party = {},
+        bosses = { { id = 2732, name = "Oggleflint", at = killAt - 900 }, { id = 2735, name = "Bazzalan", at = killAt } } }
+    env = reboot(env)
+    local run = char(env).dungeons[#char(env).dungeons]
+    H.ok(run.completed); H.eq(run.repairTried, 3)
+    H.eq(char(env).days[os.date("%Y-%m-%d", killAt)].dungeonsCompleted, 1)
+end)
+
 H.test("dungeons: a saved run without a boss list is repaired at login", function()
     local env = boot(RETAIL)
     local st = env.__state
@@ -335,7 +362,7 @@ H.test("dungeons: a saved run without a boss list is repaired at login", functio
     H.ok(rfc.completed, "repaired"); H.eq(rfc.completedAt, killAt)
     H.eq(c.days[os.date("%Y-%m-%d", killAt)].dungeonsCompleted, 1, "counted on the day of the kill")
     H.ok(not other.completed, "a dungeon the journal does not know stays as it was")
-    H.eq(other.repairTried, 2)
+    H.eq(other.repairTried, 3)
 end)
 
 H.test("kills: only your own, with type and rare/elite when targeted", function()

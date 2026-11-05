@@ -114,9 +114,15 @@ local function findLastBoss(dungeonName)
 end
 
 -- Is this kill the run's last boss? By encounter ID, or by name when the journal had no ID.
+-- Is this kill the run's last boss? From the journal (by encounter ID, or by name when
+-- it had no ID), or from our own final-boss list (Core/DungeonBosses.lua, D-086), which
+-- is what WoW Forever needs: its journal is empty.
 local function isLastBoss(run, encounterID, encounterName)
     if run.lastBossID and encounterID == run.lastBossID then return true end
-    return run.lastBossName ~= nil and type(encounterName) == "string" and encounterName:lower() == run.lastBossName:lower()
+    if run.lastBossName ~= nil and type(encounterName) == "string" and encounterName:lower() == run.lastBossName:lower() then
+        return true
+    end
+    return ns.DungeonBosses.IsFinal(run.name, encounterName)
 end
 ns.DungeonFindLastBoss = findLastBoss -- for /fl verify
 
@@ -186,23 +192,23 @@ local Dungeons = T.Define({ id = "dungeons" })
 -- Runs saved without a boss list (D-085): look the list up by the dungeon's name now,
 -- and if the last boss is among the kills, the run was completed (counted on the day
 -- of that kill).
-local REPAIR_VERSION = 2
+local REPAIR_VERSION = 3
 function Dungeons.Repair(char)
     local fixed = 0
     for _, run in ipairs(char.dungeons or {}) do
-        -- repairTried: the version of this repair that last looked (2 = loose names, D-085).
+        -- repairTried: the version of this repair that last looked (3 = final-boss list, D-086).
         if not run.completed and #(run.bosses or {}) > 0 and (run.repairTried or 0) ~= REPAIR_VERSION then
             run.repairTried = REPAIR_VERSION
             local last, count, how, lastName = findLastBoss(run.name)
             if last ~= nil then
                 run.lastBossID, run.bossCount, run.lookup, run.lastBossName = last or nil, count, how, lastName
-                for _, b in ipairs(run.bosses) do
-                    if isLastBoss(run, b.id, b.name) then
-                        run.completed, run.completedBy, run.completedAt = true, "lastBoss", b.at
-                        Days.Add(char.days, Days.Key(b.at or Store.Now(), date), "dungeonsCompleted", 1)
-                        fixed = fixed + 1
-                        break
-                    end
+            end
+            for _, b in ipairs(run.bosses) do
+                if isLastBoss(run, b.id, b.name) then
+                    run.completed, run.completedBy, run.completedAt = true, "lastBoss", b.at
+                    Days.Add(char.days, Days.Key(b.at or Store.Now(), date), "dungeonsCompleted", 1)
+                    fixed = fixed + 1
+                    break
                 end
             end
         end

@@ -9,7 +9,7 @@
 - Hover a column header on the Me or Friends table to see what it counts. Dungeons shows "-" instead of 0/0 when none were entered.
 
 ### Fixed
-- Dungeons on WoW Forever were entered but never completed: the boss list was not found when you zoned in. It is now retried during the run and looked up by the dungeon's name, and earlier runs where you killed the last boss are marked completed at the next login.
+- Dungeons on WoW Forever were entered but never completed: the boss list was not found when you zoned in. It is now retried during the run and looked up by the dungeon's name, and earlier runs where you killed the last boss are marked completed at the next login. WoW Forever's journal has no dungeon data, so the ledger now carries its own list of each dungeon's final boss.
 
 ## 1.1.0 - 2026-11-05
 
