@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 - 2026-11-04
+
+First full release. Verified in-game on WoW Forever, the main target: tracking, quest chains with Questie, notable loot, deaths with what killed you, and sharing between friends over Battle.net, including friends that Forever's friends list shows with no character. Retail is verified too, except whether it shows or hides what killed you.
+
+### Fixed
+- Friends tab: "1 character", not "1 characters".
+
 ## 0.2.3 - 2026-11-04 (pre-release)
 
 ### Fixed

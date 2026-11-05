@@ -59,7 +59,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Forever: notable loot and deaths with the killer and spell from the death recap, confirmed in the Me tab (2026-11-04, D-067)
 - [ ] Retail: one death, to see whether the killer is readable or secret
 - [x] Forever verification pass and two-client test (2026-11-04)
-- [ ] 1.0.0
+- [x] 1.0.0 released 2026-11-04 (GitHub Release and CurseForge Release)
 
 ## Phase 4: Polish and release (in progress)
 - [x] Accessibility and performance review (`docs/REVIEW.md`)
