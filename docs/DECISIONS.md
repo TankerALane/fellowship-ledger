@@ -206,3 +206,6 @@ The `/fl friends` report showed Battle.net characters on Forever as "Ned Row" wi
 
 ## D-065 A failed send fails one message, not all of sharing
 Sends went through `Compat.Call`, which disables the whole feature when a call errors. One failed `C_BattleNet.SendGameData` (for example to a game account that just went offline) switched sharing off until reload, so messages sat waiting. Sends now disable sharing only when the API is missing; an error fails that message and is shown by `/fl comms`.
+
+## D-066 Project 0 means 'not reported', so those friends are messaged
+On Forever, `/fl friends` showed several Battle.net friends in WoW with `wowProjectID` 0 and no character name, including one known to be playing Forever. Friends on retail showed project 1 with a character, so 0 is not another game. Friends with project 0 are now messaged and listened to like friends on our project. Data still never mixes: each flavor has its own prefix and flavor code, and a client on another flavor ignores the message.

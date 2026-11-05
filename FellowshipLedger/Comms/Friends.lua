@@ -77,10 +77,14 @@ function Friends.IsSelf(sender)
     return Friends.SameCharacter(sender, key)
 end
 
+-- Could this game account be on our flavor? On Forever the game reports some
+-- friends who are in WoW with wowProjectID 0 and no character (seen 2026-11-04,
+-- D-066): 0 means "not reported", not another game, so they are messaged too.
+-- Data never mixes: each flavor has its own prefix and flavor code.
 local function sameFlavor(projectID)
     local ours = _G.WOW_PROJECT_ID
     projectID = plain(projectID)
-    return projectID == nil or ours == nil or projectID == ours
+    return projectID == nil or projectID == 0 or ours == nil or projectID == ours
 end
 
 function Friends.Refresh()

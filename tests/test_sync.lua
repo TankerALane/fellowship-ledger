@@ -136,6 +136,18 @@ H.test("friends on another project are not even messaged", function()
     for _, m in ipairs(A.__state.sent) do H.ok(m.kind ~= "bn", "messaged a friend on another flavor") end
 end)
 
+H.test("Forever: a friend whose game version is not reported (project 0) still shares, both ways", function()
+    local fo = { interface = 16001, tocFlavor = "Forever", projectID = 18, friendProjectID = 0 }
+    local a, nsA = client("Ned", 1, "Tara#2", 2, "Tara Hallow", fo)
+    local b, nsB = client("Tara", 2, "Ned#1", 1, "Ned Row", fo)
+    giveData(a, 3)
+    giveData(b, 3)
+    nsA.Sync.SyncAll(true)
+    network({ a, b }, 120)
+    H.ok(nsB.db.friends["bn:Ned#1"], "Ned's ledger reached Tara")
+    H.ok(nsA.db.friends["bn:Tara#2"], "Tara's ledger reached Ned")
+end)
+
 H.test("nothing is sent in combat; it goes out afterwards", function()
     local A = client("Alice", 1, "Bob#1", 2, "Bob")
     local B = client("Bob", 2, "Alice#1", 1, "Alice")
