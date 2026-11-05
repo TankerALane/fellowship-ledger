@@ -210,8 +210,8 @@ Sends went through `Compat.Call`, which disables the whole feature when a call e
 ## D-066 Project 0 means 'not reported', so those friends are messaged
 On Forever, `/fl friends` showed several Battle.net friends in WoW with `wowProjectID` 0 and no character name, including one known to be playing Forever. Friends on retail showed project 1 with a character, so 0 is not another game. Friends with project 0 are now messaged and listened to like friends on our project. Data still never mixes: each flavor has its own prefix and flavor code, and a client on another flavor ignores the message.
 
-## D-067 Forever keeps no death recap
-On Forever, after a death, `C_DeathRecap.HasRecapEvents` was false for every ID from 1 to 60, although the functions exist (report 2026-11-04 20:34). Deaths are still recorded with their time, zone and level, but there is no killer. The Me tab shows "Died … in …" without a killer. `/fl verify` now says so when you died since the last reload and no recap was found. Retail keeps recaps; whether its killer fields are readable or secret still needs one retail death.
+## D-067 Death recaps work on Forever (correction)
+A first reading of the 20:34 verify report concluded that Forever keeps no death recap, and `/fl verify` was changed to say so. That was wrong: the only death before that report happened before the last reload, and recap IDs start over at each reload. The Me tab then showed "Died 11-04 20:35 to Vile Fin Minor Oracle (Lightning Bolt)", so on Forever the recap exists and its killer and spell are readable. The verify change was reverted.
 
 ## Result 2026-11-04: sharing works on Forever
 With 0.2.3, Austin and a Battle.net friend on Forever shared ledgers both ways. The friend's game account was one the game reports with project id 0 and no character (D-066). This confirms on Forever: `C_BattleNet.SendGameData` delivery, `BN_CHAT_MSG_ADDON` with the sender's game account ID as the fourth argument, chunk reassembly, HELLO, REQUEST and DATA, and the merge into the Friends tab. Character-friend sharing by whisper is still untested with a second player (whispers to yourself work).

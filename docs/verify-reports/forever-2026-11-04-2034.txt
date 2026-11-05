@@ -35,8 +35,11 @@ PASS x:questie.db: state=ready; quest 5482 chain 2/3 via questie
 MANUAL m:toc.icon, m:toc.suffix, m:slash, m:commtest, m:sync, m:minimap, m:options, m:fakeviews, m:copywindow
 
 Notes (2026-11-04 20:34, after looting a green item and dying once in the same session, last reload 20:19):
-- x:death.recap: C_DeathRecap functions exist on Forever but no recap ID 1-60 had events after a death.
-  Forever does not keep death recaps (D-067); deaths are recorded without a killer.
+- x:death.recap: no recap at 20:34 because the only death (19:35) was before the 20:19 reload and recap
+  IDs start over at each reload. The death at 20:35 was recorded with its killer and spell
+  ("Vile Fin Minor Oracle (Lightning Bolt)"), so death recaps work on Forever (D-067).
+- Notable loot confirmed in the Me tab: Nomad Buckler of the Falcon (20:34) and Journeyman's Pants
+  (20:43), both Uncommon.
 - Battle.net: online client/project WoW/0 x5 are friends playing Forever whose details the game does not
   pass on (known Forever friends-list problem); handled in 0.2.3 (D-066).
 - The API and event lists, and the probe section, are the same as forever-2026-11-04.txt and are left out.

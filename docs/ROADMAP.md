@@ -56,8 +56,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Notable item drops from your own loot window (green or better), shown in the character's expanded row
 - [x] What killed you, from the death recap; stored as hidden if the game makes it secret
 - [x] Retail 12.1.7 declared in the TOC and the release versions
-- [x] Forever: died once and looted a green item, then `/fl verify` (2026-11-04). Forever keeps no death recap (D-067).
-- [ ] Confirm the green item and the death show in the Me tab's expanded row (Forever)
+- [x] Forever: notable loot and deaths with the killer and spell from the death recap, confirmed in the Me tab (2026-11-04, D-067)
 - [ ] Retail: one death, to see whether the killer is readable or secret
 - [x] Forever verification pass and two-client test (2026-11-04)
 - [ ] 1.0.0
