@@ -56,17 +56,20 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Notable item drops from your own loot window (green or better), shown in the character's expanded row
 - [x] What killed you, from the death recap; stored as hidden if the game makes it secret
 - [x] Retail 12.1.7 declared in the TOC and the release versions
-- [ ] Austin in-game: loot a green item, die once, then `/fl verify` (new checks: loot functions, `LOOT_SLOT_CLEARED`, `x:death.recap`, `C_Map.GetAreaInfo`)
-- [ ] Forever verification pass, two-client test, screenshots, then 1.0.0
+- [x] Forever: died once and looted a green item, then `/fl verify` (2026-11-04). Forever keeps no death recap (D-067).
+- [ ] Confirm the green item and the death show in the Me tab's expanded row (Forever)
+- [ ] Retail: one death, to see whether the killer is readable or secret
+- [x] Forever verification pass and two-client test (2026-11-04)
+- [ ] 1.0.0
 
 ## Phase 4: Polish and release (in progress)
 - [x] Accessibility and performance review (`docs/REVIEW.md`)
 - [x] README; release script, CI and release workflows, `.pkgmeta` note (`docs/RELEASING.md`)
 - [x] CurseForge name check: no existing "Fellowship Ledger" found (D-054)
 - [x] `/fl commtest` on retail: whispers up to 255 bytes arrive; argument order confirmed
-- [ ] Screenshots for the README (Austin)
-- [ ] Full verification pass on Forever (launch 2026-11-04 15:00 PST): `/fl verify`, `/fl test`, `/fl commtest`, `/fl fake`, Questie chains
-- [ ] Two-client sharing test (Austin and a friend, or two accounts)
+- [x] Screenshots for the README (Austin)
+- [x] Full verification pass on Forever (2026-11-04): `/fl verify`, `/fl test`, `/fl commtest`, tracking, Questie chains
+- [x] Two-client sharing test on Forever (2026-11-04, 0.2.3): Austin and a Battle.net friend shared ledgers over Battle.net, with the friend affected by Forever's friends-list problem (project id 0, D-066)
 - [x] GitHub repository https://github.com/TankerALane/fellowship-ledger (public), CI green, `v0.1.0` published as a pre-release (2026-11-04)
 - [x] CurseForge project created by Austin (ID 1784128), ID in both TOCs
 - [x] 0.1.0 uploaded to CurseForge by hand; `CF_API_KEY` secret added and checked (token accepted; 12.1.5 and Forever 1.60.1 both listed)

@@ -212,3 +212,6 @@ On Forever, `/fl friends` showed several Battle.net friends in WoW with `wowProj
 
 ## D-067 Forever keeps no death recap
 On Forever, after a death, `C_DeathRecap.HasRecapEvents` was false for every ID from 1 to 60, although the functions exist (report 2026-11-04 20:34). Deaths are still recorded with their time, zone and level, but there is no killer. The Me tab shows "Died … in …" without a killer. `/fl verify` now says so when you died since the last reload and no recap was found. Retail keeps recaps; whether its killer fields are readable or secret still needs one retail death.
+
+## Result 2026-11-04: sharing works on Forever
+With 0.2.3, Austin and a Battle.net friend on Forever shared ledgers both ways. The friend's game account was one the game reports with project id 0 and no character (D-066). This confirms on Forever: `C_BattleNet.SendGameData` delivery, `BN_CHAT_MSG_ADDON` with the sender's game account ID as the fourth argument, chunk reassembly, HELLO, REQUEST and DATA, and the merge into the Friends tab. Character-friend sharing by whisper is still untested with a second player (whispers to yourself work).
