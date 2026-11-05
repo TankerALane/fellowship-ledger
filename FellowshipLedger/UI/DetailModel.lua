@@ -22,6 +22,19 @@ DetailModel.INSET = 18
 
 local function when(dateFn, at) return dateFn("%m-%d %H:%M", at or 0) end
 
+-- "9 -> 10" with our arrow image (media/level-arrow.tga) tinted to `c`, so it
+-- does not depend on the font having an arrow. Without a color: plain "->".
+local ARROW_PATH = "Interface\\AddOns\\FellowshipLedger\\media\\level-arrow"
+function DetailModel.ArrowCode(c)
+    if not c then return "->" end
+    local function byte(v) return math.floor(math.max(0, math.min(1, v)) * 255 + 0.5) end
+    return string.format("|T%s:0:0:0:0:16:16:0:16:0:16:%d:%d:%d|t", ARROW_PATH, byte(c[1]), byte(c[2]), byte(c[3]))
+end
+
+function DetailModel.LevelText(L, from, to, arrow)
+    return string.format(L.DETAIL_LEVEL, from, arrow or "->", to)
+end
+
 -- Killer's level for display: a number, "??" for skull level (-1), "?" unknown.
 local function killerLevel(d)
     local v = d.killerLevel
@@ -31,7 +44,8 @@ local function killerLevel(d)
 end
 
 -- char: a saved character. all: { levels = bool, deaths = bool, loot = bool }.
-function DetailModel.Data(char, L, dateFn, all)
+-- arrow: from DetailModel.ArrowCode (default "->").
+function DetailModel.Data(char, L, dateFn, all, arrow)
     all = all or {}
     local Format = ns.Format
     local out = { levels = { rows = {} }, deaths = { rows = {} }, loot = { rows = {} }, summary = {} }
@@ -55,7 +69,7 @@ function DetailModel.Data(char, L, dateFn, all)
     for i = 1, shown do
         local r = char.levels[keys[i]]
         out.levels.rows[i] = {
-            level = string.format(L.DETAIL_LEVEL, r.from or (keys[i] - 1), r.to or keys[i]),
+            level = DetailModel.LevelText(L, r.from or (keys[i] - 1), r.to or keys[i], arrow),
             active = Format.Duration(r.active),
             played = Format.Duration(r.total),
             zone = (r.zone or "") .. (r.partial and (" " .. L.DETAIL_PARTIAL) or ""),
@@ -90,7 +104,7 @@ function DetailModel.Data(char, L, dateFn, all)
     end
 
     out.summary = { levels = #keys, average = n > 0 and math.floor(sum / n) or nil, fastest = fastest, slowest = slowest,
-        deaths = #deaths }
+        deaths = #deaths, arrow = arrow }
     return out
 end
 
@@ -101,9 +115,9 @@ function DetailModel.SummaryText(s, L, valueCode)
     local parts = { string.format(L.DETAIL_SUM_LEVELS, v(tostring(s.levels))) }
     if s.average then parts[#parts + 1] = string.format(L.DETAIL_SUM_AVERAGE, v(Format.Duration(s.average))) end
     if s.fastest and s.slowest and s.fastest ~= s.slowest then
-        parts[#parts + 1] = string.format(L.DETAIL_SUM_FASTEST, v(string.format(L.DETAIL_LEVEL, s.fastest.from, s.fastest.to)),
+        parts[#parts + 1] = string.format(L.DETAIL_SUM_FASTEST, v(DetailModel.LevelText(L, s.fastest.from, s.fastest.to, s.arrow)),
             Format.Duration(s.fastest.active))
-        parts[#parts + 1] = string.format(L.DETAIL_SUM_SLOWEST, v(string.format(L.DETAIL_LEVEL, s.slowest.from, s.slowest.to)),
+        parts[#parts + 1] = string.format(L.DETAIL_SUM_SLOWEST, v(DetailModel.LevelText(L, s.slowest.from, s.slowest.to, s.arrow)),
             Format.Duration(s.slowest.active))
     end
     parts[#parts + 1] = string.format(L.DETAIL_SUM_DEATHS, v(tostring(s.deaths)))
@@ -114,7 +128,7 @@ end
 -- loot on the right (.44 to 1). List: each section uses the full width.
 local COLS = {
     card = {
-        levels = { { .00, .075 }, { .08, .08 }, { .165, .08 }, { .25, .16 } }, levelsEnd = .41,
+        levels = { { .00, .09 }, { .095, .075 }, { .175, .075 }, { .255, .155 } }, levelsEnd = .41,
         deaths = { { .44, .105 }, { .55, .19 }, { .745, .06 }, { .81, .06 }, { .875, .125 } },
         loot = { { .44, .105 }, { .55, .23 }, { .785, .085 }, { .875, .125 } },
         rightStart = .44,
@@ -202,7 +216,10 @@ function DetailModel.Lines(data, layout, L, opts)
             for _, half in ipairs(part) do add(half) end
         end
     else
+        -- A blank line before the summary and before the headings, like the one before Notable loot.
+        add({ segs = {} })
         add({ segs = { seg({ 0, 1 }, DetailModel.SummaryText(data.summary, L, opts.valueCode), "muted") }, rules = { { 0, 1 } } })
+        add({ segs = {} })
         local right = {}
         for _, h in ipairs(de) do right[#right + 1] = h end
         right[#right + 1] = { segs = {} }

@@ -32,7 +32,7 @@ end
 function Me.DetailLines(key, char, name)
     local all = state.showAll[key] or {}
     local skin = ns.db.settings.skin
-    local data = ns.DetailModel.Data(char, L, date, all)
+    local data = ns.DetailModel.Data(char, L, date, all, ns.DetailModel.ArrowCode(ns.Palette.Color(skin, "text")))
     local removable = not ns.Data.IsFake() and key ~= ns.Store.key
     return ns.DetailModel.Lines(data, ns.db.settings.detailsLayout, L, {
         skin = skin,

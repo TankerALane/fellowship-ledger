@@ -58,6 +58,15 @@ H.test("details: newest first, last 10 levels / 5 deaths / 5 loot, Show all list
     H.ok(all.levels.rows[21].zone:find("(partial)", 1, true), "partial levels are marked")
 end)
 
+H.test("details: levels use our arrow image, tinted to the text color", function()
+    local D, L = H.pureNamespace().DetailModel, H.pureNamespace().L
+    local code = D.ArrowCode({ 1, 0.5, 0, 1 })
+    H.eq(code, "|TInterface\\AddOns\\FellowshipLedger\\media\\level-arrow:0:0:0:0:16:16:0:16:0:16:255:128:0|t")
+    local d = D.Data({ levels = { [10] = { from = 9, to = 10, active = 60, total = 60 } } }, L, DATE, nil, code)
+    H.eq(d.levels.rows[1].level, "9 " .. code .. " 10")
+    H.eq(D.ArrowCode(nil), "->")
+end)
+
 H.test("details: their level is a number, ?? for skull level, ? when unknown, blank with no killer", function()
     local D, L = H.pureNamespace().DetailModel, H.pureNamespace().L
     local c = { deathLog = {
@@ -109,8 +118,10 @@ H.test("details: card layout is a box with levels left and deaths and loot right
     H.ok(all:find("Notable loot | [Show all (8)]", 1, true), all)
     H.ok(all:find("Level | Active | Played | Zone", 1, true), "level column headers")
     H.ok(all:find("When | Killed by | Their lvl | Your lvl | Zone", 1, true), "death column headers")
-    -- 1 summary + max(2 + 10 levels, 2 + 5 deaths + 1 gap + 2 + 5 loot) + remove
-    H.eq(#lines, 1 + 15 + 1)
+    -- blank + summary + blank + max(2 + 10 levels, 2 + 5 deaths + 1 gap + 2 + 5 loot) + remove
+    H.eq(#lines, 3 + 15 + 1)
+    H.eq(#lines[1].segments, 0, "space before the summary")
+    H.eq(#lines[3].segments, 0, "space before the headings")
     buttons(lines)[1].onClick()
     H.eq(toggled, "levels")
 end)
@@ -191,7 +202,7 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.ok(shown:find("Recent levels", 1, true) and shown:find("[Show all (21)]", 1, true), shown)
     local grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 17)
+    H.eq(grid, 19)
     -- Show all on levels, then Show less.
     local function levelsButton()
         for _, line in ipairs(Me.ui.table.lines) do
@@ -202,7 +213,7 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, true)
     grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 1 + 2 + 21 + 1, "all 21 levels listed")
+    H.eq(grid, 3 + 2 + 21 + 1, "all 21 levels listed")
     H.eq(levelsButton().label, "Show less")
     levelsButton().onClick()
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, nil, "back to the last 10")

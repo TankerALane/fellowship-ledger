@@ -82,7 +82,7 @@ ns.Locale.Set({
     STALE_NEVER = "Don't ask again",
     SETTINGS_ASK_STALE = "On a new character, offer to remove characters I haven't played in 30 days",
     -- An opened character on the Me tab (D-075)
-    DETAIL_LEVEL = "%d -> %d",
+    DETAIL_LEVEL = "%d %s %d", -- from, arrow, to
     DETAIL_PARTIAL = "(partial)",
     DETAIL_LEVELS = "Recent levels",
     DETAIL_DEATHS = "Recent deaths",
