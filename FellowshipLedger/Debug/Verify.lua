@@ -362,6 +362,22 @@ custom["x:quest.completed"] = function()
     return #ids > 0 and "PASS" or "INFO", detail
 end
 
+-- Dungeon completion (D-085): the newest run, and the journal's boss list for it by name.
+custom["x:dungeon.journal"] = function()
+    local char = ns.Store and ns.Store.char
+    local runs = char and char.dungeons or {}
+    local run = (char and char.currentRun) or runs[#runs]
+    if not run then return "INFO", "no dungeon runs yet; run one, then /fl verify" end
+    local detail = string.format("%s: %d bosses killed, completed=%s, lastBossID=%s via %s, lookups=%s", tostring(run.name),
+        #(run.bosses or {}), tostring(run.completed == true), tostring(run.lastBossID), tostring(run.lookup), tostring(run.lookups))
+    local journalID = ns.DungeonJournalByName and ns.DungeonJournalByName(run.name)
+    local last, count, how = nil, nil, nil
+    if ns.DungeonFindLastBoss then last, count, how = ns.DungeonFindLastBoss(run.name) end
+    detail = detail .. string.format("; journal by name: %s; now: last=%s of %s via %s", tostring(journalID), tostring(last),
+        tostring(count), tostring(how))
+    return last and "PASS" or "FAIL", detail
+end
+
 custom["x:death.recap"] = function()
     if not (Compat.Has("C_DeathRecap.HasRecapEvents") and Compat.Has("C_DeathRecap.GetRecapEvents")) then
         return "FAIL", "death recap functions missing"

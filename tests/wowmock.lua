@@ -82,6 +82,7 @@ function M.new(opts)
         end,
     }
     state.name, state.realm = opts.playerName or "Tester", opts.realm or "TestRealm"
+    for k, v in pairs(opts.state or {}) do state[k] = v end -- extra starting state for a test
     env.UnitFullName = function(unit) if unit == "player" then return state.name, state.realm end end
     env.GetNormalizedRealmName = function() return state.realm end
     env.UnitClass = function(unit)
@@ -253,6 +254,13 @@ function M.new(opts)
     env.GetInstanceInfo = function() return unpack(state.instance, 1, 8) end
     env.EJ_GetInstanceForMap = function() return state.ejInstance end
     env.EJ_SelectInstance = function() end
+    -- Journal by name: state.ejList = { { id, name } } (one tier).
+    env.EJ_GetNumTiers = function() return 1 end
+    env.EJ_SelectTier = function() end
+    env.EJ_GetInstanceByIndex = function(i)
+        local e = state.ejList and state.ejList[i]
+        if e then return e.id, e.name end
+    end
     env.EJ_GetEncounterInfoByIndex = function(i)
         local b = state.ejBosses and state.ejBosses[i]
         if b then return b.name, "", i, 0, "", state.ejInstance, b.id end

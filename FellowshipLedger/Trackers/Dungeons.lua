@@ -2,7 +2,8 @@
 -- Dungeon runs: entered and completed are counted separately. A run is completed
 -- when the dungeon's last boss (from the encounter journal) dies, or when the
 -- dungeon finder reports completion. Party make-up is stored as class and role only.
--- Status "unverified": ENCOUNTER_END and the journal lookup are not yet seen in a probe.
+-- ENCOUNTER_END works on Forever (2026-11-05); the journal lookup by map did not on the
+-- first run there, so it is retried and falls back to the dungeon's name (D-085).
 
 local _, ns = ...
 local T = ns.Trackers
@@ -32,22 +33,62 @@ local function partySnapshot()
     return party
 end
 
--- Journal lookup of the final boss's encounter ID for the current dungeon.
-local function findLastBoss()
-    local ejFrame = _G.EncounterJournal
-    if ejFrame and ejFrame.IsShown and ejFrame:IsShown() then return nil end -- don't disturb an open journal
-    local okMap, mapID = ns.Compat.Call("dungeons", "C_Map.GetBestMapForUnit", "player")
-    if not okMap or not mapID then return nil end
-    local okJ, journalID = ns.Compat.Call("dungeons", "EJ_GetInstanceForMap", mapID)
-    if not okJ or not journalID or journalID == 0 then return nil end
-    ns.Compat.Call("dungeons", "EJ_SelectInstance", journalID)
+-- Journal lookup of the final boss's encounter ID (D-085). First by the map you are
+-- on; if that gives nothing (Forever's first Ragefire Chasm run, 2026-11-05), by the
+-- dungeon's name in the journal's instance lists, which also works after the run.
+-- Returns lastEncounterID, bossCount, how ("map" | "name") or nil.
+local function journalBosses(journalID)
+    ns.Compat.Try("EJ_SelectInstance", journalID)
     local last, count
     for i = 1, 40 do
-        local ok, name, _, _, _, _, _, dungeonEncounterID = ns.Compat.Call("dungeons", "EJ_GetEncounterInfoByIndex", i, journalID)
+        local ok, name, _, _, _, _, _, dungeonEncounterID = ns.Compat.Try("EJ_GetEncounterInfoByIndex", i, journalID)
         if not ok or not name then break end
         last, count = T.Plain(dungeonEncounterID), i
     end
     return last, count
+end
+
+function ns.DungeonJournalByName(name)
+    if type(name) ~= "string" or name == "" then return nil end
+    local okT, tiers = ns.Compat.Try("EJ_GetNumTiers")
+    for tier = 1, (okT and type(tiers) == "number") and tiers or 1 do
+        if okT then ns.Compat.Try("EJ_SelectTier", tier) end
+        for i = 1, 200 do
+            local ok, journalID, iname = ns.Compat.Try("EJ_GetInstanceByIndex", i, false)
+            if not ok or not journalID then break end
+            if T.Plain(iname) == name then return journalID end
+        end
+    end
+    return nil
+end
+
+local function findLastBoss(dungeonName)
+    local ejFrame = _G.EncounterJournal
+    if ejFrame and ejFrame.IsShown and ejFrame:IsShown() then return nil end -- don't disturb an open journal
+    local okMap, mapID = ns.Compat.Try("C_Map.GetBestMapForUnit", "player")
+    if okMap and mapID then
+        local okJ, journalID = ns.Compat.Try("EJ_GetInstanceForMap", mapID)
+        if okJ and journalID and journalID ~= 0 then
+            local last, count = journalBosses(journalID)
+            if last then return last, count, "map" end
+        end
+    end
+    local journalID = ns.DungeonJournalByName(dungeonName)
+    if journalID then
+        local last, count = journalBosses(journalID)
+        if last then return last, count, "name" end
+    end
+    return nil
+end
+ns.DungeonFindLastBoss = findLastBoss -- for /fl verify
+
+-- Retry while the run has no boss list (the map can be unknown right at loading).
+local RETRIES = 10
+local function ensureLastBoss(run)
+    if not run or run.lastBossID or (run.lookups or 0) >= RETRIES then return end
+    run.lookups = (run.lookups or 0) + 1
+    local last, count, how = findLastBoss(run.name)
+    if last then run.lastBossID, run.bossCount, run.lookup = last, count, how end
 end
 
 local function closeRun(char)
@@ -72,7 +113,7 @@ local function check()
             return
         end
         closeRun(char)
-        local lastBoss, bossCount = findLastBoss()
+        local lastBoss, bossCount, how = findLastBoss(T.Plain(name))
         char.currentRun = {
             name = T.Plain(name),
             instanceID = instanceID,
@@ -84,6 +125,8 @@ local function check()
             party = partySnapshot(),
             lastBossID = lastBoss,
             bossCount = bossCount,
+            lookup = how,
+            lookups = 1,
         }
         Store.Count("dungeonsEntered")
     elseif run then
@@ -101,13 +144,44 @@ end
 
 local Dungeons = T.Define({ id = "dungeons" })
 
-function Dungeons:OnLogin() check() end
+-- Runs saved without a boss list (D-085): look the list up by the dungeon's name now,
+-- and if the last boss is among the kills, the run was completed (counted on the day
+-- of that kill).
+function Dungeons.Repair(char)
+    local fixed = 0
+    for _, run in ipairs(char.dungeons or {}) do
+        if not run.completed and not run.lastBossID and #(run.bosses or {}) > 0 and not run.repairTried then
+            run.repairTried = true
+            local last, count, how = findLastBoss(run.name)
+            if last then
+                run.lastBossID, run.bossCount, run.lookup = last, count, how
+                for _, b in ipairs(run.bosses) do
+                    if b.id == last then
+                        run.completed, run.completedBy, run.completedAt = true, "lastBoss", b.at
+                        Days.Add(char.days, Days.Key(b.at or Store.Now(), date), "dungeonsCompleted", 1)
+                        fixed = fixed + 1
+                        break
+                    end
+                end
+            end
+        end
+    end
+    return fixed
+end
+
+function Dungeons:OnLogin()
+    check()
+    Dungeons.Repair(Store.char)
+end
 
 function Dungeons:OnTick()
     local run = Store.char.currentRun
     if run then
         local _, instanceType = GetInstanceInfo()
-        if T.Plain(instanceType) == "party" then run.lastSeen = Store.Now() end
+        if T.Plain(instanceType) == "party" then
+            run.lastSeen = Store.Now()
+            ensureLastBoss(run)
+        end
     end
 end
 
@@ -135,6 +209,7 @@ end
 
 Dungeons.events.ENCOUNTER_START = function(_, _, _, difficultyID)
     noteDifficulty(Store.char.currentRun, difficultyID)
+    ensureLastBoss(Store.char.currentRun)
 end
 
 Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficultyID, _, success)
@@ -145,6 +220,7 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     if T.Dedupe("boss:" .. tostring(encounterID), 10) then return end
     run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = Store.Now() }
     Store.Count("bossKills")
+    if not run.lastBossID then run.lookups = 0; ensureLastBoss(run) end
     if run.lastBossID and encounterID == run.lastBossID then complete(run, "lastBoss") end
 end
 

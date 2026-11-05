@@ -246,6 +246,10 @@ These come from addons already installed in Austin's game folders. They are good
 | `EJ_GetInstanceForMap` | api | find a dungeon's journal entry (to know the last boss) | `/dump type(EJ_GetInstanceForMap)` -> "function" | PASS | PASS |
 | `EJ_SelectInstance` | api | select journal instance before listing bosses | `/dump type(EJ_SelectInstance)` -> "function" | PASS | PASS |
 | `EJ_GetEncounterInfoByIndex` | api | list bosses in order (last one = completion) | `/dump type(EJ_GetEncounterInfoByIndex)` -> "function" | PASS | PASS |
+| `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | ? | ? |
+| `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | ? | ? |
+| `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | ? | ? |
+| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | ? | ? |
 | `x:dungeon.instance` | custom | GetInstanceInfo returns readable values here | `/dump GetInstanceInfo()` | INFO | INFO |
 | `ev:ENCOUNTER_START` | event | boss pull: pause sending | `/dump C_EventUtils.IsEventValid("ENCOUNTER_START")` -> true | PASS | PASS |
 | `ev:ENCOUNTER_END` | event | boss kill (args: encounterID, name, difficulty, size, success) | `/dump C_EventUtils.IsEventValid("ENCOUNTER_END")` -> true | PASS | PASS |

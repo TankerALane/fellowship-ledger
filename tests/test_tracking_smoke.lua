@@ -275,6 +275,56 @@ H.test("flight paths: a first map visit without the message is only a baseline",
     H.eq(char(env).flightPaths["1"].baseline, true)
 end)
 
+H.test("dungeons: no journal by map, found by name; last boss completes the run", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.ejInstance = nil -- the map lookup gives nothing (Forever, 2026-11-05)
+    st.ejList = { { id = 226, name = "Ragefire Chasm" } }
+    st.ejBosses = { { name = "Oggleflint", id = 2732 }, { name = "Bazzalan", id = 2735 } }
+    st.instance = { "Ragefire Chasm", "party", 1, "Normal", 5, 0, false, 389 }
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", false, false)
+    local run = char(env).currentRun
+    H.eq(run.lastBossID, 2735); H.eq(run.lookup, "name")
+    Mock.fire(env, "ENCOUNTER_END", 2732, "Oggleflint", 1, 5, 1)
+    H.ok(not run.completed)
+    Mock.fire(env, "ENCOUNTER_END", 2735, "Bazzalan", 1, 5, 1)
+    H.ok(run.completed); H.eq(run.completedBy, "lastBoss")
+    H.eq(today(env).dungeonsCompleted, 1)
+end)
+
+H.test("dungeons: the boss list is retried during the run when it was not known on entry", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.instance = { "Ragefire Chasm", "party", 1, "Normal", 5, 0, false, 389 }
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", false, false)
+    local run = char(env).currentRun
+    H.eq(run.lastBossID, nil, "nothing known yet")
+    st.ejList = { { id = 226, name = "Ragefire Chasm" } }
+    st.ejBosses = { { name = "Oggleflint", id = 2732 }, { name = "Bazzalan", id = 2735 } }
+    Mock.advance(env, 31)
+    H.eq(run.lastBossID, 2735, "found on a later tick")
+end)
+
+H.test("dungeons: a saved run without a boss list is repaired at login", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    local c = char(env)
+    local killAt = st.now - 3600
+    c.dungeons[#c.dungeons + 1] = { name = "Ragefire Chasm", instanceID = 389, entered = killAt - 2000, left = killAt + 60,
+        deaths = 1, party = {}, bosses = { { id = 2732, name = "Oggleflint", at = killAt - 900 }, { id = 2735, name = "Bazzalan", at = killAt } } }
+    c.dungeons[#c.dungeons + 1] = { name = "Unknown Place", entered = killAt, bosses = { { id = 9, at = killAt } }, party = {} }
+    env = reboot(env, { interface = 120105, tocFlavor = "Retail", state = {
+        ejList = { { id = 226, name = "Ragefire Chasm" } },
+        ejBosses = { { name = "Oggleflint", id = 2732 }, { name = "Bazzalan", id = 2735 } } } })
+    c = char(env)
+    local rfc, other
+    for _, r in ipairs(c.dungeons) do if r.name == "Ragefire Chasm" then rfc = r elseif r.name == "Unknown Place" then other = r end end
+    H.ok(rfc.completed, "repaired"); H.eq(rfc.completedAt, killAt)
+    H.eq(c.days[os.date("%Y-%m-%d", killAt)].dungeonsCompleted, 1, "counted on the day of the kill")
+    H.ok(not other.completed, "a dungeon the journal does not know stays as it was")
+    H.eq(other.repairTried, true)
+end)
+
 H.test("kills: only your own, with type and rare/elite when targeted", function()
     local env = boot(RETAIL)
     local st = env.__state
