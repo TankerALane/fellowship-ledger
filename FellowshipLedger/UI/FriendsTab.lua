@@ -99,7 +99,8 @@ function FriendsTab.Refresh()
     end
     local list, count = lines()
     ui.table:SetLines(list)
-    ui.empty:SetShown(count == 0)
+    -- "This week" has its own empty line; the long explanation would sit on top of it.
+    ui.empty:SetShown(count == 0 and not state.weekly)
     ui.empty:SetText(ns.Data.IsFake() and L.NO_FRIENDS_FAKE or L.NO_FRIENDS_YET)
 end
 
