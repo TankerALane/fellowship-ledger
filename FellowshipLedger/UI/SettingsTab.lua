@@ -251,6 +251,7 @@ local function build(panel)
     end
     y = y - 28
     toggle(L.SETTINGS_COLORBLIND, "colorblind", function() ns.MainWindow.Refresh() end)
+    toggle(L.SETTINGS_CLASS_COLORS, "classColors", function() ns.MainWindow.Refresh() end)
     toggle(L.SETTINGS_REMEMBER_TAB, "rememberTab")
     local mm = W.Toggle(content, L.SETTINGS_MINIMAP, function() return not S().minimap.hide end, function(v)
         S().minimap.hide = not v

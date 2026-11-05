@@ -60,4 +60,5 @@ ns.Locale.Set({
 ns.Locale.Set({
     UPDATE_AVAILABLE = "A friend is running Fellowship Ledger %s (you have %s). Update through CurseForge when it shows there.",
     FRIEND_OLD_VERSION = "old version %s",
+    SETTINGS_CLASS_COLORS = "Show character names in class colors",
 })

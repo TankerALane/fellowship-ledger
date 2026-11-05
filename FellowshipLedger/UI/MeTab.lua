@@ -20,7 +20,7 @@ local function cellsFor(row)
     local cells = {}
     for c, col in ipairs(MeModel.COLUMNS) do
         local text = MeModel.FormatCell(col, row)
-        if c == 1 and row.key then text = (state.expanded[row.key] and "- " or "+ ") .. text end
+        if c == 1 and row.key then text = (state.expanded[row.key] and "- " or "+ ") .. W.ClassName(text, row.class) end
         cells[c] = text
     end
     return cells

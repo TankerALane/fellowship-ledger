@@ -69,7 +69,7 @@ local function lines()
                 if col.field == "lastUpdated" then
                     cells[c] = FriendsModel.Ago(now, r.lastUpdated)
                 elseif col.field == "name" then
-                    cells[c] = r.name
+                    cells[c] = W.ClassName(r.name, r.class)
                 else
                     cells[c] = MeModel.FormatCell({ field = col.field, kind = KIND[col.field] }, r)
                 end

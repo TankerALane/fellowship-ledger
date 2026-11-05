@@ -222,3 +222,6 @@ GitHub noted that `ubuntu-latest` moves to Ubuntu 26 from 2026-10-19. The workfl
 
 ## D-069 Update notice comes from friends' versions
 An addon cannot reach CurseForge, so the only signal is the version a friend sends in HELLO. When it is a newer `x.y.z` than ours, one chat line per session says so; the friend's header on the Friends tab says "old version" when theirs is older. A version only changes in the release commit, which is published to CurseForge minutes later, so builds being tested still report the last released number and never cause a notice. The wording says "when it shows there" to cover CurseForge's review delay. Anything that is not plain `x.y.z` (a test build, or nonsense from a peer) is ignored.
+
+## D-070 Class colors: our own table, made readable per skin
+Names on the Me and Friends tables use class colors (Settings toggle, on by default). The colors are our own copy of the usual values, keyed by the class token, so no game table (`RAID_CLASS_COLORS`) has to be verified on Forever. On each skin a color is moved toward black (parchment) or white (plain) just until it reaches 4.5:1 contrast with the background: priest white becomes grey (#666666) on parchment, rogue yellow a dark olive gold. A unit test checks every class on both skins.

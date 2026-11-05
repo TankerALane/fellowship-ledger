@@ -157,6 +157,14 @@ function W.Toggle(parent, label, get, set, width)
     return t
 end
 
+-- A name in its class color, if class colors are on (Settings) and the class is known.
+function W.ClassName(text, classToken)
+    if not text or text == "" or not (ns.db and ns.db.settings and ns.db.settings.classColors) then return text end
+    local c = Palette.ClassColor(classToken, skin())
+    if not c then return text end
+    return Palette.Code(c) .. text .. "|r"
+end
+
 -- Show a tooltip with a title and lines, if GameTooltip exists.
 function W.Tooltip(owner, title, lines)
     local tip = _G.GameTooltip

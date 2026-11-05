@@ -51,6 +51,52 @@ function Palette.Color(skin, role)
     return set[role] or set.text
 end
 
+-- Class colors, keyed by the class token UnitClass returns second (our own copy of
+-- the usual values, so no game table is needed; an unknown token gets no color).
+Palette.CLASS = {
+    WARRIOR = "C69B6D", PALADIN = "F48CBA", HUNTER = "AAD372", ROGUE = "FFF468", PRIEST = "FFFFFF",
+    DEATHKNIGHT = "C41E3A", SHAMAN = "0070DD", MAGE = "3FC7EB", WARLOCK = "8788EE", MONK = "00FF98",
+    DRUID = "FF7C0A", DEMONHUNTER = "A330C9", EVOKER = "33937F",
+}
+Palette.MIN_CONTRAST = 4.5 -- WCAG AA for body text
+
+local function channel(v)
+    if v <= 0.03928 then return v / 12.92 end
+    return ((v + 0.055) / 1.055) ^ 2.4
+end
+
+function Palette.Luminance(c)
+    return 0.2126 * channel(c[1]) + 0.7152 * channel(c[2]) + 0.0722 * channel(c[3])
+end
+
+function Palette.Contrast(a, b)
+    local x, y = Palette.Luminance(a), Palette.Luminance(b)
+    if x < y then x, y = y, x end
+    return (x + 0.05) / (y + 0.05)
+end
+
+-- A class's color for this skin, moved toward black (light skins) or white (dark
+-- skins) just far enough to be readable on the skin's background: priest white
+-- becomes grey on parchment, rogue yellow a dark gold. Nil for unknown classes.
+function Palette.ClassColor(classToken, skin)
+    local hex = type(classToken) == "string" and Palette.CLASS[classToken]
+    if not hex then return nil end
+    local c = rgb(hex)
+    local bg = Palette.Color(skin, "bg")
+    local target = Palette.Luminance(bg) > 0.4 and 0 or 1
+    for _ = 1, 40 do
+        if Palette.Contrast(c, bg) >= Palette.MIN_CONTRAST then break end
+        for i = 1, 3 do c[i] = c[i] + (target - c[i]) * 0.08 end
+    end
+    return c
+end
+
+-- "|cffRRGGBB" escape for a color, for colored text inside a string.
+function Palette.Code(c)
+    local function byte(v) return math.floor(math.max(0, math.min(1, v)) * 255 + 0.5) end
+    return string.format("|cff%02x%02x%02x", byte(c[1]), byte(c[2]), byte(c[3]))
+end
+
 function Palette.Series(colorblind, index)
     local set = colorblind and Palette.SERIES.safe or Palette.SERIES.brand
     return set[((index or 1) - 1) % #set + 1]
