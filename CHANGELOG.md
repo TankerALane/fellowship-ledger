@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The killer's level was missed when the game cleared your target as you died. Targets from the last 5 minutes are now remembered by name, so the level is found as long as you targeted the killer during the fight.
+
 ## 1.0.1 - 2026-11-05
 
 ### Added

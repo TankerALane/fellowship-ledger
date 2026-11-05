@@ -209,6 +209,37 @@ H.test("dungeon: entered, bosses, last boss completes, party class and role only
     H.eq(char(env).currentRun, nil)
 end)
 
+H.test("deaths: killer level from the target, or a recent target if it was cleared", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.recaps = { [1] = { { timestamp = 5, sourceName = "Gnoll Brute", spellName = "Melee", amount = 40 } } }
+    st.units.target = { name = "Gnoll Brute", level = 14 }
+    Mock.fire(env, "PLAYER_DEAD")
+    Mock.advance(env, 2)
+    local log = char(env).deathLog
+    H.eq(log[#log].killer, "Gnoll Brute")
+    H.eq(log[#log].killerLevel, 14, "target at death")
+
+    -- Targeted earlier, but the game cleared the target as you died.
+    st.units.target = { name = "Elite Ogre", level = 16 }
+    Mock.fire(env, "PLAYER_TARGET_CHANGED")
+    st.units.target = nil
+    st.recaps[2] = { { timestamp = 9, sourceName = "Elite Ogre", spellName = "Smash", amount = 90 } }
+    Mock.advance(env, 30)
+    Mock.fire(env, "PLAYER_DEAD")
+    Mock.advance(env, 2)
+    H.eq(log[#log].killer, "Elite Ogre")
+    H.eq(log[#log].killerLevel, 16, "recent target")
+
+    -- Someone never targeted: no level.
+    st.recaps[3] = { { timestamp = 3, sourceName = "Hidden Rogue", spellName = "Stab", amount = 70 } }
+    Mock.advance(env, 30)
+    Mock.fire(env, "PLAYER_DEAD")
+    Mock.advance(env, 2)
+    H.eq(log[#log].killer, "Hidden Rogue")
+    H.eq(log[#log].killerLevel, nil)
+end)
+
 H.test("kills: only your own, with type and rare/elite when targeted", function()
     local env = boot(RETAIL)
     local st = env.__state

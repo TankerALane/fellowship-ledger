@@ -321,11 +321,15 @@ custom["x:death.killerlevel"] = function()
     local log = ns.Store and ns.Store.char and ns.Store.char.deathLog
     local d = log and log[#log]
     if not d then return "INFO", "no deaths on this character yet; target a monster, let it kill you, then run /fl verify" end
+    local c = ns.Trackers.byId.deaths
+    c = c and c.lastCheck
+    local seen = c and string.format("; at death: target %s, recap source %s, matched by %s",
+        Compat.Describe(c.target or "none"), Compat.Describe(c.source or "none"), tostring(c.how or "nothing")) or ""
     if type(d.killerLevel) == "number" then
-        return "PASS", string.format("newest death: killer %s, level %d", tostring(d.killer), d.killerLevel)
+        return "PASS", string.format("newest death: killer %s, level %d", tostring(d.killer), d.killerLevel) .. seen
     end
-    if not d.killer then return "INFO", "newest death has no killer (" .. tostring(d.killerStatus) .. "), so no level" end
-    return "INFO", "newest death: killer " .. tostring(d.killer) .. " was not your target, so no level; try again with it targeted"
+    if not d.killer then return "INFO", "newest death has no killer (" .. tostring(d.killerStatus) .. "), so no level" .. seen end
+    return "INFO", "newest death: killer " .. tostring(d.killer) .. " was not your target, so no level" .. seen
 end
 
 local function runCheck(check)

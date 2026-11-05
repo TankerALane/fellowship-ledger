@@ -52,6 +52,33 @@ function Deaths.TargetNow()
     return name, level
 end
 
+-- Recently targeted units by name, so the level is still known when the game
+-- clears your target as you die. Kept in memory only, for 5 minutes.
+Deaths.SEEN_KEEP = 300
+Deaths.seen = {}
+function Deaths.Remember(name, level, now)
+    if not name then return end
+    Deaths.seen[name] = { level = level, at = now }
+    for n, s in pairs(Deaths.seen) do
+        if now - s.at > Deaths.SEEN_KEEP then Deaths.seen[n] = nil end
+    end
+end
+
+-- The killer's level: from the target at the moment of death, else from a
+-- recent target with the same name. Returns level, how ("target"/"recent") or nil.
+function Deaths.LevelFor(source, targetName, targetLevel, now)
+    if not source then return nil end
+    if targetName == source then return targetLevel, "target" end
+    local s = Deaths.seen[source]
+    if s and now - s.at <= Deaths.SEEN_KEEP then return s.level, "recent" end
+    return nil
+end
+
+Deaths.events.PLAYER_TARGET_CHANGED = function()
+    local name, level = Deaths.TargetNow()
+    if name then Deaths.Remember(name, level, Store.Now()) end
+end
+
 Deaths.events.PLAYER_DEAD = function()
     if T.Dedupe("death", 5) then return end
     local char = Store.char
@@ -61,17 +88,21 @@ Deaths.events.PLAYER_DEAD = function()
     char.deathLog[#char.deathLog + 1] = entry
     Days.PruneList(char.deathLog, "at", Store.Now(), Character.LIST_KEEP_SECONDS)
     Store.Count("deaths")
-    -- The recap has no level, so note your target now; if it turns out to be the
-    -- killer, keep its level (D-075). -1 means skull level.
+    -- The recap has no level, so note your target now (and recent targets); if
+    -- one turns out to be the killer, keep its level (D-075, D-077). -1 = skull.
     local targetName, targetLevel = Deaths.TargetNow()
+    if targetName then Deaths.Remember(targetName, targetLevel, Store.Now()) end
     -- The recap is built a moment after the death.
     ns.Events.After(1, function()
         local killer, status = Deaths.FindKiller()
         entry.killerStatus = status
+        local how
         if killer then
             entry.killer, entry.killerSpell = killer.source, killer.spell
-            if targetName and targetName == killer.source then entry.killerLevel = targetLevel end
+            entry.killerLevel, how = Deaths.LevelFor(killer.source, targetName, targetLevel, Store.Now())
         end
+        -- For /fl verify only (this session, not saved).
+        Deaths.lastCheck = { target = targetName or false, source = killer and killer.source, how = how or false }
     end)
 end
 
