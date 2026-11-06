@@ -6,7 +6,7 @@ Run after /fl shots and a /reload (the reload writes the saved variables):
     python tools/crop_shots.py --flavor retail
 
 It reads db.dev.shots from FellowshipLedger.lua in SavedVariables, pairs each step
-with the game's screenshots taken since the run started (oldest first), and writes
+with the newest game screenshots taken since the run started, and writes
 PNGs to assets/screenshots/ named like 01-me-card-ledger.png. Cropping uses Windows'
 own System.Drawing through PowerShell, so nothing needs installing.
 """
@@ -139,7 +139,7 @@ def main():
                    if p.stat().st_mtime >= shots.get("at", 0) - 5), key=lambda p: p.stat().st_mtime)
     if len(pics) < len(steps):
         raise SystemExit(f"{len(steps)} steps but only {len(pics)} screenshots since the run in {game / 'Screenshots'}")
-    pics = pics[:len(steps)]
+    pics = pics[-len(steps):]  # the newest ones: an earlier run may also be in the window
     OUT.mkdir(parents=True, exist_ok=True)
     script = pathlib.Path(OUT / "_crop.ps1")
     script.write_text(PS, encoding="utf-8")
