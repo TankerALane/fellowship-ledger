@@ -130,10 +130,12 @@ function Friends.Refresh()
         end
     end
     Friends.peers, Friends.byGameAccount, Friends.byCharacter = peers, byGame, byChar
-    -- Keep the online flag of stored friends current for the Friends tab.
+    -- Keep the online flag of stored friends current for the Friends tab, and which
+    -- character they are on (Battle.net's characterName), so the tab can mark it.
     for id, f in pairs(ns.db.friends) do
         local p = peers[id]
         f.online = p ~= nil and p.online or false
+        f.playing = f.online and p.character or nil
     end
     return peers
 end

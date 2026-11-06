@@ -4,6 +4,7 @@
 
 ### Added
 - `/fl shots` takes screenshots of every tab, in each skin, with made-up data, for the addon page.
+- Friends tab: the character a friend is playing right now shows "(playing)" in green, sits first under their name, and its tooltip says "Playing this character now". All their characters are still listed and still update.
 
 ## 1.2.1 - 2026-11-05
 

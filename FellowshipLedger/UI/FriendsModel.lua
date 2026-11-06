@@ -19,6 +19,17 @@ function FriendsModel.IsBlocked(blocklist, friend, charKey)
     return false
 end
 
+-- Is the friend online on this character right now? friend.playing is the
+-- "Name-Realm" (Forever: "First-Last") Battle.net reports; compared without
+-- spaces or case, as character keys and Battle.net names can differ in both.
+function FriendsModel.IsPlaying(friend, charKey)
+    if not (friend and friend.online and type(friend.playing) == "string" and type(charKey) == "string") then
+        return false
+    end
+    local function norm(s) return (s:gsub("[%s%-]", ""):lower()) end
+    return norm(friend.playing) == norm(charKey)
+end
+
 -- Returns a flat list of display rows: { header = true, friend, id } and
 -- { character row from MeModel, friendId, indent = bool }.
 -- sortField/desc (optional): sort characters by that column, and order friends by
@@ -36,8 +47,19 @@ function FriendsModel.Build(friends, blocklist, range, todayKey, timeFn, dateFn,
                 if not FriendsModel.IsBlocked(blocklist, f, key) then chars[key] = c end
             end
             local charRows = ns.MeModel.Build(chars, range, todayKey, timeFn, dateFn)
-            for _, r in ipairs(charRows) do r.friendId, r.lastUpdated = id, f.lastUpdated end
-            if sortField then ns.MeModel.Sort(charRows, sortField, desc) else ns.MeModel.Sort(charRows, "level", true) end
+            for _, r in ipairs(charRows) do
+                r.friendId, r.lastUpdated = id, f.lastUpdated
+                r.playing = FriendsModel.IsPlaying(f, r.key) or nil
+            end
+            if sortField then
+                ns.MeModel.Sort(charRows, sortField, desc)
+            else
+                -- Default order: the character they are on first, then by level.
+                ns.MeModel.Sort(charRows, "level", true)
+                for i, r in ipairs(charRows) do
+                    if r.playing and i > 1 then table.insert(charRows, 1, table.remove(charRows, i)) break end
+                end
+            end
             local order
             if sortField == "name" then
                 order = string.lower(f.kind == "bnet" and (f.name or id) or (charRows[1] and charRows[1].name or id))
@@ -98,7 +120,11 @@ function FriendsModel.Tooltip(row, char, friend, now, L, factionText)
     local who = (race and class) and (race .. " " .. class) or race or class or ""
     lines[#lines + 1] = (string.format(L.TIP_LEVEL, char.level or row.level or 0, who):gsub("%s+$", ""))
     if factionText and factionText ~= "" then lines[#lines + 1] = string.format(L.TIP_FACTION, factionText) end
-    lines[#lines + 1] = string.format(L.TIP_LAST_PLAYED, FriendsModel.Ago(now, char.lastSeen))
+    if row.playing then
+        lines[#lines + 1] = L.TIP_PLAYING_NOW
+    else
+        lines[#lines + 1] = string.format(L.TIP_LAST_PLAYED, FriendsModel.Ago(now, char.lastSeen))
+    end
     lines[#lines + 1] = string.format(L.TIP_UPDATED, FriendsModel.Ago(now, friend.lastUpdated))
     if friend.version then lines[#lines + 1] = string.format(L.TIP_VERSION, friend.version) end
     return row.name, lines

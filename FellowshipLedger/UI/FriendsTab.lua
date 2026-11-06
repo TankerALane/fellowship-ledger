@@ -115,6 +115,7 @@ local function lines()
                     cells[c] = FriendsModel.Ago(now, r.lastUpdated)
                 elseif col.field == "name" then
                     cells[c] = (state.expanded[openId] and "- " or "+ ") .. W.ClassName(r.name, r.class)
+                        .. (r.playing and (" " .. ns.Palette.Code(W.Color("good")) .. L.FRIEND_PLAYING .. "|r") or "")
                 else
                     cells[c] = MeModel.FormatCell({ field = col.field, kind = KIND[col.field] }, r)
                 end

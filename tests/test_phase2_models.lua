@@ -150,6 +150,29 @@ H.test("friends are grouped, ordered and blockable", function()
     H.eq(ns.FriendsModel.Ago(10000, 10000 - 7200), "2h ago")
 end)
 
+H.test("the character a friend is playing is marked and listed first", function()
+    local ns = H.pureNamespace()
+    local friends = fake(ns).friends
+    local rows = ns.FriendsModel.Build(friends, {}, "all", "2026-11-04", os.time, os.date)
+    local marked, afterHeader = {}, {}
+    local last
+    for _, r in ipairs(rows) do
+        if r.playing then marked[#marked + 1] = r.name end
+        if last and last.header and not r.header then afterHeader[last.friend.name] = r end
+        last = r
+    end
+    H.eq(#marked, 2, "Fennick and Tobin are each on one character")
+    H.eq(afterHeader.Fennick.name, "Grimwald", "the character being played comes first")
+    H.eq(afterHeader.Tobin.name, "Lune", "even when another character has a higher level")
+    H.ok(not afterHeader.Marisol.playing, "an offline friend plays nothing")
+    -- Battle.net names may differ from keys in spaces, hyphens and case.
+    H.ok(ns.FriendsModel.IsPlaying({ online = true, playing = "first last" }, "First-Last"))
+    H.ok(not ns.FriendsModel.IsPlaying({ online = false, playing = "First-Last" }, "First-Last"))
+    H.ok(not ns.FriendsModel.IsPlaying({ online = true }, "First-Last"))
+    local _, lines = ns.FriendsModel.Tooltip({ name = "Lune", playing = true }, {}, {}, 1000, ns.L)
+    H.ok(table.concat(lines, "|"):find(ns.L.TIP_PLAYING_NOW, 1, true), "tooltip says playing now")
+end)
+
 H.test("settings defaults fill gaps and keep choices", function()
     local D = H.pureNamespace().SettingsDefaults
     local s = D.Ensure({ skin = "plain", colorblind = false })

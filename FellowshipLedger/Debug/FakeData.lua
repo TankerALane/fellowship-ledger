@@ -157,17 +157,18 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
         out.characters[ns.Character.Key(spec.name, FakeData.REALM)] = makeCharacter(rng, spec, now, timeFn, dateFn)
     end
     local friends = {
-        { id = "fake-bn-1", kind = "bnet", name = "Fennick", tag = "Fennick#0001", online = true,
+        { id = "fake-bn-1", kind = "bnet", name = "Fennick", tag = "Fennick#0001", online = true, playing = "Grimwald",
           chars = { { "Thistle", "DRUID", 5 }, { "Grimwald", "PALADIN", 20 }, { "Pip", "ROGUE", 1 } } },
         { id = "fake-bn-2", kind = "bnet", name = "Marisol", tag = "Marisol#0002", online = false,
           chars = { { "Seraphel", "SHAMAN", 15 }, { "Vexa", "WARLOCK", 34 } } },
-        { id = "fake-bn-3", kind = "bnet", name = "Tobin", tag = "Tobin#0003", online = true,
+        { id = "fake-bn-3", kind = "bnet", name = "Tobin", tag = "Tobin#0003", online = true, playing = "Lune",
           chars = { { "Hollin", "HUNTER", 1 }, { "Brask", "WARRIOR", 25 }, { "Lune", "PRIEST", 10 }, { "Okka", "MAGE", 40 } } },
         { id = "fake-char-1", kind = "char", name = "Wren-" .. FakeData.REALM, tag = "Wren-" .. FakeData.REALM, online = false,
           chars = { { "Wren", "ROGUE", 8 } } },
     }
     for _, f in ipairs(friends) do
         local friend = { kind = f.kind, name = f.name, tag = f.tag, online = f.online, fake = true,
+            playing = f.playing and ns.Character.Key(f.playing, FakeData.REALM) or nil,
             lastUpdated = now - rng.int(5, 3 * 24 * 60) * 60, characters = {} }
         for _, cs in ipairs(f.chars) do
             local spec = { name = cs[1], class = cs[2], startLevel = cs[3], playChance = 0.2 + rng.float() * 0.4 }

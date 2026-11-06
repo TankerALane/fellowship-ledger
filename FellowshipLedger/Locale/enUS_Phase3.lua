@@ -62,6 +62,8 @@ ns.Locale.Set({
     TIP_LEVEL = "Level %d %s",
     TIP_FACTION = "Faction: %s",
     TIP_LAST_PLAYED = "Last played: %s",
+    TIP_PLAYING_NOW = "Playing this character now",
+    FRIEND_PLAYING = "(playing)",
     TIP_UPDATED = "Shared with you: %s",
     TIP_VERSION = "Their Fellowship Ledger: %s",
     CLASS_DEATHKNIGHT = "Death Knight",
