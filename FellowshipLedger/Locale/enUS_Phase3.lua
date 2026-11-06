@@ -228,7 +228,7 @@ ns.Locale.Set({
     STATS_COMPLETED_OTHER_CHAR = "The game only lists completed quests for the character you are playing. Log in to this one to see its list.",
     HELP_SHOTS = "/fl shots - take screenshots of every tab and skin with made-up data (for the addon page)",
     SHOTS_START = "Taking %d screenshots with made-up data. Leave the window alone until it says done.",
-    SHOTS_DONE = "Screenshots done: %d pictures in the game's Screenshots folder. Your skin and settings are back.",
+    SHOTS_DONE = "Screenshots done: %d pictures in the game's Screenshots folder. Your skin and settings are back. Type /reload so the crop script can find them.",
     SHOTS_FAILED = "Screenshots stopped: %s. Your skin and settings are back.",
     SHOTS_NO_API = "This client has no Screenshot function, so /fl shots cannot run. Use Print Screen instead.",
     CHAIN_LEGEND ="Check mark: done. Arrow: in your quest log. A red Req is above your level. Hover a quest for where to turn it in.",

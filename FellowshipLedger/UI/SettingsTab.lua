@@ -68,7 +68,8 @@ function SettingsTab.Refresh()
     if char then
         ui.shareAll.text:SetText(SettingsTab.AnySharing(char) and L.SHARING_OFF_CHARACTER or L.SHARING_ON_CHARACTER)
     end
-    ui.charLabel:SetText(char and string.format(L.SETTINGS_CHARACTER, key, state.charIndex, count) or L.SETTINGS_NO_CHARACTER)
+    local shown = shooting() and char and char.name or key
+    ui.charLabel:SetText(char and string.format(L.SETTINGS_CHARACTER, shown, state.charIndex, count) or L.SETTINGS_NO_CHARACTER)
     for _, row in ipairs(ui.trackerRows) do
         local t = ns.TrackerList.byId[row.id]
         local unavailable = t.status == "unavailable"

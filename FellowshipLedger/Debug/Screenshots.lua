@@ -32,12 +32,30 @@ local function sortedKeys(t)
     return keys
 end
 
--- Open one character on the Me or Friends tab (and only that one).
+-- The chain to open in the Quest chains picture: the longest one you are part-way
+-- through (past step 1), else the longest.
+local function pickChain()
+    local best, bestScore
+    for _, e in ipairs((ns.QuestChains.ForLog())) do
+        if e.key and e.step then
+            local score = (e.total or 0) + ((e.step > 1 and e.step < (e.total or 0)) and 100 or 0)
+            if not bestScore or score > bestScore then best, bestScore = e.key, score end
+        end
+    end
+    return best
+end
+
+-- Open one character on the Me or Friends tab (and only that one), or one chain.
 local function openCharacter(step)
     local me, friends = ns.MeTab.state, ns.FriendsTab.state
     for k in pairs(me.expanded) do me.expanded[k] = nil end
     for k in pairs(friends.expanded) do friends.expanded[k] = nil end
+    for k in pairs(me.chainOpen) do me.chainOpen[k] = nil end
     me.mode = step.mode or "characters"
+    if step.mode == "chains" then
+        local key = pickChain()
+        if key then me.chainOpen[key] = true end
+    end
     if step.open == "me" then
         -- The highest-level character: the fullest card.
         local best, bestLevel
@@ -79,8 +97,9 @@ local function restore(saved)
     local s = ns.db.settings
     s.skin, s.detailsLayout = saved.skin, saved.layout
     local me = ns.MeTab.state
-    me.mode = saved.mode
+    me.mode, me.range, ns.FriendsTab.state.range = saved.mode, saved.meRange, saved.friendsRange
     for k in pairs(me.expanded) do me.expanded[k] = nil end
+    for k in pairs(me.chainOpen) do me.chainOpen[k] = nil end
     for k in pairs(ns.FriendsTab.state.expanded) do ns.FriendsTab.state.expanded[k] = nil end
     if not saved.fake then ns.Data.DisableFake() end
     Shots.active = false
@@ -100,7 +119,9 @@ function Shots.Run()
     local f = ns.MainWindow.frame
     local s = ns.db.settings
     local saved = { skin = s.skin, layout = s.detailsLayout, tab = ns.MainWindow.current, fake = ns.Data.IsFake(),
-        mode = ns.MeTab.state.mode, w = f:GetWidth(), h = f:GetHeight() }
+        mode = ns.MeTab.state.mode, w = f:GetWidth(), h = f:GetHeight(),
+        meRange = ns.MeTab.state.range, friendsRange = ns.FriendsTab.state.range }
+    ns.MeTab.state.range, ns.FriendsTab.state.range = "all", "all"
     if not saved.fake then ns.Data.EnableFake() end
     Shots.active = true
     f:Show()

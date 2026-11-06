@@ -418,9 +418,11 @@ H.test("/fl shots: every planned picture with fake data, then settings put back"
     env.Screenshot = function()
         taken = taken + 1
         seen[#seen + 1] = { tab = ns.MainWindow.current, skin = ns.db.settings.skin, layout = ns.db.settings.detailsLayout,
+            range = ns.MeTab.state.range,
             fake = ns.Data.IsFake(), banner = ns.MainWindow.fakeBanner:IsShown() }
     end
     ns.db.settings.skin, ns.db.settings.detailsLayout = "leather", "list"
+    ns.MeTab.state.range = "today"
     ns.db.blocklist["Someone#1234"] = true
     Mock.slash(env, "shots")
     for _ = 1, 3 do Mock.runTimers(env) end
@@ -432,6 +434,7 @@ H.test("/fl shots: every planned picture with fake data, then settings put back"
         H.eq(s.tab, ns.Screenshots.PLAN[i].tab)
         H.eq(s.skin, ns.Screenshots.PLAN[i].skin)
         H.ok(s.fake and not s.banner, "fake data without the banner")
+        H.eq(s.range, "all", "the All range")
         if ns.Screenshots.PLAN[i].open then
             opened = true
             if s.layout == "card" then cards = cards + 1 else lists = lists + 1 end
@@ -443,6 +446,7 @@ H.test("/fl shots: every planned picture with fake data, then settings put back"
     H.ok(skins.ledger and skins.leather and skins.plain, "every skin")
     H.eq(ns.db.settings.skin, "leather", "skin back")
     H.eq(ns.db.settings.detailsLayout, "list", "layout back")
+    H.eq(ns.MeTab.state.range, "today", "range back")
     H.ok(not ns.Data.IsFake(), "fake data off again")
     H.ok(not ns.Screenshots.active)
     H.ok(Mock.chatContains(env, "Screenshots done"))
