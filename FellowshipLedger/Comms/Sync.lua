@@ -102,6 +102,12 @@ function Sync.SendLive()
     local same = Codec.EncodeData(key, c, shared, today)
     c.lastSeen = seen
     local n = 0
+    -- A friend who went offline gets the next live update in full, even if
+    -- nothing changed: the last one may not have reached them.
+    for id in pairs(Sync.lastLive) do
+        local peer = Friends.peers[id]
+        if not (peer and peer.online) then Sync.lastLive[id] = nil end
+    end
     for id, peer in pairs(Friends.peers) do
         local f = ns.db.friends[id]
         if peer.online and peer.target and f and f.version and not Friends.IsBlocked(peer) and Sync.lastLive[id] ~= same then

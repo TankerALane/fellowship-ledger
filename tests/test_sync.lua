@@ -373,6 +373,11 @@ H.test("live update: the played character's changes reach friends within a minut
     c.lastSeen = (c.lastSeen or 0) + 120
     H.eq(A.__ns.Sync.SendLive(), 0, "an unchanged character sends nothing")
     H.eq(A.__ns.Transport.stats.sent, before)
+    -- Bob goes offline and comes back: he gets the update again, unchanged or not.
+    A.__ns.Friends.peers["bn:Bob#1"].online = false
+    A.__ns.Sync.SendLive()
+    A.__ns.Friends.peers["bn:Bob#1"].online = true
+    H.ok(A.__ns.Sync.SendLive() > 0, "resent after Bob was offline")
     -- Friends without the ledger (no HELLO from them) get no live updates.
     A.FellowshipLedgerDB.friends["bn:Bob#1"].version = nil
     c.days[today].quests = 9
