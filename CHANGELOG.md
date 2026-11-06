@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixed
+- The login message now says "/fl" opens the ledger and "/fl help" lists the commands (it said "/fl" for commands).
 - "Sync now" (and `/fl sync`) always asks your friends for their latest data. Before, it quietly fetched nothing new if any sync had asked them in the last 5 minutes.
 
 ### Changed

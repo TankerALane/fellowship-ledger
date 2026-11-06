@@ -8,7 +8,7 @@ ns.Locale.Set({
     ADDON_TITLE = "Fellowship Ledger",
 
     -- Loading
-    LOADED = "The ledger is open (v%s, %s). Type /fl for commands.",
+    LOADED = "The ledger is open (v%s, %s). Type /fl to open it, or /fl help for commands.",
     FLAVOR_MISMATCH = "Warning: this client reports flavor %s, but the %s file was loaded. Please run /fl verify and send the report.",
     UNKNOWN_FLAVOR = "This client is not one the ledger recognises (interface %s). Tracking is disabled.",
     FOREVER_VERIFY_REMINDER = "This ledger has not been checked on WoW Forever yet. Please type /fl verify and send the report (this reminder stops once a report is saved).",

@@ -12,7 +12,7 @@ end)
 
 H.test("format strings accept their arguments", function()
     local ns = H.pureNamespace()
-    H.eq(ns.L.LOADED:format("1.0", "Forever"), "The ledger is open (v1.0, Forever). Type /fl for commands.")
+    H.eq(ns.L.LOADED:format("1.0", "Forever"), "The ledger is open (v1.0, Forever). Type /fl to open it, or /fl help for commands.")
     H.ok(ns.L.VERIFY_DONE:format(1, 2, 3, 4, 5))
     H.ok(ns.L.FEATURE_DISABLED:format("Quests", "missing"))
 end)
