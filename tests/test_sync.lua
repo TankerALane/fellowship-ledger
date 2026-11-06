@@ -378,3 +378,25 @@ H.test("live update: the played character's changes reach friends within a minut
     c.days[today].quests = 9
     H.eq(A.__ns.Sync.SendLive(), 0, "only friends who run the ledger")
 end)
+
+H.test("Sync now asks friends for their data even right after a sync", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    giveData(A, 1)
+    local bob = giveData(B, 3)
+    network({ A, B }, 30)
+    local today = os.date("%Y-%m-%d", NOW)
+    local fromBob = A.FellowshipLedgerDB.friends["bn:Bob#1"]
+    H.eq(fromBob.characters["Bob-Realm"].days[today].quests, 3)
+    -- Bob plays on, but the request gap (5 min) has not passed. All of this runs
+    -- in the first 50 s, before Bob's first live update (at 60 s), so only a
+    -- request can bring the change.
+    bob.days[today].quests = 4
+    A.__ns.Sync.lastHello = {}
+    A.__ns.Sync.SyncAll(false)
+    network({ A, B }, 10)
+    H.eq(fromBob.characters["Bob-Realm"].days[today].quests, 3, "an automatic sync keeps the gap")
+    A.__ns.Sync.SyncAll(true)
+    network({ A, B }, 10)
+    H.eq(fromBob.characters["Bob-Realm"].days[today].quests, 4, "Sync now fetched the new data")
+end)

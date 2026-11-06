@@ -181,6 +181,9 @@ function Sync.SyncAll(force)
     local count = 0
     for _, peer in pairs(Friends.peers) do
         if peer.online and not Friends.IsBlocked(peer) then
+            -- "Sync now" (force) always asks for their data when they answer, even if
+            -- a sync asked them less than REQUEST_GAP ago; automatic syncs keep the gap.
+            if force then Sync.lastRequest[peer.id] = nil end
             Sync.SendHello(peer, true, force)
             count = count + 1
         end
