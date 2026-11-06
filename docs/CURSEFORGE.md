@@ -48,7 +48,7 @@ Works on **WoW Forever** and **retail**, and keeps their data completely separat
 
 ## Recommended
 
-**Questie** gives fuller quest-chain information, especially on WoW Forever. Fellowship Ledger works without it, and if one friend has Questie, chains still show up for the rest of you.
+**Questie** gives fuller quest-chain information, especially on WoW Forever. Fellowship Ledger works without it. Only one of you needs it: with Questie you see your friends' chains even if they don't have it, and a friend with Questie shares their chains with you even if you don't.
 
 ## Commands
 
