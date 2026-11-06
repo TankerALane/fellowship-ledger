@@ -110,7 +110,7 @@ B -> A   DATA x (B's sharing characters)
 
 **Repeats:**
 - A HELLO goes to the same friend at most once a minute (unless "Sync now" forces it).
-- A REQUEST goes at most once every 5 minutes.
+- A REQUEST goes at most once every 4 minutes.
 
 **Triggers:**
 - 10 s after login
@@ -118,7 +118,9 @@ B -> A   DATA x (B's sharing characters)
 - 10 s after friend-list changes (throttled; `BN_FRIEND_INFO_CHANGED` fired about 300 times an hour on retail)
 - opening the Friends tab
 - "Sync now" or `/fl sync`
-- every 15 minutes
+- every 5 minutes (a full sync of every character)
+
+**Live update (after 1.2.2, D-090):** every minute, the character being played sends today's DATA to each online friend who runs the ledger (has sent a HELLO), unasked, when it changed since the last one sent to them (`lastSeen` alone does not count). Receivers merge it like any DATA, so older versions accept it too.
 
 ## Send queue
 

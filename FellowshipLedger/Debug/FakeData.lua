@@ -174,6 +174,13 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
             local spec = { name = cs[1], class = cs[2], startLevel = cs[3], playChance = 0.2 + rng.float() * 0.4 }
             local fc = makeCharacter(rng, spec, now, timeFn, dateFn)
             fc.mask = string.rep("1", #ns.TrackerList.ORDER) -- shares everything, so every friend view has data
+            if f.playing == cs[1] then
+                -- On this character now: just played, and its data just arrived (shows "now").
+                fc.lastSeen = now - 15
+                friend.lastUpdated = now - 20
+            elseif f.playing then
+                fc.lastSeen = math.min(fc.lastSeen, now - 3600) -- their other characters: played earlier
+            end
             friend.characters[ns.Character.Key(cs[1], FakeData.REALM)] = fc
         end
         out.friends[f.id] = friend

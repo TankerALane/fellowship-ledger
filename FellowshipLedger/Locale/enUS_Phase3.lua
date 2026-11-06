@@ -64,6 +64,7 @@ ns.Locale.Set({
     TIP_LAST_PLAYED = "Last played: %s",
     TIP_PLAYING_NOW = "Playing this character now",
     FRIEND_PLAYING = "(playing)",
+    FRIEND_NOW = "now",
     TIP_UPDATED = "Shared with you: %s",
     TIP_VERSION = "Their Fellowship Ledger: %s",
     CLASS_DEATHKNIGHT = "Death Knight",
@@ -201,7 +202,7 @@ ns.Locale.Set({
     COL_TIP_DEATHS = "Deaths in the chosen range. Click to sort.",
     COL_TIP_KILLS = "Kills in the chosen range (your own killing blows). Click to sort.",
     COL_TIP_SKILLUPS = "Profession points gained in the chosen range. Click to sort.",
-    COL_TIP_UPDATED = "When this friend's ledger last reached you. Click to sort.",
+    COL_TIP_LAST_PLAYED = "When this character was last played. \"now\" means it is being played and its data reached you in the last minute or so. Click to sort.",
     -- Friends' characters (D-083)
     STATS_NOT_SHARED = "This character does not share this.",
     STATS_NOT_SHARED_SHORT = "not shared",

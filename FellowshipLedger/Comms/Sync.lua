@@ -5,7 +5,9 @@
 --   A -> B  DATA (one per shared character, only shared trackers, since that day)
 --   A <- B  ... and the same the other way round.
 -- Triggers: 10 s after login, a friend coming online, opening the Friends tab or
--- "Sync now", and every 15 minutes. Blocked friends get nothing and are ignored.
+-- "Sync now", and every 5 minutes. Blocked friends get nothing and are ignored.
+-- Live update (D-090): every minute, the character I am playing sends today's DATA,
+-- unasked, to online friends who run the ledger, but only when it changed.
 -- Fake data (/fl fake) is never read here: only db.characters is ever sent.
 
 local _, ns = ...
@@ -15,10 +17,12 @@ local Codec, Merge, Transport, Friends = ns.Codec, ns.Merge, ns.Transport, ns.Fr
 local Sync = {}
 ns.Sync = Sync
 
-Sync.INTERVAL = 900      -- seconds between automatic syncs
+Sync.INTERVAL = 300      -- seconds between automatic full syncs (every character; D-090)
 Sync.HELLO_GAP = 60      -- don't repeat HELLO to the same friend within this
-Sync.REQUEST_GAP = 300   -- don't repeat REQUEST to the same friend within this
+Sync.REQUEST_GAP = 240   -- don't repeat REQUEST to the same friend within this (under INTERVAL, so a late reply is not skipped)
 Sync.NAME_GAP = 60
+Sync.LIVE_EVERY = 60     -- seconds between live updates of the character being played
+Sync.lastLive = {}       -- peer id -> what the last live update said (lastSeen left out)
 Sync.lastHello, Sync.lastRequest = {}, {}
 Sync.optedIn = {}        -- party member names who sent a NAME note this session
 Sync.test = nil
@@ -77,6 +81,33 @@ function Sync.SendData(peer, since)
     for _, mine in ipairs(Sync.MyCharacters()) do
         local body = Codec.EncodeData(mine.key, mine.char, mine.shared, since)
         n = n + Transport.Send(destFor(peer), "D", body)
+    end
+    return n
+end
+
+-- Live update: today's DATA for the character I am playing, to each online friend
+-- who runs the ledger (has sent a HELLO), when it changed since the last one sent
+-- to them. lastSeen moves on every tick, so it is left out of that comparison: an
+-- idle character sends nothing. Older receivers merge it like any other DATA.
+function Sync.SendLive()
+    local key = ns.Store.key
+    local c = key and ns.db.characters[key]
+    if not c then return 0 end
+    local shared, any = Codec.SharedTrackers(c, ns.db.settings.sharingPaused)
+    if not any then return 0 end
+    local today = ns.Store.Today()
+    local body = Codec.EncodeData(key, c, shared, today)
+    local seen = c.lastSeen
+    c.lastSeen = 0
+    local same = Codec.EncodeData(key, c, shared, today)
+    c.lastSeen = seen
+    local n = 0
+    for id, peer in pairs(Friends.peers) do
+        local f = ns.db.friends[id]
+        if peer.online and peer.target and f and f.version and not Friends.IsBlocked(peer) and Sync.lastLive[id] ~= same then
+            Sync.lastLive[id] = same
+            n = n + Transport.Send(destFor(peer), "D", body)
+        end
     end
     return n
 end
@@ -244,4 +275,5 @@ function Sync.Start()
     ns.Events.On("PLAYER_ENTERING_WORLD", "sync", function() ns.Events.After(5, Sync.AnnounceName) end)
     ns.Events.After(10, function() Sync.SyncAll(false) end)
     ns.Events.Every(Sync.INTERVAL, "sync", function() Sync.SyncAll(false) end)
+    ns.Events.Every(Sync.LIVE_EVERY, "sync", Sync.SendLive)
 end

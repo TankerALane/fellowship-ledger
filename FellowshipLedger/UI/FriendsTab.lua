@@ -29,7 +29,7 @@ local COLUMNS = {
     { field = "deaths", label = "COL_DEATHS", width = 50 },
     { field = "kills", label = "COL_KILLS", width = 50 },
     { field = "skillUps", label = "COL_SKILLUPS", width = 54 },
-    { field = "lastUpdated", label = "COL_UPDATED", width = 90 },
+    { field = "lastPlayed", label = "COL_LAST_PLAYED", width = 90 },
 }
 
 local KIND = { level = "number", faction = "faction", levels = "number", quests = "number", dungeons = "pair", moneyNet = "money",
@@ -111,8 +111,9 @@ local function lines()
             local cells = {}
             local openId = tostring(r.friendId) .. "|" .. tostring(r.key)
             for c, col in ipairs(COLUMNS) do
-                if col.field == "lastUpdated" then
-                    cells[c] = FriendsModel.Ago(now, r.lastUpdated)
+                if col.field == "lastPlayed" then
+                    local text, live = FriendsModel.LastPlayed(now, r)
+                    cells[c] = live and (ns.Palette.Code(W.Color("good")) .. L.FRIEND_NOW .. "|r") or text
                 elseif col.field == "name" then
                     cells[c] = (state.expanded[openId] and "- " or "+ ") .. W.ClassName(r.name, r.class)
                         .. (r.playing and (" " .. ns.Palette.Code(W.Color("good")) .. L.FRIEND_PLAYING .. "|r") or "")

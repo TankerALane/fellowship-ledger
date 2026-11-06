@@ -173,6 +173,21 @@ H.test("the character a friend is playing is marked and listed first", function(
     H.ok(table.concat(lines, "|"):find(ns.L.TIP_PLAYING_NOW, 1, true), "tooltip says playing now")
 end)
 
+H.test("Last played says now only for a fresh update of the character being played", function()
+    local ns = H.pureNamespace()
+    local LP = ns.FriendsModel.LastPlayed
+    H.eq((LP(10000, { playing = true, lastUpdated = 10000 - 30, lastSeen = 9000 })), "now")
+    H.eq((LP(10000, { playing = true, lastUpdated = 10000 - 600, lastSeen = 10000 - 600 })), "10m ago", "stale: show the time")
+    H.eq((LP(10000, { playing = nil, lastUpdated = 10000, lastSeen = 10000 - 7200 })), "2h ago", "another character: when it was played")
+    H.eq((LP(10000, { lastSeen = nil })), "never")
+    -- Sorting by the column puts the character being played first.
+    local friends = fake(ns).friends
+    local rows = ns.FriendsModel.Build(friends, {}, "all", "2026-11-04", os.time, os.date, "lastPlayed", true)
+    for i, r in ipairs(rows) do
+        if r.header and r.friend.name == "Tobin" then H.eq(rows[i + 1].name, "Lune") end
+    end
+end)
+
 H.test("settings defaults fill gaps and keep choices", function()
     local D = H.pureNamespace().SettingsDefaults
     local s = D.Ensure({ skin = "plain", colorblind = false })

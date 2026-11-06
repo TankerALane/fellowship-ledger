@@ -264,7 +264,7 @@ H.test("a send that errors fails that message only; sharing stays on", function(
         return real(...)
     end
     nsA.Sync.SyncAll(true)
-    network({ a, b }, 60)
+    network({ a, b }, 70) -- past the live update at 60 s, so its messages have gone out too
     H.ok(not nsA.Compat.IsDisabled("comms"), "comms still on: " .. tostring(nsA.Compat.disabled.comms))
     H.ok(nsA.Transport.lastError and nsA.Transport.lastError:find("went away", 1, true), "error kept for /fl comms")
     H.eq(#nsA.Transport.queue, 0, "queue drained")
@@ -352,4 +352,29 @@ H.test("a character removed by a friend disappears from my Friends tab at the ne
     H.ok(f.characters["Bob-Realm"], "the other one stays")
     local hello = nsA.Codec.DecodeHello(nsA.Codec.EncodeHello({ version = "1.0.1", characters = {}, removed = { "X-Y", "A,b~c" } }))
     H.eq(hello.removed[2], "A,b~c", "removed keys are escaped")
+end)
+
+H.test("live update: the played character's changes reach friends within a minute", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    local c = giveData(A, 7)
+    network({ A, B }, 60)
+    local today = os.date("%Y-%m-%d", NOW)
+    local fromAlice = B.FellowshipLedgerDB.friends["bn:Alice#1"]
+    H.eq(fromAlice.characters["Alice-Realm"].days[today].quests, 7)
+    -- Alice turns in a quest; the 15-minute sync is far off, the live update is not.
+    c.days[today].quests = 8
+    network({ A, B }, 65)
+    H.eq(fromAlice.characters["Alice-Realm"].days[today].quests, 8, "arrived by the live update")
+    -- Nothing changed: no live update goes out (lastSeen moving does not count).
+    A.__state.sent = {}
+    network({ A }, 1)
+    local before = A.__ns.Transport.stats.sent
+    c.lastSeen = (c.lastSeen or 0) + 120
+    H.eq(A.__ns.Sync.SendLive(), 0, "an unchanged character sends nothing")
+    H.eq(A.__ns.Transport.stats.sent, before)
+    -- Friends without the ledger (no HELLO from them) get no live updates.
+    A.FellowshipLedgerDB.friends["bn:Bob#1"].version = nil
+    c.days[today].quests = 9
+    H.eq(A.__ns.Sync.SendLive(), 0, "only friends who run the ledger")
 end)

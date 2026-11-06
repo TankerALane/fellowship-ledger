@@ -50,6 +50,11 @@ function FriendsModel.Build(friends, blocklist, range, todayKey, timeFn, dateFn,
             for _, r in ipairs(charRows) do
                 r.friendId, r.lastUpdated = id, f.lastUpdated
                 r.playing = FriendsModel.IsPlaying(f, r.key) or nil
+                -- Sort value for "Last played": the character being played counts as
+                -- played when its data last arrived, so it sorts as the newest.
+                local seen = chars[r.key] and chars[r.key].lastSeen
+                r.lastSeen = seen
+                r.lastPlayed = r.playing and math.max(seen or 0, f.lastUpdated or 0) or seen
             end
             if sortField then
                 ns.MeModel.Sort(charRows, sortField, desc)
@@ -128,6 +133,17 @@ function FriendsModel.Tooltip(row, char, friend, now, L, factionText)
     lines[#lines + 1] = string.format(L.TIP_UPDATED, FriendsModel.Ago(now, friend.lastUpdated))
     if friend.version then lines[#lines + 1] = string.format(L.TIP_VERSION, friend.version) end
     return row.name, lines
+end
+
+-- The "Last played" cell. "now" only while the friend is on this character and
+-- their data arrived within LIVE_WINDOW (live updates come every minute, D-090);
+-- otherwise when the character was last played, as the friend's ledger reported it.
+FriendsModel.LIVE_WINDOW = 90
+function FriendsModel.LastPlayed(now, row)
+    if row.playing and row.lastUpdated and now - row.lastUpdated <= FriendsModel.LIVE_WINDOW then
+        return "now", true
+    end
+    return FriendsModel.Ago(now, row.lastSeen), false
 end
 
 -- "5m ago", "3h ago", "2d ago"; "never" when nil.

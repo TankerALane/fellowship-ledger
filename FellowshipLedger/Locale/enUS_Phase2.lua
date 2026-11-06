@@ -26,7 +26,7 @@ ns.Locale.Set({
     CHAIN_QUESTIE_HINT = "Tip: install Questie for fuller quest-chain information (see Settings > Recommended addons).",
 
     -- Friends tab
-    COL_UPDATED = "Updated",
+    COL_LAST_PLAYED = "Last played",
     ONLINE = "online",
     OFFLINE = "offline",
     FRIEND_HEADER = "%s  (%s, %d characters, updated %s)",
