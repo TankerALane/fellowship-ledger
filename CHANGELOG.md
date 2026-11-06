@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Changed
-- Friends update much faster. The character you are playing sends its changes to friends who run the ledger every minute (only when something changed), and a full sync of all your characters runs every 5 minutes instead of every 15.
+- Friends update much faster. The character you are playing sends its changes to friends who run the ledger every minute (only when something changed). The full sync of all your characters stays every 15 minutes.
 - Friends tab: the "Updated" column is now "Last played": when each character was last played. The character a friend is on shows "now" in green while its data is less than about a minute and a half old, otherwise the time. When their ledger last reached you is still on the friend's header row and in each row's tooltip.
 
 ## 1.2.2 - 2026-11-06

@@ -5,7 +5,7 @@
 --   A -> B  DATA (one per shared character, only shared trackers, since that day)
 --   A <- B  ... and the same the other way round.
 -- Triggers: 10 s after login, a friend coming online, opening the Friends tab or
--- "Sync now", and every 5 minutes. Blocked friends get nothing and are ignored.
+-- "Sync now", and every 15 minutes. Blocked friends get nothing and are ignored.
 -- Live update (D-090): every minute, the character I am playing sends today's DATA,
 -- unasked, to online friends who run the ledger, but only when it changed.
 -- Fake data (/fl fake) is never read here: only db.characters is ever sent.
@@ -17,9 +17,9 @@ local Codec, Merge, Transport, Friends = ns.Codec, ns.Merge, ns.Transport, ns.Fr
 local Sync = {}
 ns.Sync = Sync
 
-Sync.INTERVAL = 300      -- seconds between automatic full syncs (every character; D-090)
+Sync.INTERVAL = 900      -- seconds between automatic full syncs (every character; D-090)
 Sync.HELLO_GAP = 60      -- don't repeat HELLO to the same friend within this
-Sync.REQUEST_GAP = 240   -- don't repeat REQUEST to the same friend within this (under INTERVAL, so a late reply is not skipped)
+Sync.REQUEST_GAP = 300   -- don't repeat REQUEST to the same friend within this
 Sync.NAME_GAP = 60
 Sync.LIVE_EVERY = 60     -- seconds between live updates of the character being played
 Sync.lastLive = {}       -- peer id -> what the last live update said (lastSeen left out)
