@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Friends' quest chains no longer need Questie on the friend's side. Each character now also shares the quests in its log (with the Quests share switch), and your ledger works out the chains with your Questie. A friend without Questie shows up in "Chains your friends are on", "Friends on this chain" and their Quests tab, as soon as they run 1.2.1 or later.
+
 ## 1.2.0 - 2026-11-05
 
 ### Added

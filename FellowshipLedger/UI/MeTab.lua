@@ -166,7 +166,7 @@ function Me.ChainView()
         c.open, c.showAll = state.chainOpen[c.key], state.chainAll[c.key]
         if c.open then
             c.details = ns.QuestChains.Details(c.key, c.anchor, logSet)
-            c.friendsOn = ns.QuestChainLogic.FriendsOn(friends, blocked, c.key)
+            c.friendsOn = ns.QuestChainLogic.FriendsOn(friends, blocked, c.key, ns.QuestChains.FriendChains)
         end
     end
     for _, u in ipairs(unknown) do view.mine[#view.mine + 1] = u end
@@ -175,7 +175,7 @@ function Me.ChainView()
     local me = ns.Store.char
     for key in pairs(me and me.chains or {}) do mine[key] = true end
     local started = ns.Data.IsFake() and function() return false end or ns.QuestChains.HaveStarted
-    for _, s in ipairs(ns.QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)) do
+    for _, s in ipairs(ns.QuestChainLogic.FriendSuggestions(friends, blocked, mine, started, ns.QuestChains.FriendChains)) do
         local c = { key = s.key, name = s.chain.name, friend = s.friend, character = s.character, step = s.chain.step,
             total = s.chain.total, zone = s.chain.startZone, open = state.chainOpen[s.key], showAll = state.chainAll[s.key] }
         if c.open then

@@ -77,7 +77,7 @@ function FriendsTab.DetailLines(id, char)
             FriendsTab.Refresh()
         end, ns.Palette.Code(ns.Palette.Color(skin, "text")))
     elseif view == "quests" then
-        parts = S.FriendQuests(sum, char.chains, shared, L)
+        parts = S.FriendQuests(sum, ns.QuestChains.FriendChains(char), shared, L)
     elseif view == "gold" then
         parts = shared.gold and S.Gold(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "kills" then

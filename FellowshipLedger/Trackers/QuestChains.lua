@@ -112,15 +112,47 @@ end
 function QuestChains.Snapshot()
     local char = ns.Store.char
     if not char then return end
-    local chains = {}
+    local chains, ids = {}, {}
     for _, e in ipairs((QuestChains.ForLog())) do
+        if e.questID then ids[#ids + 1] = e.questID end
         if e.key and e.step then
             chains[e.key] = { name = e.chainName, step = e.step, total = e.total, firstQuestID = e.firstQuestID,
                 firstName = e.firstName, startZone = e.startZone, source = e.source }
         end
     end
+    table.sort(ids)
     char.chains = chains
+    -- The quests in the log, shared with Quests so friends can work out the chains with
+    -- their own Questie when this character has none (D-087).
+    char.logQuests = ids
     return chains
+end
+
+-- A friend's character's chains (D-087): the chains it sent, plus chains worked out
+-- here from the quest IDs in its log (sent from 1.2.1), so a friend without Questie
+-- still shows up when you have it. Sent chains win for the same key. Cached per
+-- character until its log or our Questie state changes.
+local friendCache = setmetatable({}, { __mode = "k" })
+function QuestChains.FriendChains(c)
+    if type(c) ~= "table" then return {} end
+    if type(c.logQuests) ~= "table" then return c.chains or {} end
+    local sig = table.concat(c.logQuests, ",") .. "|" .. QuestChains.QuestieState()
+    local cached = friendCache[c]
+    if cached and cached.sig == sig and cached.sent == c.chains then return cached.chains end
+    local out = {}
+    for _, id in ipairs(c.logQuests) do
+        local e = QuestChains.Lookup(id)
+        if e and e.key and e.step then
+            local have = out[e.key]
+            if not have or e.step > (have.step or 0) then
+                out[e.key] = { name = e.chainName, step = e.step, total = e.total, firstQuestID = e.firstQuestID,
+                    firstName = e.firstName, startZone = e.startZone, source = e.source, derived = true }
+            end
+        end
+    end
+    for key, ch in pairs(c.chains or {}) do out[key] = ch end
+    friendCache[c] = { sig = sig, sent = c.chains, chains = out }
+    return out
 end
 
 -- Has this character started (or finished) the chain that begins with questID?

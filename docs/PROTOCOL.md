@@ -56,6 +56,7 @@ d,<YYYY-MM-DD>,<code>=<int>,...                                        day bucke
 l,<toLevel>,<active>,<total>,<partial 0|1>,<at>                        level times (levels tracker)
 k,<chainKey>,<name>,<step>,<total>,<firstQuestID>,<firstName>,<startZone>,<source>   quest chains in progress (quests tracker)
 p,<professionKey>,<name>,<rank>,<max>,<lastAt>   profession ranks (professions tracker; 1.2.0)
+o,<questID>,<questID>,...   quest IDs in the log, or just "o" when it is empty (quests tracker; 1.2.1)
 s,<start>,<played>,<active>,<levelStart>,<levelEnd>,<code>=<int>,...   last 60 sessions
 ```
 
@@ -79,7 +80,7 @@ Field codes:
 | `pu` | partyLevelUps | partyLevels |
 | `in`, `ie` | itemsNotable, itemsEpic | items |
 
-The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days. Quest chains (`k`) describe what the character is on now, so the received set replaces the stored one. When the sender stops sharing Quests, the stored chains are cleared. Chain keys are `g:<questLineID>` (game data) or `q:<firstQuestID>` (Questie). Profession ranks (`p`, from 1.2.0) are replaced the same way and cleared when the sender stops sharing Professions; a 1.2.0 receiver that has none from a friend says the friend's version does not send them. Version 1 receivers that predate these records ignore them.
+The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days. Quest chains (`k`) describe what the character is on now, so the received set replaces the stored one. When the sender stops sharing Quests, the stored chains are cleared. Chain keys are `g:<questLineID>` (game data) or `q:<firstQuestID>` (Questie). Quest IDs in the log (`o`, from 1.2.1) are replaced on every DATA and cleared with chains; the receiver works out chains from them with its own game data or Questie and adds them to the chains the sender sent (sent chains win for the same key). Profession ranks (`p`, from 1.2.0) are replaced the same way and cleared when the sender stops sharing Professions; a 1.2.0 receiver that has none from a friend says the friend's version does not send them. Version 1 receivers that predate these records ignore them.
 
 ### NAME (`N`)
 

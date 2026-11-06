@@ -151,3 +151,79 @@ H.test("column headers explain themselves on hover (Me and Friends)", function()
         H.eq(name.tip, nil, "no hover text where nothing needs explaining")
     end
 end)
+
+H.test("quest log IDs travel with Quests; empty logs and older senders are told apart", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    local C = ns2.Codec
+    local char = { class = "MAGE", level = 9, days = {}, levels = {}, sessions = {}, chains = {}, logQuests = { 53, 54, 900 } }
+    local d = C.DecodeData(C.EncodeData("Zeryssa-Drowbear", char, { time = true, quests = true }, nil))
+    H.eq(table.concat(d.logQuests, ","), "53,54,900")
+    char.logQuests = {}
+    H.eq(#C.DecodeData(C.EncodeData("Zeryssa-Drowbear", char, { time = true, quests = true }, nil)).logQuests, 0, "empty log")
+    H.eq(C.DecodeData(C.EncodeData("Zeryssa-Drowbear", char, { time = true }, nil)).logQuests, nil, "not shared")
+    H.eq(C.DecodeData("c,Old-Realm,MAGE,Human,Alliance,9,5,1").logQuests, nil, "an older sender sends none")
+    local friend = { characters = {} }
+    local all, none = string.rep("1", #ns2.TrackerList.ORDER), string.rep("0", #ns2.TrackerList.ORDER)
+    ns2.Merge.Data(friend, { key = "Z-R", level = 9, mask = all, days = {}, levels = {}, sessions = {}, chains = {}, logQuests = { 54 } },
+        "2026-11-05", "2026-08-01", 1)
+    H.eq(friend.characters["Z-R"].logQuests[1], 54)
+    ns2.Merge.Data(friend, { key = "Z-R", level = 9, mask = none, days = {}, levels = {}, sessions = {}, chains = {} }, "2026-11-05", "2026-08-01", 2)
+    H.eq(friend.characters["Z-R"].logQuests, nil, "cleared when Quests is no longer shared")
+end)
+
+H.test("a friend without Questie: their chains are worked out here from their quest log", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false } }
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    local st = env.__state
+    st.noQuestLines = true
+    st.questieLoaded = true
+    st.questie = { [70] = { next = 71, name = "Gnolls" }, [71] = { pre = 70, next = 72, name = "More Gnolls" }, [72] = { pre = 71, name = "Hogger" },
+        [53] = { next = 54, name = "Start Here" }, [54] = { pre = 53, next = 60 }, [60] = { pre = 54 } }
+    -- My own character saves its quest log for sharing.
+    ns2.QuestChains.Snapshot()
+    H.eq(table.concat(ns2.Store.char.logQuests, ","), "54")
+    -- Like DrowBear on 1.2.1 without Questie: no chains sent, but the quest log is.
+    local zer = { name = "Zeryssa", level = 12, mask = string.rep("1", #ns2.TrackerList.ORDER), chains = {}, logQuests = { 71, 54 }, days = {} }
+    ns2.db.friends["bn:DrowBear#1411"] = { kind = "bnet", name = "DrowBear", characters = { ["Zeryssa-Drowbear"] = zer } }
+    local chains = ns2.QuestChains.FriendChains(zer)
+    H.eq(chains["q:70"].step, 2); H.eq(chains["q:70"].total, 3); H.eq(chains["q:70"].name, "Gnolls")
+    H.ok(chains["q:53"], "the chain we are both on")
+    -- Chains the friend sent win.
+    zer.chains = { ["q:70"] = { name = "Gnolls (sent)", step = 2, total = 3, firstQuestID = 70 } }
+    H.eq(ns2.QuestChains.FriendChains(zer)["q:70"].name, "Gnolls (sent)")
+    zer.chains = {}
+    -- In the Quest chains view: a suggestion for the chain I am not on, and "Friends on this chain" for mine.
+    ns2.MainWindow.Open("me")
+    local Me = ns2.MeTab
+    Me.state.mode = "chains"
+    local view = Me.ChainView()
+    local suggested
+    for _, f in ipairs(view.friends) do if f.key == "q:70" then suggested = f end end
+    H.ok(suggested, "Gnolls suggested from DrowBear's quest log")
+    H.eq(suggested.friend, "DrowBear")
+    Me.state.chainOpen["q:53"] = true
+    view = Me.ChainView()
+    local mine
+    for _, c in ipairs(view.mine) do if c.key == "q:53" then mine = c end end
+    H.eq(mine.friendsOn[1].friend, "DrowBear", "friends on this chain")
+    Me.Refresh()
+    -- Their Quests tab lists it too.
+    ns2.MainWindow.Open("friends")
+    local F = ns2.FriendsTab
+    local id = "bn:DrowBear#1411|Zeryssa-Drowbear"
+    F.state.expanded[id], F.state.detailView[id] = true, "quests"
+    F.Refresh()
+    local seen = {}
+    for _, line in ipairs(F.ui.table.lines) do
+        for _, s in ipairs(line.segments or {}) do if s.text and s.text ~= "" then seen[#seen + 1] = s.text end end
+    end
+    H.ok(table.concat(seen, " | "):find("Gnolls", 1, true), table.concat(seen, " | "))
+    local chat = table.concat(st.chat, "\n")
+    H.ok(not chat:find("failed") and not chat:find("problem"), chat)
+end)

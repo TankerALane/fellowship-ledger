@@ -93,7 +93,12 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     c.levels = c.levels or {}
     for to, r in pairs(data.levels) do c.levels[to] = r end
     -- Quest chains are "what they are on now": replace them when quests are shared.
-    if ns.Codec.MaskToSet(data.mask or "").quests then c.chains = data.chains or {} else c.chains = nil end
+    if ns.Codec.MaskToSet(data.mask or "").quests then
+        c.chains = data.chains or {}
+        c.logQuests = data.logQuests -- nil from senders before 1.2.1 (D-087)
+    else
+        c.chains, c.logQuests = nil, nil
+    end
     -- Profession ranks (1.2.0+ senders), replaced like chains; nil = not known (D-083).
     if ns.Codec.MaskToSet(data.mask or "").professions then
         c.professions = data.professions or c.professions

@@ -21,12 +21,15 @@ end
 -- Chains friends are on that I have not started.
 -- friends: db.friends shape; mine: set of my chain keys; started(firstQuestID) -> bool.
 -- Returns { friend, character, chain } sorted by friend then chain name; one entry per chain key.
-function QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)
+-- chainsOf(c) -> that character's chains (default c.chains; the UI adds chains worked
+-- out from the friend's quest log, D-087).
+function QuestChainLogic.FriendSuggestions(friends, blocked, mine, started, chainsOf)
+    chainsOf = chainsOf or function(c) return c.chains end
     local out, seen = {}, {}
     for _, f in pairs(friends or {}) do
         if not blocked(f) then
             for charKey, c in pairs(f.characters or {}) do
-                for key, chain in pairs(c.chains or {}) do
+                for key, chain in pairs(chainsOf(c) or {}) do
                     if not mine[key] and not seen[key] and not started(chain.firstQuestID) then
                         seen[key] = true
                         out[#out + 1] = { friend = f.name or "?", character = c.display or c.name or charKey, chain = chain, key = key }
@@ -43,12 +46,14 @@ function QuestChainLogic.FriendSuggestions(friends, blocked, mine, started)
 end
 
 -- Friends' characters on the chain `key`: { friend, character, step }, by friend then character.
-function QuestChainLogic.FriendsOn(friends, blocked, key)
+function QuestChainLogic.FriendsOn(friends, blocked, key, chainsOf)
+    chainsOf = chainsOf or function(c) return c.chains end
     local out = {}
     for _, f in pairs(friends or {}) do
         if not blocked(f) then
             for charKey, c in pairs(f.characters or {}) do
-                local chain = c.chains and c.chains[key]
+                local chains = chainsOf(c)
+                local chain = chains and chains[key]
                 if chain then
                     out[#out + 1] = { friend = f.name or "?", character = c.display or c.name or charKey, step = chain.step }
                 end

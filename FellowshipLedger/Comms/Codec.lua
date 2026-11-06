@@ -177,6 +177,12 @@ function Codec.EncodeData(key, char, shared, since)
                 Codec.Escape(ch.source) }, ",")
         end
     end
+    -- Quest IDs in the log (1.2.1, D-087): "o,<id>,<id>,...", or just "o" for an empty log.
+    if shared.quests and type(char.logQuests) == "table" then
+        local parts = { "o" }
+        for _, id in ipairs(char.logQuests) do parts[#parts + 1] = string.format("%d", id) end
+        recs[#recs + 1] = table.concat(parts, ",")
+    end
     -- Profession ranks (1.2.0, D-083): "p,<key>,<name>,<rank>,<max>,<lastAt>". Older
     -- versions skip record types they do not know.
     if shared.professions then
@@ -236,6 +242,12 @@ function Codec.DecodeData(body)
             out.chains[Codec.Unescape(f[2])] = { name = opt(f[3]), step = tonumber(f[4]), total = tonumber(f[5]),
                 firstQuestID = tonumber(f[6]) ~= 0 and tonumber(f[6]) or nil, firstName = opt(f[7]), startZone = opt(f[8]),
                 source = opt(f[9]) }
+        elseif f[1] == "o" then
+            out.logQuests = {}
+            for i = 2, #f do
+                local id = tonumber(f[i])
+                if id then out.logQuests[#out.logQuests + 1] = id end
+            end
         elseif f[1] == "p" and f[2] and f[2] ~= "" then
             profs = profs or {}
             local name = Codec.Unescape(f[3] or "")
