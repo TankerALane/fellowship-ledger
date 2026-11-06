@@ -113,8 +113,10 @@ function Sync.SendLive()
         if peer.online and peer.target and f and f.version and not Friends.IsBlocked(peer) and Sync.lastLive[id] ~= same then
             Sync.lastLive[id] = same
             n = n + Transport.Send(destFor(peer), "D", body)
+            Sync.liveSent = (Sync.liveSent or 0) + 1
         end
     end
+    Sync.liveMessages = (Sync.liveMessages or 0) + n
     return n
 end
 
@@ -262,6 +264,7 @@ local started = false
 function Sync.Start()
     if started then return end
     started = true
+    Sync.startedAt = now()
     Merge.firstLastNames = ns.Compat.flavor == "Forever"
     Transport.Start()
     if ns.Compat.IsDisabled("comms") then return end

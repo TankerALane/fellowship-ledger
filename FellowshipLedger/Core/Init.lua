@@ -216,21 +216,34 @@ function commands.comms(rest)
         Log.Info(L.COMMS_SIZE_SET, ns.db.settings.commsChunk)
         return
     end
-    local T = ns.Transport
+    -- A copy window (like /fl friends), so the report can be pasted back.
+    local T, S = ns.Transport, ns.Sync
+    local lines = {}
+    local function add(fmt, ...) lines[#lines + 1] = string.format(fmt, ...) end
     local online = 0
     for _, p in pairs(ns.Friends.peers) do if p.online then online = online + 1 end end
-    Log.Info(L.COMMS_STATUS, tostring(T.Prefix()), T.ChunkSize(), #T.queue, T.stats.sent, T.stats.retried, T.stats.failed,
+    add(L.COMMS_STATUS, tostring(T.Prefix()), T.ChunkSize(), #T.queue, T.stats.sent, T.stats.retried, T.stats.failed,
         T.stats.received, T.stats.dropped, online, tostring(T.Blocked() or "-"))
-    if ns.Compat.disabled.comms then Log.Info(L.COMMS_OFF_WHY, "comms", tostring(ns.Compat.disabled.comms)) end
-    if ns.Compat.disabled.friends then Log.Info(L.COMMS_OFF_WHY, "friends", tostring(ns.Compat.disabled.friends)) end
-    if T.lastError then Log.Info(L.COMMS_LAST_ERROR, T.lastError) end
+    add(L.COMMS_LIVE, S.liveSent or 0, S.liveMessages or 0,
+        S.startedAt and math.floor((time() - S.startedAt) / 60) or 0)
+    if ns.Compat.disabled.comms then add(L.COMMS_OFF_WHY, "comms", tostring(ns.Compat.disabled.comms)) end
+    if ns.Compat.disabled.friends then add(L.COMMS_OFF_WHY, "friends", tostring(ns.Compat.disabled.friends)) end
+    if T.lastError then add(L.COMMS_LAST_ERROR, T.lastError) end
     local results = {}
     for name, n in pairs(T.stats.results) do results[#results + 1] = name .. "=" .. n end
     table.sort(results)
-    if #results > 0 then Log.Info(L.COMMS_RESULTS, table.concat(results, " ")) end
-    for id, p in pairs(ns.Friends.peers) do
-        if p.online then Log.Info(L.COMMS_PEER_LINE, id, tostring(p.transport), tostring(p.target)) end
+    if #results > 0 then add(L.COMMS_RESULTS, table.concat(results, " ")) end
+    local ids = {}
+    for id, p in pairs(ns.Friends.peers) do if p.online then ids[#ids + 1] = id end end
+    table.sort(ids)
+    for _, id in ipairs(ids) do
+        local p = ns.Friends.peers[id]
+        local f = ns.db.friends[id]
+        add(L.COMMS_PEER_LINE, id, tostring(p.transport), tostring(p.target))
+        if f and f.version then add(L.COMMS_PEER_LEDGER, f.version, tostring(p.character or "-")) end
     end
+    ns.db.dev.comms = table.concat(lines, "\n")
+    ns.CopyWindow:Show(L.COMMS_REPORT_TITLE, ns.db.dev.comms)
 end
 
 function commands.friends()

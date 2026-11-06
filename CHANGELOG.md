@@ -7,6 +7,7 @@
 - "Sync now" (and `/fl sync`) always asks your friends for their latest data. Before, it quietly fetched nothing new if any sync had asked them in the last 5 minutes.
 
 ### Changed
+- `/fl comms` opens a window you can copy from (Ctrl+A, Ctrl+C), instead of printing to chat. It also shows how many live updates went out since login, and which online friends run the ledger and what they are playing.
 - Friends update much faster. The character you are playing sends its changes to friends who run the ledger every minute (only when something changed). The full sync of all your characters stays every 15 minutes.
 - Friends tab: the "Updated" column is now "Last played": when each character was last played. The character a friend is on shows "now" in green while its data is less than about a minute and a half old, otherwise the time. When their ledger last reached you is still on the friend's header row and in each row's tooltip.
 
