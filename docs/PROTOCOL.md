@@ -120,7 +120,7 @@ B -> A   DATA x (B's sharing characters)
 - "Sync now" or `/fl sync`
 - every 15 minutes (a full sync of every character)
 
-**Live update (after 1.2.2, D-090):** every minute, the character being played sends today's DATA to each online friend who runs the ledger (has sent a HELLO), unasked, when it changed since the last one sent to them (`lastSeen` alone does not count). Receivers merge it like any DATA, so older versions accept it too.
+**Live update (1.3.0+, D-090):** every minute, the character being played sends today's DATA to each online friend who runs the ledger (has sent a HELLO), unasked, when it changed since the last one sent to them (`lastSeen` alone does not count). Receivers merge it like any DATA, so older versions accept it too.
 
 ## Send queue
 

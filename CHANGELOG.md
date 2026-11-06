@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 - 2026-11-06
 
 ### Fixed
 - The login message now says "/fl" opens the ledger and "/fl help" lists the commands (it said "/fl" for commands).
@@ -8,7 +8,7 @@
 
 ### Changed
 - `/fl comms` opens a window you can copy from (Ctrl+A, Ctrl+C), instead of printing to chat. It also shows how many live updates went out since login, and which online friends run the ledger and what they are playing.
-- Friends update much faster. The character you are playing sends its changes to friends who run the ledger every minute (only when something changed). The full sync of all your characters stays every 15 minutes.
+- Friends update much faster. The character you are playing sends its changes to friends who run the ledger every minute (only when something changed). The full sync of all your characters stays every 15 minutes. Friends send you these faster updates once they run 1.3.0; older versions still receive yours.
 - Friends tab: the "Updated" column is now "Last played": when each character was last played. The character a friend is on shows "now" in green while its data is less than about a minute and a half old, otherwise the time. When their ledger last reached you is still on the friend's header row and in each row's tooltip.
 
 ## 1.2.2 - 2026-11-06
