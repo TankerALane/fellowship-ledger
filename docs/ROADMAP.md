@@ -96,6 +96,9 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] Column header hover text; Dungeons shows "-" when none entered (D-084)
 - [x] Dungeon completion on WoW Forever: journal retries, then our own final-boss list (D-085, D-086)
 
+## 1.2.1 (released 2026-11-05)
+- [x] Quest logs shared, so friends' chains are worked out with your own Questie (D-087)
+
 ## Still open (needs a second player or a retail session)
 - [ ] Retail: one death, to see whether the killer is readable or secret
 - [ ] Character-friend (whisper) sharing with a second player
