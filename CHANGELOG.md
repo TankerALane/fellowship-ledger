@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `/fl shots` takes screenshots of every tab, in each skin, with made-up data, for the addon page.
+
 ## 1.2.1 - 2026-11-05
 
 ### Changed

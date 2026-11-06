@@ -45,13 +45,16 @@ python tools/gen_verify_doc.py
 # Build the release zip (and check a tag): see docs/RELEASING.md
 python tools/build_release.py --tag v0.1.0
 
+# Crop /fl shots pictures (after a /reload) into assets/screenshots/
+python tools/crop_shots.py
+
 # Apply a pasted /fl verify report to the Forever or Retail column
 python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 ```
 
 ## In-game commands so far
 
-`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl friends`, `/fl comms`, `/fl commtest`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl version`. `/fellowshipledger` is an alias.
+`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl friends`, `/fl comms`, `/fl commtest`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl shots` (addon-page screenshots with fake data), `/fl version`. `/fellowshipledger` is an alias.
 
 ## Status
 

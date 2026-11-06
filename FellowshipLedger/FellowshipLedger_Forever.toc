@@ -83,4 +83,5 @@ UI\StalePrompt.lua
 UI\OptionsPanel.lua
 Debug\EventLog.lua
 Debug\SelfTest.lua
+Debug\Screenshots.lua
 Core\Init.lua

@@ -433,6 +433,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `AddonCompartmentFrame` | api | addon compartment menu entry | `/dump type(AddonCompartmentFrame)` -> "table" | PASS | PASS |
 | `MenuUtil.CreateContextMenu` | api | right-click menus | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
+| `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | ? | ? |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | PASS | PASS |
 | `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth) | `/dump CreateFrame("Frame").SetResizeBounds` | PASS | PASS |

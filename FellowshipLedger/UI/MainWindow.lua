@@ -147,7 +147,7 @@ end
 -- Redraw the visible tab and the fake-data banner.
 function Main.Refresh()
     if not Main.frame then return end
-    Main.fakeBanner:SetShown(ns.Data.IsFake())
+    Main.fakeBanner:SetShown(ns.Data.IsFake() and not (ns.Screenshots and ns.Screenshots.active))
     refreshCurrent()
 end
 

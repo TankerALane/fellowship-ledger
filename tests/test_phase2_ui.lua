@@ -411,3 +411,47 @@ H.test("the new-character prompt waits for the welcome panel to close", function
     Mock.runTimers(env)
     H.ok(ns.StalePrompt.IsShown(), "prompt after the welcome panel closes")
 end)
+
+H.test("/fl shots: every planned picture with fake data, then settings put back", function()
+    local env, ns = boot()
+    local taken, seen = 0, {}
+    env.Screenshot = function()
+        taken = taken + 1
+        seen[#seen + 1] = { tab = ns.MainWindow.current, skin = ns.db.settings.skin, layout = ns.db.settings.detailsLayout,
+            fake = ns.Data.IsFake(), banner = ns.MainWindow.fakeBanner:IsShown() }
+    end
+    ns.db.settings.skin, ns.db.settings.detailsLayout = "leather", "list"
+    ns.db.blocklist["Someone#1234"] = true
+    Mock.slash(env, "shots")
+    for _ = 1, 3 do Mock.runTimers(env) end
+    noErrors(env)
+    H.eq(taken, #ns.Screenshots.PLAN, "one picture per step: " .. table.concat(env.__state.chat, " | "))
+    H.eq(#ns.db.dev.shots.steps, taken, "a record per picture")
+    local cards, lists, opened = 0, 0, false
+    for i, s in ipairs(seen) do
+        H.eq(s.tab, ns.Screenshots.PLAN[i].tab)
+        H.eq(s.skin, ns.Screenshots.PLAN[i].skin)
+        H.ok(s.fake and not s.banner, "fake data without the banner")
+        if ns.Screenshots.PLAN[i].open then
+            opened = true
+            if s.layout == "card" then cards = cards + 1 else lists = lists + 1 end
+        end
+    end
+    H.ok(opened and cards > 0 and lists > 0, "a card and a list")
+    local skins = {}
+    for _, s in ipairs(seen) do skins[s.skin] = true end
+    H.ok(skins.ledger and skins.leather and skins.plain, "every skin")
+    H.eq(ns.db.settings.skin, "leather", "skin back")
+    H.eq(ns.db.settings.detailsLayout, "list", "layout back")
+    H.ok(not ns.Data.IsFake(), "fake data off again")
+    H.ok(not ns.Screenshots.active)
+    H.ok(Mock.chatContains(env, "Screenshots done"))
+end)
+
+H.test("/fl shots: no Screenshot function, one message and nothing changed", function()
+    local env, ns = boot()
+    env.Screenshot = nil
+    Mock.slash(env, "shots")
+    H.ok(Mock.chatContains(env, "no Screenshot function"))
+    H.ok(not ns.Data.IsFake() and not ns.Screenshots.active)
+end)

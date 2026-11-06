@@ -146,7 +146,9 @@ function FriendsTab.Refresh()
     if not ui.table then return end
     for range, b in pairs(ui.rangeButtons) do b:SetSelected(range == state.range) end
     ui.weeklyButton:SetSelected(state.weekly)
-    if ns.Data.IsFake() then
+    if ns.Screenshots and ns.Screenshots.active then
+        ui.status:SetText("")
+    elseif ns.Data.IsFake() then
         ui.status:SetText(L.SYNC_STATUS_FAKE)
     else
         local online = 0

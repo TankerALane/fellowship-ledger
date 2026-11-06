@@ -18,9 +18,12 @@ local QUESTIE_URL = "https://www.curseforge.com/wow/addons/questie"
 
 local function S() return ns.db.settings end
 
+local function shooting() return ns.Screenshots and ns.Screenshots.active end
+local function characters() return shooting() and ns.Data.Characters() or ns.db.characters end
+
 local function realCharacterKeys()
     local keys = {}
-    for k in pairs(ns.db.characters) do keys[#keys + 1] = k end
+    for k in pairs(characters()) do keys[#keys + 1] = k end
     table.sort(keys, function(a, b)
         if a == ns.Store.key then return true end
         if b == ns.Store.key then return false end
@@ -33,7 +36,7 @@ local function selectedChar()
     local keys = realCharacterKeys()
     if state.charIndex > #keys then state.charIndex = 1 end
     local key = keys[state.charIndex]
-    return key and ns.db.characters[key], key, #keys
+    return key and characters()[key], key, #keys
 end
 
 local function readOnlyBox(parent, text, width)
@@ -84,7 +87,7 @@ function SettingsTab.Refresh()
     ui.scaleLabel:SetText(string.format(L.SETTINGS_SCALE_VALUE, S().scale or 1))
     -- Block list
     local tags = {}
-    for tag in pairs(ns.db.blocklist) do tags[#tags + 1] = tag end
+    for tag in pairs(shooting() and {} or ns.db.blocklist) do tags[#tags + 1] = tag end -- no real names in screenshots
     table.sort(tags)
     for i, row in ipairs(ui.blockRows) do
         local tag = tags[i]
