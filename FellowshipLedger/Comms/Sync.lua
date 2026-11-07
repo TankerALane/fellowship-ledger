@@ -184,11 +184,18 @@ end
 
 -- Sync everyone ------------------------------------------------------------------
 
-function Sync.SyncAll(force)
+-- changedOnly (friend-list events, which fire very often): only friends who came
+-- online on this game version or switched character since the last look. Login,
+-- the 15-minute timer, the Friends tab and Sync now still greet everyone online.
+Sync.seen = {} -- peer id -> "online|character" at the last look
+function Sync.SyncAll(force, changedOnly)
     Friends.Refresh()
     local count = 0
-    for _, peer in pairs(Friends.peers) do
-        if peer.online and not Friends.IsBlocked(peer) then
+    for id, peer in pairs(Friends.peers) do
+        local state = tostring(peer.online) .. "|" .. tostring(peer.character)
+        local changed = Sync.seen[id] ~= state
+        Sync.seen[id] = state
+        if peer.online and not Friends.IsBlocked(peer) and (changed or not changedOnly) then
             -- "Sync now" (force) always asks for their data when they answer, even if
             -- a sync asked them less than REQUEST_GAP ago; automatic syncs keep the gap.
             if force then Sync.lastRequest[peer.id] = nil end
@@ -270,7 +277,7 @@ function Sync.Start()
     if ns.Compat.IsDisabled("comms") then return end
     Friends.Refresh()
     ns.Events.On("BN_FRIEND_ACCOUNT_ONLINE", "sync", function()
-        ns.Events.After(5, function() Sync.SyncAll(false) end)
+        ns.Events.After(5, function() Sync.SyncAll(false, true) end)
     end)
     local friendPending = false
     local function soon()
@@ -278,7 +285,7 @@ function Sync.Start()
         friendPending = true
         ns.Events.After(10, function()
             friendPending = false
-            Sync.SyncAll(false)
+            Sync.SyncAll(false, true)
         end)
     end
     ns.Events.On("FRIENDLIST_UPDATE", "sync", soon)

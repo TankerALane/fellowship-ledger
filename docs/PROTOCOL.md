@@ -114,8 +114,7 @@ B -> A   DATA x (B's sharing characters)
 
 **Triggers:**
 - 10 s after login
-- 5 s after a Battle.net friend comes online
-- 10 s after friend-list changes (throttled; `BN_FRIEND_INFO_CHANGED` fired about 300 times an hour on retail)
+- 5 s after a Battle.net friend comes online, and 10 s after friend-list changes (throttled; `BN_FRIEND_INFO_CHANGED` fired about 300 times an hour on retail, 140 in a Forever session). From 1.4.1 these two only greet friends who came online on this game version or switched character since the last look (D-092).
 - opening the Friends tab
 - "Sync now" or `/fl sync`
 - every 15 minutes (a full sync of every character)

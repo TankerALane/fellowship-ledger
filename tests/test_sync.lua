@@ -411,3 +411,28 @@ H.test("Sync now asks friends for their data even right after a sync", function(
     network({ A, B }, 10)
     H.eq(fromBob.characters["Bob-Realm"].days[today].quests, 4, "Sync now fetched the new data")
 end)
+
+H.test("friend-list events greet only friends who came online or switched character", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    network({ A, B }, 30)
+    local S = A.__ns.Sync
+    local greeted = 0
+    local real = S.SendHello
+    S.SendHello = function(peer, ...) greeted = greeted + 1 return real(peer, ...) end
+    -- Battle.net "friend info changed" fires constantly: with nothing changed, no hellos.
+    for _ = 1, 18 do
+        Mock.fire(A, "BN_FRIEND_INFO_CHANGED", 1)
+        network({ A, B }, 10)
+    end
+    H.eq(greeted, 0, "three minutes of events, nobody changed")
+    -- Bob switches character: he is greeted.
+    A.__state.bnFriends[1].games[1].characterName = "Bobalt"
+    Mock.fire(A, "BN_FRIEND_INFO_CHANGED", 1)
+    network({ A, B }, 15)
+    H.eq(greeted, 1, "greeted after switching character")
+    -- The 15-minute sync and Sync now still greet everyone online.
+    S.lastHello = {}
+    S.SyncAll(false)
+    H.eq(greeted, 2)
+end)
