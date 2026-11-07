@@ -23,6 +23,7 @@ Shots.PLAN = {
     { tab = "graphs", skin = "ledger" },
     { tab = "settings", skin = "leather" },
     { tab = "me", skin = "plain", mode = "chains" },
+    { tab = "dungeons", skin = "ledger", open = "run" },
 }
 
 local function sortedKeys(t)
@@ -63,6 +64,18 @@ local function openCharacter(step)
             if not bestLevel or (c.level or 0) > bestLevel then best, bestLevel = key, c.level or 0 end
         end
         if best then me.expanded[best], me.detailView[best] = true, "overview" end
+    elseif step.open == "run" then
+        -- Dungeons: open the newest completed run that has bosses.
+        local d = ns.DungeonsTab.state
+        for k in pairs(d.expanded) do d.expanded[k] = nil end
+        d.char = nil
+        local runs = ns.DungeonsModel.Runs(ns.Data.Characters(), nil, nil, date)
+        for _, e in ipairs(runs) do
+            if e.run.completed and #(e.run.bosses or {}) > 0 then
+                d.expanded[tostring(e.charKey) .. "|" .. tostring(e.run.entered)] = true
+                break
+            end
+        end
     elseif step.open == "friend" then
         local all = ns.Data.Friends()
         for _, id in ipairs(sortedKeys(all)) do
@@ -101,6 +114,7 @@ local function restore(saved)
     for k in pairs(me.expanded) do me.expanded[k] = nil end
     for k in pairs(me.chainOpen) do me.chainOpen[k] = nil end
     for k in pairs(ns.FriendsTab.state.expanded) do ns.FriendsTab.state.expanded[k] = nil end
+    for k in pairs(ns.DungeonsTab.state.expanded) do ns.DungeonsTab.state.expanded[k] = nil end
     if not saved.fake then ns.Data.DisableFake() end
     Shots.active = false
     local f = ns.MainWindow.frame

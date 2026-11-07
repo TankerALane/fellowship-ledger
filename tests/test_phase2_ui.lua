@@ -528,3 +528,31 @@ H.test("Me tab marks the character being played", function()
     end
     H.ok(found, "(playing) on my character")
 end)
+
+H.test("Dungeons tab: fake runs render, open to their bosses, character drop-down", function()
+    local env, ns = boot()
+    Mock.slash(env, "fake")
+    ns.MainWindow.Select("dungeons")
+    local D = ns.DungeonsTab
+    local lines = D.ui.table.lines
+    H.ok(#lines > 6, "lines shown")
+    local runLine
+    for _, l in ipairs(lines) do if l.onClick then runLine = l break end end
+    H.ok(runLine, "a run to click")
+    runLine.onClick()
+    local found = false
+    for _, l in ipairs(D.ui.table.lines) do
+        if l.box then found = true end
+    end
+    H.ok(found, "the opened run shows its bosses")
+    H.ok(D.ui.summary:GetText():find("runs", 1, true), D.ui.summary:GetText())
+    -- Without the game's menu the character button cycles through characters with runs.
+    env.MenuUtil = nil
+    D.ui.charButton:GetScript("OnClick")(D.ui.charButton)
+    H.ok(D.state.char ~= nil, "picked a character")
+    for _, range in ipairs(ns.Days.RANGES) do
+        D.state.range = range
+        D.Refresh()
+    end
+    noErrors(env)
+end)

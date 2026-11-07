@@ -70,6 +70,7 @@ ns.Locale.Set({
     TAB_ME = "Me",
     TAB_FRIENDS = "Friends",
     TAB_GRAPHS = "Graphs",
+    TAB_DUNGEONS = "Dungeons",
     TAB_SETTINGS = "Settings",
     TAB_FRIENDS_SOON = "Your fellowship's ledgers arrive in a later chapter (Phase 3).",
     TAB_GRAPHS_SOON = "Charts of your journey arrive in the next chapter (Phase 2).",

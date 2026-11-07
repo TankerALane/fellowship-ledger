@@ -29,6 +29,8 @@ Works on **WoW Forever** and **retail**, and keeps their data completely separat
 
 **Graphs**: levels per session, time per level, quests per day, gold per session and XP per hour. **Compare** puts any two characters side by side, yours or a friend's.
 
+**Dungeons**: every run with its time, bosses, deaths and group, opening to when each boss died; your best and average time per dungeon; and your friends' dungeon totals.
+
 **Settings**: a Track and a Share switch for every tracker on every character, three looks (Ledger, Leather, Plain), text size, scale, colorblind-safe colors, and a block list.
 
 ## What it tracks

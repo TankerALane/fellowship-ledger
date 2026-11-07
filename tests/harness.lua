@@ -105,6 +105,7 @@ H.PURE_FILES = {
     "UI/StatsModel.lua",
     "UI/GraphModel.lua",
     "UI/FriendsModel.lua",
+    "UI/DungeonsModel.lua",
     "Debug/FakeData.lua",
     "Comms/Codec.lua",
     "Comms/Merge.lua",

@@ -207,6 +207,68 @@ H.test("compare groups: yours, each Battle.net friend, then other friends", func
     H.eq(#ns.GraphModel.CompareGroups({}, nil, ns.L), 0)
 end)
 
+H.test("dungeons model: runs, per-dungeon summary, bosses, groups, friends' totals", function()
+    local ns = H.pureNamespace()
+    local M, L = ns.DungeonsModel, ns.L
+    local E = os.time({ year = 2026, month = 11, day = 6, hour = 10, min = 2 })
+    local chars = {
+        ["Tara-R"] = { display = "Tara R", class = "PRIEST", dungeons = {
+            { name = "Ruins of Lordaeron", entered = E, duration = 2675, completed = true, completedBy = "lastBoss",
+              completedAt = E + 1860, deaths = 0, party = { { role = "DAMAGER" } },
+              bosses = { { name = "Witherfang", at = E + 300 }, { name = "Rath'mael", at = E + 1860 } } },
+            { name = "Ragefire Chasm", entered = E - 40000, duration = 2278, completed = true, deaths = 0,
+              party = { { role = "TANK" }, { role = "DAMAGER" }, { role = "DAMAGER" } }, bosses = { {}, {}, {}, {} } },
+            { name = "Ragefire Chasm", entered = E - 72000, duration = 2523, completed = true, deaths = 1, bosses = { {}, {}, {}, {} } },
+        } },
+        ["Alt-R"] = { display = "Alt R", dungeons = {}, currentRun = { name = "Wailing Caverns", entered = E + 100, pending = true } },
+    }
+    local runs = M.Runs(chars, nil, nil, os.date)
+    H.eq(#runs, 3, "a pending run (not yet 5 minutes) is not listed")
+    H.eq(runs[1].run.name, "Ruins of Lordaeron", "newest first")
+    local sum = M.Summary(runs)
+    H.eq(sum.completed, 3); H.eq(sum.bosses, 10); H.eq(sum.deaths, 1)
+    local by = M.ByDungeon(runs)
+    H.eq(by[1].name, "Ruins of Lordaeron")
+    H.eq(by[2].runs, 2); H.eq(M.Minutes(by[2].best), "38m"); H.eq(M.Minutes(by[2].average), "40m")
+    H.eq(M.Minutes(3700), "1h 02m"); H.eq(M.Minutes(nil), "-")
+    H.eq(M.Group(runs[2].run.party, L), "1 tank, 2 damage")
+    H.eq(M.Group(nil, L), "solo")
+    local bosses = M.Bosses(runs[1].run)
+    H.eq(bosses[1].offset, 300); H.ok(bosses[2].final, "the completing kill is the final boss"); H.ok(not bosses[1].final)
+    -- A filter by day and by character.
+    H.eq(#M.Runs(chars, nil, "2026-11-06", os.date), os.date("%Y-%m-%d", E - 40000) == "2026-11-06" and 2 or 1)
+    H.eq(#M.Runs(chars, "Alt-R", nil, os.date), 0)
+    -- Friends: day counts, blocked friends left out, only characters with dungeons.
+    local friends = {
+        ["bn:Ham#1"] = { name = "Hamlet", characters = {
+            ["Al-R"] = { display = "Alastair Ratt", days = { ["2026-11-06"] = { dungeonsEntered = 2, bossKills = 7 } } },
+            ["Ca-R"] = { display = "Cain Ratt", days = { ["2026-11-05"] = { dungeonsEntered = 1, dungeonsCompleted = 1, bossKills = 4 } } },
+            ["No-R"] = { display = "Nobody", days = { ["2026-11-06"] = { quests = 3 } } } } },
+        ["bn:Blk#1"] = { name = "Blocked", tag = "Blk#1", characters = { ["X-R"] = { days = { ["2026-11-06"] = { dungeonsEntered = 1 } } } } },
+    }
+    local blocked = function(f) return f.tag == "Blk#1" end
+    local fr = M.FriendRows(friends, blocked, nil, "2026-11-06")
+    H.eq(#fr, 2); H.eq(fr[1].name, "Alastair Ratt"); H.eq(fr[1].completed, 0); H.eq(fr[2].completed, 1)
+    H.eq(#M.FriendRows(friends, blocked, "2026-11-06", "2026-11-06"), 1, "range")
+    -- Lines: sections, an opened run shows its bosses, the completing one marked.
+    local opened = {}
+    local lines = M.Lines({ chars = chars, friends = friends, isBlocked = blocked, now = E + 4000, dateFn = os.date, L = L,
+        todayKey = "2026-11-06", expanded = { ["Tara-R|" .. E] = true }, toggle = function(k) opened[#opened + 1] = k end })
+    local text = {}
+    for _, l in ipairs(lines) do
+        if l.text then text[#text + 1] = l.text end
+        for _, sg in ipairs(l.segments or {}) do if sg.text then text[#text + 1] = sg.text end end
+    end
+    local all = table.concat(text, "|")
+    H.ok(all:find("By dungeon", 1, true) and all:find("Friends", 1, true) and all:find("Runs", 1, true), all)
+    H.ok(all:find("Rath'mael|+31m", 1, true), "bosses with minutes after entering: " .. all)
+    H.ok(all:find("final boss", 1, true))
+    H.ok(all:find("1 damage", 1, true))
+    local clicked
+    for _, l in ipairs(lines) do if l.onClick and not clicked then l.onClick(); clicked = true end end
+    H.eq(opened[1], "Tara-R|" .. E, "clicking a run toggles it")
+end)
+
 H.test("settings defaults fill gaps and keep choices", function()
     local D = H.pureNamespace().SettingsDefaults
     local s = D.Ensure({ skin = "plain", colorblind = false })

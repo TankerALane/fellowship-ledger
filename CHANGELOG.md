@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **Dungeons tab**: every run of your characters (when, dungeon, character, time, bosses, deaths, who was with you by role, result), newest first. Click a run to see its bosses in the order they died, with the minutes after entering and the final boss marked. Above it: a summary per dungeon (runs, completed, best and average time, last run) and your friends' dungeon totals (entered, completed, bosses; friends share totals only). Today / This week / This month / All and a character drop-down filter it. `/fl shots` takes a picture of it too.
+
 ### Changed
 - Much less sharing traffic: Battle.net's frequent "friend changed" events no longer send a hello to every online friend (most of whom do not run the ledger). Only friends who just came online or switched character are greeted then; login, the 15-minute sync, the Friends tab and Sync now still greet everyone.
 - Dungeons: a run only counts once you have been inside for 5 minutes or a boss dies. Walking in and straight back out no longer adds an "entered" run, and such runs saved before are removed once (and taken off that day's count).

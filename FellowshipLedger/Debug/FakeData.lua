@@ -19,6 +19,7 @@ FakeData.REALM = "Fakerealm"
 local ZONES = { "Elwynn Forest", "Westfall", "Redridge Mountains", "Duskwood", "Stranglethorn Vale", "Arathi Highlands",
     "The Hinterlands", "Tanaris", "Feralas", "Un'Goro Crater" }
 local DUNGEONS = { "The Deadmines", "Wailing Caverns", "Shadowfang Keep", "Blackfathom Deeps", "Gnomeregan", "Scarlet Monastery" }
+local FAKE_BOSSES = { "Grubjaw the Glutton", "Sister Vellis", "The Ashen Warden", "Old Mossback", "Kael the Hollow" }
 local CLASSES = { "WARRIOR", "MAGE", "PRIEST", "ROGUE", "HUNTER", "DRUID", "PALADIN", "WARLOCK", "SHAMAN" }
 local ROLES = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
 
@@ -99,6 +100,15 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
                     c.dungeons[#c.dungeons + 1] = { name = rng.pick(DUNGEONS), entered = start + 600, left = start + 600 + rng.int(18, 55) * 60,
                         duration = rng.int(18, 55) * 60, deaths = rng.int(0, 3), completed = done or nil,
                         completedBy = done and "lastBoss" or nil, difficultyID = 1, party = party, bosses = {}, fake = true }
+                    -- Made-up bosses (no random draws, so the rest of the fake set stays the same).
+                    local run = c.dungeons[#c.dungeons]
+                    local names = FAKE_BOSSES
+                    local kills = done and 3 or 1
+                    for k = 1, kills do
+                        run.bosses[k] = { name = names[(#c.dungeons + k - 2) % #names + 1], at = run.entered + math.floor(run.duration * k / 3.4) }
+                    end
+                    run.bossCount = 3
+                    if done then run.completedAt = run.bosses[kills].at end
                 end
                 if d < 30 then
                     for q = 1, math.min(quests, 4) do
