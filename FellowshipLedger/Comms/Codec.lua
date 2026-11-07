@@ -194,7 +194,7 @@ function Codec.EncodeData(key, char, shared, since)
             recs[#recs + 1] = table.concat({ "p", Codec.Escape(key), Codec.Escape(pr.name), tostring(pr.rank or 0),
                 tostring(pr.max or 0), tostring(pr.lastAt or 0) }, ",")
         end
-        -- None (1.3.1): a bare "p" says "no professions", so receivers can tell that
+        -- None (1.4.0): a bare "p" says "no professions", so receivers can tell that
         -- from an old sender. 1.2.x receivers skip a "p" with no key.
         if #keys == 0 then recs[#recs + 1] = "p" end
     end
@@ -252,7 +252,7 @@ function Codec.DecodeData(body)
                 if id then out.logQuests[#out.logQuests + 1] = id end
             end
         elseif f[1] == "p" and #f == 1 then
-            profs = profs or {} -- "no professions" (1.3.1+ senders)
+            profs = profs or {} -- "no professions" (1.4.0+ senders)
         elseif f[1] == "p" and f[2] and f[2] ~= "" then
             profs = profs or {}
             local name = Codec.Unescape(f[3] or "")
@@ -264,7 +264,7 @@ function Codec.DecodeData(body)
         end
     end
     if not out.key or out.key == "" then return nil end
-    out.professions = profs -- nil when the sender sent none (older version, nothing shared, or none before 1.3.1)
+    out.professions = profs -- nil when the sender sent none (older version, nothing shared, or none before 1.4.0)
     return out
 end
 

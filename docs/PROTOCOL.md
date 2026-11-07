@@ -55,7 +55,7 @@ c,<Name-Realm>,<CLASS>,<race>,<faction>,<level>,<lastSeen>,<shareMask>
 d,<YYYY-MM-DD>,<code>=<int>,...                                        day buckets
 l,<toLevel>,<active>,<total>,<partial 0|1>,<at>                        level times (levels tracker)
 k,<chainKey>,<name>,<step>,<total>,<firstQuestID>,<firstName>,<startZone>,<source>   quest chains in progress (quests tracker)
-p,<professionKey>,<name>,<rank>,<max>,<lastAt>   profession ranks (professions tracker; 1.2.0), or just "p" when there are none (1.3.1)
+p,<professionKey>,<name>,<rank>,<max>,<lastAt>   profession ranks (professions tracker; 1.2.0), or just "p" when there are none (1.4.0)
 o,<questID>,<questID>,...   quest IDs in the log, or just "o" when it is empty (quests tracker; 1.2.1)
 s,<start>,<played>,<active>,<levelStart>,<levelEnd>,<code>=<int>,...   last 60 sessions
 ```
@@ -80,7 +80,7 @@ Field codes:
 | `pu` | partyLevelUps | partyLevels |
 | `in`, `ie` | itemsNotable, itemsEpic | items |
 
-The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days. Quest chains (`k`) describe what the character is on now, so the received set replaces the stored one. When the sender stops sharing Quests, the stored chains are cleared. Chain keys are `g:<questLineID>` (game data) or `q:<firstQuestID>` (Questie). Quest IDs in the log (`o`, from 1.2.1) are replaced on every DATA and cleared with chains; the receiver works out chains from them with its own game data or Questie and adds them to the chains the sender sent (sent chains win for the same key). Profession ranks (`p`, from 1.2.0) are replaced the same way and cleared when the sender stops sharing Professions; a bare `p` (1.3.1+) means the character has none. A receiver that gets no `p` at all from a friend on 1.2.0 or later shows "no professions"; only before 1.2.0 does it say the friend's version does not send them. 1.2.x receivers skip the bare `p`. Version 1 receivers that predate these records ignore them.
+The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days. Quest chains (`k`) describe what the character is on now, so the received set replaces the stored one. When the sender stops sharing Quests, the stored chains are cleared. Chain keys are `g:<questLineID>` (game data) or `q:<firstQuestID>` (Questie). Quest IDs in the log (`o`, from 1.2.1) are replaced on every DATA and cleared with chains; the receiver works out chains from them with its own game data or Questie and adds them to the chains the sender sent (sent chains win for the same key). Profession ranks (`p`, from 1.2.0) are replaced the same way and cleared when the sender stops sharing Professions; a bare `p` (1.4.0+) means the character has none. A receiver that gets no `p` at all from a friend on 1.2.0 or later shows "no professions"; only before 1.2.0 does it say the friend's version does not send them. 1.2.x receivers skip the bare `p`. Version 1 receivers that predate these records ignore them.
 
 ### NAME (`N`)
 
