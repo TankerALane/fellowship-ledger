@@ -95,6 +95,7 @@ H.PURE_FILES = {
     "Core/Export.lua",
     "Core/SettingsDefaults.lua",
     "Core/Summary.lua",
+    "Core/Notices.lua",
     "Core/QuestChainLogic.lua",
     "Core/DungeonBosses.lua",
     "UI/Palette.lua",

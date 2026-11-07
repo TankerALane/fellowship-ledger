@@ -16,6 +16,8 @@ local function scanLog()
         local okInfo, info = ns.Compat.Call("quests", "C_QuestLog.GetInfo", i)
         if okInfo and type(info) == "table" and not info.isHeader and info.questID and info.title then
             titles[info.questID] = info.title
+            -- Its rewards, for the quest details (D-100).
+            if ns.QuestRewards then pcall(ns.QuestRewards.FromLog, info.questID) end
         end
     end
 end

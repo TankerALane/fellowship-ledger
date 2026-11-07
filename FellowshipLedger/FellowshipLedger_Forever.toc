@@ -32,6 +32,7 @@ Core\GoldLogic.lua
 Core\Export.lua
 Core\SettingsDefaults.lua
 Core\Summary.lua
+Core\Notices.lua
 Core\QuestChainLogic.lua
 Core\DungeonBosses.lua
 UI\Palette.lua
@@ -66,6 +67,7 @@ Trackers\Dungeons.lua
 Trackers\Extras.lua
 Trackers\Items.lua
 Trackers\QuestChains.lua
+Trackers\QuestRewards.lua
 Comms\Friends.lua
 Comms\Transport.lua
 Comms\Sync.lua
@@ -79,6 +81,7 @@ UI\GraphsTab.lua
 UI\DungeonsTab.lua
 UI\SettingsTab.lua
 UI\Toast.lua
+UI\TooltipInfo.lua
 UI\MinimapButton.lua
 UI\Welcome.lua
 UI\StalePrompt.lua

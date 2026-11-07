@@ -194,11 +194,37 @@ H.test("level milestone notice when a friend crosses a multiple of 10", function
     local B = client("Bob", 2, "Alice#1", 1, "Alice")
     giveData(B, 3)
     network({ A, B }, 60)
+    A.__ns.Sync.startedAt = A.__ns.Sync.startedAt - 600 -- past the "while you were away" window
     B.FellowshipLedgerDB.characters["Bob-Realm"].level = 20
     A.__ns.Sync.lastRequest = {}
     A.__ns.Sync.SyncAll(true)
     network({ A, B }, 60)
-    H.ok(Mock.chatContains(A, "Bob (Bob) reached level 20!"), table.concat(A.__state.chat, "\n"))
+    H.ok(Mock.chatContains(A, "A friend's milestone - Bob (Bob) reached level 20!"), table.concat(A.__state.chat, "\n"))
+end)
+
+H.test("while you were away: level gains at login, in one notice", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    giveData(B, 3)
+    network({ A, B }, 60)
+    B.FellowshipLedgerDB.characters["Bob-Realm"].level = 20
+    A.__ns.Sync.lastRequest = {}
+    A.__ns.Sync.SyncAll(true)
+    network({ A, B }, 60)
+    H.ok(Mock.chatContains(A, "While you were away - Bob (Bob) went from level 12 to 20"), table.concat(A.__state.chat, "\n"))
+    H.ok(not Mock.chatContains(A, "reached level 20"), "the every-10 line is covered by the gain")
+end)
+
+H.test("joined notice: a friend's first hello, after the install grace period", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    A.FellowshipLedgerDB.joinNoticesFrom = 0
+    network({ A, B }, 60)
+    H.ok(Mock.chatContains(A, "Bob now runs Fellowship Ledger"), table.concat(A.__state.chat, "\n"))
+    local C = client("Carl", 3, "Dana#1", 4, "Dana")
+    local D = client("Dana", 4, "Carl#1", 3, "Carl")
+    network({ C, D }, 60)
+    H.ok(not Mock.chatContains(C, "now runs Fellowship Ledger"), "fresh install: every friend is new, so no notice")
 end)
 
 H.test("dungeon names appear only for party members who opted in", function()

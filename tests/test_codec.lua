@@ -124,7 +124,8 @@ H.test("merge stores friend data and raises level milestones", function()
     H.eq(f.syncedThrough, "2026-11-04")
     data.level = 21
     ev = ns.Merge.Data(f, data, "2026-11-04", "2026-08-07", 2000)
-    H.eq(#ev, 1); H.eq(ev[1].level, 20)
+    H.eq(#ev, 2); H.eq(ev[1].level, 20)
+    H.eq(ev[2].kind, "levels"); H.eq(ev[2].from, 18); H.eq(ev[2].to, 21); H.eq(ev[2].key, "Vel-Testrealm")
     data.days["2026-01-01"] = { quests = 1 }
     ns.Merge.Data(f, data, "2026-11-04", "2026-08-07", 3000)
     H.eq(f.characters["Vel-Testrealm"].days["2026-01-01"], nil, "days past 90 are not kept")
@@ -145,7 +146,9 @@ H.test("friend milestones: level cap, profession ranks, dungeon clears", functio
     local ev = M.Data(f, data(60, 151, { { name = "Ruins of Lordaeron", entered = E, completed = true },
         { name = "Ragefire Chasm", entered = E - 9000 } }), "2026-11-06", "2026-08-09", 2)
     local kinds = {}
-    for _, e in ipairs(ev) do kinds[#kinds + 1] = e.kind .. ":" .. tostring(e.level or e.rank or e.dungeon) end
+    for _, e in ipairs(ev) do
+        if e.kind ~= "levels" then kinds[#kinds + 1] = e.kind .. ":" .. tostring(e.level or e.rank or e.dungeon) end
+    end
     table.sort(kinds)
     H.eq(table.concat(kinds, ","), "dungeon:Ruins of Lordaeron,maxlevel:60,profession:150",
         "the cap replaces the every-10 notice; 75 and 150 crossed: only 150; an unfinished run is no clear")

@@ -467,6 +467,36 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `x:questie.details` | custom | quest-chain drop-downs (D-078): Questie's questLevel, requiredLevel, startedBy, and QueryNPCSingle name/spawns with the zone from C_Map.GetAreaInfo and map coordinates (D-079) | have a quest in your log, then /fl verify (the line shows the quest, its levels and who starts it where, with coordinates; compare with Questie's map) | PASS | ? |
+
+### Quests
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `ev:QUEST_DETAIL` | event | a quest giver shows a quest: its rewards are read | `/dump C_EventUtils.IsEventValid("QUEST_DETAIL")` -> true | ? | ? |
+| `GetQuestID` | api | the quest in the open quest dialog | `/dump type(GetQuestID)` -> "function" | ? | ? |
+| `GetNumQuestRewards` | api | quest dialog: items you always get | `/dump type(GetNumQuestRewards)` -> "function" | ? | ? |
+| `GetNumQuestChoices` | api | quest dialog: items you choose from | `/dump type(GetNumQuestChoices)` -> "function" | ? | ? |
+| `GetQuestItemInfo` | api | quest dialog item (6th value itemID) | `/dump type(GetQuestItemInfo)` -> "function" | ? | ? |
+| `GetQuestItemLink` | api | quest dialog item link (itemID fallback) | `/dump type(GetQuestItemLink)` -> "function" | ? | ? |
+| `GetRewardMoney` | api | quest dialog money reward | `/dump type(GetRewardMoney)` -> "function" | ? | ? |
+| `GetRewardXP` | api | quest dialog XP reward | `/dump type(GetRewardXP)` -> "function" | ? | ? |
+| `GetNumQuestLogRewards` | api | log quest reward items, by questID | `/dump type(GetNumQuestLogRewards)` -> "function" | ? | ? |
+| `GetQuestLogRewardInfo` | api | log quest reward item (index, questID) | `/dump type(GetQuestLogRewardInfo)` -> "function" | ? | ? |
+| `GetNumQuestLogChoices` | api | log quest choice items, by questID | `/dump type(GetNumQuestLogChoices)` -> "function" | ? | ? |
+| `GetQuestLogChoiceInfo` | api | log quest choice item (index, questID) | `/dump type(GetQuestLogChoiceInfo)` -> "function" | ? | ? |
+| `GetQuestLogRewardMoney` | api | log quest money, by questID | `/dump type(GetQuestLogRewardMoney)` -> "function" | ? | ? |
+| `GetQuestLogRewardXP` | api | log quest XP, by questID | `/dump type(GetQuestLogRewardXP)` -> "function" | ? | ? |
+| `C_Item.RequestLoadItemDataByID` | api | load a reward item's name | `/dump type(C_Item.RequestLoadItemDataByID)` -> "function" | ? | ? |
+| `x:quest.rewards` | custom | rewards read for the quests in your log, and from the last quest dialog (D-100) | have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log | ? | ? |
+| `x:questie.xp` | custom | Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100) | `/dump QuestieLoader:ImportModule("QuestXP").GetQuestLogRewardXP` | ? | ? |
+
+### UI
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `TooltipDataProcessor` | api | add a line to unit tooltips (modern clients) | `/dump type(TooltipDataProcessor)` -> "table" | ? | ? |
+| `x:tooltip.unit` | custom | the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099) | `/fl verify; then hover a friend's character` | ? | ? |
+| `m:notices` | manual | friend notices: several at once become one, "While you were away" after login, a click opens the friend's page, right click only closes | log in while friends on 1.7.0 have played; click the notice | ? | ? |
 | `m:minimap` | manual | minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered | look at the minimap; click, right-click, drag, /reload | pending | ? |
 | `m:options` | manual | Options > AddOns lists Fellowship Ledger and its button opens Settings | Esc > Options > AddOns > Fellowship Ledger | pending | ? |
 | `m:fakeviews` | manual | with /fl fake every table and all five graphs draw, tooltips show, both skins and all text sizes look right | `/fl fake, visit every tab and chart, switch skin and text size, /fl fake off` | pending | ? |

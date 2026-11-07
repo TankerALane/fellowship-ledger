@@ -12,7 +12,7 @@ local Me = {}
 ns.MeTab = Me
 
 local state = { range = "today", sort = "level", desc = true, expanded = {}, showAll = {}, mode = "characters",
-    chainOpen = {}, chainAll = {}, detailView = {}, openProf = {}, openZone = {} }
+    chainOpen = {}, chainAll = {}, chainQuest = {}, detailView = {}, openProf = {}, openZone = {} }
 local ui = {}
 Me.state, Me.ui = state, ui -- for tests
 
@@ -118,6 +118,11 @@ local function characterLines()
     local rows = MeModel.Build(chars, state.range, ns.Store.Today(), time, date)
     MeModel.Sort(rows, state.sort, state.desc)
     local lines = {}
+    -- "This session: ..." (D-099), for the character being played.
+    if ns.db.settings.sessionRecap and not ns.Data.IsFake() and ns.Store.session then
+        local recap = ns.Summary.Recap(ns.Store.session, L)
+        if recap then lines[#lines + 1] = { kind = "detail", text = recap } end
+    end
     if #rows > 1 then
         local total = MeModel.Totals(rows)
         total.name = L.TOTAL_ALL
@@ -212,7 +217,27 @@ local function chainLines()
             state.chainAll[key] = not state.chainAll[key] or nil
             Me.Refresh()
         end,
+        -- Quest details (D-100): click a quest for its objective, rewards and your turn-in.
+        skin = skin, dateFn = date, openQuest = state.chainQuest,
+        onQuest = function(key, questID)
+            local k = tostring(key) .. "|" .. tostring(questID)
+            state.chainQuest[k] = not state.chainQuest[k] or nil
+            Me.Refresh()
+        end,
+        more = function(q) return Me.QuestMore(q) end,
     })
+end
+
+-- The details of one quest: rewards (seen in the game or from Questie) and your
+-- latest turn-in of it (30-day log). Fake data has no rewards.
+function Me.QuestMore(q)
+    if ns.Data.IsFake() or not ns.QuestRewards then return nil end
+    local turnedIn
+    for _, e in ipairs(ns.Store.char and ns.Store.char.questLog or {}) do
+        if e.id == q.id and (not turnedIn or (e.at or 0) > (turnedIn.at or 0)) then turnedIn = e end
+    end
+    local ok, more = pcall(ns.QuestRewards.More, q.id, q.status == "log", turnedIn)
+    return ok and more or nil
 end
 
 -- Remove one of my characters (never the one I am on), after a confirm. Friends

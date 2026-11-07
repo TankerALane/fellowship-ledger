@@ -27,3 +27,23 @@ function Summary.Session(s, L, dateFn)
     if (c.deaths or 0) > 0 then lines[#lines + 1] = string.format(L.SUMMARY_DEATHS, c.deaths) end
     return title, lines
 end
+
+-- One line for the top of the Me tab (D-099): "This session: 1h 12m, 2 levels, ...".
+-- nil before anything happened (under a minute played and nothing counted).
+function Summary.Recap(s, L)
+    if type(s) ~= "table" then return nil end
+    local F = ns.Format
+    local c = s.counts or {}
+    local parts = {}
+    local function add(n, one, many)
+        if (n or 0) > 0 then parts[#parts + 1] = string.format(n == 1 and one or many, n) end
+    end
+    add(c.levels, L.RECAP_LEVEL, L.RECAP_LEVELS)
+    add(c.quests, L.RECAP_QUEST, L.RECAP_QUESTS)
+    add(c.dungeonsEntered, L.RECAP_DUNGEON, L.RECAP_DUNGEONS)
+    if c.moneyNet and c.moneyNet ~= 0 then parts[#parts + 1] = F.Money(c.moneyNet, true) end
+    add(c.deaths, L.RECAP_DEATH, L.RECAP_DEATHS)
+    if (s.played or 0) < 60 and #parts == 0 then return nil end
+    table.insert(parts, 1, F.Duration(s.played or 0))
+    return string.format(L.RECAP, table.concat(parts, ", "))
+end

@@ -278,6 +278,53 @@ custom["x:ui.compartment"] = function()
     return type(f.RegisterAddon) == "function" and "PASS" or "FAIL", "RegisterAddon is " .. type(f.RegisterAddon)
 end
 
+-- Quest details (D-100): what the log gives for each quest, and the last quest dialog.
+custom["x:quest.rewards"] = function()
+    if not ns.QuestRewards then return "FAIL", "QuestRewards module missing" end
+    local okN, n = Compat.Try("C_QuestLog.GetNumQuestLogEntries")
+    local parts, any = {}, false
+    for i = 1, okN and n or 0 do
+        local ok, info = Compat.Try("C_QuestLog.GetInfo", i)
+        if ok and type(info) == "table" and not info.isHeader and info.questID then
+            pcall(ns.QuestRewards.FromLog, info.questID)
+            local e = (ns.db.questRewards or {})[info.questID]
+            local items = {}
+            for _, it in ipairs(e and e.items or {}) do items[#items + 1] = (it.choice and "c" or "r") .. it.id end
+            if e and (#items > 0 or e.money or e.xp) then any = true end
+            parts[#parts + 1] = string.format("%d xp=%s money=%s items=%s from=%s", info.questID, tostring(e and e.xp),
+                tostring(e and e.money), #items > 0 and table.concat(items, "/") or "-", tostring(e and e.from))
+        end
+    end
+    local d = ns.QuestRewards.lastDialog
+    parts[#parts + 1] = d and string.format("last dialog: quest %d, %d items, money=%s, xp=%s", d.id, d.items, tostring(d.money), tostring(d.xp))
+        or "no quest dialog seen since the reload"
+    if #parts == 1 and not d then return "INFO", "quest log empty; " .. parts[1] end
+    return (any or d) and "PASS" or "FAIL", table.concat(parts, "; ")
+end
+
+custom["x:questie.xp"] = function()
+    local okLoaded, loaded = Compat.Try("C_AddOns.IsAddOnLoaded", "Questie")
+    if not (okLoaded and loaded) then return "INFO", "Questie not loaded" end
+    local okN, n = Compat.Try("C_QuestLog.GetNumQuestLogEntries")
+    local parts = {}
+    for i = 1, okN and n or 0 do
+        local ok, info = Compat.Try("C_QuestLog.GetInfo", i)
+        if ok and type(info) == "table" and not info.isHeader and info.questID then
+            parts[#parts + 1] = string.format("%d=%s", info.questID, tostring(ns.QuestRewards.QuestieXP(info.questID)))
+            if #parts >= 6 then break end
+        end
+    end
+    if #parts == 0 then return "INFO", "quest log empty" end
+    local any = false
+    for _, p in ipairs(parts) do if not p:find("=nil$") then any = true end end
+    return any and "PASS" or "FAIL", table.concat(parts, " ")
+end
+
+custom["x:tooltip.unit"] = function()
+    local hook = ns.TooltipInfo and ns.TooltipInfo.hook
+    return hook and "PASS" or "FAIL", "hook=" .. tostring(hook)
+end
+
 custom["x:questie.db"] = function()
     local okLoaded, loaded = Compat.Try("C_AddOns.IsAddOnLoaded", "Questie")
     if not (okLoaded and loaded) then return "INFO", "Questie not loaded" end

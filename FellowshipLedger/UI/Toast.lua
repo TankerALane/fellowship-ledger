@@ -1,7 +1,7 @@
 -- UI/Toast.lua
 -- Small parchment notices near the top of the screen: level-ups, last session's
 -- summary, and (Phase 3) friend milestones. Up to three stack; each fades out.
--- Every toast is also written to chat, so nothing is lost if it is missed.
+-- Every toast is also written to chat (unless that is turned off), so nothing is lost if it is missed.
 
 local _, ns = ...
 local W = ns.Widgets
@@ -28,7 +28,15 @@ local function make(i)
     f.body:SetPoint("RIGHT", -12, 0)
     f.body:SetWordWrap(true)
     f:EnableMouse(true)
-    f:SetScript("OnMouseDown", function(self) self:Hide() end) -- click to dismiss
+    -- Left click opens what the notice is about (D-099); any click dismisses it.
+    f:SetScript("OnMouseUp", function(self, button)
+        local onClick = self.onClick
+        self:Hide()
+        if onClick and button ~= "RightButton" then
+            local ok, err = pcall(onClick)
+            if not ok then ns.Log.Debug("toast click failed: %s", tostring(err)) end
+        end
+    end)
     f:SetScript("OnUpdate", function(self, elapsed)
         self.age = (self.age or 0) + (elapsed or 0)
         local left = Toast.SHOW_SECONDS - self.age
@@ -43,9 +51,13 @@ local function make(i)
     return f
 end
 
-function Toast.Show(title, lines)
+-- opts: { onClick = fn } (left click). Settings (D-099): toastsShown puts it on
+-- screen, toastChat also writes it to chat.
+function Toast.Show(title, lines, opts)
     local text = type(lines) == "table" and table.concat(lines, "\n") or tostring(lines or "")
-    ns.Log.Info("%s - %s", title, (text:gsub("\n", "; ")))
+    local settings = ns.db and ns.db.settings or {}
+    if settings.toastChat ~= false then ns.Log.Info("%s - %s", title, (text:gsub("\n", "; "))) end
+    if settings.toastsShown == false then return end
     local ok, err = pcall(function()
         -- Reuse the oldest slot when all are busy.
         local slot, oldest = nil, -1
@@ -58,6 +70,7 @@ function Toast.Show(title, lines)
         slot.body:SetText(text)
         local lineCount = select(2, text:gsub("\n", "")) + 1
         slot:SetHeight(44 + 14 * lineCount)
+        slot.onClick = opts and opts.onClick or nil
         slot.age = 0
         slot:SetAlpha(1)
         slot:Show()

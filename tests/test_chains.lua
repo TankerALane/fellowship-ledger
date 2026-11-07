@@ -74,9 +74,9 @@ H.test("chains: an opened chain is a box with the quests, Show all, prerequisite
     H.ok(text:find("- | The Defias Brotherhood | step 3 of 7 | Westfall", 1, true), text)
     H.ok(text:find("+ | Closed | step 1 of 2", 1, true), text)
     H.ok(text:find("Kill On Sight | no chain information", 1, true), text)
-    H.ok(text:find("OK | 1 | One | 14 | 9 | Gryan, Westfall", 1, true), text)
-    H.ok(text:find("NOW | 3 | Three | 15 | 10 | in your quest log", 1, true), text)
-    H.ok(text:find(" | 4 | Four | 16 | 12 | item: Torn Scroll", 1, true), text)
+    H.ok(text:find("OK | 1 | + One | 14 | 9 | Gryan, Westfall", 1, true), text)
+    H.ok(text:find("NOW | 3 | + Three | 15 | 10 | in your quest log", 1, true), text)
+    H.ok(text:find(" | 4 | + Four | 16 | 12 | item: Torn Scroll", 1, true), text)
     H.ok(not text:find("Seven", 1, true), "step 7 is past the window")
     H.ok(text:find("[Show all (7)]", 1, true), text)
     H.ok(text:find("Also requires: \"Red Silk Bandanas\" (not done)", 1, true), text)
@@ -123,4 +123,49 @@ H.test("chains: friends on a chain, blocked friends left out", function()
     }
     local on = Logic.FriendsOn(friends, function(f) return f.blocked end, "q:1")
     H.eq(#on, 1); H.eq(on[1].friend, "Bob"); H.eq(on[1].step, 5)
+end)
+
+H.test("quest details: objective, rewards, items to choose, your turn-in", function()
+    local q = { id = 3, name = "Three", level = 15, req = 10, status = "log",
+        start = { kind = "npc", name = "Gryan", zone = "Westfall" } }
+    local more = { objectives = string.rep("Kill the Defias ", 10), xp = 1250, money = 12345,
+        rep = { { name = "Stormwind", value = 250 } }, seen = true,
+        items = { { id = 1, name = "Sword", quality = 2, choice = true }, { id = 2, name = "Mace", choice = true },
+            { id = 3, name = "Potion", count = 5 } },
+        done = { at = 0, xp = 1250, money = 12345 } }
+    local out = M.QuestMore(q, more, L, { skin = "ledger", dateFn = function() return "11-05 14:20" end })
+    local text = {}
+    for _, l in ipairs(out) do text[#text + 1] = l.text end
+    text = table.concat(text, "\n")
+    H.ok(text:find("Objective: Kill the Defias", 1, true), text)
+    H.ok(#out[1].text <= M.WRAP and out[2].text:find("^   "), "long objectives wrap onto indented lines")
+    H.ok(text:find("Starts: Gryan, Westfall    Turn in: ?", 1, true), text)
+    H.ok(text:find("Rewards: 1,250 XP, 1g 23s 45c, +250 Stormwind", 1, true), text)
+    H.ok(text:find("Choose one: |c", 1, true) and text:find("Sword|r, Mace", 1, true), "green item colored: " .. text)
+    H.ok(text:find("You also get: Potion x5", 1, true), text)
+    H.ok(text:find("You turned it in 11-05 14:20 and got 1,250 XP, 1g 23s 45c.", 1, true), text)
+    -- Not seen yet; seen with no items; an old XP number from when you saw it.
+    text = M.QuestMore(q, { xp = 300, xpLevel = 9 }, L, {})
+    local last = text[#text].text
+    H.eq(last, L.QUEST_ITEMS_UNSEEN)
+    H.ok(text[#text - 1].text:find("300 XP (at level 9, when you saw it)", 1, true), text[#text - 1].text)
+    text = M.QuestMore(q, { seen = true }, L, {})
+    H.eq(text[#text].text, L.QUEST_ITEMS_NONE)
+end)
+
+H.test("quest details: a click opens a quest inside its chain", function()
+    local view = { mine = { { key = "q:1", name = "Defias", step = 3, total = 7, known = true, open = true, details = details(3) } },
+        friends = {} }
+    local clicked
+    local opts = { playerLevel = 16, openQuest = { ["q:1|3"] = true },
+        onQuest = function(k, id) clicked = k .. "|" .. id end,
+        more = function(q2) return { seen = true, xp = q2.id * 100 } end }
+    local lines = M.Lines(view, L, opts)
+    local text = textOf(lines)
+    H.ok(text:find("- Three", 1, true), text)
+    H.ok(text:find("Rewards: 300 XP", 1, true), text)
+    for _, l in ipairs(lines) do
+        for _, s in ipairs(l.segments or {}) do if s.text == "+ Four" then l.onClick() end end
+    end
+    H.eq(clicked, "q:1|4")
 end)

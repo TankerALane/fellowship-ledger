@@ -99,6 +99,8 @@ function handlers.PLAYER_LOGIN()
     end
     step("sharing", ns.Sync.Start)
     step("minimap button", ns.MinimapButton.Update)
+    step("tooltips", ns.TooltipInfo.Start)
+    step("quest rewards", ns.QuestRewards.Start)
     step("options page", ns.OptionsPanel.Register)
     ns.welcomeStep = function()
         step("welcome panel", ns.Welcome.MaybeShow)

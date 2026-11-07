@@ -158,6 +158,10 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     if isNew then return {} end
     local name = c.display or c.name
     local events = milestones(name, oldLevel, c.level)
+    -- The gain itself, for the "While you were away" notice only (D-099).
+    if oldLevel and c.level and c.level > oldLevel then
+        events[#events + 1] = { kind = "levels", character = name, from = oldLevel, to = c.level }
+    end
     -- Professions: the highest cap crossed since the last DATA.
     if oldRanks and c.professions then
         for key, p in pairs(c.professions) do
@@ -179,6 +183,7 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
             events[#events + 1] = { kind = "dungeon", character = name, dungeon = r.name }
         end
     end
+    for _, e in ipairs(events) do e.key = data.key end
     return events
 end
 

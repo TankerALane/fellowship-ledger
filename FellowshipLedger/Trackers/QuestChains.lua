@@ -245,6 +245,27 @@ function QuestChains.QuestInfo(id)
             if type(list) == "table" then for _, p in ipairs(list) do if type(p) == "number" then pre[#pre + 1] = p end end end
         end
         info.pre = pre
+        -- The quest's objective text (a list of strings) and reputation rewards
+        -- ({ { factionID, value } }), for the quest details (D-100).
+        local text = questieQuery(id, "objectivesText")
+        if type(text) == "table" then
+            local parts = {}
+            for _, s in ipairs(text) do if type(s) == "string" and s ~= "" then parts[#parts + 1] = s end end
+            info.objectives = #parts > 0 and table.concat(parts, " ") or nil
+        elseif type(text) == "string" and text ~= "" then
+            info.objectives = text
+        end
+        local rep = questieQuery(id, "reputationReward")
+        if type(rep) == "table" then
+            info.rep = {}
+            for _, r in ipairs(rep) do
+                if type(r) == "table" and type(r[1]) == "number" and type(r[2]) == "number" then
+                    local okF, data = ns.Compat.Try("C_Reputation.GetFactionDataByID", r[1])
+                    local name = okF and type(data) == "table" and T.Plain(data.name) or nil
+                    info.rep[#info.rep + 1] = { name = type(name) == "string" and name or nil, value = r[2] }
+                end
+            end
+        end
         -- Questie's zoneOrSort: a positive value is the zone (area) the quest belongs to.
         local area = questieQuery(id, "zoneOrSort")
         if type(area) == "number" and area > 0 then

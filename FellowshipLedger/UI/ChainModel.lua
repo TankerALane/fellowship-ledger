@@ -62,6 +62,92 @@ function ChainModel.Tooltip(q, L)
     return q.name or "?", lines
 end
 
+-- Quest details (D-100) -------------------------------------------------------------
+ChainModel.WRAP = 100 -- characters per detail line
+
+local function visibleLen(s)
+    return #(s:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+end
+
+-- Pack pieces (words, or item names) into lines of at most `max` visible characters.
+-- The first line starts with `lead`; pieces are joined with `sep`.
+function ChainModel.Wrap(pieces, max, sep, lead)
+    local lines, cur = {}, lead or ""
+    local started = false
+    for _, p in ipairs(pieces) do
+        local add = started and (sep .. p) or p
+        if started and visibleLen(cur .. add) > max then
+            lines[#lines + 1] = cur .. (sep:match("^,") and "," or "")
+            cur, add = "   ", p
+        end
+        cur = cur .. add
+        started = true
+    end
+    if started or cur ~= "" then lines[#lines + 1] = cur end
+    return lines
+end
+
+local function words(text)
+    local out = {}
+    for w in tostring(text):gmatch("%S+") do out[#out + 1] = w end
+    return out
+end
+
+local function itemText(it, L, skin)
+    local name = it.name or string.format(L.QUEST_ITEM_UNKNOWN, it.id or 0)
+    if it.count then name = string.format(L.QUEST_ITEM_COUNT, name, it.count) end
+    local color = skin and ns.Palette and ns.Palette.QualityColor(it.quality, skin)
+    return color and (ns.Palette.Code(color) .. name .. "|r") or name
+end
+
+-- The text lines of one opened quest. q: the chain's quest (name, level, req, start,
+-- finish, status); more: { objectives, xp, xpLevel, money, items = { id, name, quality,
+-- count, choice }, seen, rep = { name, value }, done = { at, xp, money } }.
+function ChainModel.QuestMore(q, more, L, opts)
+    opts = opts or {}
+    more = more or {}
+    local F = ns.Format
+    local out = {}
+    local function add(text, role) out[#out + 1] = { text = text, role = role or "text" } end
+    if more.objectives then
+        for _, l in ipairs(ChainModel.Wrap(words(more.objectives), ChainModel.WRAP, " ", L.QUEST_OBJECTIVE)) do add(l, "muted") end
+    end
+    add(string.format(L.CHAIN_TIP_STARTS, ChainModel.PlaceText(q.start, L)) .. "    "
+        .. string.format(L.CHAIN_TIP_ENDS, ChainModel.PlaceText(q.finish, L)))
+    if levelText(q.level) ~= "" or levelText(q.req) ~= "" then
+        add(string.format(L.CHAIN_TIP_LEVEL, levelText(q.level) ~= "" and levelText(q.level) or "?",
+            levelText(q.req) ~= "" and levelText(q.req) or "?"), "muted")
+    end
+    local gives = {}
+    if more.xp then
+        gives[#gives + 1] = string.format(more.xpLevel and L.QUEST_XP_AT or L.QUEST_XP, F.Number(more.xp), more.xpLevel)
+    end
+    if more.money then gives[#gives + 1] = F.Money(more.money) end
+    for _, r in ipairs(more.rep or {}) do
+        gives[#gives + 1] = string.format(L.QUEST_REP, r.value >= 0 and "+" or "", r.value, r.name or L.QUEST_REP_UNKNOWN)
+    end
+    if #gives > 0 then add(L.QUEST_REWARDS .. table.concat(gives, ", ")) end
+    local choose, also = {}, {}
+    for _, it in ipairs(more.items or {}) do
+        local list = it.choice and choose or also
+        list[#list + 1] = itemText(it, L, opts.skin)
+    end
+    if #choose > 0 then for _, l in ipairs(ChainModel.Wrap(choose, ChainModel.WRAP, ", ", L.QUEST_CHOOSE)) do add(l) end end
+    if #also > 0 then
+        for _, l in ipairs(ChainModel.Wrap(also, ChainModel.WRAP, ", ", #choose > 0 and L.QUEST_ALSO or L.QUEST_ITEMS)) do add(l) end
+    end
+    if not more.seen then add(L.QUEST_ITEMS_UNSEEN, "muted")
+    elseif #choose == 0 and #also == 0 then add(L.QUEST_ITEMS_NONE, "muted") end
+    if more.done then
+        local got = {}
+        if (more.done.xp or 0) > 0 then got[#got + 1] = string.format(L.QUEST_XP, F.Number(more.done.xp)) end
+        if (more.done.money or 0) > 0 then got[#got + 1] = F.Money(more.done.money) end
+        local when = opts.dateFn and more.done.at and opts.dateFn("%m-%d %H:%M", more.done.at) or "?"
+        add(#got > 0 and string.format(L.QUEST_DONE_GOT, when, table.concat(got, ", ")) or string.format(L.QUEST_DONE_AT, when), "muted")
+    end
+    return out
+end
+
 -- The box under an opened chain. c: the chain view entry; returns a list of lines.
 local function body(c, L, opts)
     local C = ChainModel.COLS
@@ -98,10 +184,20 @@ local function body(c, L, opts)
             local mark = q.status == "done" and (opts.checkCode or "+") or q.status == "log" and (opts.logCode or ">") or ""
             local tooHigh = q.status ~= "done" and q.status ~= "log" and type(q.req) == "number" and opts.playerLevel and q.req > opts.playerLevel
             local starts = q.status == "log" and L.CHAIN_IN_LOG or ChainModel.PlaceText(q.start, L)
-            add({ seg(C.mark, mark), seg(C.num, tostring(i), "muted"), seg(C.quest, q.name or ("#" .. tostring(q.id))),
+            local openKey = tostring(c.key) .. "|" .. tostring(q.id)
+            local isOpen = opts.openQuest and opts.openQuest[openKey]
+            add({ seg(C.mark, mark), seg(C.num, tostring(i), "muted"),
+                seg(C.quest, (isOpen and "- " or "+ ") .. (q.name or ("#" .. tostring(q.id)))),
                 seg(C.lvl, levelText(q.level), "text", nil, "CENTER"), seg(C.req, levelText(q.req), tooHigh and "bad" or "text", nil, "CENTER"),
                 seg(C.starts, starts, q.status == "log" and "muted" or "text") },
-                { shade = (i == focus) or nil, tooltip = function() return ChainModel.Tooltip(q, L) end })
+                { shade = (i == focus) or nil, tooltip = function() return ChainModel.Tooltip(q, L) end,
+                  onClick = function() opts.onQuest(c.key, q.id) end })
+            if isOpen then
+                local more = opts.more and opts.more(q) or nil
+                for _, l in ipairs(ChainModel.QuestMore(q, more, L, opts)) do
+                    add({ seg({ C.quest[1], 1 - C.quest[1] }, l.text, l.role) })
+                end
+            end
         end
         if from > 1 or to < #qs or c.showAll then
             local label = c.showAll and L.DETAIL_SHOW_LESS or string.format(L.DETAIL_SHOW_ALL, #qs)
@@ -138,10 +234,12 @@ end
 -- view: { mine = { entry }, friends = { entry }, emptyLog = bool, questieMissing = bool }
 -- mine entry: { key, name, step, total, zone, known, title, open, showAll, details, friendsOn }
 -- friend entry: { key, name, friend, character, step, total, zone, open, showAll, details, next }
--- opts: { playerLevel, onToggle(key), onShowAll(key), checkCode, logCode }
+-- opts: { playerLevel, onToggle(key), onShowAll(key), checkCode, logCode, skin, dateFn,
+--         openQuest = { ["<chain key>|<quest id>"] = true }, onQuest(key, questID), more(q) -> details }
 function ChainModel.Lines(view, L, opts)
     opts.onToggle = opts.onToggle or function() end
     opts.onShowAll = opts.onShowAll or function() end
+    opts.onQuest = opts.onQuest or function() end
     local lines = { { kind = "group", text = L.CHAIN_MINE_TITLE } }
     if view.emptyLog then lines[#lines + 1] = { kind = "detail", text = L.CHAIN_EMPTY_LOG } end
     for _, c in ipairs(view.mine or {}) do

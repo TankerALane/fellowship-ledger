@@ -156,6 +156,12 @@ function Obj:SetLines(lines)
     self:Render()
 end
 
+-- Scroll so line i is at the top (Render keeps it within range).
+function Obj:ScrollTo(i)
+    self.offset = math.max(0, (tonumber(i) or 1) - 1)
+    self:Render()
+end
+
 function Obj:Visible()
     local h = self.parent:GetHeight() or 0
     if h < ROW_H * 3 then h = 400 end

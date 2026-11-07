@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Quest details**: in Quest chains, click a quest to open it: its objective, where it starts and ends, its levels, and what it gives: XP, money, reputation, the items you choose from and the items you also get (in their quality colors), and when you turned it in and what you got. XP for quests you have not picked up comes from Questie when it is installed. Item rewards show once you have had the quest in your log or seen it at the quest giver (the game only tells addons then); they are remembered for all your characters.
+- **While you were away**: friend notices in the first two minutes after login become one notice titled "While you were away", which also lists the levels friends gained ("Cain (Hamlet) went from level 42 to 45").
+- Friend notices that arrive together become one ("3 friend notices").
+- **Click a friend notice** to open that friend's character on the Friends tab, on the right page (Quests for a finished chain, Dungeons for a clear, and so on). Right click just closes it.
+- **A friend joined your ledger**: a notice the first time a friend's ledger says hello.
+- **This session** line at the top of the Me tab: time played, levels, quests, dungeons, gold and deaths so far.
+- **Tooltip line**: hover a friend's character in the world or in your group and the game's tooltip shows "Ledger: Hamlet's character, 12 quests and 2 dungeons this week".
+- Settings > Notices: a switch for each of these, plus "Show notices on screen" (turn all on-screen notices off; chat still gets them) and "Also write notices in chat".
+
 ## 1.6.0 - 2026-11-06
 
 ### Added

@@ -128,7 +128,7 @@ local function lines()
             local friend = ns.Data.Friends()[r.friendId]
             local char = friend and friend.characters and friend.characters[r.key]
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
-            out[#out + 1] = { kind = "row", cells = cells, indent = r.indent,
+            out[#out + 1] = { kind = "row", id = openId, cells = cells, indent = r.indent,
                 tooltip = function() return FriendsModel.Tooltip(r, char, friend, time(), L, factionText) end,
                 onClick = function()
                     state.expanded[openId] = not state.expanded[openId] or nil
@@ -142,6 +142,18 @@ local function lines()
     end
     if hidden > 0 then out[#out + 1] = { kind = "detail", text = string.format(L.BLOCKED_HIDDEN, hidden) } end
     return out, #rows
+end
+
+-- Open the Friends tab on one friend's character and view (a clicked notice, D-099).
+-- Without a character it just opens the tab.
+function FriendsTab.Open(friendId, key, view)
+    if friendId and key then
+        local id = tostring(friendId) .. "|" .. tostring(key)
+        state.expanded[id] = true
+        if view then state.detailView[id] = view end
+        state.focus = id
+    end
+    ns.MainWindow.Open("friends")
 end
 
 FriendsTab.Lines = lines -- for tests
@@ -170,6 +182,13 @@ function FriendsTab.Refresh()
     end
     local list, count = lines()
     ui.table:SetLines(list)
+    -- A clicked notice: scroll its character's row to the top, once.
+    if state.focus then
+        for i, l in ipairs(list) do
+            if l.id == state.focus then ui.table:ScrollTo(i) break end
+        end
+        state.focus = nil
+    end
     -- "This week" has its own empty line; the long explanation would sit on top of it.
     ui.empty:SetShown(count == 0 and not state.weekly)
     if ns.Data.IsFake() then

@@ -155,3 +155,24 @@ function FriendsModel.Ago(now, at)
     if d < 86400 then return math.floor(d / 3600) .. "h ago" end
     return math.floor(d / 86400) .. "d ago"
 end
+
+-- The ledger line in the game's tooltip on a friend's character (D-099):
+-- "Ledger: Hamlet's character, 12 quests and 2 dungeons this week".
+-- f: the friend record; key: the character key; sum: Days.Sum for this week.
+function FriendsModel.TooltipLine(f, sum, L)
+    sum = sum or {}
+    local quests, dungeons = sum.quests or 0, sum.dungeonsCompleted or 0
+    local who = (f and f.name) or "?"
+    if quests == 0 and dungeons == 0 then return string.format(L.TOOLTIP_FRIEND_QUIET, who) end
+    return string.format(L.TOOLTIP_FRIEND, who, quests, dungeons)
+end
+
+-- Which friend has this character (key), skipping blocked ones. Returns id, friend, character.
+function FriendsModel.FindCharacter(friends, blocklist, key)
+    if not key then return nil end
+    for id, f in pairs(friends or {}) do
+        local c = f.characters and f.characters[key]
+        if c and not FriendsModel.IsBlocked(blocklist, f, key) then return id, f, c end
+    end
+    return nil
+end

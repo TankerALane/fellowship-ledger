@@ -126,9 +126,17 @@ local function friendRecord(peer)
     return Merge.Friend(ns.db.friends, peer)
 end
 
+-- "Hamlet joined your ledger" (D-099): the first hello from a friend. Not during the
+-- first 15 minutes after the ledger is installed, when every friend is new.
+Sync.JOIN_GRACE = 900
 Transport.handlers.H = function(peer, body)
     local hello = Codec.DecodeHello(body)
-    Merge.Hello(friendRecord(peer), hello, now())
+    local friend = friendRecord(peer)
+    local fresh = friend.version == nil
+    Merge.Hello(friend, hello, now())
+    if fresh and ns.db.joinNoticesFrom and now() >= ns.db.joinNoticesFrom then
+        Sync.Notify({ event = { kind = "joined" }, friendName = friend.name or peer.id, friendId = peer.id })
+    end
     -- A friend runs a newer release: say so once per session. Versions only change
     -- in the release commit, which goes to CurseForge straight away, so a build
     -- being tested still carries the last released number (D-069).
@@ -166,15 +174,55 @@ function Sync.FinishedChains(before, after)
     return out
 end
 
-local TOAST_SETTING = { level = "friendToasts", maxlevel = "friendToastsMaxLevel", chain = "friendToastsChains",
-    dungeon = "friendToastsDungeons", profession = "friendToastsProfessions" }
-
 function Sync.MilestoneText(e, friendName)
-    if e.kind == "maxlevel" then return string.format(L.FRIEND_MILESTONE_MAX, e.character, friendName, e.level) end
-    if e.kind == "chain" then return string.format(L.FRIEND_MILESTONE_CHAIN, e.character, friendName, e.chain) end
-    if e.kind == "dungeon" then return string.format(L.FRIEND_MILESTONE_DUNGEON, e.character, friendName, e.dungeon) end
-    if e.kind == "profession" then return string.format(L.FRIEND_MILESTONE_PROF, e.character, friendName, e.rank, e.profession) end
-    return string.format(L.FRIEND_MILESTONE, e.character, friendName, e.level)
+    return ns.Notices.Text(e, friendName, L)
+end
+
+-- Friend notices (D-099) ------------------------------------------------------------
+-- Notices that arrive close together become one; the ones in the first two minutes
+-- after login are "While you were away". Each notice opens the friend's page on click.
+Sync.queue = {}
+local queueGen, queueFirst = 0, nil
+
+function Sync.OpenTarget(target)
+    if not target then return end
+    if ns.FriendsTab and ns.FriendsTab.Open then ns.FriendsTab.Open(target.friendId, target.key, target.view) end
+end
+
+local function showNotice(items, away)
+    local title, lines, target = ns.Notices.Build(items, L, away)
+    if title then ns.Toast.Show(title, lines, { onClick = function() Sync.OpenTarget(target) end }) end
+end
+
+function Sync.FlushNotices()
+    local items, first = Sync.queue, queueFirst
+    Sync.queue, queueFirst = {}, nil
+    queueGen = queueGen + 1
+    local settings = ns.db.settings
+    local away = ns.Notices.IsAway(settings, Sync.startedAt, first)
+    local shown = ns.Notices.Select(items, settings, away)
+    if #shown == 0 then return end
+    if away or settings.toastBundle ~= false then
+        showNotice(shown, away)
+    else
+        for _, it in ipairs(shown) do showNotice({ it }, false) end
+    end
+end
+
+-- Queue one notice. items: { event, friendName, friendId }.
+function Sync.Notify(item)
+    local t = now()
+    Sync.queue[#Sync.queue + 1] = item
+    queueFirst = queueFirst or t
+    local settings = ns.db.settings
+    local away = ns.Notices.IsAway(settings, Sync.startedAt, queueFirst)
+    if not away and settings.toastBundle == false then return Sync.FlushNotices() end
+    if t - queueFirst >= ns.Notices.BUNDLE_MAX_SECONDS then return Sync.FlushNotices() end
+    queueGen = queueGen + 1
+    local gen = queueGen
+    ns.Events.After(ns.Notices.BUNDLE_SECONDS, function()
+        if gen == queueGen then Sync.FlushNotices() end
+    end)
 end
 
 Transport.handlers.D = function(peer, body)
@@ -190,14 +238,10 @@ Transport.handlers.D = function(peer, body)
     if chainsBefore and Codec.MaskToSet(data.mask or "").quests then
         local c = friend.characters[data.key]
         for _, name in ipairs(Sync.FinishedChains(chainsBefore, chainState(c))) do
-            events[#events + 1] = { kind = "chain", character = c.display or c.name or data.key, chain = name }
+            events[#events + 1] = { kind = "chain", character = c.display or c.name or data.key, chain = name, key = data.key }
         end
     end
-    for _, e in ipairs(events) do
-        if ns.db.settings[TOAST_SETTING[e.kind] or "friendToasts"] then
-            ns.Toast.Show(L.FRIEND_MILESTONE_TITLE, { Sync.MilestoneText(e, friend.name or peer.id) })
-        end
-    end
+    for _, e in ipairs(events) do Sync.Notify({ event = e, friendName = friend.name or peer.id, friendId = peer.id }) end
     if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
 end
 
@@ -314,6 +358,7 @@ function Sync.Start()
     if started then return end
     started = true
     Sync.startedAt = now()
+    ns.db.joinNoticesFrom = ns.db.joinNoticesFrom or (now() + Sync.JOIN_GRACE)
     Merge.firstLastNames = ns.Compat.flavor == "Forever"
     -- The level cap, for the "reached the level cap" notice (D-098). Unverified on both
     -- clients (VerifyChecks): without either, that notice is simply never shown.
