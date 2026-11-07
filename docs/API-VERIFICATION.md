@@ -249,7 +249,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | PASS | ? |
 | `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | PASS | ? |
 | `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | PASS | ? |
-| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | PASS | ? |
+| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | INFO | ? |
 | `x:dungeon.instance` | custom | GetInstanceInfo returns readable values here | `/dump GetInstanceInfo()` | INFO | INFO |
 | `ev:ENCOUNTER_START` | event | boss pull: pause sending | `/dump C_EventUtils.IsEventValid("ENCOUNTER_START")` -> true | PASS | PASS |
 | `ev:ENCOUNTER_END` | event | boss kill (args: encounterID, name, difficulty, size, success) | `/dump C_EventUtils.IsEventValid("ENCOUNTER_END")` -> true | PASS | PASS |
@@ -298,8 +298,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
-| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | PASS | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | INFO | ? |
+| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | INFO | ? |
 
 ### Reputation
 
@@ -331,7 +331,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | PASS | PASS |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | PASS | PASS |
 | `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | PASS | ? |
-| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | PASS | ? |
+| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | INFO | ? |
 
 ### Kills
 
@@ -432,9 +432,9 @@ These come from addons already installed in Austin's game folders. They are good
 | `Settings.OpenToCategory` | api | open our Options page | `/dump type(Settings.OpenToCategory)` -> "function" | PASS | PASS |
 | `AddonCompartmentFrame` | api | addon compartment menu entry | `/dump type(AddonCompartmentFrame)` -> "table" | PASS | PASS |
 | `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
-| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | ? | ? |
+| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | ? |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
-| `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | ? | ? |
+| `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | PASS | ? |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | PASS | PASS |
 | `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth) | `/dump CreateFrame("Frame").SetResizeBounds` | PASS | PASS |
