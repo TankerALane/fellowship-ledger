@@ -102,5 +102,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 ## Still open (needs a second player or a retail session)
 - [ ] Retail: one death, to see whether the killer is readable or secret
 - [ ] Character-friend (whisper) sharing with a second player
-- [ ] Sharing across factions (Horde and Alliance Battle.net friends)
+- [x] Sharing across factions (Horde and Alliance Battle.net friends), verified on Forever 2026-11-06
 - [ ] `/fl fake` pass on both clients; retail `/fl probe`
+- [x] 1.6.0 with friends on Forever (2026-11-07): friend notices for chains, dungeon clears and professions, friends' shared dungeon runs, friends' quest chains and profession ranks
+- [ ] Friend level-cap notice: fires when a friend reaches 60 (GetMaxLevelForPlayerExpansion returns 60; no friend has reached it yet)
