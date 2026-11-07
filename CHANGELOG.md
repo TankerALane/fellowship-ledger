@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+- Graphs: the character on show and Compare are now drop-downs. Your characters come first, then each Battle.net friend with their characters under their name, then other friends; Compare has "Compare off" on top. The < and > buttons still step through. Graphs opens on the character you are playing, and the character each friend is playing is marked "(playing)".
+- Me tab: the character you are playing shows "(playing)".
+
 ### Fixed
 - A friend's Professions tab said "Profession ranks arrive once this friend runs Fellowship Ledger 1.2.0 or later" for a friend on 1.2.0 or later whose character has no professions. It now says "This character has no professions." Characters with none now also say so to friends, so a friend who drops their last profession no longer keeps showing it.
 

@@ -22,7 +22,13 @@ local function cellsFor(row)
     local cells = {}
     for c, col in ipairs(MeModel.COLUMNS) do
         local text = MeModel.FormatCell(col, row)
-        if c == 1 and row.key then text = (state.expanded[row.key] and "- " or "+ ") .. W.ClassName(text, row.class) end
+        if c == 1 and row.key then
+            text = (state.expanded[row.key] and "- " or "+ ") .. W.ClassName(text, row.class)
+            -- The character I am playing (real data only; fake characters are never played).
+            if row.key == ns.Store.key and not ns.Data.IsFake() then
+                text = text .. " " .. ns.Palette.Code(W.Color("good")) .. L.FRIEND_PLAYING .. "|r"
+            end
+        end
         cells[c] = text
     end
     return cells

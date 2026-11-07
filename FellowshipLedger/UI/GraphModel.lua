@@ -182,6 +182,45 @@ function GraphModel.CanCompare(chart)
     return GraphModel.COMPARABLE[chart] == true
 end
 
+-- The Compare menu's groups, from Data.GraphableCharacters entries (skipKey: the
+-- character on show, which is left out). Your characters first, then each
+-- Battle.net friend under their name, then character-only friends together.
+-- Returns { { title, items = { { key, label } } } }; empty groups are left out.
+function GraphModel.CompareGroups(list, skipKey, L)
+    local mine, other, byFriend, friends = {}, {}, {}, {}
+    for _, e in ipairs(list or {}) do
+        if e.key ~= skipKey then
+            local item = { key = e.key, label = e.name or e.label, playing = e.playing }
+            if e.mine then
+                mine[#mine + 1] = item
+            elseif e.friendKind == "bnet" then
+                local g = byFriend[e.friendId]
+                if not g then
+                    g = { title = e.owner or e.friendId, items = {} }
+                    byFriend[e.friendId] = g
+                    friends[#friends + 1] = g
+                end
+                g.items[#g.items + 1] = item
+            else
+                other[#other + 1] = item
+            end
+        end
+    end
+    local function byLabel(a, b) return string.lower(a.label) < string.lower(b.label) end
+    table.sort(friends, function(a, b) return string.lower(a.title) < string.lower(b.title) end)
+    local groups = {}
+    if #mine > 0 then groups[#groups + 1] = { title = L.COMPARE_GROUP_MINE, items = mine } end
+    for _, g in ipairs(friends) do
+        table.sort(g.items, byLabel)
+        groups[#groups + 1] = g
+    end
+    if #other > 0 then
+        table.sort(other, byLabel)
+        groups[#groups + 1] = { title = L.COMPARE_GROUP_OTHER, items = other }
+    end
+    return groups
+end
+
 -- Line two series up by label. Returns rows { label, note, a, b, partialA, partialB }
 -- (a or b nil where that character has no point). Level labels sort numerically.
 function GraphModel.Align(a, b)

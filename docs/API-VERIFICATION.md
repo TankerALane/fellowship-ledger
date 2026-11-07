@@ -431,7 +431,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `Settings.RegisterAddOnCategory` | api | Options panel entry | `/dump type(Settings.RegisterAddOnCategory)` -> "function" | PASS | PASS |
 | `Settings.OpenToCategory` | api | open our Options page | `/dump type(Settings.OpenToCategory)` -> "function" | PASS | PASS |
 | `AddonCompartmentFrame` | api | addon compartment menu entry | `/dump type(AddonCompartmentFrame)` -> "table" | PASS | PASS |
-| `MenuUtil.CreateContextMenu` | api | right-click menus | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
+| `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
+| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | ? | ? |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
 | `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | ? | ? |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |

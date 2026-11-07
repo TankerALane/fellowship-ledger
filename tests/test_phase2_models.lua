@@ -188,6 +188,25 @@ H.test("Last played says now only for a fresh update of the character being play
     end
 end)
 
+H.test("compare groups: yours, each Battle.net friend, then other friends", function()
+    local ns = H.pureNamespace()
+    local list = {
+        { key = "Me-R", name = "Me", mine = true, playing = true },
+        { key = "Alt-R", name = "alt", mine = true },
+        { key = "bn:Zed#1/Zed-R", name = "Zed", friendId = "bn:Zed#1", friendKind = "bnet", owner = "Zed" },
+        { key = "bn:Amy#1/Bo-R", name = "Bo", friendId = "bn:Amy#1", friendKind = "bnet", owner = "Amy", playing = true },
+        { key = "bn:Amy#1/Al-R", name = "Al", friendId = "bn:Amy#1", friendKind = "bnet", owner = "Amy" },
+        { key = "ch:Wren-R/Wren-R", name = "Wren", friendId = "ch:Wren-R", friendKind = "char", owner = "Wren-R" },
+    }
+    local g = ns.GraphModel.CompareGroups(list, "Me-R", ns.L)
+    H.eq(#g, 4)
+    H.eq(g[1].title, "Your characters"); H.eq(#g[1].items, 1, "the shown character is left out"); H.eq(g[1].items[1].label, "alt")
+    H.eq(g[2].title, "Amy"); H.eq(g[2].items[1].label, "Al"); H.eq(g[2].items[2].label, "Bo"); H.ok(g[2].items[2].playing)
+    H.eq(g[3].title, "Zed")
+    H.eq(g[4].title, "Other friends"); H.eq(g[4].items[1].label, "Wren")
+    H.eq(#ns.GraphModel.CompareGroups({}, nil, ns.L), 0)
+end)
+
 H.test("settings defaults fill gaps and keep choices", function()
     local D = H.pureNamespace().SettingsDefaults
     local s = D.Ensure({ skin = "plain", colorblind = false })

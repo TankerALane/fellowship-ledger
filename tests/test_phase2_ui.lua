@@ -459,3 +459,72 @@ H.test("/fl shots: no Screenshot function, one message and nothing changed", fun
     H.ok(Mock.chatContains(env, "no Screenshot function"))
     H.ok(not ns.Data.IsFake() and not ns.Screenshots.active)
 end)
+
+-- A stand-in for the game's menu: records what the drop-down was filled with.
+local function fakeMenu(env)
+    local rec = { items = {} }
+    env.MenuUtil = { CreateContextMenu = function(owner, gen)
+        rec.items = {}
+        local root = {}
+        function root:CreateTitle(t) rec.items[#rec.items + 1] = { kind = "title", text = t } end
+        function root:CreateDivider() rec.items[#rec.items + 1] = { kind = "divider" } end
+        function root:CreateRadio(t, isSel, set) rec.items[#rec.items + 1] = { kind = "radio", text = t, isSel = isSel, set = set } end
+        gen(owner, root)
+    end }
+    return rec
+end
+
+local function find(rec, kind, text)
+    for _, it in ipairs(rec.items) do
+        if it.kind == kind and it.text:find(text, 1, true) then return it end
+    end
+end
+
+H.test("graphs: grouped drop-downs for the character and Compare; opens on the played character", function()
+    local env, ns = boot()
+    local rec = fakeMenu(env)
+    ns.MainWindow.Open("graphs")
+    local G = ns.GraphsTab
+    H.ok(G.ui.charButton.text:GetText():find("(playing)", 1, true), "opens on the played character: " .. tostring(G.ui.charButton.text:GetText()))
+    Mock.slash(env, "fake")
+    ns.MainWindow.Select("graphs")
+    -- Compare: off on top, then your characters, each Battle.net friend, other friends.
+    G.ui.compareButton:GetScript("OnClick")(G.ui.compareButton)
+    H.eq(rec.items[1].text, "Compare off")
+    H.ok(rec.items[1].isSel(), "off is selected to start")
+    local titles = {}
+    for _, it in ipairs(rec.items) do if it.kind == "title" then titles[#titles + 1] = it.text end end
+    H.eq(table.concat(titles, ","), "Your characters,Fennick,Marisol,Tobin,Other friends")
+    H.ok(find(rec, "radio", "Lune (playing)"), "a friend's played character is marked")
+    find(rec, "radio", "Grimwald").set()
+    H.ok(G.ui.compareButton.text:GetText():find("Grimwald", 1, true), G.ui.compareButton.text:GetText())
+    H.ok(G.menuStatus and G.menuStatus.ok, "menu status kept for /fl verify")
+    -- The shown character's drop-down has the same groups, without Compare off.
+    G.ui.charButton:GetScript("OnClick")(G.ui.charButton)
+    H.ok(not find(rec, "radio", "Compare off"))
+    find(rec, "radio", "Wren").set()
+    H.ok(G.ui.charButton.text:GetText():find("Wren", 1, true), G.ui.charButton.text:GetText())
+    noErrors(env)
+end)
+
+H.test("graphs: without the game's menu, Compare cycles as before", function()
+    local env, ns = boot()
+    env.MenuUtil = nil
+    Mock.slash(env, "fake")
+    ns.MainWindow.Select("graphs")
+    local G = ns.GraphsTab
+    G.state.compare = nil
+    G.ui.compareButton:GetScript("OnClick")(G.ui.compareButton)
+    H.ok(G.state.compare ~= nil, "cycled to a character")
+    H.ok(ns.Compat.IsDisabled("graphs.menu"), "menu turned off once")
+end)
+
+H.test("Me tab marks the character being played", function()
+    local env, ns = boot()
+    ns.MainWindow.Open("me")
+    local found = false
+    for _, line in ipairs(ns.MeTab.ui.table.lines) do
+        if line.kind == "row" and tostring(line.cells[1]):find("(playing)", 1, true) then found = true end
+    end
+    H.ok(found, "(playing) on my character")
+end)

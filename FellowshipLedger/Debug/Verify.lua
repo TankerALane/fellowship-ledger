@@ -320,6 +320,14 @@ custom["x:questie.details"] = function()
     return good and "PASS" or "FAIL", detail
 end
 
+-- Graphs drop-downs: did the game's menu open and fill this session?
+custom["x:graphs.menu"] = function()
+    local st = ns.GraphsTab and ns.GraphsTab.menuStatus
+    if not st then return "INFO", "not opened this session; open Graphs, click the character name or Compare, then /fl verify" end
+    if st.ok then return "PASS", string.format("opened at %s with %d choices", date("%H:%M", st.at), st.items or 0) end
+    return "FAIL", "menu failed: " .. tostring(st.err) .. " (the buttons cycle instead)"
+end
+
 -- Flight paths (D-080): what this character has saved, and what was seen this session.
 custom["x:flight.paths"] = function()
     local char = ns.Store and ns.Store.char
