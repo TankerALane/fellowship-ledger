@@ -63,6 +63,19 @@ H.test("friends: quests are counts plus their chains; kills without types; profe
     H.ok(text:find("Cooking | 30 / 75 | bar0.40", 1, true), text)
     H.ok(text:find("Mining | 90 / 150 | bar0.60 | 01-01, 01:00", 1, true), text)
     H.ok(textOf(S.FriendProfessions({ skillUps = 1 }, nil, ALL, L, DATE)):find("1.2.0 or later", 1, true), "older friend")
+    H.ok(textOf(S.FriendProfessions({ skillUps = 1 }, nil, ALL, L, DATE, "1.1.0")):find("1.2.0 or later", 1, true), "1.1.0 is older")
+    H.ok(textOf(S.FriendProfessions({}, nil, ALL, L, DATE, "1.2.1")):find("has no professions", 1, true),
+        "a 1.2.x friend who sent none has none")
+    H.ok(textOf(S.FriendProfessions({}, {}, ALL, L, DATE, "1.3.1")):find("has no professions", 1, true), "said outright")
+
+    -- The codec: a character with no professions sends a bare "p"; it decodes to an empty set.
+    local none = { class = "MAGE", level = 5, days = {}, levels = {}, sessions = {}, professions = {} }
+    local body = ns.Codec.EncodeData("Vel-Testrealm", none, ALL, nil)
+    local d = ns.Codec.DecodeData(body)
+    H.ok(d.professions and next(d.professions) == nil, "no professions decodes to an empty set: " .. body)
+    H.eq(ns.Codec.DecodeData(ns.Codec.EncodeData("Vel-Testrealm", none, {}, nil)).professions, nil, "not shared: nothing sent")
+    -- A 1.2.x decoder (key required) skips the bare "p" record.
+    H.ok(not body:find("~p,", 1, true), "the marker has no key field for old decoders to read")
     H.ok(textOf(S.FriendProfessions({}, profs, {}, L, DATE)):find("does not share", 1, true))
 end)
 
@@ -82,7 +95,9 @@ H.test("profession ranks travel with Professions; older data and junk are fine",
     H.eq(d.professions["186"].name, "Mining"); H.eq(d.professions["186"].rank, 87); H.eq(d.professions["186"].max, 150)
     H.eq(d.professions["186"].history, nil, "history stays home")
     H.eq(C.DecodeData(C.EncodeData("Vel-Realm", char, { time = true }, nil)).professions, nil, "not shared, not sent")
-    H.eq(C.DecodeData("c,Vel-Doom,HUNTER,BloodElf,Horde,18,5,1~p~p,,x").professions, nil, "junk ignored")
+    H.eq(C.DecodeData("c,Vel-Doom,HUNTER,BloodElf,Horde,18,5,1~p,,x~p,").professions, nil, "junk ignored")
+    local bare = C.DecodeData("c,Vel-Doom,HUNTER,BloodElf,Horde,18,5,1~p").professions
+    H.ok(bare and next(bare) == nil, "a bare p means no professions (1.3.1+)")
     -- Merge keeps them only while Professions is shared.
     local mask = string.rep("1", #ns2.TrackerList.ORDER)
     local friend = { characters = {} }

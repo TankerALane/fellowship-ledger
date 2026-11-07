@@ -230,6 +230,7 @@ ns.Locale.Set({
     STATS_FRIEND_QUESTS_NOTE = "Friends share quest counts and the chains they are on, not the names of the quests they turned in.",
     STATS_KILLS_TYPES_NOT_SHARED = "Kills by creature type are not shared, only the totals above.",
     STATS_PROF_FRIEND_SUM = "%s skill-ups",
+    STATS_PROF_FRIEND_NONE = "This character has no professions.",
     STATS_PROF_FRIEND_OLD = "Profession ranks arrive once this friend runs Fellowship Ledger 1.2.0 or later.",
     STATS_COMPLETED_OTHER_CHAR = "The game only lists completed quests for the character you are playing. Log in to this one to see its list.",
     HELP_SHOTS = "/fl shots - take screenshots of every tab and skin with made-up data (for the addon page)",

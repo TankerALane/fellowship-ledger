@@ -359,20 +359,23 @@ end
 
 -- A friend's Professions: skill-ups in the range, and each profession's rank when the
 -- friend's version shares it (char.professions = { [key] = { name, rank, max, lastAt } }).
-function StatsModel.FriendProfessions(sum, profs, shared, L, dateFn)
+-- version: the friend's ledger version. No ranks from 1.2.0+ means the character
+-- has no professions (1.3.0+ also says so outright); before 1.2.0 they were not sent.
+function StatsModel.FriendProfessions(sum, profs, shared, L, dateFn, version)
     local Format = ns.Format
     if not shared.professions then return { { segs = { seg(0, 1, L.STATS_NOT_SHARED, "muted") } } } end
     local out = { { segs = { seg(0, 1, string.format(L.STATS_PROF_FRIEND_SUM, Format.Number(sum.skillUps or 0)), "muted") }, rules = { { 0, 1 } } },
         { segs = {} } }
     if not profs then
-        out[#out + 1] = { segs = { seg(0, 1, L.STATS_PROF_FRIEND_OLD, "muted") } }
+        local old = version == nil or ns.Merge.CompareVersions(version, "1.2.0") == -1
+        out[#out + 1] = { segs = { seg(0, 1, old and L.STATS_PROF_FRIEND_OLD or L.STATS_PROF_FRIEND_NONE, "muted") } }
         return out
     end
     local keys = {}
     for key in pairs(profs) do keys[#keys + 1] = key end
     table.sort(keys, function(a, b) return tostring(profs[a].name) < tostring(profs[b].name) end)
     if #keys == 0 then
-        out[#out + 1] = { segs = { seg(0, 1, L.STATS_NO_PROF, "muted") } }
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_PROF_FRIEND_NONE, "muted") } }
         return out
     end
     out[#out + 1] = { segs = { seg(0, .22, L.STATS_COL_PROFESSION, "muted", "small"), seg(.23, .10, L.STATS_COL_RANK, "muted", "small", "CENTER"),

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- A friend's Professions tab said "Profession ranks arrive once this friend runs Fellowship Ledger 1.2.0 or later" for a friend on 1.2.0 or later whose character has no professions. It now says "This character has no professions." Characters with none now also say so to friends, so a friend who drops their last profession no longer keeps showing it.
+
 ## 1.3.0 - 2026-11-06
 
 ### Fixed

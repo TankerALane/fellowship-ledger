@@ -84,7 +84,8 @@ function FriendsTab.DetailLines(id, char)
         parts = shared.kills and S.Kills(sum, { total = allSum.kills or 0, rare = allSum.rareKills or 0, elite = allSum.eliteKills or 0 },
             state.range, L, true) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     else
-        parts = S.FriendProfessions(sum, char.professions, shared, L, date)
+        local friend = ns.Data.Friends()[id:match("^(.-)|") or ""]
+        parts = S.FriendProfessions(sum, char.professions, shared, L, date, friend and friend.version)
     end
     return S.Wrap(tabs, parts, layout)
 end
