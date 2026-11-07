@@ -152,27 +152,31 @@ function Me.ChainView()
     for _, e in ipairs(entries) do logSet[e.questID] = true end
     local view = { mine = {}, friends = {}, emptyLog = #entries == 0, questieMissing = source == "missing" }
 
-    -- One line per chain (two quests of one chain in the log: the later step counts).
-    local byKey, unknown = {}, {}
+    -- One line per quest in the log, named after the quest (Austin looked for "The
+    -- Family Crypt" under its chain's first quest, "Speak with Sevren"); the chain's
+    -- first quest follows when it is another quest. Two quests of one chain: two
+    -- lines, and the chain opens under the first of them only.
+    local unknown = {}
     for _, e in ipairs(entries) do
         if e.step and e.key then
-            local c = byKey[e.key]
-            if not c then
-                c = { key = e.key, name = e.chainName, total = e.total, zone = e.startZone, known = true }
-                byKey[e.key] = c
-                view.mine[#view.mine + 1] = c
-            end
-            if not c.step or e.step > c.step then c.step, c.anchor = e.step, e.questID end
+            local name = e.title
+            if e.chainName and e.chainName ~= e.title then name = string.format(L.CHAIN_PART_OF, e.title, e.chainName) end
+            view.mine[#view.mine + 1] = { key = e.key, name = name, title = e.title, step = e.step, total = e.total,
+                zone = e.startZone, known = true, anchor = e.questID }
         else
             unknown[#unknown + 1] = { known = false, title = e.title }
         end
     end
-    table.sort(view.mine, function(a, b) return tostring(a.name) < tostring(b.name) end)
+    table.sort(view.mine, function(a, b) return tostring(a.title) < tostring(b.title) end)
+    local opened = {}
     for _, c in ipairs(view.mine) do
-        c.open, c.showAll = state.chainOpen[c.key], state.chainAll[c.key]
-        if c.open then
-            c.details = ns.QuestChains.Details(c.key, c.anchor, logSet)
-            c.friendsOn = ns.QuestChainLogic.FriendsOn(friends, blocked, c.key, ns.QuestChains.FriendChains)
+        if not opened[c.key] then
+            opened[c.key] = true
+            c.open, c.showAll = state.chainOpen[c.key], state.chainAll[c.key]
+            if c.open then
+                c.details = ns.QuestChains.Details(c.key, c.anchor, logSet)
+                c.friendsOn = ns.QuestChainLogic.FriendsOn(friends, blocked, c.key, ns.QuestChains.FriendChains)
+            end
         end
     end
     for _, u in ipairs(unknown) do view.mine[#view.mine + 1] = u end

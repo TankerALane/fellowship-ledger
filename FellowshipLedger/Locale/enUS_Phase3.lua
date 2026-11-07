@@ -161,7 +161,8 @@ ns.Locale.Set({
     DETAILS_LIST = "List",
 
     -- Quest chains view with drop-downs (D-078)
-    CHAIN_MINE_TITLE = "Your chains",
+    CHAIN_MINE_TITLE = "Your quests",
+    CHAIN_PART_OF = "%s  (chain: %s)",
     CHAIN_STEP_OF = "step %d of %d",
     CHAIN_WHO = "%s (%s), step %d of %d",
     CHAIN_NO_INFO = "no chain information",

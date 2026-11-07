@@ -235,7 +235,8 @@ function M.new(opts)
         GetMapInfo = function() return { name = "Elwynn Forest", mapID = 1429 } end,
     }
     env.C_QuestLog = {
-        GetNumQuestLogEntries = function() return 2 end,
+        -- state.questLog = { { questID, title }, ... } replaces the one-quest log below.
+        GetNumQuestLogEntries = function() return state.questLog and (#state.questLog + 1) or 2 end,
         GetTitleForQuestID = function(id) return "Quest " .. id end,
         IsQuestFlaggedCompleted = function(id) return state.completed ~= nil and state.completed[id] == true end,
         GetAllCompletedQuestIDs = function()
@@ -245,6 +246,10 @@ function M.new(opts)
         end,
         GetInfo = function(i)
             if i == 1 then return { isHeader = true, title = "Elwynn" } end
+            if state.questLog then
+                local q = state.questLog[i - 1]
+                return q and { isHeader = false, questID = q[1], title = q[2] } or nil
+            end
             return { isHeader = false, questID = 54, title = "Report to Goldshire" }
         end,
     }

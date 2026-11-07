@@ -174,6 +174,33 @@ H.test("quest chains: one quest Questie cannot answer does not turn Questie off"
     H.eq(ns.QuestChains.QuestieState(), "broken")
 end)
 
+H.test("quest chains: one line per quest in the log, named after the quest", function()
+    local env, ns = boot()
+    local st = env.__state
+    st.noQuestLines, st.questieLoaded = true, true
+    st.questie = { [355] = { name = "Speak with Sevren" }, [408] = { pre = 355, name = "The Family Crypt" },
+        [427] = { name = "At War With The Scarlet Crusade", next = 370 }, [370] = { pre = 427, next = 374 }, [374] = { pre = 370 } }
+    st.questLog = { { 408, "The Family Crypt" }, { 370, "At War With The Scarlet Crusade" }, { 374, "Proof of Demise" },
+        { 405, "The Prodigal Lich" } }
+    local view = ns.MeTab.ChainView()
+    H.eq(#view.mine, 4, "every quest in the log has a line")
+    local names = {}
+    for _, c in ipairs(view.mine) do names[#names + 1] = c.known and c.name or ("?" .. c.title) end
+    H.eq(names[3], "The Family Crypt  (chain: Speak with Sevren)", table.concat(names, " | "))
+    H.eq(names[2], "Proof of Demise  (chain: At War With The Scarlet Crusade)")
+    H.eq(names[4], "?The Prodigal Lich", "a quest with no chain still shows")
+    -- Two quests of one chain: the chain opens under the first line only.
+    ns.MeTab.state.chainOpen["q:427"] = true
+    view = ns.MeTab.ChainView()
+    local opened = 0
+    for _, c in ipairs(view.mine) do if c.open then opened = opened + 1 end end
+    H.eq(opened, 1)
+    ns.MainWindow.Open("me")
+    ns.MeTab.state.mode = "chains"
+    ns.MeTab.Refresh()
+    noErrors(env)
+end)
+
 H.test("quest chain drop-down: Questie levels, starters and zones in the Me tab", function()
     local env, ns = boot()
     local st = env.__state

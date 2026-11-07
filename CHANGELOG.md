@@ -6,6 +6,7 @@
 - Quest chains: a single quest Questie could not answer (for example one of WoW Forever's own quests) turned the Questie lookup off for the whole session, so no chains showed until a reload. Now that quest just has no chain; only many failures turn it off. `/fl verify` (x:questie.db) lists the chain found for every quest in your log and the last failed query.
 
 ### Changed
+- Quest chains: one line per quest in your log, named after the quest, with its chain's first quest after it ("The Family Crypt (chain: Speak with Sevren), step 2 of 2"). Before, each chain had one line named after its first quest, so a quest could seem missing, and two quests of one chain shared a line.
 - Dungeons tab: your runs now come before your friends' totals, so a long friend list no longer pushes your runs off the screen.
 
 ## 1.5.1 - 2026-11-06
