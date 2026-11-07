@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.6.0 - 2026-11-06
 
 ### Added
 - More friend notices, each with its own switch under Settings > Notices: a friend **reached the level cap**, **finished a quest chain**, **cleared a dungeon** (one you have not seen them clear) and a **profession reached 75, 150, 225 or 300**. Like the level notices, none fire the first time a friend's character reaches you. Dungeon clears need the friend on 1.5.0 or later.
