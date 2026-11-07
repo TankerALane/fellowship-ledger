@@ -182,13 +182,16 @@ H.test("dungeon: entered, bosses, last boss completes, party class and role only
     st.instance = { "The Deadmines", "party", 1, "Normal", 5, 0, false, 36 }
     Mock.fire(env, "PLAYER_ENTERING_WORLD", false, false)
     Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
-    H.eq(today(env).dungeonsEntered, 1, "re-check in the same instance does not count twice")
+    H.eq(today(env).dungeonsEntered, nil, "not counted until 5 minutes or a boss kill")
     local run = char(env).currentRun
     H.eq(run.lastBossID, 9)
     H.eq(run.party[1].class, "PRIEST")
     H.eq(run.party[1].role, "HEALER")
     H.eq(run.party[1].name, nil)
     Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    H.eq(today(env).dungeonsEntered, 1, "a boss kill makes it a run")
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    H.eq(today(env).dungeonsEntered, 1, "re-check in the same instance does not count twice")
     H.ok(not run.completed)
     Mock.fire(env, "PLAYER_DEAD")
     Mock.advance(env, 600)
@@ -207,6 +210,41 @@ H.test("dungeon: entered, bosses, last boss completes, party class and role only
     H.eq(today(env).dungeonsCompleted, 1)
     H.eq(today(env).deaths, 1)
     H.eq(char(env).currentRun, nil)
+end)
+
+H.test("dungeon: in and straight out is not a run; 5 minutes is; old blips are cleaned", function()
+    local env, ns = boot(RETAIL)
+    local st = env.__state
+    local outside = { "Tirisfal Glades", "none", 0, "", 5, 0, false, 0 }
+    st.instance = { "Ruins of Lordaeron", "party", 1, "Normal", 5, 0, false, 2999 }
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    Mock.advance(env, 30)
+    st.instance = outside
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    H.eq(#(char(env).dungeons or {}), 0, "walked in and out: no run saved")
+    H.eq(today(env).dungeonsEntered, nil, "and nothing counted")
+    -- In for 6 minutes, no boss: counts once it passes 5 minutes, and is saved.
+    st.instance = { "Ruins of Lordaeron", "party", 1, "Normal", 5, 0, false, 2999 }
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    for _ = 1, 12 do
+        Mock.advance(env, 30)
+        ns.Trackers.byId.dungeons:OnTick()
+    end
+    H.eq(today(env).dungeonsEntered, 1, "counted after 5 minutes")
+    st.instance = outside
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    H.eq(#char(env).dungeons, 1)
+    -- Saved data from before the rule: a 1-second run is dropped once, and uncounted.
+    local c = char(env)
+    local D = ns.Trackers.byId.dungeons
+    local day = ns.Days.Key(env.time(), env.date)
+    c.dungeonBlipsDropped = nil
+    table.insert(c.dungeons, 1, { name = "Ruins of Lordaeron", entered = env.time() - 60, duration = 1, bosses = {} })
+    c.days[day].dungeonsEntered = 2
+    H.eq(D.DropBlips(c), 1)
+    H.eq(#c.dungeons, 1, "the real run stays")
+    H.eq(c.days[day].dungeonsEntered, 1)
+    H.eq(D.DropBlips(c), 0, "only once")
 end)
 
 H.test("deaths: killer level from the target, or a recent target if it was cleared", function()

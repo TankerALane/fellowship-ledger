@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Much less sharing traffic: Battle.net's frequent "friend changed" events no longer send a hello to every online friend (most of whom do not run the ledger). Only friends who just came online or switched character are greeted then; login, the 15-minute sync, the Friends tab and Sync now still greet everyone.
+- Dungeons: a run only counts once you have been inside for 5 minutes or a boss dies. Walking in and straight back out no longer adds an "entered" run, and such runs saved before are removed once (and taken off that day's count).
+
 ## 1.4.0 - 2026-11-06
 
 ### Changed

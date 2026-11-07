@@ -135,11 +135,30 @@ local function ensureLastBoss(run)
     if last ~= nil then run.lastBossID, run.bossCount, run.lookup, run.lastBossName = last or nil, count, how, lastName end
 end
 
+-- A run counts once it lasts 5 minutes or a boss dies (Austin, 2026-11-06): walking in
+-- and straight back out is not a run. Until then it is "pending": not counted, and
+-- dropped if it ends that way. Runs saved before this have no pending flag.
+local MIN_RUN_SECONDS = 300
+local function qualifies(run, t)
+    return #(run.bosses or {}) > 0 or (t - (run.entered or t)) >= MIN_RUN_SECONDS
+end
+local function countIfReady(run, t)
+    if run and run.pending and qualifies(run, t) then
+        run.pending = nil
+        Store.Count("dungeonsEntered")
+    end
+end
+
 local function closeRun(char)
     local run = char.currentRun
     if not run then return end
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
+    countIfReady(run, run.left)
+    if run.pending then -- in and out: not a run
+        char.currentRun = nil
+        return
+    end
     char.dungeons[#char.dungeons + 1] = run
     char.currentRun = nil
     Days.PruneList(char.dungeons, "entered", Store.Now(), Character.LIST_KEEP_SECONDS)
@@ -154,6 +173,7 @@ local function check()
     if instanceType == "party" then
         if run and run.instanceID == instanceID and t - (run.lastSeen or run.entered) <= RESUME_SECONDS then
             run.lastSeen = t
+            countIfReady(run, t)
             return
         end
         closeRun(char)
@@ -172,8 +192,8 @@ local function check()
             bossCount = bossCount,
             lookup = how,
             lookups = 1,
+            pending = true, -- counted as entered after 5 minutes or a boss kill
         }
-        Store.Count("dungeonsEntered")
     elseif run then
         closeRun(char)
     end
@@ -181,6 +201,11 @@ end
 
 local function complete(run, how)
     if run.completed then return end
+    countIfReady(run, Store.Now())
+    if run.pending then -- completed without a kill (a reward) still makes it a run
+        run.pending = nil
+        Store.Count("dungeonsEntered")
+    end
     run.completed = true
     run.completedBy = how
     run.completedAt = Store.Now()
@@ -188,6 +213,7 @@ local function complete(run, how)
 end
 
 local Dungeons = T.Define({ id = "dungeons" })
+Dungeons.MIN_RUN_SECONDS = MIN_RUN_SECONDS
 
 -- Runs saved without a boss list (D-085): look the list up by the dungeon's name now,
 -- and if the last boss is among the kills, the run was completed (counted on the day
@@ -216,7 +242,35 @@ function Dungeons.Repair(char)
     return fixed
 end
 
+-- Once per character: drop saved runs from before the 5-minute rule that were only
+-- a walk in and out (under 5 minutes, no boss, not completed), and take them back
+-- off that day's and that session's "entered" count.
+function Dungeons.DropBlips(char)
+    if char.dungeonBlipsDropped then return 0 end
+    char.dungeonBlipsDropped = true
+    local dropped = 0
+    local list = char.dungeons or {}
+    for i = #list, 1, -1 do
+        local run = list[i]
+        if not run.completed and #(run.bosses or {}) == 0 and (run.duration or 0) < MIN_RUN_SECONDS then
+            table.remove(list, i)
+            dropped = dropped + 1
+            local day = char.days and char.days[Days.Key(run.entered or 0, date)]
+            if day and (day.dungeonsEntered or 0) > 0 then day.dungeonsEntered = day.dungeonsEntered - 1 end
+            for _, s in ipairs(char.sessions or {}) do
+                local e = run.entered or 0
+                if s.counts and e >= (s.start or 0) and e <= (s.stop or e) then
+                    if (s.counts.dungeonsEntered or 0) > 0 then s.counts.dungeonsEntered = s.counts.dungeonsEntered - 1 end
+                    break
+                end
+            end
+        end
+    end
+    return dropped
+end
+
 function Dungeons:OnLogin()
+    Dungeons.DropBlips(Store.char)
     check()
     Dungeons.Repair(Store.char)
 end
@@ -227,6 +281,7 @@ function Dungeons:OnTick()
         local _, instanceType = GetInstanceInfo()
         if T.Plain(instanceType) == "party" then
             run.lastSeen = Store.Now()
+            countIfReady(run, run.lastSeen)
             ensureLastBoss(run)
         end
     end
@@ -266,6 +321,7 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     encounterID = T.Plain(encounterID)
     if T.Dedupe("boss:" .. tostring(encounterID), 10) then return end
     run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = Store.Now() }
+    countIfReady(run, Store.Now())
     Store.Count("bossKills")
     if not run.lastBossID and not run.lastBossName then run.lookups = 0; ensureLastBoss(run) end
     if isLastBoss(run, encounterID, T.Plain(encounterName)) then complete(run, "lastBoss") end
