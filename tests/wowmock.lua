@@ -134,6 +134,7 @@ function M.new(opts)
             if state.questieBroken then error("no such module") end
             if name ~= "QuestieDB" then return nil end
             return { QueryQuestSingle = function(id, field)
+                if state.questieErrorFor and state.questieErrorFor[id] then error("bad quest " .. tostring(id)) end
                 local q = state.questie and state.questie[id]
                 if not q then return nil end
                 if field == "preQuestSingle" then return q.pre and { q.pre } or nil end

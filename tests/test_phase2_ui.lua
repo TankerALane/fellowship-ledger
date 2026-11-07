@@ -156,6 +156,24 @@ H.test("quest chains: game data, then Questie, then a plain answer", function()
     noErrors(env)
 end)
 
+H.test("quest chains: one quest Questie cannot answer does not turn Questie off", function()
+    local env, ns = boot()
+    env.__state.noQuestLines = true
+    env.__state.questieLoaded = true
+    env.__state.questie = { [355] = { name = "Speak with Sevren" }, [408] = { pre = 355, name = "The Family Crypt" } }
+    env.__state.questieErrorFor = { [95314] = true }
+    H.eq(ns.QuestChains.Lookup(95314), nil, "the failing quest has no chain")
+    H.eq(ns.QuestChains.QuestieState(), "ready", "Questie stays on")
+    local e = ns.QuestChains.Lookup(408)
+    H.ok(e, "The Family Crypt still found")
+    H.eq(e.step, 2); H.eq(e.total, 2); H.eq(e.firstName, "Speak with Sevren")
+    H.ok(ns.QuestChains.questieErrors >= 1, "counted")
+    H.ok(ns.QuestChains.questieLastError:find("95314", 1, true))
+    -- Many failures in one session do turn it off.
+    for id = 1, ns.QuestChains.MAX_QUESTIE_ERRORS do env.__state.questieErrorFor[id] = true; ns.QuestChains.Lookup(id) end
+    H.eq(ns.QuestChains.QuestieState(), "broken")
+end)
+
 H.test("quest chain drop-down: Questie levels, starters and zones in the Me tab", function()
     local env, ns = boot()
     local st = env.__state

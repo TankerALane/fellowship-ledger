@@ -17,6 +17,12 @@ ns.QuestChains = QuestChains
 
 local questieDB
 local questieBroken = false
+-- Failed Questie queries this session. One quest Questie cannot answer (say, a WoW
+-- Forever quest its data lacks) gets no chain; only this many failures turn the
+-- Questie lookup off for the session.
+QuestChains.MAX_QUESTIE_ERRORS = 25
+QuestChains.questieErrors = 0
+QuestChains.questieLastError = nil -- for /fl verify
 
 -- "missing" | "loading" | "ready" | "broken"
 function QuestChains.QuestieState()
@@ -41,7 +47,9 @@ end
 local function questieQuery(id, field)
     local ok, value = pcall(questieDB.QueryQuestSingle, id, field)
     if not ok then
-        questieBroken = true
+        QuestChains.questieErrors = QuestChains.questieErrors + 1
+        QuestChains.questieLastError = string.format("quest %s %s: %s", tostring(id), tostring(field), tostring(value))
+        if QuestChains.questieErrors >= QuestChains.MAX_QUESTIE_ERRORS then questieBroken = true end
         return nil
     end
     return value

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- Quest chains: a single quest Questie could not answer (for example one of WoW Forever's own quests) turned the Questie lookup off for the whole session, so no chains showed until a reload. Now that quest just has no chain; only many failures turn it off. `/fl verify` (x:questie.db) lists the chain found for every quest in your log and the last failed query.
+
 ### Changed
 - Dungeons tab: your runs now come before your friends' totals, so a long friend list no longer pushes your runs off the screen.
 

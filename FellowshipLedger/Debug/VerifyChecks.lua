@@ -282,7 +282,7 @@ ns.VerifyChecks = {
     { id = "x:ui.frame", kind = "custom", area = "UI", why = "frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth)", test = "/dump CreateFrame(\"Frame\").SetResizeBounds" },
     { id = "GameTooltip", kind = "api", area = "UI", why = "hover tooltips on graphs and the minimap button", expect = "table" },
     { id = "x:ui.compartment", kind = "custom", area = "UI", why = "AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap)", test = "/dump AddonCompartmentFrame.RegisterAddon" },
-    { id = "x:questie.db", kind = "custom", area = "UI", why = "Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback)", test = "/dump QuestieLoader:ImportModule(\"QuestieDB\").QueryQuestSingle" },
+    { id = "x:questie.db", kind = "custom", area = "UI", why = "Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback); lists the chain found for each quest in the log and any failed queries", test = "/dump QuestieLoader:ImportModule(\"QuestieDB\").QueryQuestSingle" },
     { id = "C_QuestLog.GetAllCompletedQuestIDs", kind = "api", area = "Quests", why = "every quest this character completed (All completed view, D-081)" },
     { id = "GetQuestsCompleted", kind = "api", area = "Quests", why = "older form of the completed-quest list (a set of IDs); only a fallback, missing on Forever (2026-11-05)" },
     { id = "x:quest.completed", kind = "custom", area = "Quests", why = "the completed-quest list is readable, and Questie names and zones for it (D-081)", test = "/fl verify on a character that has done quests" },

@@ -440,7 +440,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth) | `/dump CreateFrame("Frame").SetResizeBounds` | PASS | PASS |
 | `GameTooltip` | api | hover tooltips on graphs and the minimap button | `/dump type(GameTooltip)` -> "table" | PASS | PASS |
 | `x:ui.compartment` | custom | AddonCompartmentFrame:RegisterAddon exists (menu entry by the minimap) | `/dump AddonCompartmentFrame.RegisterAddon` | PASS | PASS |
-| `x:questie.db` | custom | Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback) | `/dump QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle` | PASS | INFO |
+| `x:questie.db` | custom | Questie's internal QuestieDB.QueryQuestSingle is reachable (quest-chain fallback); lists the chain found for each quest in the log and any failed queries | `/dump QuestieLoader:ImportModule("QuestieDB").QueryQuestSingle` | PASS | INFO |
 
 ### Quests
 

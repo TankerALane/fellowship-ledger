@@ -284,15 +284,21 @@ custom["x:questie.db"] = function()
     local state = ns.QuestChains.QuestieState()
     local detail = "state=" .. state
     if state == "ready" then
+        -- Every quest in the log and what the chain lookup says for it.
         local okN, n = Compat.Try("C_QuestLog.GetNumQuestLogEntries")
+        local parts = {}
         for i = 1, okN and n or 0 do
             local ok, info = Compat.Try("C_QuestLog.GetInfo", i)
             if ok and type(info) == "table" and not info.isHeader and info.questID then
                 local e = ns.QuestChains.Lookup(info.questID)
-                detail = detail .. string.format("; quest %d chain %s", info.questID, e and (e.step .. "/" .. e.total .. " via " .. e.source) or "none")
-                break
+                parts[#parts + 1] = string.format("%d %s", info.questID, e and (e.step .. "/" .. e.total .. " " .. e.source) or "none")
             end
         end
+        detail = detail .. "; log: " .. (#parts > 0 and table.concat(parts, ", ") or "empty")
+    end
+    local QC = ns.QuestChains
+    if (QC.questieErrors or 0) > 0 then
+        detail = detail .. string.format("; %d failed queries, last: %s", QC.questieErrors, tostring(QC.questieLastError))
     end
     return state == "ready" and "PASS" or (state == "loading" and "INFO" or "FAIL"), detail
 end
