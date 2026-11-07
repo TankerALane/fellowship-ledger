@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.5.1 - 2026-11-06
 
 ### Fixed
 - The one-time cleanup of walk-in-and-out dungeon runs (1.5.0) only ran on the character you logged in with, so other characters kept theirs. It now runs on every character at login.
