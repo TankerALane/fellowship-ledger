@@ -39,7 +39,7 @@ ns.Locale.Set({
     DUNGEONS_RUNS = "Runs",
     DUNGEONS_NO_RUNS = "No dungeon runs in this range yet.",
     DUNGEONS_NO_FRIENDS = "None of your friends entered a dungeon in this range.",
-    DUNGEONS_FRIENDS_NOTE = "Friends share totals only, so their runs are counted, not listed.",
+    DUNGEONS_FRIENDS_NOTE = "To see which dungeons a friend ran, open their character on the Friends tab and click Dungeons.",
     DUNGEONS_FOOTER = "Click a run to see its bosses. A run counts once you are inside 5 minutes or a boss dies. Runs are kept for 90 days.",
     DUNGEONS_COMPLETED = "Completed",
     DUNGEONS_IN_PROGRESS = "In progress",
