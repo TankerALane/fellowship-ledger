@@ -95,6 +95,7 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
                     local done = rng.float() < 0.8
                     add("dungeonsEntered", 1)
                     if done then add("dungeonsCompleted", 1) end
+                    add("bossKills", done and 3 or 1) -- the made-up bosses below
                     local party = {}
                     for p = 1, 4 do party[p] = { class = rng.pick(CLASSES), role = ROLES[p + 1] or "DAMAGER" } end
                     c.dungeons[#c.dungeons + 1] = { name = rng.pick(DUNGEONS), entered = start + 600, left = start + 600 + rng.int(18, 55) * 60,

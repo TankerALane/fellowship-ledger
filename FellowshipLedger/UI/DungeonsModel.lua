@@ -1,6 +1,6 @@
 -- UI/DungeonsModel.lua
--- PURE: no WoW globals. The Dungeons tab (D-094): my runs (from each character's
--- saved runs), a summary per dungeon, and friends' totals (friends share day
+-- PURE: no WoW globals. The Dungeons tab (D-094): a summary per dungeon, my runs
+-- (from each character's saved runs), then friends' totals (friends share day
 -- counts only, so their runs are counted, not listed). Builds the tab's lines as
 -- "grid" lines for UI/Table.lua, like UI/DetailModel.lua.
 
@@ -199,22 +199,6 @@ function DungeonsModel.Lines(o)
     end
     lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
 
-    -- Friends
-    lines[#lines + 1] = { kind = "group", text = L.DUNGEONS_FRIENDS }
-    local fr = DungeonsModel.FriendRows(o.friends, o.isBlocked, o.fromKey, o.todayKey)
-    if #fr == 0 then
-        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_FRIENDS }
-    else
-        lines[#lines + 1] = { kind = "grid", rules = { { 0, 1 } }, segments = row(DungeonsModel.FRIEND_COLS,
-            { L.DCOL_FRIEND, L.DCOL_CHARACTER, L.DCOL_ENTERED, L.DCOL_COMPLETED, L.DCOL_BOSSES }, "muted", "small") }
-        for i, f in ipairs(fr) do
-            lines[#lines + 1] = { kind = "grid", shade = i % 2 == 0, segments = row(DungeonsModel.FRIEND_COLS,
-                { f.friend, nameOf(f.name, f.class), tostring(f.entered), tostring(f.completed), tostring(f.bosses) }) }
-        end
-        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_FRIENDS_NOTE }
-    end
-    lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
-
     -- Runs
     lines[#lines + 1] = { kind = "group", text = L.DUNGEONS_RUNS }
     if #runs == 0 then
@@ -266,6 +250,21 @@ function DungeonsModel.Lines(o)
                 end
             end
         end
+    end
+    lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
+    -- Friends
+    lines[#lines + 1] = { kind = "group", text = L.DUNGEONS_FRIENDS }
+    local fr = DungeonsModel.FriendRows(o.friends, o.isBlocked, o.fromKey, o.todayKey)
+    if #fr == 0 then
+        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_FRIENDS }
+    else
+        lines[#lines + 1] = { kind = "grid", rules = { { 0, 1 } }, segments = row(DungeonsModel.FRIEND_COLS,
+            { L.DCOL_FRIEND, L.DCOL_CHARACTER, L.DCOL_ENTERED, L.DCOL_COMPLETED, L.DCOL_BOSSES }, "muted", "small") }
+        for i, f in ipairs(fr) do
+            lines[#lines + 1] = { kind = "grid", shade = i % 2 == 0, segments = row(DungeonsModel.FRIEND_COLS,
+                { f.friend, nameOf(f.name, f.class), tostring(f.entered), tostring(f.completed), tostring(f.bosses) }) }
+        end
+        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_FRIENDS_NOTE }
     end
     lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_FOOTER }
     return lines, sum

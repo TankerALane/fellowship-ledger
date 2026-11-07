@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Dungeons tab: your runs now come before your friends' totals, so a long friend list no longer pushes your runs off the screen.
+
 ## 1.5.1 - 2026-11-06
 
 ### Fixed
