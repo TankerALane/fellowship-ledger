@@ -275,7 +275,9 @@ function Dungeons.DropBlips(char)
 end
 
 function Dungeons:OnLogin()
-    Dungeons.DropBlips(Store.char)
+    -- Every character on this account, not only the one logging in: a character
+    -- not played since the update would otherwise keep its old walk-in runs.
+    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c) end
     check()
     Dungeons.Repair(Store.char)
 end

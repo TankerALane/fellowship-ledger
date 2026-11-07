@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixed
+- The one-time cleanup of walk-in-and-out dungeon runs (1.5.0) only ran on the character you logged in with, so other characters kept theirs. It now runs on every character at login.
 - Dungeons: "With" is now the group at the final boss. Before, it followed the group until you left the dungeon, so people leaving after the last boss dropped out of the run. Someone who joins mid-run still counts, and leaving after the first boss no longer shrinks the group.
 
 ## 1.5.0 - 2026-11-06

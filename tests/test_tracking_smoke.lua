@@ -247,6 +247,21 @@ H.test("dungeon: in and straight out is not a run; 5 minutes is; old blips are c
     H.eq(D.DropBlips(c), 0, "only once")
 end)
 
+H.test("dungeon blips are cleaned on every character at login, not only the one playing", function()
+    local T0 = os.time({ year = 2026, month = 11, day = 6, hour = 0, min = 20 })
+    local db = { characters = { ["Alt-Elsewhere"] = { name = "Alt", realm = "Elsewhere", days = { ["2026-11-06"] = { dungeonsEntered = 2 } },
+        sessions = {}, levels = {}, dungeons = {
+            { name = "Ruins of Lordaeron", entered = T0, duration = 1, bosses = {} },
+            { name = "Ruins of Lordaeron", entered = T0 + 36000, duration = 2675, completed = true, bosses = { { name = "Rath'mael" } } },
+        } } } }
+    local env = boot(RETAIL, db)
+    local alt = env.FellowshipLedgerDB.characters["Alt-Elsewhere"]
+    H.eq(#alt.dungeons, 1, "the 1-second run on a character not logged in is gone")
+    H.eq(alt.dungeons[1].duration, 2675)
+    H.eq(alt.days["2026-11-06"].dungeonsEntered, 1)
+    H.ok(alt.dungeonBlipsDropped)
+end)
+
 H.test("dungeon group: joins count, leaving after a boss does not shrink it, frozen at the final boss", function()
     local env = boot(RETAIL)
     local st = env.__state
