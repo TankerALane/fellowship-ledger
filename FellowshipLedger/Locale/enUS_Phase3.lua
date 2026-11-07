@@ -190,6 +190,11 @@ ns.Locale.Set({
     -- Character detail views (D-081)
     DETAIL_TAB_OVERVIEW = "Overview",
     DETAIL_TAB_QUESTS = "Quests",
+    DETAIL_TAB_DUNGEONS = "Dungeons",
+    STATS_DUNGEONS_FRIEND_SUM = "%d dungeons entered, %d completed, %d bosses killed",
+    STATS_DUNGEONS_FRIEND_OLD = "Their runs show here once this friend runs Fellowship Ledger 1.5.0 or later. The totals above are shared already.",
+    STATS_DUNGEONS_FRIEND_NONE = "No dungeon runs in this range.",
+    STATS_DUNGEONS_MORE = "and %d more",
     DETAIL_TAB_GOLD = "Gold",
     DETAIL_TAB_KILLS = "Kills",
     DETAIL_TAB_PROFESSIONS = "Professions",

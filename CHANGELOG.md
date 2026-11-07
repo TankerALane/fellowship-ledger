@@ -4,6 +4,7 @@
 
 ### Added
 - **Dungeons tab**: every run of your characters (when, dungeon, character, time, bosses, deaths, who was with you by role, result), newest first. Click a run to see its bosses in the order they died, with the minutes after entering and the final boss marked. Above it: a summary per dungeon (runs, completed, best and average time, last run) and your friends' dungeon totals (entered, completed, bosses; friends share totals only). Today / This week / This month / All and a character drop-down filter it. `/fl shots` takes a picture of it too.
+- Friends tab: a **Dungeons** button on a friend's character shows their dungeon totals for the range and which dungeons they ran: when, time inside, bosses killed, deaths and whether they completed it (newest 15). Friends share this from 1.5.0; until then their page says so. Only that is shared: no boss names and nothing about who was in the group.
 
 ### Changed
 - Much less sharing traffic: Battle.net's frequent "friend changed" events no longer send a hello to every online friend (most of whom do not run the ledger). Only friends who just came online or switched character are greeted then; login, the 15-minute sync, the Friends tab and Sync now still greet everyone.

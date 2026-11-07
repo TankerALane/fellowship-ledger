@@ -11,7 +11,8 @@ ns.StatsModel = StatsModel
 
 StatsModel.TABS = { "overview", "quests", "gold", "kills", "professions", "completed" }
 StatsModel.TAB_LABEL = { overview = "DETAIL_TAB_OVERVIEW", quests = "DETAIL_TAB_QUESTS", gold = "DETAIL_TAB_GOLD",
-    kills = "DETAIL_TAB_KILLS", professions = "DETAIL_TAB_PROFESSIONS", completed = "DETAIL_TAB_COMPLETED" }
+    kills = "DETAIL_TAB_KILLS", professions = "DETAIL_TAB_PROFESSIONS", completed = "DETAIL_TAB_COMPLETED",
+    dungeons = "DETAIL_TAB_DUNGEONS" }
 StatsModel.INSET = 18
 StatsModel.QUEST_LIMIT = 10
 StatsModel.POINT_LIMIT = 10
@@ -28,7 +29,7 @@ local function pct(part, whole)
 end
 
 -- A friend's character has no All completed (the game only lists your own).
-StatsModel.FRIEND_TABS = { "overview", "quests", "gold", "kills", "professions" }
+StatsModel.FRIEND_TABS = { "overview", "quests", "gold", "kills", "professions", "dungeons" }
 
 -- The tab buttons. current: a tab id; onPick(id); tabs: TABS (default) or FRIEND_TABS.
 function StatsModel.TabLine(current, L, onPick, tabs)
@@ -386,6 +387,42 @@ function StatsModel.FriendProfessions(sum, profs, shared, L, dateFn, version)
         out[#out + 1] = { segs = { seg(0, .22, p.name or key), seg(.23, .10, string.format(L.STATS_RANK, p.rank or 0, max), "text", nil, "CENTER"),
             { x = .35, w = .25, bar = max > 0 and (p.rank or 0) / max or 0 },
             seg(.62, .38, (p.lastAt or 0) > 0 and dateFn("%m-%d, %H:%M", p.lastAt) or "", "muted") } }
+    end
+    return out
+end
+
+-- A friend's Dungeons view (D-095): their totals for the range (from day counts), then
+-- which dungeons they ran, newest first. runs: the friend character's c.runs (1.5.0+
+-- senders); fromKey: the range start day (nil = all); version: the friend's ledger.
+StatsModel.FRIEND_RUNS_SHOWN = 15
+function StatsModel.FriendDungeons(sum, runs, shared, L, dateFn, version, fromKey)
+    if not shared.dungeons then return { { segs = { seg(0, 1, L.STATS_NOT_SHARED, "muted") } } } end
+    local out = { { segs = { seg(0, 1, string.format(L.STATS_DUNGEONS_FRIEND_SUM, sum.dungeonsEntered or 0,
+        sum.dungeonsCompleted or 0, sum.bossKills or 0), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
+    local list = {}
+    for _, r in ipairs(runs or {}) do
+        if r.entered and (not fromKey or dateFn("%Y-%m-%d", r.entered) >= fromKey) then list[#list + 1] = r end
+    end
+    table.sort(list, function(a, b) return a.entered > b.entered end)
+    if #list == 0 then
+        local old = runs == nil and (version == nil or ns.Merge.CompareVersions(version, "1.5.0") == -1)
+        out[#out + 1] = { segs = { seg(0, 1, old and L.STATS_DUNGEONS_FRIEND_OLD or L.STATS_DUNGEONS_FRIEND_NONE, "muted") } }
+        return out
+    end
+    out[#out + 1] = { segs = { seg(0, .16, L.DCOL_WHEN, "muted", "small"), seg(.17, .37, L.DCOL_DUNGEON, "muted", "small"),
+        seg(.55, .10, L.DCOL_TIME, "muted", "small", "RIGHT"), seg(.66, .10, L.DCOL_BOSSES, "muted", "small", "RIGHT"),
+        seg(.77, .09, L.DCOL_DEATHS, "muted", "small", "RIGHT"), seg(.88, .12, L.DCOL_RESULT, "muted", "small") }, rules = { { 0, 1 } } }
+    for i = 1, math.min(#list, StatsModel.FRIEND_RUNS_SHOWN) do
+        local r = list[i]
+        local kills = r.kills or 0
+        out[#out + 1] = { segs = { seg(0, .16, when(dateFn, r.entered)), seg(.17, .37, r.name or "?"),
+            seg(.55, .10, ns.DungeonsModel.Minutes(r.duration), "text", nil, "RIGHT"),
+            seg(.66, .10, r.bossCount and (kills .. " / " .. r.bossCount) or tostring(kills), "text", nil, "RIGHT"),
+            seg(.77, .09, tostring(r.deaths or 0), "text", nil, "RIGHT"),
+            seg(.88, .12, r.completed and L.DUNGEONS_COMPLETED or L.DUNGEONS_NOT_DONE, r.completed and "good" or "muted") } }
+    end
+    if #list > StatsModel.FRIEND_RUNS_SHOWN then
+        out[#out + 1] = { segs = { seg(0, 1, string.format(L.STATS_DUNGEONS_MORE, #list - StatsModel.FRIEND_RUNS_SHOWN), "muted", "small") } }
     end
     return out
 end

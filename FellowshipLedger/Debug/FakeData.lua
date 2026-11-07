@@ -184,6 +184,12 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
             local spec = { name = cs[1], class = cs[2], startLevel = cs[3], playChance = 0.2 + rng.float() * 0.4 }
             local fc = makeCharacter(rng, spec, now, timeFn, dateFn)
             fc.mask = string.rep("1", #ns.TrackerList.ORDER) -- shares everything, so every friend view has data
+            -- What a 1.5.0+ friend shares of their runs (D-095).
+            fc.runs = {}
+            for _, r in ipairs(fc.dungeons or {}) do
+                fc.runs[#fc.runs + 1] = { name = r.name, entered = r.entered, duration = r.duration, completed = r.completed,
+                    kills = #(r.bosses or {}), bossCount = r.bossCount, deaths = r.deaths }
+            end
             if f.playing == cs[1] then
                 -- On this character now: just played, and its data just arrived (shows "now").
                 fc.lastSeen = now - 15

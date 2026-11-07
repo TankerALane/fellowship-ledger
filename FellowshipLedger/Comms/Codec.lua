@@ -13,6 +13,7 @@ Codec.DEFAULT_CHUNK = 200       -- bytes per addon message, header included
 Codec.MIN_CHUNK, Codec.MAX_CHUNK = 60, 255
 Codec.REASSEMBLY_TIMEOUT = 120  -- seconds before a half-received message is dropped
 Codec.MAX_SESSIONS = 60         -- sessions sent per character per DATA
+Codec.MAX_RUNS = 20             -- dungeon runs sent per character per DATA (the newest; D-095)
 Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST" }
 
 -- Escaping: the separators and "%" become %XX.
@@ -198,6 +199,22 @@ function Codec.EncodeData(key, char, shared, since)
         -- from an old sender. 1.2.x receivers skip a "p" with no key.
         if #keys == 0 then recs[#recs + 1] = "p" end
     end
+    -- Dungeon runs (1.5.0, D-095): "u,<entered>,<name>,<duration>,<completed>,<bosses>,
+    -- <bossCount>,<deaths>". Which dungeons were run, and how it went: finished runs since
+    -- `since`, the newest MAX_RUNS. No boss names and nothing about the group.
+    if shared.dungeons then
+        local runs = {}
+        local from = since and ns.Codec.SinceEpoch(since) or nil
+        for _, r in ipairs(char.dungeons or {}) do
+            if r.entered and (not from or r.entered >= from) then runs[#runs + 1] = r end
+        end
+        table.sort(runs, function(a, b) return a.entered < b.entered end)
+        for i = math.max(1, #runs - Codec.MAX_RUNS + 1), #runs do
+            local r = runs[i]
+            recs[#recs + 1] = table.concat({ "u", tostring(r.entered), Codec.Escape(r.name), tostring(r.duration or 0),
+                r.completed and "1" or "0", tostring(#(r.bosses or {})), tostring(r.bossCount or 0), tostring(r.deaths or 0) }, ",")
+        end
+    end
     local sessions = {}
     for _, s in ipairs(char.sessions or {}) do
         if not since or (s.stop or s.start or 0) >= ns.Codec.SinceEpoch(since) then sessions[#sessions + 1] = s end
@@ -258,6 +275,13 @@ function Codec.DecodeData(body)
             local name = Codec.Unescape(f[3] or "")
             profs[Codec.Unescape(f[2])] = { name = name ~= "" and name or nil, rank = tonumber(f[4]) or 0,
                 max = tonumber(f[5]) or 0, lastAt = tonumber(f[6]) or 0 }
+        elseif f[1] == "u" and tonumber(f[2]) then
+            local count = tonumber(f[7]) or 0
+            local run = { entered = tonumber(f[2]), name = Codec.Unescape(f[3] or ""), duration = tonumber(f[4]) or 0,
+                completed = f[5] == "1" or nil, kills = math.max(0, tonumber(f[6]) or 0), bossCount = count > 0 and count or nil,
+                deaths = tonumber(f[8]) or 0 }
+            out.runs = out.runs or {}
+            out.runs[#out.runs + 1] = run
         elseif f[1] == "s" and tonumber(f[2]) then
             out.sessions[#out.sessions + 1] = { start = tonumber(f[2]), played = tonumber(f[3]) or 0, active = tonumber(f[4]) or 0,
                 levelStart = tonumber(f[5]), levelEnd = tonumber(f[6]), counts = decodeCounts(f, 7) }

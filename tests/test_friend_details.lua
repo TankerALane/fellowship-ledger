@@ -79,10 +79,11 @@ H.test("friends: quests are counts plus their chains; kills without types; profe
     H.ok(textOf(S.FriendProfessions({}, profs, {}, L, DATE)):find("does not share", 1, true))
 end)
 
-H.test("friends: the tab row has no All completed", function()
+H.test("friends: the tab row has no All completed, and has Dungeons", function()
     local line = S.TabLine("overview", L, function() end, S.FRIEND_TABS)
-    H.eq(#line.segments, 5)
+    H.eq(#line.segments, 6)
     H.eq(line.segments[5].button.label, "Professions")
+    H.eq(line.segments[6].button.label, "Dungeons")
 end)
 
 H.test("profession ranks travel with Professions; older data and junk are fine", function()
@@ -241,4 +242,59 @@ H.test("a friend without Questie: their chains are worked out here from their qu
     H.ok(table.concat(seen, " | "):find("Gnolls", 1, true), table.concat(seen, " | "))
     local chat = table.concat(st.chat, "\n")
     H.ok(not chat:find("failed") and not chat:find("problem"), chat)
+end)
+
+H.test("dungeon runs travel with Dungeons: which dungeon, when, time, result, bosses, deaths only", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    local C, M = ns2.Codec, ns2.Merge
+    local E = os.time({ year = 2026, month = 11, day = 6, hour = 10, min = 2 })
+    local char = { class = "PRIEST", level = 20, days = {}, levels = {}, sessions = {}, dungeons = {
+        { name = "Ruins of Lordaeron", entered = E, duration = 2675, completed = true, bossCount = 6, deaths = 0,
+          party = { { class = "MAGE", role = "DAMAGER", name = "Someone" } },
+          bosses = { { name = "Witherfang", at = E + 300 }, { name = "Rath'mael", at = E + 1860 } } },
+        { name = "Ragefire Chasm, Orgrimmar", entered = E - 3 * 86400, duration = 2278, deaths = 1, bosses = {} },
+    } }
+    local body = C.EncodeData("Tara-R", char, { time = true, dungeons = true }, nil)
+    H.ok(not body:find("Witherfang", 1, true) and not body:find("Someone", 1, true) and not body:find("MAGE,", 1, true),
+        "no boss names, nothing about the group: " .. body)
+    local d = C.DecodeData(body)
+    H.eq(#d.runs, 2)
+    H.eq(d.runs[2].name, "Ruins of Lordaeron"); H.eq(d.runs[2].kills, 2); H.eq(d.runs[2].bossCount, 6)
+    H.ok(d.runs[2].completed); H.eq(d.runs[2].duration, 2675)
+    H.eq(d.runs[1].name, "Ragefire Chasm, Orgrimmar", "a comma in a name survives"); H.eq(d.runs[1].completed, nil); H.eq(d.runs[1].deaths, 1)
+    H.eq(C.DecodeData(C.EncodeData("Tara-R", char, { time = true }, nil)).runs, nil, "not shared, not sent")
+    H.eq(#C.DecodeData(C.EncodeData("Tara-R", char, { time = true, dungeons = true }, "2026-11-06")).runs, 1, "only runs since")
+    -- Merge: upsert by entry time, cleared when Dungeons stops being shared.
+    local mask = string.rep("1", #ns2.TrackerList.ORDER)
+    local friend = { characters = {} }
+    d.mask = mask
+    M.Data(friend, d, "2026-11-06", "2026-08-09", E + 5000)
+    local c = friend.characters["Tara-R"]
+    H.eq(#c.runs, 2)
+    local again = C.DecodeData(C.EncodeData("Tara-R", char, { time = true, dungeons = true }, "2026-11-06"))
+    again.mask = mask
+    M.Data(friend, again, "2026-11-06", "2026-08-09", E + 6000)
+    H.eq(#c.runs, 2, "a later DATA with fewer runs keeps the others")
+    local off = C.DecodeData(C.EncodeData("Tara-R", char, { time = true }, nil))
+    off.mask = string.rep("0", #ns2.TrackerList.ORDER)
+    M.Data(friend, off, "2026-11-06", "2026-08-09", E + 7000)
+    H.eq(c.runs, nil, "cleared when not shared")
+end)
+
+H.test("a friend's Dungeons view: totals, runs, and older versions told apart", function()
+    local DATE = os.date
+    local E = os.time({ year = 2026, month = 11, day = 6, hour = 10, min = 2 })
+    local runs = { { name = "Ruins of Lordaeron", entered = E, duration = 2675, completed = true, kills = 6, bossCount = 6, deaths = 0 },
+        { name = "Ragefire Chasm", entered = E - 40000, duration = 2278, kills = 2, deaths = 1 } }
+    local sum = { dungeonsEntered = 2, dungeonsCompleted = 1, bossKills = 8 }
+    local text = textOf(S.FriendDungeons(sum, runs, ALL, L, DATE, "1.5.0"))
+    H.ok(text:find("2 dungeons entered, 1 completed, 8 bosses killed", 1, true), text)
+    H.ok(text:find("Ruins of Lordaeron | 45m | 6 / 6 | 0 | Completed", 1, true), text)
+    H.ok(text:find("Ragefire Chasm | 38m | 2 | 1 | Not finished", 1, true), text)
+    H.ok(text:find("Ruins", 1, true) < text:find("Ragefire", 1, true), "newest first")
+    H.ok(textOf(S.FriendDungeons(sum, nil, ALL, L, DATE, "1.4.0")):find("1.5.0 or later", 1, true), "older friend")
+    H.ok(textOf(S.FriendDungeons(sum, nil, ALL, L, DATE, "1.5.0")):find("No dungeon runs", 1, true), "new friend, no runs")
+    H.ok(textOf(S.FriendDungeons(sum, runs, {}, L, DATE, "1.5.0")):find("does not share", 1, true))
+    H.eq(S.FRIEND_TABS[#S.FRIEND_TABS], "dungeons")
 end)

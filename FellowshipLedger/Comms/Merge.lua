@@ -10,6 +10,7 @@ ns.Merge = Merge
 
 Merge.KEEP_DAYS = 90
 Merge.MILESTONE_EVERY = 10
+Merge.MAX_RUNS_KEPT = 50
 
 -- friends: db.friends; peer: { id, kind, name, tag, online }
 function Merge.Friend(friends, peer)
@@ -104,6 +105,23 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
         c.professions = data.professions or c.professions
     else
         c.professions = nil
+    end
+    -- Dungeon runs (1.5.0+ senders, D-095): upsert by entry time, keep 90 days and the
+    -- newest MAX_RUNS_KEPT; cleared when Dungeons is not shared.
+    if ns.Codec.MaskToSet(data.mask or "").dungeons then
+        if data.runs then
+            local byEntered = {}
+            for _, r in ipairs(c.runs or {}) do byEntered[r.entered] = r end
+            for _, r in ipairs(data.runs) do byEntered[r.entered] = r end
+            local from = ns.Codec.SinceEpoch(cutoffKey)
+            local list = {}
+            for _, r in pairs(byEntered) do if r.entered >= from then list[#list + 1] = r end end
+            table.sort(list, function(a, b) return a.entered < b.entered end)
+            while #list > Merge.MAX_RUNS_KEPT do table.remove(list, 1) end
+            c.runs = list
+        end
+    else
+        c.runs = nil
     end
     -- sessions: upsert by start time, keep sorted
     c.sessions = c.sessions or {}
