@@ -16,6 +16,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 CONFIG = ROOT / "tools" / "sync.config.json"
@@ -137,6 +138,15 @@ def main():
     steps = shots.get("steps") or []
     pics = sorted((p for p in (game / "Screenshots").glob("WoWScrnShot_*")
                    if p.stat().st_mtime >= shots.get("at", 0) - 5), key=lambda p: p.stat().st_mtime)
+    # Pictures taken after the saved run ended belong to a run the game has not
+    # written yet (no /reload since): matching them to the old steps would name
+    # every picture wrong.
+    last_at = max((s.get("at") or 0 for s in steps), default=shots.get("at", 0))
+    newer = [p for p in pics if p.stat().st_mtime > last_at + 60]
+    if newer:
+        raise SystemExit(f"{len(newer)} screenshot(s) are newer than the saved /fl shots run "
+                         f"(saved {time.strftime('%m-%d %H:%M', time.localtime(last_at))}). "
+                         "Type /reload in the game so it saves the new run, then run this again.")
     if len(pics) < len(steps):
         raise SystemExit(f"{len(steps)} steps but only {len(pics)} screenshots since the run in {game / 'Screenshots'}")
     pics = pics[-len(steps):]  # the newest ones: an earlier run may also be in the window
