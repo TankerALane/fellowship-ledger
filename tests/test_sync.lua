@@ -436,3 +436,39 @@ H.test("friend-list events greet only friends who came online or switched charac
     S.SyncAll(false)
     H.eq(greeted, 2)
 end)
+
+H.test("a friend finishing a quest chain is announced, with a switch for each kind", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local S = A.__ns.Sync
+    local before = { ["q:355"] = { step = 2, total = 2, name = "Speak with Sevren" }, ["q:427"] = { step = 2, total = 4, name = "War" },
+        ["q:9"] = { step = 3, total = 3, name = "Still here" } }
+    local after = { ["q:427"] = { step = 3, total = 4 }, ["q:9"] = { step = 3, total = 3 } }
+    H.eq(table.concat(S.FinishedChains(before, after), ","), "Speak with Sevren", "last step and gone from the log")
+    H.eq(S.MilestoneText({ kind = "chain", character = "Cain Ratt", chain = "Speak with Sevren" }, "Hamlet"),
+        "Cain Ratt (Hamlet) finished the Speak with Sevren chain!")
+    H.eq(S.MilestoneText({ kind = "profession", character = "Cain", rank = 150, profession = "Mining" }, "Hamlet"),
+        "Cain (Hamlet) reached 150 Mining!")
+    H.eq(S.MilestoneText({ kind = "dungeon", character = "Cain", dungeon = "Ragefire Chasm" }, "Hamlet"), "Cain (Hamlet) cleared Ragefire Chasm!")
+    H.eq(S.MilestoneText({ kind = "maxlevel", character = "Cain", level = 60 }, "Hamlet"), "Cain (Hamlet) reached the level cap, 60!")
+    local st = A.FellowshipLedgerDB.settings
+    H.eq(st.friendToastsChains, true); H.eq(st.friendToastsDungeons, true); H.eq(st.friendToastsProfessions, true)
+    H.eq(st.friendToastsMaxLevel, true)
+end)
+
+H.test("a friend's cleared dungeon reaches you as a notice; switched off, it does not", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    giveData(B, 3)
+    network({ A, B }, 30)
+    local bob = B.FellowshipLedgerDB.characters["Bob-Realm"]
+    bob.dungeons = bob.dungeons or {}
+    bob.dungeons[#bob.dungeons + 1] = { name = "Shadowfang Keep", entered = NOW + 10, duration = 1800, completed = true, bosses = {} }
+    bob.days[os.date("%Y-%m-%d", NOW)].dungeonsCompleted = 1
+    network({ A, B }, 65) -- Bob's live update carries today's runs
+    H.ok(Mock.chatContains(A, "Bob (Bob) cleared Shadowfang Keep!"), table.concat(A.__state.chat, " | "))
+    A.FellowshipLedgerDB.settings.friendToastsDungeons = false
+    bob.dungeons[#bob.dungeons + 1] = { name = "Wailing Caverns", entered = NOW + 20, duration = 1800, completed = true, bosses = {} }
+    bob.days[os.date("%Y-%m-%d", NOW)].dungeonsCompleted = 2
+    network({ A, B }, 65)
+    H.ok(not Mock.chatContains(A, "cleared Wailing Caverns"), "switched off")
+end)

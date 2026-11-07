@@ -144,16 +144,58 @@ Transport.handlers.Q = function(peer, body)
     Sync.SendData(peer, Codec.DecodeRequest(body).since)
 end
 
+-- A friend's chains as { key = { step, total, name } } (theirs plus the ones worked out
+-- here from their quest log), for the "finished a chain" notice.
+local function chainState(c)
+    if not c or not ns.QuestChains then return nil end
+    local ok, chains = pcall(ns.QuestChains.FriendChains, c)
+    if not ok or type(chains) ~= "table" then return nil end
+    local out = {}
+    for key, ch in pairs(chains) do out[key] = { step = ch.step, total = ch.total, name = ch.name or ch.firstName } end
+    return out
+end
+
+-- Chains that were on their last step and are gone from the log now. (Abandoning the
+-- last quest looks the same; the game does not tell us which.)
+function Sync.FinishedChains(before, after)
+    local out = {}
+    for key, ch in pairs(before or {}) do
+        if ch.step and ch.total and ch.step >= ch.total and not (after or {})[key] then out[#out + 1] = ch.name or key end
+    end
+    table.sort(out)
+    return out
+end
+
+local TOAST_SETTING = { level = "friendToasts", maxlevel = "friendToastsMaxLevel", chain = "friendToastsChains",
+    dungeon = "friendToastsDungeons", profession = "friendToastsProfessions" }
+
+function Sync.MilestoneText(e, friendName)
+    if e.kind == "maxlevel" then return string.format(L.FRIEND_MILESTONE_MAX, e.character, friendName, e.level) end
+    if e.kind == "chain" then return string.format(L.FRIEND_MILESTONE_CHAIN, e.character, friendName, e.chain) end
+    if e.kind == "dungeon" then return string.format(L.FRIEND_MILESTONE_DUNGEON, e.character, friendName, e.dungeon) end
+    if e.kind == "profession" then return string.format(L.FRIEND_MILESTONE_PROF, e.character, friendName, e.rank, e.profession) end
+    return string.format(L.FRIEND_MILESTONE, e.character, friendName, e.level)
+end
+
 Transport.handlers.D = function(peer, body)
     local data = Codec.DecodeData(body)
     if not data then return end
     local friend = friendRecord(peer)
     local today = ns.Store.Today()
     local cutoff = ns.Days.Shift(today, -(Merge.KEEP_DAYS - 1), time, date)
+    local known = friend.characters[data.key]
+    local chainsBefore = known and chainState(known)
     local events = Merge.Data(friend, data, today, cutoff, now())
-    if ns.db.settings.friendToasts then
-        for _, e in ipairs(events) do
-            ns.Toast.Show(L.FRIEND_MILESTONE_TITLE, { string.format(L.FRIEND_MILESTONE, e.character, friend.name or peer.id, e.level) })
+    -- Finished chains (D-098): only while Quests is shared, and only for a character we knew.
+    if chainsBefore and Codec.MaskToSet(data.mask or "").quests then
+        local c = friend.characters[data.key]
+        for _, name in ipairs(Sync.FinishedChains(chainsBefore, chainState(c))) do
+            events[#events + 1] = { kind = "chain", character = c.display or c.name or data.key, chain = name }
+        end
+    end
+    for _, e in ipairs(events) do
+        if ns.db.settings[TOAST_SETTING[e.kind] or "friendToasts"] then
+            ns.Toast.Show(L.FRIEND_MILESTONE_TITLE, { Sync.MilestoneText(e, friend.name or peer.id) })
         end
     end
     if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
@@ -273,6 +315,11 @@ function Sync.Start()
     started = true
     Sync.startedAt = now()
     Merge.firstLastNames = ns.Compat.flavor == "Forever"
+    -- The level cap, for the "reached the level cap" notice (D-098). Unverified on both
+    -- clients (VerifyChecks): without either, that notice is simply never shown.
+    local okMax, maxLevel = ns.Compat.Try("GetMaxLevelForPlayerExpansion")
+    if not (okMax and type(maxLevel) == "number" and maxLevel > 0) then maxLevel = ns.Compat.Resolve("MAX_PLAYER_LEVEL") end
+    Merge.maxLevel = type(maxLevel) == "number" and maxLevel > 0 and maxLevel or nil
     Transport.Start()
     if ns.Compat.IsDisabled("comms") then return end
     Friends.Refresh()

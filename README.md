@@ -29,7 +29,7 @@ Type **`/fl`**, or click the minimap button.
 - **Friends:** friends who run the ledger, grouped under their Battle.net name, sortable by any column; hover a character for details, or click it to open it like your own: their levels, totals, gold by source, kills, quest chains and profession ranks (whatever they share). **This week** gives a summary, and **Sync now** shares right away. If a friend runs a newer version, you get one reminder to update.
 - **Graphs:** levels per session, time per level, quests per day, gold per session and XP per hour, with tooltips. Pick a character, and **Compare** with any other, yours or a friend's, from drop-downs grouped by friend.
 - **Dungeons:** every run of your characters (when, how long, bosses, deaths, who was with you by role, completed or not), opening to its bosses with the minutes after entering each died; a summary per dungeon with the best and average time; and your friends' dungeon totals. A run counts once you are inside 5 minutes or a boss dies.
-- **Settings:** tracking and sharing switches, the Ledger (parchment), Leather (dark) or Plain look, text size, scale, colorblind-safe colors (on by default), notices, the block list and recommended addons.
+- **Settings:** tracking and sharing switches, the Ledger (parchment), Leather (dark) or Plain look, text size, scale, colorblind-safe colors (on by default), notices (your level-ups and session summary; friends reaching level 10, 20, ... and the level cap, finishing a quest chain, clearing a dungeon, profession milestones), the block list and recommended addons.
 
 ### Screenshots
 

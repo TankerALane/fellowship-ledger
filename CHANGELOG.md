@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- More friend notices, each with its own switch under Settings > Notices: a friend **reached the level cap**, **finished a quest chain**, **cleared a dungeon** (one you have not seen them clear) and a **profession reached 75, 150, 225 or 300**. Like the level notices, none fire the first time a friend's character reaches you. Dungeon clears need the friend on 1.5.0 or later.
+
 ### Fixed
 - Quest chains: a single quest Questie could not answer (for example one of WoW Forever's own quests) turned the Questie lookup off for the whole session, so no chains showed until a reload. Now that quest just has no chain; only many failures turn it off. `/fl verify` (x:questie.db) lists the chain found for every quest in your log and the last failed query.
 

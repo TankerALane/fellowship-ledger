@@ -273,6 +273,8 @@ ns.VerifyChecks = {
     { id = "Settings.RegisterAddOnCategory", kind = "api", area = "UI", why = "Options panel entry" },
     { id = "Settings.OpenToCategory", kind = "api", area = "UI", why = "open our Options page" },
     { id = "AddonCompartmentFrame", kind = "api", area = "UI", why = "addon compartment menu entry", expect = "table" },
+    { id = "GetMaxLevelForPlayerExpansion", kind = "api", area = "Friends", why = "the level cap, for the 'friend reached the level cap' notice (D-098)" },
+    { id = "MAX_PLAYER_LEVEL", kind = "api", area = "Friends", why = "fallback level cap for the same notice", expect = "number" },
     { id = "MenuUtil.CreateContextMenu", kind = "api", area = "UI", why = "right-click menus; the Graphs character and Compare drop-downs" },
     { id = "x:graphs.menu", kind = "custom", area = "UI", why = "the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle", test = "open Graphs, click the character name or Compare, then /fl verify" },
     { id = "CreateColor", kind = "api", area = "UI", why = "colors" },

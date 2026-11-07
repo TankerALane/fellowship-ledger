@@ -130,6 +130,34 @@ H.test("merge stores friend data and raises level milestones", function()
     H.eq(f.characters["Vel-Testrealm"].days["2026-01-01"], nil, "days past 90 are not kept")
 end)
 
+H.test("friend milestones: level cap, profession ranks, dungeon clears", function()
+    local ns = ns_()
+    local M = ns.Merge
+    local f = M.Friend({}, { id = "bn:Kim#1", kind = "bnet", name = "Kim" })
+    local mask = string.rep("1", #ns.TrackerList.ORDER)
+    local function data(level, profRank, runs)
+        return { key = "Vel-R", class = "MAGE", level = level, mask = mask, days = {}, levels = {}, sessions = {}, chains = {},
+            professions = { ["186"] = { name = "Mining", rank = profRank, max = 300 } }, runs = runs }
+    end
+    local E = 1793988137
+    H.eq(#M.Data(f, data(58, 70, nil), "2026-11-06", "2026-08-09", 1), 0, "first sight: nothing")
+    M.maxLevel = 60
+    local ev = M.Data(f, data(60, 151, { { name = "Ruins of Lordaeron", entered = E, completed = true },
+        { name = "Ragefire Chasm", entered = E - 9000 } }), "2026-11-06", "2026-08-09", 2)
+    local kinds = {}
+    for _, e in ipairs(ev) do kinds[#kinds + 1] = e.kind .. ":" .. tostring(e.level or e.rank or e.dungeon) end
+    table.sort(kinds)
+    H.eq(table.concat(kinds, ","), "dungeon:Ruins of Lordaeron,maxlevel:60,profession:150",
+        "the cap replaces the every-10 notice; 75 and 150 crossed: only 150; an unfinished run is no clear")
+    -- The same clear again, or a dungeon cleared before: no notice.
+    ev = M.Data(f, data(60, 151, { { name = "Ruins of Lordaeron", entered = E, completed = true },
+        { name = "Ruins of Lordaeron", entered = E + 9000, completed = true } }), "2026-11-06", "2026-08-09", 3)
+    H.eq(#ev, 0)
+    M.maxLevel = nil
+    ev = M.Data(f, data(70, 151, nil), "2026-11-06", "2026-08-09", 4)
+    H.eq(ev[1].kind, "level"); H.eq(ev[1].level, 70, "no known cap: a plain level notice")
+end)
+
 H.test("weekly summary per friend, blocked friends left out", function()
     local ns = ns_()
     local fake = ns.FakeData.Generate(os.time({ year = 2026, month = 11, day = 4, hour = 12 }), os.time, os.date)

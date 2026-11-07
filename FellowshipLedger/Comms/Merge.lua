@@ -10,6 +10,8 @@ ns.Merge = Merge
 
 Merge.KEEP_DAYS = 90
 Merge.MILESTONE_EVERY = 10
+Merge.PROFESSION_CAPS = { 75, 150, 225, 300 } -- profession milestone ranks (D-098)
+Merge.maxLevel = nil -- the level cap on this client, set at login (Comms/Sync.lua); nil = unknown
 Merge.MAX_RUNS_KEPT = 50
 
 -- friends: db.friends; peer: { id, kind, name, tag, online }
@@ -60,11 +62,17 @@ function Merge.Hello(friend, hello, now)
     end
 end
 
+-- Level milestones: every MILESTONE_EVERY levels, and the level cap as its own kind
+-- (instead of the every-10 one at the same level).
 local function milestones(name, old, new)
     local out = {}
     if not old or not new or new <= old then return out end
     for lvl = old + 1, new do
-        if lvl % Merge.MILESTONE_EVERY == 0 then out[#out + 1] = { character = name, level = lvl } end
+        if Merge.maxLevel and lvl == Merge.maxLevel then
+            out[#out + 1] = { kind = "maxlevel", character = name, level = lvl }
+        elseif lvl % Merge.MILESTONE_EVERY == 0 then
+            out[#out + 1] = { kind = "level", character = name, level = lvl }
+        end
     end
     return out
 end
@@ -78,6 +86,14 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
         friend.characters[data.key] = c
     end
     local oldLevel = c.level
+    -- What we knew before, for the milestones (D-098).
+    local oldRanks
+    if c.professions then
+        oldRanks = {}
+        for key, p in pairs(c.professions) do oldRanks[key] = p.rank or 0 end
+    end
+    local cleared = {}
+    for _, r in ipairs(c.runs or {}) do if r.completed and r.name then cleared[r.name] = true end end
     c.name = data.key:match("^([^%-]+)") or data.key
     c.realm = data.key:match("%-(.+)$")
     -- Forever: the key is "First-Last" (D-064), so show "First Last".
@@ -140,7 +156,30 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     end
     friend.syncedThrough = latest
     if isNew then return {} end
-    return milestones(c.display or c.name, oldLevel, c.level)
+    local name = c.display or c.name
+    local events = milestones(name, oldLevel, c.level)
+    -- Professions: the highest cap crossed since the last DATA.
+    if oldRanks and c.professions then
+        for key, p in pairs(c.professions) do
+            local before, now_ = oldRanks[key], p.rank or 0
+            if before then
+                local hit
+                for _, cap in ipairs(Merge.PROFESSION_CAPS) do
+                    if before < cap and now_ >= cap then hit = cap end
+                end
+                if hit then events[#events + 1] = { kind = "profession", character = name, profession = p.name or key, rank = hit } end
+            end
+        end
+    end
+    -- Dungeons: a completed run of a dungeon not seen completed before. A regular sync
+    -- carries only the last day or two of runs, so this does not replay old clears.
+    for _, r in ipairs(data.runs or {}) do
+        if r.completed and r.name and not cleared[r.name] then
+            cleared[r.name] = true
+            events[#events + 1] = { kind = "dungeon", character = name, dungeon = r.name }
+        end
+    end
+    return events
 end
 
 -- Weekly summary per friend (last 7 days): { name, levels, quests, dungeons, active }.

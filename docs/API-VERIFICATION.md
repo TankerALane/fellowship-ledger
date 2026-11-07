@@ -431,6 +431,18 @@ These come from addons already installed in Austin's game folders. They are good
 | `Settings.RegisterAddOnCategory` | api | Options panel entry | `/dump type(Settings.RegisterAddOnCategory)` -> "function" | PASS | PASS |
 | `Settings.OpenToCategory` | api | open our Options page | `/dump type(Settings.OpenToCategory)` -> "function" | PASS | PASS |
 | `AddonCompartmentFrame` | api | addon compartment menu entry | `/dump type(AddonCompartmentFrame)` -> "table" | PASS | PASS |
+
+### Friends
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `GetMaxLevelForPlayerExpansion` | api | the level cap, for the 'friend reached the level cap' notice (D-098) | `/dump type(GetMaxLevelForPlayerExpansion)` -> "function" | ? | ? |
+| `MAX_PLAYER_LEVEL` | api | fallback level cap for the same notice | `/dump type(MAX_PLAYER_LEVEL)` -> "number" | ? | ? |
+
+### UI
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
 | `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
 | `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | ? |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
