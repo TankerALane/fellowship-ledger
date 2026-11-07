@@ -209,6 +209,11 @@ local function complete(run, how)
     run.completed = true
     run.completedBy = how
     run.completedAt = Store.Now()
+    -- The group at the final boss is the run's group: groups often break up before
+    -- anyone leaves the dungeon (Austin, 2026-11-06). Frozen from here on.
+    local party = partySnapshot()
+    if #party > 0 then run.party = party end
+    run.partyFrozen = true
     Store.Count("dungeonsCompleted")
 end
 
@@ -290,12 +295,26 @@ end
 Dungeons.events.PLAYER_ENTERING_WORLD = function() check() end
 Dungeons.events.ZONE_CHANGED_NEW_AREA = function() check() end
 
+-- Group changes during a run. Joins always count (a late arrival was in the run);
+-- after the first boss, someone leaving no longer shrinks the group; once the
+-- run is completed the group is frozen, and only a name opt-in that arrives late
+-- is filled in (matched by class and role).
 local function refreshParty()
     local run = Store.char and Store.char.currentRun
-    if run then
-        local party = partySnapshot()
-        if #party > 0 then run.party = party end
+    if not run then return end
+    local party = partySnapshot()
+    if run.partyFrozen then
+        for _, p in ipairs(party) do
+            if p.name then
+                for _, q in ipairs(run.party or {}) do
+                    if not q.name and q.class == p.class and q.role == p.role then q.name = p.name break end
+                end
+            end
+        end
+        return
     end
+    if #(run.bosses or {}) > 0 and #party < #(run.party or {}) then return end
+    if #party > 0 then run.party = party end
 end
 Dungeons.events.GROUP_ROSTER_UPDATE = refreshParty
 ns.DungeonsRefreshParty = refreshParty -- called when a party member's name opt-in arrives
@@ -321,6 +340,10 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     encounterID = T.Plain(encounterID)
     if T.Dedupe("boss:" .. tostring(encounterID), 10) then return end
     run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = Store.Now() }
+    if not run.partyFrozen then
+        local party = partySnapshot() -- the group that killed this boss
+        if #party > 0 then run.party = party end
+    end
     countIfReady(run, Store.Now())
     Store.Count("bossKills")
     if not run.lastBossID and not run.lastBossName then run.lookups = 0; ensureLastBoss(run) end

@@ -247,6 +247,42 @@ H.test("dungeon: in and straight out is not a run; 5 minutes is; old blips are c
     H.eq(D.DropBlips(c), 0, "only once")
 end)
 
+H.test("dungeon group: joins count, leaving after a boss does not shrink it, frozen at the final boss", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    st.units.party1 = { class = "PRIEST", role = "HEALER", level = 20 }
+    st.ejInstance = 63
+    st.ejBosses = { { name = "Rhahk'Zor", id = 1 }, { name = "Captain Cookie", id = 9 } }
+    st.instance = { "The Deadmines", "party", 1, "Normal", 5, 0, false, 36 }
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    local run = char(env).currentRun
+    H.eq(#run.party, 1)
+    st.units.party2 = { class = "WARRIOR", role = "TANK", level = 21 }
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    H.eq(#run.party, 2, "a late arrival joins the run's group")
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    st.units.party2 = nil
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    H.eq(#run.party, 2, "leaving after a boss does not shrink it")
+    st.units.party2 = { class = "MAGE", role = "DAMAGER", level = 20 }
+    st.units.party3 = { class = "ROGUE", role = "DAMAGER", level = 20 }
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    H.eq(#run.party, 3, "joins still count")
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
+    H.ok(run.completed)
+    H.eq(#run.party, 3, "the group at the final boss")
+    st.units.party1, st.units.party2, st.units.party3 = nil, nil, nil
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    st.units.party1 = { class = "HUNTER", role = "DAMAGER", level = 30 }
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    H.eq(#run.party, 3, "frozen after the final boss: the group breaking up or a new one changes nothing")
+    H.eq(run.party[1].class, "PRIEST")
+    st.instance = { "Westfall", "none", 0, "", 5, 0, false, 0 }
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    H.eq(#char(env).dungeons[1].party, 3, "saved with that group")
+end)
+
 H.test("deaths: killer level from the target, or a recent target if it was cleared", function()
     local env = boot(RETAIL)
     local st = env.__state

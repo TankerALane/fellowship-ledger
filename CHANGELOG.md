@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Dungeons: "With" is now the group at the final boss. Before, it followed the group until you left the dungeon, so people leaving after the last boss dropped out of the run. Someone who joins mid-run still counts, and leaving after the first boss no longer shrinks the group.
+
 ## 1.5.0 - 2026-11-06
 
 ### Added
