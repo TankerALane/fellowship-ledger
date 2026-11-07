@@ -436,8 +436,8 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `GetMaxLevelForPlayerExpansion` | api | the level cap, for the 'friend reached the level cap' notice (D-098) | `/dump type(GetMaxLevelForPlayerExpansion)` -> "function" | ? | ? |
-| `MAX_PLAYER_LEVEL` | api | fallback level cap for the same notice | `/dump type(MAX_PLAYER_LEVEL)` -> "number" | ? | ? |
+| `GetMaxLevelForPlayerExpansion` | api | the level cap, for the 'friend reached the level cap' notice (D-098) | `/dump type(GetMaxLevelForPlayerExpansion)` -> "function" | PASS | ? |
+| `MAX_PLAYER_LEVEL` | api | fallback level cap for the same notice | `/dump type(MAX_PLAYER_LEVEL)` -> "number" | FAIL | ? |
 
 ### UI
 
