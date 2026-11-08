@@ -146,6 +146,12 @@ function ChainModel.QuestMore(q, more, L, opts)
     if #also > 0 then items(also, #choose > 0 and L.QUEST_ALSO or L.QUEST_ITEMS) end
     if not more.seen then add(L.QUEST_ITEMS_UNSEEN, "muted")
     elseif #choose == 0 and #also == 0 then add(L.QUEST_ITEMS_NONE, "muted") end
+    -- Friends with this quest in their log (D-106).
+    if more.friends and #more.friends > 0 then
+        local names = {}
+        for _, w in ipairs(more.friends) do names[#names + 1] = string.format(L.CHAIN_WITH_LINE, w.character, w.friend) end
+        for _, l in ipairs(ChainModel.Wrap(names, ChainModel.WRAP, ", ", L.QUEST_FRIENDS_TOO)) do add(l, "good") end
+    end
     if more.done then
         local got = {}
         if (more.done.xp or 0) > 0 then got[#got + 1] = string.format(L.QUEST_XP, F.Number(more.done.xp)) end
@@ -199,7 +205,7 @@ local function body(c, L, opts)
                 seg(C.lvl, levelText(q.level), "text", nil, "CENTER"), seg(C.req, levelText(q.req), tooHigh and "bad" or "text", nil, "CENTER"),
                 seg(C.starts, starts, q.status == "log" and "muted" or "text") },
                 { shade = (i == focus) or nil, tooltip = function() return ChainModel.Tooltip(q, L) end,
-                  onClick = function() opts.onQuest(c.key, q.id) end })
+                  onClick = function() opts.onQuest(c.key, q.id, q) end })
             if isOpen then
                 local more = opts.more and opts.more(q) or nil
                 for _, l in ipairs(ChainModel.QuestMore(q, more, L, opts)) do
@@ -238,9 +244,34 @@ local function body(c, L, opts)
     return lines
 end
 
+-- "with Hamlet" / "with Hamlet +2" after the step, in green; the whole list on hover
+-- (D-106). with: FriendsModel.OnQuest rows.
+function ChainModel.WithText(with, L, goodCode)
+    if not with or #with == 0 then return nil end
+    local text = #with == 1 and string.format(L.CHAIN_WITH, with[1].friend) or string.format(L.CHAIN_WITH_MORE, with[1].friend, #with - 1)
+    return goodCode and (goodCode .. text .. "|r") or text
+end
+
+local function withTooltip(with, L)
+    if not with or #with == 0 then return nil end
+    return function()
+        local lines = {}
+        for _, w in ipairs(with) do lines[#lines + 1] = string.format(L.CHAIN_WITH_LINE, w.character, w.friend) end
+        lines[#lines + 1] = L.CHAIN_WITH_HINT
+        return L.CHAIN_WITH_TITLE, lines
+    end
+end
+
 local function head(c, L, opts, stepText, H)
-    return { kind = "grid", inset = 0, onClick = function() opts.onToggle(c.key) end, segments = {
-        seg(H.sign, c.open and "-" or "+", "muted"), seg(H.name, c.name or L.CHAIN_UNNAMED),
+    local with = ChainModel.WithText(c.withFriends, L, opts.goodCode)
+    if with then stepText = stepText .. "   " .. with end
+    return { kind = "grid", inset = 0, tooltip = withTooltip(c.withFriends, L),
+        onClick = function()
+            -- Shift-click links the log quest this line is named after (D-107).
+            if c.anchor and opts.onLink and opts.onLink(c.anchor, c.title) then return end
+            opts.onToggle(c.key)
+        end,
+        segments = { seg(H.sign, c.open and "-" or "+", "muted"), seg(H.name, c.name or L.CHAIN_UNNAMED),
         seg(H.step, stepText), seg(H.zone, c.zone or "", "muted") } }
 end
 
@@ -261,8 +292,10 @@ function ChainModel.Lines(view, L, opts)
             if c.open then for _, l in ipairs(body(c, L, opts)) do lines[#lines + 1] = l end end
         else
             local H = ChainModel.HEAD
-            lines[#lines + 1] = { kind = "grid", inset = 0, segments = { seg(H.name, c.title or "?", "muted"),
-                seg({ H.step[1], 1 - H.step[1] }, L.CHAIN_NO_INFO, "muted") } }
+            local with = ChainModel.WithText(c.withFriends, L, opts.goodCode)
+            lines[#lines + 1] = { kind = "grid", inset = 0, tooltip = withTooltip(c.withFriends, L),
+                segments = { seg(H.name, c.title or "?", "muted"),
+                seg({ H.step[1], 1 - H.step[1] }, with and (L.CHAIN_NO_INFO .. "   " .. with) or L.CHAIN_NO_INFO, "muted") } }
         end
     end
     if view.questieMissing then lines[#lines + 1] = { kind = "detail", text = L.CHAIN_QUESTIE_HINT } end

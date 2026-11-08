@@ -361,11 +361,23 @@ function StatsModel.FriendDeathsLoot(data, shared, L, skin, onToggle, version)
 end
 
 -- A friend's Quests: counts for the range and the chains they are on (titles are not shared).
-function StatsModel.FriendQuests(sum, chains, shared, L)
+-- common (D-106): quests in both your logs, { { id, name, level, zone } }, shown first
+-- when there are any; onLink(q) for shift-click.
+function StatsModel.FriendQuests(sum, chains, shared, L, common, onLink)
     local Format = ns.Format
     if not shared.quests then return { { segs = { seg(0, 1, L.STATS_NOT_SHARED, "muted") } } } end
     local out = { { segs = { seg(0, 1, string.format(L.STATS_FRIEND_QUESTS_SUM, Format.Number(sum.quests or 0),
         Format.Number(sum.questsAccepted or 0), Format.Number(sum.xp or 0)), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
+    if common and #common > 0 then
+        out[#out + 1] = { segs = { seg(0, 1, string.format(L.STATS_FRIEND_COMMON, #common), "heading") }, rules = { { 0, 1 } } }
+        for _, q in ipairs(common) do
+            out[#out + 1] = { segs = { seg(0, .56, q.name or string.format(L.STATS_QUEST_NUM, q.id), "good"),
+                seg(.56, .10, q.level and tostring(q.level) or "", "muted", nil, "CENTER"), seg(.68, .32, q.zone or "", "muted") },
+                onClick = onLink and function() onLink(q) end or nil }
+        end
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_COMMON_NOTE, "muted", "small") } }
+        out[#out + 1] = { segs = {} }
+    end
     local list = {}
     for key, c in pairs(chains or {}) do list[#list + 1] = { key = key, c = c } end
     table.sort(list, function(a, b) return tostring(a.c.name) < tostring(b.c.name) end)

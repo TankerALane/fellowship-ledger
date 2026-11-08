@@ -161,6 +161,35 @@ H.test("quest details: objective, rewards, items to choose, your turn-in", funct
     H.eq(text[#text].text, L.QUEST_ITEMS_NONE)
 end)
 
+H.test("quests in both logs: common IDs, friends on a quest, the chain line and details (D-106)", function()
+    local FM = H.pureNamespace().FriendsModel
+    H.eq(table.concat(FM.CommonQuests({ 5, 7, 9 }, { 9, 1, 5 }), ","), "5,9", "in my log's order")
+    H.eq(#FM.CommonQuests(nil, { 1 }), 0)
+    local friends = {
+        ["bn:Ham#1"] = { name = "Hamlet", characters = { ["Ca-R"] = { display = "Cain", logQuests = { 3, 4 } },
+            ["Al-R"] = { display = "Alastair", logQuests = { 3 } } } },
+        ["bn:Blk#1"] = { name = "Blocked", tag = "Blk#1", characters = { ["X-R"] = { logQuests = { 3 } } } },
+        ["bn:Old#1"] = { name = "Old", characters = { ["O-R"] = {} } },
+    }
+    local on = FM.OnQuest(friends, { ["Blk#1"] = true }, 3)
+    H.eq(#on, 2); H.eq(on[1].character, "Alastair"); H.eq(on[2].friend, "Hamlet")
+    H.eq(M.WithText(on, L), "with Hamlet +1"); H.eq(M.WithText({ on[1] }, L), "with Hamlet"); H.eq(M.WithText({}, L), nil)
+    local view = { mine = { { key = "q:1", name = "Defias", step = 3, total = 7, known = true, anchor = 3, withFriends = on } }, friends = {} }
+    local lines = M.Lines(view, L, {})
+    H.ok(textOf(lines):find("3 of 7   with Hamlet +1", 1, true), textOf(lines))
+    local title, tip = lines[2].tooltip()
+    H.eq(title, L.CHAIN_WITH_TITLE); H.eq(tip[1], "Alastair (Hamlet)")
+    -- Shift-click on the line links the quest instead of opening the chain.
+    local linked, toggled
+    lines = M.Lines(view, L, { onLink = function(id) linked = id return true end, onToggle = function() toggled = true end })
+    lines[2].onClick()
+    H.eq(linked, 3); H.eq(toggled, nil)
+    local out = M.QuestMore({ id = 3, name = "Three" }, { seen = true, friends = on }, L, {})
+    local found
+    for _, l in ipairs(out) do if l.text:find("Also in the log of: Alastair (Hamlet), Cain (Hamlet)", 1, true) then found = l end end
+    H.ok(found and found.role == "good")
+end)
+
 H.test("quest details: a click opens a quest inside its chain", function()
     local view = { mine = { { key = "q:1", name = "Defias", step = 3, total = 7, known = true, open = true, details = details(3) } },
         friends = {} }

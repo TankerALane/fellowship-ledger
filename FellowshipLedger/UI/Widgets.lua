@@ -211,6 +211,28 @@ function W.LinkItem(item)
     if okShift and shift then ns.Compat.Try("ChatEdit_InsertLink", item.link) end
 end
 
+-- A quest's chat link (D-107). GetQuestLink takes a quest ID on modern clients but a
+-- quest log index on older ones, so its link is used only when it names this quest;
+-- otherwise the standard quest link is built from the ID, level and name.
+function W.QuestLink(id, name, level)
+    id = tonumber(id)
+    if not id then return nil end
+    local ok, link = ns.Compat.Try("GetQuestLink", id)
+    if ok and type(link) == "string" and link:find("quest:" .. id .. ":", 1, true) then return link end
+    if type(name) ~= "string" or name == "" then return nil end
+    return string.format("|cffffff00|Hquest:%d:%d|h[%s]|h|r", id, tonumber(level) or 0, name)
+end
+
+-- Shift-click on a quest: put its link in the chat box. True when shift was down (the
+-- click then does nothing else).
+function W.LinkQuest(id, name, level)
+    local okShift, shift = ns.Compat.Try("IsShiftKeyDown")
+    if not (okShift and shift) then return false end
+    local link = W.QuestLink(id, name, level)
+    if link then ns.Compat.Try("ChatEdit_InsertLink", link) end
+    return true
+end
+
 function W.HideTooltip()
     if _G.GameTooltip then _G.GameTooltip:Hide() end
 end

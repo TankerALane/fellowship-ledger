@@ -132,6 +132,8 @@ function FriendsModel.Tooltip(row, char, friend, now, L, factionText)
     end
     lines[#lines + 1] = string.format(L.TIP_UPDATED, FriendsModel.Ago(now, friend.lastUpdated))
     if friend.version then lines[#lines + 1] = string.format(L.TIP_VERSION, friend.version) end
+    -- row.common: quests in both your logs (D-106).
+    if row.common and row.common > 0 then lines[#lines + 1] = string.format(L.TIP_COMMON_QUESTS, row.common) end
     return row.name, lines
 end
 
@@ -165,6 +167,38 @@ function FriendsModel.TooltipLine(f, sum, L)
     local who = (f and f.name) or "?"
     if quests == 0 and dungeons == 0 then return string.format(L.TOOLTIP_FRIEND_QUIET, who) end
     return string.format(L.TOOLTIP_FRIEND, who, quests, dungeons)
+end
+
+-- Quests in both logs (D-106): the IDs in `mine` (my current character's log) that
+-- are also in `theirs` (a friend character's shared log), in my log's order.
+function FriendsModel.CommonQuests(mine, theirs)
+    local set, out = {}, {}
+    for _, id in ipairs(theirs or {}) do set[id] = true end
+    for _, id in ipairs(mine or {}) do if set[id] then out[#out + 1] = id end end
+    return out
+end
+
+-- Friends' characters with quest `id` in their shared log, blocked ones skipped:
+-- { { friend, character, friendId, key } }, sorted by friend then character.
+function FriendsModel.OnQuest(friends, blocklist, id)
+    local out = {}
+    for fid, f in pairs(friends or {}) do
+        for key, c in pairs(f.characters or {}) do
+            if type(c.logQuests) == "table" and not FriendsModel.IsBlocked(blocklist, f, key) then
+                for _, q in ipairs(c.logQuests) do
+                    if q == id then
+                        out[#out + 1] = { friend = f.name or fid, character = c.display or c.name or key, friendId = fid, key = key }
+                        break
+                    end
+                end
+            end
+        end
+    end
+    table.sort(out, function(a, b)
+        if a.friend:lower() ~= b.friend:lower() then return a.friend:lower() < b.friend:lower() end
+        return a.character:lower() < b.character:lower()
+    end)
+    return out
 end
 
 -- Which friend has this character (key), skipping blocked ones. Returns id, friend, character.

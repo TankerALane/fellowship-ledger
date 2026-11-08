@@ -51,6 +51,19 @@ local function weeklyLines()
     return out
 end
 
+-- Quests in both your current character's log and this friend character's (D-106),
+-- with names and levels from Questie (or the game).
+function FriendsTab.Common(char)
+    local me = ns.Store.char
+    local out = {}
+    for _, id in ipairs(FriendsModel.CommonQuests(me and me.logQuests, char and char.logQuests)) do
+        local ok, info = pcall(ns.QuestChains.QuestInfo, id)
+        info = ok and info or {}
+        out[#out + 1] = { id = id, name = info.name, level = info.level, zone = info.zone }
+    end
+    return out
+end
+
 -- An opened friend's character (D-083): the same tabs as the Me tab without All
 -- completed, built from what the character shares. id: "<friend id>|<character key>".
 function FriendsTab.DetailLines(id, char)
@@ -94,7 +107,9 @@ function FriendsTab.DetailLines(id, char)
             FriendsTab.Refresh()
         end, friend and friend.version)) do parts[#parts + 1] = p end
     elseif view == "quests" then
-        parts = S.FriendQuests(sum, ns.QuestChains.FriendChains(char), shared, L)
+        parts = S.FriendQuests(sum, ns.QuestChains.FriendChains(char), shared, L, FriendsTab.Common(char), function(q)
+            W.LinkQuest(q.id, q.name, q.level)
+        end)
     elseif view == "gold" then
         parts = shared.gold and S.Gold(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "kills" then
@@ -146,7 +161,11 @@ local function lines()
             local char = friend and friend.characters and friend.characters[r.key]
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
             out[#out + 1] = { kind = "row", id = openId, cells = cells, indent = r.indent,
-                tooltip = function() return FriendsModel.Tooltip(r, char, friend, time(), L, factionText) end,
+                tooltip = function()
+                    local me = ns.Store.char
+                    r.common = #FriendsModel.CommonQuests(me and me.logQuests, char and char.logQuests)
+                    return FriendsModel.Tooltip(r, char, friend, time(), L, factionText)
+                end,
                 onClick = function()
                     state.expanded[openId] = not state.expanded[openId] or nil
                     FriendsTab.Refresh()

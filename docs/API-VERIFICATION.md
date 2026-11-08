@@ -502,6 +502,14 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:friendextras` | manual | a friend on 1.7.0 shows Recent deaths and Notable loot (blue or better) under their Overview; hover an item for its tooltip; a new blue drop gives a notice (D-105) | both on 1.7.0; the friend dies once and loots a blue; open their character | ? | ? |
 
+### Quests
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `GetQuestLink` | api | a quest's chat link; used only when it names the quest (some clients take a log index), else the link is built (D-107) | `/dump type(GetQuestLink)` -> "function" | ? | ? |
+| `m:questlink` | manual | shift-click a quest in Quest chains (or in a friend's "In both your quest logs") puts a working quest link in chat; others can click it (D-107) | open the chat box, shift-click a quest, send it, click the link | ? | ? |
+| `m:commonquests` | manual | a quest a friend also has shows "with <friend>" in Quest chains, in its details, in the friend's Quests view and their row tooltip (D-106) | both pick up the same quest; open Quest chains and the friend's Quests | ? | ? |
+
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |

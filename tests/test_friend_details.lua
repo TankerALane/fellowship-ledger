@@ -110,6 +110,26 @@ H.test("profession ranks travel with Professions; older data and junk are fine",
     H.eq(friend.characters["Vel-Realm"].professions, nil, "stopped sharing")
 end)
 
+H.test("quest links: the game's when it names the quest, else built; shift-click only (D-107)", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    local W = ns2.Widgets
+    H.eq(W.QuestLink(496, "Elixir of Suffering", 22), "|cffffff00|Hquest:496:22|h[Elixir of Suffering]|h|r", "no GetQuestLink: built")
+    env.GetQuestLink = function(id) return "|cffffff00|Hquest:8:5|h[A Rogue's Deal]|h|r" end -- a log-index client
+    H.eq(W.QuestLink(496, "Elixir of Suffering", 22), "|cffffff00|Hquest:496:22|h[Elixir of Suffering]|h|r", "wrong quest: built")
+    env.GetQuestLink = function(id) return "|cffffff00|Hquest:" .. id .. ":22|h[Real]|h|r" end
+    H.eq(W.QuestLink(496, "Elixir of Suffering", 22), "|cffffff00|Hquest:496:22|h[Real]|h|r", "the game's own")
+    H.eq(W.QuestLink(496, nil, nil), "|cffffff00|Hquest:496:22|h[Real]|h|r")
+    env.GetQuestLink = nil
+    H.eq(W.QuestLink(496, nil, nil), nil, "no name, no link")
+    local inserted
+    env.ChatEdit_InsertLink = function(l) inserted = l end
+    env.IsShiftKeyDown = function() return false end
+    H.eq(W.LinkQuest(496, "Elixir", 22), false); H.eq(inserted, nil)
+    env.IsShiftKeyDown = function() return true end
+    H.eq(W.LinkQuest(496, "Elixir", 22), true); H.eq(inserted, "|cffffff00|Hquest:496:22|h[Elixir]|h|r")
+end)
+
 H.test("Friends tab: open a fake friend's character and go through every view", function()
     local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
     env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false } }

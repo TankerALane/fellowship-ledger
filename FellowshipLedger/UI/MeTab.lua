@@ -163,13 +163,15 @@ function Me.ChainView()
     -- lines, and the chain opens under the first of them only.
     local unknown = {}
     for _, e in ipairs(entries) do
+        -- Friends with the same quest in their log (D-106).
+        local with = ns.FriendsModel.OnQuest(friends, ns.db.blocklist, e.questID)
         if e.step and e.key then
             local name = e.title
             if e.chainName and e.chainName ~= e.title then name = string.format(L.CHAIN_PART_OF, e.title, e.chainName) end
             view.mine[#view.mine + 1] = { key = e.key, name = name, title = e.title, step = e.step, total = e.total,
-                zone = e.startZone, known = true, anchor = e.questID }
+                zone = e.startZone, known = true, anchor = e.questID, withFriends = with }
         else
-            unknown[#unknown + 1] = { known = false, title = e.title }
+            unknown[#unknown + 1] = { known = false, title = e.title, withFriends = with }
         end
     end
     table.sort(view.mine, function(a, b) return tostring(a.title) < tostring(b.title) end)
@@ -221,7 +223,14 @@ local function chainLines()
         skin = skin, dateFn = date, openQuest = state.chainQuest,
         -- Shift-click a reward item to link it in chat, as from your bags (D-102).
         onItem = function(item) W.LinkItem(item) end,
-        onQuest = function(key, questID)
+        goodCode = Palette.Code(Palette.Color(skin, "good")),
+        onLink = function(questID, title)
+            local okInfo, info = pcall(ns.QuestChains.QuestInfo, questID)
+            return W.LinkQuest(questID, title, okInfo and info and info.level)
+        end,
+        onQuest = function(key, questID, q)
+            -- Shift-click links the quest in chat instead (D-107).
+            if W.LinkQuest(questID, q and q.name, q and q.level) then return end
             local k = tostring(key) .. "|" .. tostring(questID)
             state.chainQuest[k] = not state.chainQuest[k] or nil
             Me.Refresh()
@@ -239,7 +248,9 @@ function Me.QuestMore(q)
         if e.id == q.id and (not turnedIn or (e.at or 0) > (turnedIn.at or 0)) then turnedIn = e end
     end
     local ok, more = pcall(ns.QuestRewards.More, q.id, q.status == "log", turnedIn)
-    return ok and more or nil
+    if not ok or not more then return nil end
+    more.friends = ns.FriendsModel.OnQuest(ns.Data.Friends(), ns.db.blocklist, q.id) -- D-106
+    return more
 end
 
 -- Remove one of my characters (never the one I am on), after a confirm. Friends
