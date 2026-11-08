@@ -58,6 +58,8 @@ k,<chainKey>,<name>,<step>,<total>,<firstQuestID>,<firstName>,<startZone>,<sourc
 p,<professionKey>,<name>,<rank>,<max>,<lastAt>   profession ranks (professions tracker; 1.2.0), or just "p" when there are none (1.4.0)
 o,<questID>,<questID>,...   quest IDs in the log, or just "o" when it is empty (quests tracker; 1.2.1)
 u,<entered>,<name>,<duration>,<completed>,<bosses>,<bossCount>,<deaths>   a finished dungeon run: entry time, dungeon, seconds inside, 1 if completed, bosses killed, bosses in it (0 = unknown), deaths; the newest 20 since `since` (dungeons tracker; 1.5.0, D-095). No boss names, nothing about the group. 1.7.0 (D-104) appends `,<clear>,<splits>`: seconds from entering to the final boss (0 = not cleared), and `<killedAt>/<fight>;...` per boss in kill order (seconds after entering / fight seconds, empty when unknown). Older receivers read only the first eight fields.
+r,<at>,<level>,<killerLevel>,<killer>,<zone>   recent deaths: the newest 10 since `since`; killerLevel -1 = skull, empty = unknown (deaths tracker; 1.7.0, D-105)
+i,<at>,<itemID>,<quality>,<count>,<zone>   notable loot, blue (quality 3) or better only: the newest 20 since `since`; the item ID only, the receiver's game gives the name and tooltip (items tracker; 1.7.0, D-105)
 s,<start>,<played>,<active>,<levelStart>,<levelEnd>,<code>=<int>,...   last 60 sessions
 ```
 

@@ -12,6 +12,8 @@
 - **Tooltip line**: hover a friend's character in the world or in your group and the game's tooltip shows "Ledger: Hamlet's character, 12 quests and 2 dungeons this week".
 - **Reward item tooltips**: in an opened quest, each reward item has its own line with its icon; hover it for the game's own tooltip with its stats, as in your bags. Shift-click links it in chat.
 - **Boss times**: an opened dungeon run shows when each boss died and how long the fight took, and the clear time. Best is now the fastest clear, and a new **Friends' best** column shows your fastest friend (the faster one in green). Friends on this version share their boss times; hover one of their runs to see them.
+- **Friends' deaths and loot**: a friend's Overview now also lists their recent deaths (what killed them, both levels, where) and their blue or better loot, with item tooltips. A new notice says when a friend loots a blue or better item (its own switch). Each follows the friend's Share switches for Deaths and Notable items; greens are never shared.
+- Settings > Notices is split into three short groups: how notices show, your notices, and friend notices.
 - **Notable loot tooltips**: on an opened character, hover a looted item's name for the game's own tooltip; shift-click links it in chat.
 - **Gold total**: the Gold page (yours and friends') now starts with a large "Total gained" (or "Total lost") for the chosen range, and the source table ends with a Net row.
 - Settings > Notices: a switch for each of these, plus "Show notices on screen" (turn all on-screen notices off; chat still gets them) and "Also write notices in chat".

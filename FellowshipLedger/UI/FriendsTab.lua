@@ -69,13 +69,30 @@ function FriendsTab.DetailLines(id, char)
     local parts
     if view == "overview" then
         local skin = ns.db.settings.skin
-        local data = ns.DetailModel.Data(char, L, date, { levels = state.showAll[id] },
-            ns.DetailModel.ArrowCode(ns.Palette.Color(skin, "text")))
+        -- Their shared loot as items for the Notable loot section (D-105): the name, link
+        -- and quality come from our own game (loaded on first sight).
+        local view_ = setmetatable({ items = {} }, { __index = char })
+        for _, it in ipairs(char.loot or {}) do
+            local name, quality, link
+            if ns.QuestRewards and ns.QuestRewards.ItemInfo then
+                local ok, n, q, l = pcall(ns.QuestRewards.ItemInfo, it.id)
+                if ok then name, quality, link = n, q, l end
+            end
+            view_.items[#view_.items + 1] = { at = it.at, id = it.id, name = name or string.format(L.QUEST_ITEM_UNKNOWN, it.id or 0),
+                link = link, quality = quality or it.quality, quantity = it.count, zone = it.zone }
+        end
+        local data = ns.DetailModel.Data(view_, L, date, { levels = state.showAll[id], deaths = state.showAll[id .. "|deaths"],
+            loot = state.showAll[id .. "|loot"] }, ns.DetailModel.ArrowCode(ns.Palette.Color(skin, "text")))
         data.summary.deaths = allSum.deaths or 0
         parts = S.FriendOverview(data, sum, shared, L, L[RANGE_LABEL[state.range]], function()
             state.showAll[id] = not state.showAll[id] or nil
             FriendsTab.Refresh()
         end, ns.Palette.Code(ns.Palette.Color(skin, "text")))
+        local friend = ns.Data.Friends()[id:match("^(.-)|") or ""]
+        for _, p in ipairs(S.FriendDeathsLoot(data, shared, L, skin, function(kind)
+            state.showAll[id .. "|" .. kind] = not state.showAll[id .. "|" .. kind] or nil
+            FriendsTab.Refresh()
+        end, friend and friend.version)) do parts[#parts + 1] = p end
     elseif view == "quests" then
         parts = S.FriendQuests(sum, ns.QuestChains.FriendChains(char), shared, L)
     elseif view == "gold" then

@@ -13,6 +13,8 @@ Merge.MILESTONE_EVERY = 10
 Merge.PROFESSION_CAPS = { 75, 150, 225, 300 } -- profession milestone ranks (D-098)
 Merge.maxLevel = nil -- the level cap on this client, set at login (Comms/Sync.lua); nil = unknown
 Merge.MAX_RUNS_KEPT = 50
+Merge.MAX_DEATHS_KEPT = 20 -- a friend character's recent deaths kept (D-105)
+Merge.MAX_LOOT_KEPT = 30   -- a friend character's blue+ loot kept (D-105)
 
 -- friends: db.friends; peer: { id, kind, name, tag, online }
 function Merge.Friend(friends, peer)
@@ -139,6 +141,42 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     else
         c.runs = nil
     end
+    -- Recent deaths and blue+ loot (1.7.0+ senders, D-105): upsert by time, keep 90 days
+    -- and the newest few, oldest first (as our own lists); cleared when not shared.
+    local from = ns.Codec.SinceEpoch(cutoffKey)
+    local function upsert(old, new, keyOf, keep)
+        local by, list = {}, {}
+        for _, e in ipairs(old or {}) do by[keyOf(e)] = e end
+        for _, e in ipairs(new or {}) do by[keyOf(e)] = e end
+        for _, e in pairs(by) do if (e.at or 0) >= from then list[#list + 1] = e end end
+        table.sort(list, function(a, b) return a.at < b.at end)
+        while #list > keep do table.remove(list, 1) end
+        return list
+    end
+    local shared = ns.Codec.MaskToSet(data.mask or "")
+    if shared.deaths then
+        if data.deathLog then c.deathLog = upsert(c.deathLog, data.deathLog, function(e) return e.at end, Merge.MAX_DEATHS_KEPT) end
+    else
+        c.deathLog = nil
+    end
+    local newLoot = {}
+    if shared.items then
+        if data.loot then
+            local seen
+            if c.loot then
+                seen = {}
+                for _, e in ipairs(c.loot) do seen[e.at .. ":" .. e.id] = true end
+            end
+            -- Only loot new since what we already held is a notice; the first list is the baseline.
+            -- Nothing older than a day, so a friend back after a week does not replay it.
+            for _, e in ipairs(data.loot) do
+                if seen and not seen[e.at .. ":" .. e.id] and (not now or e.at >= now - 86400) then newLoot[#newLoot + 1] = e end
+            end
+            c.loot = upsert(c.loot, data.loot, function(e) return e.at .. ":" .. e.id end, Merge.MAX_LOOT_KEPT)
+        end
+    else
+        c.loot = nil
+    end
     -- sessions: upsert by start time, keep sorted
     c.sessions = c.sessions or {}
     local byStart = {}
@@ -182,6 +220,10 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
             cleared[r.name] = true
             events[#events + 1] = { kind = "dungeon", character = name, dungeon = r.name }
         end
+    end
+    -- Loot (D-105): a blue or better item looted since the last DATA.
+    for _, it in ipairs(newLoot) do
+        events[#events + 1] = { kind = "loot", character = name, itemID = it.id, quality = it.quality, count = it.count }
     end
     for _, e in ipairs(events) do e.key = data.key end
     return events

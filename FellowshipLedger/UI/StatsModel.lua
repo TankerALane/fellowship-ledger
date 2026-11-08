@@ -338,6 +338,28 @@ function StatsModel.FriendOverview(data, sum, shared, L, rangeLabel, onToggle, v
     return out
 end
 
+-- Under a friend's Overview (D-105): their recent deaths and their blue or better loot,
+-- laid out like our own (full width, one under the other). data: DetailModel.Data of
+-- the friend's character (its items built from the shared loot); version: their ledger.
+function StatsModel.FriendDeathsLoot(data, shared, L, skin, onToggle, version)
+    local DM = ns.DetailModel
+    local cols = DM.COLS.list
+    local old = version == nil or ns.Merge.CompareVersions(version, "1.7.0") == -1
+    local out = { { segs = {} } }
+    local function part(title, kind, sec, sharedOn, empty)
+        if not sharedOn or old then
+            out[#out + 1] = { segs = { seg(0, .6, title, "heading") }, rules = { { 0, 1 } } }
+            out[#out + 1] = { segs = { seg(0, 1, not sharedOn and L.STATS_NOT_SHARED or L.STATS_FRIEND_NEEDS_170, "muted") } }
+        else
+            for _, half in ipairs(DM.Section(title, sec, cols[kind], 0, 1, kind, L, skin, onToggle, empty)) do out[#out + 1] = half end
+        end
+    end
+    part(L.DETAIL_DEATHS, "deaths", data.deaths, shared.deaths, L.DETAIL_NO_DEATHS)
+    out[#out + 1] = { segs = {} }
+    part(L.DETAIL_LOOT_FRIEND, "loot", data.loot, shared.items, L.DETAIL_NO_LOOT_FRIEND)
+    return out
+end
+
 -- A friend's Quests: counts for the range and the chains they are on (titles are not shared).
 function StatsModel.FriendQuests(sum, chains, shared, L)
     local Format = ns.Format

@@ -161,6 +161,51 @@ H.test("friend milestones: level cap, profession ranks, dungeon clears", functio
     H.eq(ev[1].kind, "level"); H.eq(ev[1].level, 70, "no known cap: a plain level notice")
 end)
 
+H.test("friends' deaths and blue+ loot: shared, merged, a notice for new loot only (D-105)", function()
+    local ns = ns_()
+    local C, M = ns.Codec, ns.Merge
+    local NOW = 1793988137
+    local c = sampleChar(ns)
+    c.deathLog = { { at = NOW - 500, level = 17, killer = "Rot Hide Brute", killerLevel = 16, zone = "Silverpine, Forest" },
+        { at = NOW - 100, level = 18, killerLevel = -1, killer = "Gesharahan", zone = "The Barrens" } }
+    c.items = { { at = NOW - 400, link = "|cff1eff00|Hitem:2589::|h[Green]|h|r", quality = 2, quantity = 1 },
+        { at = NOW - 300, link = "|cff0070dd|Hitem:6414::|h[Blue]|h|r", quality = 3, quantity = 1, zone = "Wailing Caverns" },
+        { at = NOW - 200, link = "|cffa335ee|Hitem:873::|h[Epic]|h|r", quality = 4, quantity = 2 } }
+    local shared = C.SharedTrackers(c, false)
+    local body = C.EncodeData("Vel-R", c, shared, nil)
+    H.ok(body:find("r," .. (NOW - 100) .. ",18,-1,Gesharahan,The Barrens", 1, true), body)
+    H.ok(body:find("Silverpine%2C Forest", 1, true), "commas in a zone are escaped")
+    H.ok(not body:find("i,%d+,2589"), "greens are not shared")
+    H.ok(body:find("i," .. (NOW - 300) .. ",6414,3,1,Wailing Caverns", 1, true) and body:find(",873,4,2,", 1, true), body)
+    local data = C.DecodeData(body)
+    H.eq(#data.deathLog, 2); H.eq(data.deathLog[2].killerLevel, -1); H.eq(data.deathLog[1].zone, "Silverpine, Forest")
+    H.eq(#data.loot, 2); H.eq(data.loot[1].id, 6414)
+    -- Not shared: nothing sent.
+    c.flags.deaths.share, c.flags.items.share = false, false
+    local quiet = C.EncodeData("Vel-R", c, C.SharedTrackers(c, false), nil)
+    H.ok(not quiet:find("~r,") and not quiet:find("~i,"), quiet)
+    -- Merge: the first list is the baseline; a new item later is a notice.
+    local f = M.Friend({}, { id = "bn:Kim#1", kind = "bnet", name = "Kim" })
+    M.Data(f, data, "2026-11-06", "2026-08-09", NOW)
+    local ev = M.Data(f, data, "2026-11-06", "2026-08-09", NOW)
+    H.eq(#ev, 0, "nothing new")
+    H.eq(#f.characters["Vel-R"].deathLog, 2); H.eq(#f.characters["Vel-R"].loot, 2)
+    data.loot[#data.loot + 1] = { at = NOW - 10, id = 1234, quality = 3, count = 1 }
+    data.loot[#data.loot + 1] = { at = NOW - 3 * 86400, id = 999, quality = 4, count = 1 }
+    ev = M.Data(f, data, "2026-11-06", "2026-08-09", NOW)
+    H.eq(#ev, 1, "an item looted days ago is stored, not announced"); H.eq(ev[1].kind, "loot"); H.eq(ev[1].itemID, 1234)
+    H.eq(#f.characters["Vel-R"].loot, 4)
+    local text = ns.Notices.Text(ev[1], "Kim", ns.L)
+    H.eq(text, "Vel (Kim) looted item 1234 (loading)!")
+    ev[1].itemText = "[Blue]"
+    H.eq(ns.Notices.Text(ev[1], "Kim", ns.L), "Vel (Kim) looted [Blue]!")
+    H.eq(ns.Notices.Select({ { event = ev[1] } }, { friendToastsLoot = false }, false)[1], nil, "its own switch")
+    -- A friend who stops sharing deaths: their list is dropped.
+    data.mask = data.mask:sub(1, 5) .. "0" .. data.mask:sub(7)
+    M.Data(f, data, "2026-11-06", "2026-08-09", NOW)
+    H.eq(f.characters["Vel-R"].deathLog, nil)
+end)
+
 H.test("weekly summary per friend, blocked friends left out", function()
     local ns = ns_()
     local fake = ns.FakeData.Generate(os.time({ year = 2026, month = 11, day = 4, hour = 12 }), os.time, os.date)

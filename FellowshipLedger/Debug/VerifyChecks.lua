@@ -309,6 +309,7 @@ ns.VerifyChecks = {
     { id = "x:questie.xp", kind = "custom", area = "Quests", why = "Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100)", test = "/dump QuestieLoader:ImportModule(\"QuestXP\").GetQuestLogRewardXP" },
     -- Friend's character in the game's tooltip (D-099).
     { id = "m:bosstimes", kind = "manual", area = "Dungeons", why = "ENCOUNTER_START fires at the pull, so an opened run shows each boss's fight length; Best is the clear time; Friends' best fills from friends on 1.7.0+ (D-104)", test = "run a dungeon; open the run on the Dungeons tab and compare the fight times with a stopwatch" },
+    { id = "m:friendextras", kind = "manual", area = "Friends", why = "a friend on 1.7.0 shows Recent deaths and Notable loot (blue or better) under their Overview; hover an item for its tooltip; a new blue drop gives a notice (D-105)", test = "both on 1.7.0; the friend dies once and loots a blue; open their character" },
     { id = "GameTooltip.SetHyperlink", kind = "api", area = "UI", why = "show a reward item's own tooltip on hover in Quest chains (D-102)" },
     { id = "GameTooltip.SetItemByID", kind = "api", area = "UI", why = "fallback for the item tooltip (D-102)" },
     { id = "IsShiftKeyDown", kind = "api", area = "UI", why = "shift-click a reward item to link it in chat (D-102)" },

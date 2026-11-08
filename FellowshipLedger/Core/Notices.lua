@@ -3,7 +3,7 @@
 -- the settings let through, and how several that arrive together become one notice.
 --
 -- An item is { event = <Merge event>, friendName, friendId }. Events carry `kind`
--- ("level" | "maxlevel" | "levels" | "chain" | "dungeon" | "profession" | "joined"),
+-- ("level" | "maxlevel" | "levels" | "chain" | "dungeon" | "profession" | "joined" | "loot"),
 -- `character` (shown name) and `key` (character key), plus the kind's own fields.
 -- "levels" (a friend went from level a to b) is only shown in the "While you were
 -- away" notice; on its own it would repeat every level a friend gains.
@@ -21,11 +21,11 @@ Notices.MAX_LINES = 5
 -- The setting that turns each kind on or off.
 Notices.SETTING = { level = "friendToasts", maxlevel = "friendToastsMaxLevel", chain = "friendToastsChains",
     dungeon = "friendToastsDungeons", profession = "friendToastsProfessions", joined = "friendToastsJoined",
-    levels = "awayDigest" }
+    levels = "awayDigest", loot = "friendToastsLoot" }
 
 -- The view of the friend's character that a click opens.
 Notices.VIEW = { level = "overview", maxlevel = "overview", levels = "overview", chain = "quests",
-    dungeon = "dungeons", profession = "professions" }
+    dungeon = "dungeons", profession = "professions", loot = "overview" }
 
 function Notices.Text(e, friendName, L)
     local who, char = friendName or "?", e.character or "?"
@@ -35,6 +35,12 @@ function Notices.Text(e, friendName, L)
     if e.kind == "profession" then return string.format(L.FRIEND_MILESTONE_PROF, char, who, e.rank or 0, e.profession or "?") end
     if e.kind == "levels" then return string.format(L.FRIEND_LEVELS, char, who, e.from or 0, e.to or 0) end
     if e.kind == "joined" then return string.format(L.FRIEND_JOINED, who) end
+    -- itemText: the item's link or colored name, filled in when the notice is shown (D-105).
+    if e.kind == "loot" then
+        local item = e.itemText or string.format(L.QUEST_ITEM_UNKNOWN, e.itemID or 0)
+        if (e.count or 1) > 1 then item = string.format(L.QUEST_ITEM_COUNT, item, e.count) end
+        return string.format(L.FRIEND_LOOT, char, who, item)
+    end
     return string.format(L.FRIEND_MILESTONE, char, who, e.level or 0)
 end
 

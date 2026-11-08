@@ -14,6 +14,9 @@ Codec.MIN_CHUNK, Codec.MAX_CHUNK = 60, 255
 Codec.REASSEMBLY_TIMEOUT = 120  -- seconds before a half-received message is dropped
 Codec.MAX_SESSIONS = 60         -- sessions sent per character per DATA
 Codec.MAX_RUNS = 20             -- dungeon runs sent per character per DATA (the newest; D-095)
+Codec.MAX_DEATHS = 10           -- recent deaths sent per character per DATA (D-105)
+Codec.MAX_LOOT = 20             -- notable loot entries sent per character per DATA (D-105)
+Codec.LOOT_MIN_QUALITY = 3      -- only blue (rare) or better is shared (Austin, D-105)
 Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST" }
 
 -- Escaping: the separators and "%" become %XX.
@@ -226,6 +229,38 @@ function Codec.EncodeData(key, char, shared, since)
                 string.format("%d", clear), table.concat(splits, ";") }, ",")
         end
     end
+    local from = since and Codec.SinceEpoch(since) or nil
+    -- Recent deaths (1.7.0, D-105): "r,<at>,<level>,<killerLevel>,<killer>,<zone>", the
+    -- newest MAX_DEATHS since `since`. killerLevel: -1 skull, empty unknown.
+    if shared.deaths then
+        local list = {}
+        for _, d in ipairs(char.deathLog or {}) do
+            if d.at and (not from or d.at >= from) then list[#list + 1] = d end
+        end
+        for i = math.max(1, #list - Codec.MAX_DEATHS + 1), #list do
+            local d = list[i]
+            recs[#recs + 1] = table.concat({ "r", string.format("%d", d.at), tostring(tonumber(d.level) or 0),
+                type(d.killerLevel) == "number" and string.format("%d", d.killerLevel) or "", Codec.Escape(d.killer or ""),
+                Codec.Escape(d.zone or "") }, ",")
+        end
+    end
+    -- Notable loot, blue (rare) or better only (1.7.0, D-105): "i,<at>,<itemID>,<quality>,
+    -- <count>,<zone>", the newest MAX_LOOT since `since`. The item ID only; the receiver
+    -- asks its own game for the name and tooltip.
+    if shared.items then
+        local list = {}
+        for _, it in ipairs(char.items or {}) do
+            local id = type(it.link) == "string" and tonumber(it.link:match("item:(%d+)"))
+            if id and it.at and (tonumber(it.quality) or 0) >= Codec.LOOT_MIN_QUALITY and (not from or it.at >= from) then
+                list[#list + 1] = { at = it.at, id = id, quality = it.quality, count = it.quantity, zone = it.zone }
+            end
+        end
+        for i = math.max(1, #list - Codec.MAX_LOOT + 1), #list do
+            local it = list[i]
+            recs[#recs + 1] = table.concat({ "i", string.format("%d", it.at), string.format("%d", it.id), tostring(it.quality),
+                tostring(tonumber(it.count) or 1), Codec.Escape(it.zone or "") }, ",")
+        end
+    end
     local sessions = {}
     for _, s in ipairs(char.sessions or {}) do
         if not since or (s.stop or s.start or 0) >= ns.Codec.SinceEpoch(since) then sessions[#sessions + 1] = s end
@@ -302,6 +337,17 @@ function Codec.DecodeData(body)
             end
             out.runs = out.runs or {}
             out.runs[#out.runs + 1] = run
+        elseif f[1] == "r" and tonumber(f[2]) then
+            out.deathLog = out.deathLog or {}
+            local killer = Codec.Unescape(f[5] or "")
+            local zone = Codec.Unescape(f[6] or "")
+            out.deathLog[#out.deathLog + 1] = { at = tonumber(f[2]), level = tonumber(f[3]) ~= 0 and tonumber(f[3]) or nil,
+                killerLevel = tonumber(f[4]), killer = killer ~= "" and killer or nil, zone = zone ~= "" and zone or nil }
+        elseif f[1] == "i" and tonumber(f[2]) and tonumber(f[3]) then
+            out.loot = out.loot or {}
+            local zone = Codec.Unescape(f[6] or "")
+            out.loot[#out.loot + 1] = { at = tonumber(f[2]), id = tonumber(f[3]), quality = tonumber(f[4]),
+                count = tonumber(f[5]), zone = zone ~= "" and zone or nil }
         elseif f[1] == "s" and tonumber(f[2]) then
             out.sessions[#out.sessions + 1] = { start = tonumber(f[2]), played = tonumber(f[3]) or 0, active = tonumber(f[4]) or 0,
                 levelStart = tonumber(f[5]), levelEnd = tonumber(f[6]), counts = decodeCounts(f, 7) }

@@ -58,6 +58,33 @@ H.test("details: newest first, last 10 levels / 5 deaths / 5 loot, Show all list
     H.ok(all.levels.rows[21].zone:find("(partial)", 1, true), "partial levels are marked")
 end)
 
+H.test("friend overview: recent deaths and blue+ loot, not shared, older version (D-105)", function()
+    local ns = H.pureNamespace()
+    local D, S, L = ns.DetailModel, ns.StatsModel, ns.L
+    local c = sampleChar(2, 6, 0)
+    c.items = { { at = 3000, id = 6414, name = "Blue Thing", quality = 3, zone = "WC" } }
+    local data = D.Data(c, L, DATE)
+    local function textOf(parts)
+        local out = {}
+        for _, p in ipairs(parts) do for _, s in ipairs(p.segs or {}) do
+            if s.text and s.text ~= "" then out[#out + 1] = s.text end
+            if s.button then out[#out + 1] = "[" .. s.button.label .. "]" end
+        end end
+        return table.concat(out, " | ")
+    end
+    local parts = S.FriendDeathsLoot(data, { deaths = true, items = true }, L, nil, function() end, "1.7.0")
+    local text = textOf(parts)
+    H.ok(text:find("Recent deaths", 1, true) and text:find("Killer6", 1, true) and text:find("[Show all (6)]", 1, true), text)
+    H.ok(text:find("Notable loot (blue or better)", 1, true) and text:find("Blue Thing", 1, true), text)
+    local hover
+    for _, p in ipairs(parts) do for _, s in ipairs(p.segs) do if s.item then hover = s.item end end end
+    H.eq(hover.id, 6414, "a friend's item hovers by its ID")
+    text = textOf(S.FriendDeathsLoot(data, { deaths = false, items = true }, L, nil, function() end, "1.7.0"))
+    H.ok(text:find("does not share this", 1, true), text)
+    text = textOf(S.FriendDeathsLoot(data, { deaths = true, items = true }, L, nil, function() end, "1.6.0"))
+    H.ok(text:find("Shared from Fellowship Ledger 1.7.0", 1, true), text)
+end)
+
 H.test("details: a notable loot name carries its link for the item tooltip, only on that segment (D-103)", function()
     local ns = H.pureNamespace()
     local D, L = ns.DetailModel, ns.L

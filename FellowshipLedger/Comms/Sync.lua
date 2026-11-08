@@ -194,10 +194,23 @@ local function showNotice(items, away)
     if title then ns.Toast.Show(title, lines, { onClick = function() Sync.OpenTarget(target) end }) end
 end
 
+-- A friend's looted item for its notice (D-105): the game's link (colored, clickable
+-- in chat), else the name. The name loaded while the notice waited to be shown.
+local function itemText(id)
+    if not (ns.QuestRewards and ns.QuestRewards.ItemInfo) then return nil end
+    local ok, name, _, link = pcall(ns.QuestRewards.ItemInfo, id)
+    if not ok or not name then return nil end
+    return link or name
+end
+
 function Sync.FlushNotices()
     local items, first = Sync.queue, queueFirst
     Sync.queue, queueFirst = {}, nil
     queueGen = queueGen + 1
+    for _, it in ipairs(items) do
+        local e = it.event
+        if e and e.kind == "loot" and not e.itemText then e.itemText = itemText(e.itemID) end
+    end
     local settings = ns.db.settings
     local away = ns.Notices.IsAway(settings, Sync.startedAt, first)
     local shown = ns.Notices.Select(items, settings, away)
@@ -241,7 +254,10 @@ Transport.handlers.D = function(peer, body)
             events[#events + 1] = { kind = "chain", character = c.display or c.name or data.key, chain = name, key = data.key }
         end
     end
-    for _, e in ipairs(events) do Sync.Notify({ event = e, friendName = friend.name or peer.id, friendId = peer.id }) end
+    for _, e in ipairs(events) do
+        if e.kind == "loot" then itemText(e.itemID) end -- start loading the item's name
+        Sync.Notify({ event = e, friendName = friend.name or peer.id, friendId = peer.id })
+    end
     if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
 end
 
