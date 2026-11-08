@@ -130,6 +130,29 @@ H.test("quest links: the game's when it names the quest, else built; shift-click
     H.eq(W.LinkQuest(496, "Elixir", 22), true); H.eq(inserted, "|cffffff00|Hquest:496:22|h[Elixir]|h|r")
 end)
 
+H.test("friend menu: whisper and invite, by Battle.net or by name (D-108)", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    local FM, F = ns2.FriendsModel, ns2.FriendsTab
+    local bn = { kind = "bnet", name = "Hamlet", accountName = "|Kq1|k", online = true, target = 77, character = "Cain-Ratt" }
+    H.eq(table.concat(FM.Actions(bn, true), ","), "whisper,invite")
+    H.eq(table.concat(FM.Actions(bn, false), ","), "whisper", "invite only the character they are on")
+    H.eq(table.concat(FM.Actions({ kind = "bnet", name = "Away", accountName = "|Kq2|k", online = false }, true), ","), "whisper")
+    H.eq(#FM.Actions({ kind = "char", name = "Bob-R", online = false, target = "Bob-R" }, true), 0)
+    H.eq(#FM.Actions(nil, true), 0)
+    local calls = {}
+    env.ChatFrame_SendBNetTell = function(a) calls[#calls + 1] = "bn:" .. a end
+    env.ChatFrame_SendTell = function(n) calls[#calls + 1] = "tell:" .. n end
+    env.BNInviteFriend = function(id) calls[#calls + 1] = "bninvite:" .. id end
+    env.C_PartyInfo = { InviteUnit = function(n) calls[#calls + 1] = "invite:" .. n end }
+    F.Whisper(bn); F.Invite(bn)
+    F.Whisper({ kind = "char", target = "Bob-R", online = true }); F.Invite({ kind = "char", target = "Bob-R", online = true })
+    env.ChatFrame_SendBNetTell, env.BNInviteFriend = nil, nil
+    F.Whisper(bn); F.Invite(bn)
+    H.eq(table.concat(calls, " "), "bn:|Kq1|k bninvite:77 tell:Bob-R invite:Bob-R tell:Cain-Ratt invite:Cain-Ratt",
+        "Battle.net first, then the character's name")
+end)
+
 H.test("Friends tab: open a fake friend's character and go through every view", function()
     local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
     env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false } }

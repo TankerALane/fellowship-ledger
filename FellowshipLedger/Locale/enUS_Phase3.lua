@@ -347,6 +347,11 @@ ns.Locale.Set({
     QUEST_XP_AT = "%s XP (at level %d, when you saw it)",
     QUEST_REP = "%s%d %s",
     QUEST_REP_UNKNOWN = "reputation",
+    -- Right-click menu on a friend (D-108)
+    FRIEND_MENU_WHISPER = "Whisper %s",
+    FRIEND_MENU_INVITE = "Invite %s to your group",
+    FRIEND_MENU_NOTHING = "%s is not online, so there is nothing to do right now.",
+    TIP_RIGHT_CLICK = "Click to open. Right-click to whisper or invite.",
     -- Quests in both logs (D-106)
     CHAIN_WITH = "with %s",
     CHAIN_WITH_MORE = "with %s +%d",

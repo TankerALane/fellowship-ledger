@@ -134,6 +134,7 @@ function FriendsModel.Tooltip(row, char, friend, now, L, factionText)
     if friend.version then lines[#lines + 1] = string.format(L.TIP_VERSION, friend.version) end
     -- row.common: quests in both your logs (D-106).
     if row.common and row.common > 0 then lines[#lines + 1] = string.format(L.TIP_COMMON_QUESTS, row.common) end
+    lines[#lines + 1] = L.TIP_RIGHT_CLICK -- D-108
     return row.name, lines
 end
 
@@ -167,6 +168,18 @@ function FriendsModel.TooltipLine(f, sum, L)
     local who = (f and f.name) or "?"
     if quests == 0 and dungeons == 0 then return string.format(L.TOOLTIP_FRIEND_QUIET, who) end
     return string.format(L.TOOLTIP_FRIEND, who, quests, dungeons)
+end
+
+-- The right-click menu of a friend's row (D-108): which actions apply. peer: the live
+-- Friends peer (nil when the game no longer lists them); playing: the row is the
+-- character they are on now. Whisper: Battle.net friends always (their whisper reaches
+-- the app too), character friends while online. Invite: only the character they are on.
+function FriendsModel.Actions(peer, playing)
+    local out = {}
+    if not peer then return out end
+    if (peer.kind == "bnet" and peer.accountName) or (peer.kind == "char" and peer.online) then out[#out + 1] = "whisper" end
+    if peer.online and playing and peer.target then out[#out + 1] = "invite" end
+    return out
 end
 
 -- Quests in both logs (D-106): the IDs in `mine` (my current character's log) that

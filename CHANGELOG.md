@@ -16,6 +16,7 @@
 - Settings > Notices is split into three short groups: how notices show, your notices, and friend notices.
 - **You both have this quest**: in Quest chains, a quest a friend also has shows "with Hamlet" (hover for who), and its details list them. A friend's Quests view starts with the quests in both your logs, and their row's tooltip counts them. Uses the quest logs friends already share, so it works with friends on 1.2.1 or later.
 - **Shift-click a quest** in Quest chains or in a friend's "In both your quest logs" to link it in chat.
+- **Right-click a friend** on the Friends tab to whisper them, or invite the character they are on to your group.
 - **Notable loot tooltips**: on an opened character, hover a looted item's name for the game's own tooltip; shift-click links it in chat.
 - **Gold total**: the Gold page (yours and friends') now starts with a large "Total gained" (or "Total lost") for the chosen range, and the source table ends with a Net row.
 - Settings > Notices: a switch for each of these, plus "Show notices on screen" (turn all on-screen notices off; chat still gets them) and "Also write notices in chat".

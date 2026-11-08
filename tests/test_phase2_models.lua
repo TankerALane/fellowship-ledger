@@ -108,7 +108,10 @@ H.test("friend row tooltip: level, race and class, faction, times and their vers
     H.eq(ns.FriendsModel.TokenText(ns.L, "CLASS_", "WARRIOR"), "Warrior")
     local _, few = ns.FriendsModel.Tooltip({ name = "X", level = 3 }, nil, nil, now, ns.L, "")
     H.eq(few[1], "Level 3")
-    H.eq(#few, 3, "no faction or version lines when unknown")
+    H.eq(#few, 4, "no faction or version lines when unknown (level, last played, shared, right-click hint)")
+    H.eq(few[4], ns.L.TIP_RIGHT_CLICK)
+    local _, withCommon = ns.FriendsModel.Tooltip({ name = "X", level = 3, common = 2 }, nil, nil, now, ns.L, "")
+    H.eq(withCommon[4], "2 quest(s) in both your logs (see Quests)")
 end)
 
 H.test("graph series for every chart", function()

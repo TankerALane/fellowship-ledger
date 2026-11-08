@@ -51,6 +51,45 @@ local function weeklyLines()
     return out
 end
 
+-- Whisper / Invite (D-108). Each call is guarded; a missing one falls to the next.
+function FriendsTab.Whisper(peer)
+    if peer.kind == "bnet" and peer.accountName and ns.Compat.Try("ChatFrame_SendBNetTell", peer.accountName) then return true end
+    local name = peer.kind == "char" and peer.target or peer.character
+    return name and ns.Compat.Try("ChatFrame_SendTell", name) or false
+end
+
+function FriendsTab.Invite(peer)
+    if peer.kind == "bnet" and peer.target and ns.Compat.Try("BNInviteFriend", peer.target) then return true end
+    local name = peer.kind == "char" and peer.target or peer.character
+    if not name then return false end
+    return ns.Compat.Try("C_PartyInfo.InviteUnit", name) or ns.Compat.Try("InviteUnit", name) or false
+end
+
+FriendsTab.menuStatus = nil -- for /fl verify
+function FriendsTab.OpenMenu(owner, friendId, title, playing, characterName)
+    local peer = ns.Friends and ns.Friends.peers and ns.Friends.peers[friendId]
+    local actions = FriendsModel.Actions(peer, playing)
+    if #actions == 0 then
+        ns.Log.Info(L.FRIEND_MENU_NOTHING, title or "?")
+        return false
+    end
+    if ns.Compat.IsDisabled("friends.menu") then return false end
+    local ok = ns.Compat.Call("friends.menu", "MenuUtil.CreateContextMenu", owner, function(_, root)
+        local fine, err = pcall(function()
+            root:CreateTitle(title or peer.name or "?")
+            for _, a in ipairs(actions) do
+                if a == "whisper" then
+                    root:CreateButton(string.format(L.FRIEND_MENU_WHISPER, peer.name or "?"), function() FriendsTab.Whisper(peer) end)
+                else
+                    root:CreateButton(string.format(L.FRIEND_MENU_INVITE, characterName or "?"), function() FriendsTab.Invite(peer) end)
+                end
+            end
+        end)
+        FriendsTab.menuStatus = { at = time(), ok = fine, err = not fine and tostring(err) or nil, actions = table.concat(actions, ",") }
+    end)
+    return ok
+end
+
 -- Quests in both your current character's log and this friend character's (D-106),
 -- with names and levels from Questie (or the game).
 function FriendsTab.Common(char)
@@ -142,6 +181,7 @@ local function lines()
             end
             out[#out + 1] = { kind = "group", text = string.format(r.count == 1 and L.FRIEND_HEADER_ONE or L.FRIEND_HEADER, f.name or r.id, status, r.count,
                 FriendsModel.Ago(now, f.lastUpdated)),
+                onRightClick = function(owner) FriendsTab.OpenMenu(owner, r.id, f.name or r.id, false) end,
                 action = { label = L.BLOCK, onClick = function() FriendsTab.Block(f.tag or r.id) end } }
         else
             local cells = {}
@@ -169,6 +209,9 @@ local function lines()
                 onClick = function()
                     state.expanded[openId] = not state.expanded[openId] or nil
                     FriendsTab.Refresh()
+                end,
+                onRightClick = function(owner)
+                    FriendsTab.OpenMenu(owner, r.friendId, r.name, r.playing, r.name)
                 end,
                 action = (not r.indent) and { label = L.BLOCK, onClick = function() FriendsTab.Block(friend.tag or r.key) end } or nil }
             if state.expanded[openId] and char then

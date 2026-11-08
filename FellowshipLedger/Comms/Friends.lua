@@ -96,8 +96,10 @@ function Friends.Refresh()
         local okA, acc = ns.Compat.Call("friends", "C_BattleNet.GetFriendAccountInfo", i)
         local tag = okA and type(acc) == "table" and plain(acc.battleTag)
         if tag then
+            -- accountName is Battle.net's whisper token: kept in memory for the
+            -- right-click Whisper (D-108), never saved or sent.
             local peer = { id = "bn:" .. tag, kind = "bnet", tag = tag, name = tag:match("^([^#]+)") or tag,
-                online = false, transport = "bn" }
+                online = false, transport = "bn", accountName = plain(acc.accountName), bnetAccountID = plain(acc.bnetAccountID) }
             local okC, count = ns.Compat.Call("friends", "C_BattleNet.GetFriendNumGameAccounts", i)
             for j = 1, okC and (plain(count) or 0) or 0 do
                 local okG, g = ns.Compat.Call("friends", "C_BattleNet.GetFriendGameAccountInfo", i, j)

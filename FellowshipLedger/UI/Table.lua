@@ -8,6 +8,7 @@
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
 --     tooltip = fn() -> title, lines (shown on hover), shade = true (grid lines: shaded background),
 --     item = { id, link } (hover shows the game's item tooltip instead, D-102),
+--     onRightClick = fn(owner) (right click, D-108),
 --     align = "right" (group/detail text next to its action button) }
 -- or a "grid" line (UI/DetailModel.lua): text placed at fractions of the width,
 -- with optional small buttons, rules and a shaded box spanning several lines.
@@ -133,7 +134,13 @@ function Obj:Line(i)
     end
     w.action = W.Button(w, "", ACTION_W, ROW_H - 2)
     w.action:SetPoint("RIGHT", 0, 0)
-    w:SetScript("OnClick", function(btn)
+    -- Right click: line.onRightClick(owner), e.g. a friend's Whisper / Invite menu (D-108).
+    if type(w.RegisterForClicks) == "function" then pcall(w.RegisterForClicks, w, "LeftButtonUp", "RightButtonUp") end
+    w:SetScript("OnClick", function(btn, button)
+        if button == "RightButton" then
+            if btn.line and btn.line.onRightClick then btn.line.onRightClick(btn) end
+            return
+        end
         if btn.line and btn.line.onClick then btn.line.onClick() end
     end)
     w:SetScript("OnEnter", function(btn)

@@ -510,6 +510,17 @@ These come from addons already installed in Austin's game folders. They are good
 | `m:questlink` | manual | shift-click a quest in Quest chains (or in a friend's "In both your quest logs") puts a working quest link in chat; others can click it (D-107) | open the chat box, shift-click a quest, send it, click the link | ? | ? |
 | `m:commonquests` | manual | a quest a friend also has shows "with <friend>" in Quest chains, in its details, in the friend's Quests view and their row tooltip (D-106) | both pick up the same quest; open Quest chains and the friend's Quests | ? | ? |
 
+### Friends
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `ChatFrame_SendBNetTell` | api | right-click Whisper to a Battle.net friend (D-108) | `/dump type(ChatFrame_SendBNetTell)` -> "function" | ? | ? |
+| `ChatFrame_SendTell` | api | right-click Whisper by character name (D-108) | `/dump type(ChatFrame_SendTell)` -> "function" | ? | ? |
+| `BNInviteFriend` | api | right-click Invite a Battle.net friend's game account (D-108) | `/dump type(BNInviteFriend)` -> "function" | ? | ? |
+| `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | ? | ? |
+| `InviteUnit` | api | older name for the invite (D-108) | `/dump type(InviteUnit)` -> "function" | ? | ? |
+| `m:friendmenu` | manual | right-click a friend (or their character) on the Friends tab: Whisper opens a whisper to them; Invite (only on the character they are on) sends a group invite (D-108) | with a friend online, right-click their row; try both | ? | ? |
+
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
