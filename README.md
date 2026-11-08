@@ -42,18 +42,18 @@ Small notices, each with its own switch under Settings > Notices:
 
 ### Screenshots
 
-These use the made-up preview data from `/fl fake`.
+These use made-up preview data, in the three looks: Ledger, Leather and Plain.
 
 | | |
 |---|---|
-| ![Me tab: characters and time per level](docs/screenshots/fl_me.png) | ![Friends tab: friends grouped by Battle.net name](docs/screenshots/fl_friends.png) |
-| **Me:** your characters, with time per level | **Friends:** grouped under their Battle.net name |
-| ![Time per level, compared with a friend's character](docs/screenshots/fl_graph_tpl_compare.png) | ![Quests per day](docs/screenshots/fl_graph_qpd.png) |
-| **Compare:** time per level next to a friend's character | **Quests per day** over the last 30 days |
-| ![Gold per session](docs/screenshots/fl_graph_gps.png) | ![XP per hour](docs/screenshots/fl_graph_xph.png) |
-| **Gold per session:** losses below the line | **XP per hour** per session |
-| ![Settings: track and share per tracker, appearance, notices](docs/screenshots/fl_settings.png) | |
-| **Settings:** Track and Share for each tracker, the look, notices and the block list | |
+| ![Me tab: a character's card with recent levels, deaths and notable loot](assets/screenshots/01-me-card-ledger.png) | ![Dungeons tab: best times, friends' best, and a run's boss times](assets/screenshots/07-dungeons-ledger.png) |
+| **Me:** a character's card with recent levels, deaths and notable loot | **Dungeons:** best times next to friends' best, and each boss's fight time |
+| ![Friends tab: a friend's character opened like your own](assets/screenshots/03-friends-card-plain.png) | ![Quest chains: where you are in each chain in your log](assets/screenshots/06-me-chains-plain.png) |
+| **Friends:** a friend's character, opened like your own | **Quest chains:** each step, with who starts it and where |
+| ![Graphs: time per level](assets/screenshots/04-graphs-ledger.png) | ![Settings: Track and Share for each tracker](assets/screenshots/05-settings-leather.png) |
+| **Graphs:** time per level, one of five graphs | **Settings:** Track and Share for each tracker |
+| ![Me tab in the list layout, Leather look](assets/screenshots/02-me-list-leather.png) | |
+| **Me** in the list layout | |
 
 ## Commands
 
