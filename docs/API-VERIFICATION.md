@@ -298,7 +298,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | INFO | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
 | `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | PASS | ? |
 
 ### Reputation
@@ -444,7 +444,7 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
-| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | INFO | ? |
+| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | ? |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
 | `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | PASS | ? |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |
@@ -494,11 +494,11 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | ? | ? |
-| `GameTooltip.SetItemByID` | api | fallback for the item tooltip (D-102) | `/dump type(GameTooltip.SetItemByID)` -> "function" | ? | ? |
-| `IsShiftKeyDown` | api | shift-click a reward item to link it in chat (D-102) | `/dump type(IsShiftKeyDown)` -> "function" | ? | ? |
-| `ChatEdit_InsertLink` | api | put a reward item's link in the chat box (D-102) | `/dump type(ChatEdit_InsertLink)` -> "function" | ? | ? |
-| `m:itemtooltip` | manual | hovering a reward item in an opened quest (Quest chains) shows the game's item tooltip with its stats, as in your bags; shift-click links it in chat | open a quest with item rewards; hover an item; shift-click it with the chat box open | ? | ? |
+| `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | PASS | ? |
+| `GameTooltip.SetItemByID` | api | fallback for the item tooltip (D-102) | `/dump type(GameTooltip.SetItemByID)` -> "function" | PASS | ? |
+| `IsShiftKeyDown` | api | shift-click a reward item to link it in chat (D-102) | `/dump type(IsShiftKeyDown)` -> "function" | PASS | ? |
+| `ChatEdit_InsertLink` | api | put a reward item's link in the chat box (D-102) | `/dump type(ChatEdit_InsertLink)` -> "function" | PASS | ? |
+| `m:itemtooltip` | manual | hovering a reward item in an opened quest (Quest chains) shows the game's item tooltip with its stats, as in your bags; shift-click links it in chat | open a quest with item rewards; hover an item; shift-click it with the chat box open | PASS | ? |
 | `TooltipDataProcessor` | api | add a line to unit tooltips (modern clients) | `/dump type(TooltipDataProcessor)` -> "table" | PASS | ? |
 | `x:tooltip.unit` | custom | the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099) | `/fl verify; then hover a friend's character` | PASS | ? |
 | `m:notices` | manual | friend notices: several at once become one, "While you were away" after login, a click opens the friend's page, right click only closes | log in while friends on 1.7.0 have played; click the notice | ? | ? |
