@@ -154,6 +154,7 @@ local function closeRun(char)
     if not run then return end
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
+    run.pull = nil
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
         char.currentRun = nil
@@ -330,18 +331,28 @@ local function noteDifficulty(run, difficultyID)
     end
 end
 
-Dungeons.events.ENCOUNTER_START = function(_, _, _, difficultyID)
-    noteDifficulty(Store.char.currentRun, difficultyID)
-    ensureLastBoss(Store.char.currentRun)
+Dungeons.events.ENCOUNTER_START = function(_, encounterID, _, difficultyID)
+    local run = Store.char.currentRun
+    noteDifficulty(run, difficultyID)
+    ensureLastBoss(run)
+    -- The pull, for the fight length (D-104). A wipe and a new pull start it again.
+    if run then run.pull = { id = T.Plain(encounterID), at = Store.Now() } end
 end
 
 Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficultyID, _, success)
     local run = Store.char.currentRun
     noteDifficulty(run, difficultyID)
-    if not run or T.Plain(success) ~= 1 then return end
+    if not run then return end
+    local pull = run.pull
+    run.pull = nil
+    if T.Plain(success) ~= 1 then return end
     encounterID = T.Plain(encounterID)
     if T.Dedupe("boss:" .. tostring(encounterID), 10) then return end
-    run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = Store.Now() }
+    local t = Store.Now()
+    -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.
+    local fight = pull and pull.at and (pull.id == nil or pull.id == encounterID) and t - pull.at or nil
+    if fight and (fight < 0 or fight > 3600) then fight = nil end
+    run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = t, fight = fight }
     if not run.partyFrozen then
         local party = partySnapshot() -- the group that killed this boss
         if #party > 0 then run.party = party end

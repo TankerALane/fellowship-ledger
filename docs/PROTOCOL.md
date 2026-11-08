@@ -57,7 +57,7 @@ l,<toLevel>,<active>,<total>,<partial 0|1>,<at>                        level tim
 k,<chainKey>,<name>,<step>,<total>,<firstQuestID>,<firstName>,<startZone>,<source>   quest chains in progress (quests tracker)
 p,<professionKey>,<name>,<rank>,<max>,<lastAt>   profession ranks (professions tracker; 1.2.0), or just "p" when there are none (1.4.0)
 o,<questID>,<questID>,...   quest IDs in the log, or just "o" when it is empty (quests tracker; 1.2.1)
-u,<entered>,<name>,<duration>,<completed>,<bosses>,<bossCount>,<deaths>   a finished dungeon run: entry time, dungeon, seconds inside, 1 if completed, bosses killed, bosses in it (0 = unknown), deaths; the newest 20 since `since` (dungeons tracker; 1.5.0, D-095). No boss names, nothing about the group.
+u,<entered>,<name>,<duration>,<completed>,<bosses>,<bossCount>,<deaths>   a finished dungeon run: entry time, dungeon, seconds inside, 1 if completed, bosses killed, bosses in it (0 = unknown), deaths; the newest 20 since `since` (dungeons tracker; 1.5.0, D-095). No boss names, nothing about the group. 1.7.0 (D-104) appends `,<clear>,<splits>`: seconds from entering to the final boss (0 = not cleared), and `<killedAt>/<fight>;...` per boss in kill order (seconds after entering / fight seconds, empty when unknown). Older receivers read only the first eight fields.
 s,<start>,<played>,<active>,<levelStart>,<levelEnd>,<code>=<int>,...   last 60 sessions
 ```
 

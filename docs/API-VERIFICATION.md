@@ -490,6 +490,12 @@ These come from addons already installed in Austin's game folders. They are good
 | `x:quest.rewards` | custom | rewards read for the quests in your log, and from the last quest dialog (D-100) | have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log | PASS | ? |
 | `x:questie.xp` | custom | Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100) | `/dump QuestieLoader:ImportModule("QuestXP").GetQuestLogRewardXP` | PASS | ? |
 
+### Dungeons
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:bosstimes` | manual | ENCOUNTER_START fires at the pull, so an opened run shows each boss's fight length; Best is the clear time; Friends' best fills from friends on 1.7.0+ (D-104) | run a dungeon; open the run on the Dungeons tab and compare the fight times with a stopwatch | ? | ? |
+
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |

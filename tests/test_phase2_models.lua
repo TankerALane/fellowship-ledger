@@ -261,12 +261,66 @@ H.test("dungeons model: runs, per-dungeon summary, bosses, groups, friends' tota
     end
     local all = table.concat(text, "|")
     H.ok(all:find("By dungeon", 1, true) and all:find("Friends", 1, true) and all:find("Runs", 1, true), all)
-    H.ok(all:find("Rath'mael|+31m", 1, true), "bosses with minutes after entering: " .. all)
+    H.ok(all:find("Rath'mael|31:00|-", 1, true), "bosses with the time after entering, no fight time without a pull: " .. all)
+    H.ok(all:find("Cleared in 31:00", 1, true), all)
     H.ok(all:find("final boss", 1, true))
     H.ok(all:find("1 damage", 1, true))
     local clicked
     for _, l in ipairs(lines) do if l.onClick and not clicked then l.onClick(); clicked = true end end
     H.eq(opened[1], "Tara-R|" .. E, "clicking a run toggles it")
+end)
+
+H.test("boss times: clock, clear time, fight length, friends' best (D-104)", function()
+    local ns = H.pureNamespace()
+    local M, L = ns.DungeonsModel, ns.L
+    H.eq(M.Clock(45), "0:45"); H.eq(M.Clock(1450), "24:10"); H.eq(M.Clock(3725), "1:02:05"); H.eq(M.Clock(nil), "-")
+    local E = os.time({ year = 2026, month = 11, day = 6, hour = 10, min = 2 })
+    local mine = { name = "Ragefire Chasm", entered = E, duration = 1800, completed = true, completedBy = "lastBoss", completedAt = E + 1500,
+        bosses = { { name = "Oggleflint", at = E + 400, fight = 42 }, { name = "Bazzalan", at = E + 1500, fight = 95 } } }
+    H.eq(M.ClearTime(mine), 1500)
+    H.eq(M.ClearTime({ completed = true, clear = 900 }), 900, "a friend's shared clear time")
+    H.eq(M.ClearTime({ completed = nil, completedAt = E + 5, entered = E }), nil, "not cleared")
+    local chars = { ["Me-R"] = { display = "Me R", dungeons = { mine } } }
+    local friends = {
+        ["bn:Ham#1"] = { name = "Hamlet", characters = { ["Ca-R"] = { display = "Cain", runs = {
+            { name = "Ragefire Chasm", entered = E - 100, duration = 1700, completed = true, clear = 1400 },
+            { name = "Ragefire Chasm", entered = E - 50, duration = 1000, completed = nil } } } } },
+        ["bn:Rom#1"] = { name = "Romadom", characters = { ["Ro-R"] = { runs = {
+            { name = "Ragefire Chasm", entered = E - 100, duration = 1600, completed = true } } } } },
+    }
+    local best = M.FriendBest(friends, nil, nil, os.date)
+    H.eq(best["Ragefire Chasm"].time, 1400); H.eq(best["Ragefire Chasm"].friend, "Hamlet", "clear time beats a longer stay inside")
+    local lines = M.Lines({ chars = chars, friends = friends, now = E + 4000, dateFn = os.date, L = L, todayKey = "2026-11-06",
+        expanded = { ["Me-R|" .. E] = true } })
+    local text, friendSeg = {}, nil
+    for _, l in ipairs(lines) do
+        for _, sg in ipairs(l.segments or {}) do
+            if sg.text then text[#text + 1] = sg.text end
+            if sg.text == "23:20 Hamlet" then friendSeg = sg end
+        end
+    end
+    local all = table.concat(text, "|")
+    H.ok(all:find("Ragefire Chasm|1|1|25:00|30m|23:20 Hamlet", 1, true), all)
+    H.eq(friendSeg.role, "good", "the faster one is green")
+    H.ok(all:find("Oggleflint|6:40|0:42", 1, true) and all:find("Bazzalan|25:00|1:35", 1, true), all)
+end)
+
+H.test("boss times are shared in the run record and old fields still read (D-104)", function()
+    local ns = H.pureNamespace()
+    local C = ns.Codec
+    local E = 1700000000
+    local char = { class = "MAGE", level = 20, days = {}, dungeons = {
+        { name = "Ragefire Chasm", entered = E, duration = 1800, completed = true, completedAt = E + 1500, deaths = 1, bossCount = 2,
+          bosses = { { at = E + 400, fight = 42 }, { at = E + 1500 } } } } }
+    local shared = { dungeons = true, time = true }
+    local body = C.EncodeData("Me-R", char, shared, nil)
+    H.ok(body:find("u," .. E .. ",Ragefire Chasm,1800,1,2,2,1,1500,400/42;1500/", 1, true), body)
+    local d = C.DecodeData(body)
+    local r = d.runs[1]
+    H.eq(r.clear, 1500); H.eq(#r.splits, 2); H.eq(r.splits[1].fight, 42); H.eq(r.splits[2].fight, nil); H.eq(r.splits[2].at, 1500)
+    -- A 1.5.0 sender: eight fields only.
+    d = C.DecodeData("c,X-R,MAGE,,,1,0,0000000000000~u," .. E .. ",RFC,600,1,3,3,0")
+    H.eq(d.runs[1].clear, nil); H.eq(d.runs[1].splits, nil); H.eq(d.runs[1].kills, 3)
 end)
 
 H.test("settings defaults fill gaps and keep choices", function()

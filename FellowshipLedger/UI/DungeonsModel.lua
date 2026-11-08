@@ -18,6 +18,25 @@ function DungeonsModel.Minutes(seconds)
     return string.format("%dh %02dm", math.floor(m / 60), m % 60)
 end
 
+-- 45 -> "0:45", 1450 -> "24:10", 3725 -> "1:02:05", nil -> "-" (boss times, D-104)
+function DungeonsModel.Clock(seconds)
+    seconds = tonumber(seconds)
+    if not seconds or seconds < 0 then return "-" end
+    seconds = math.floor(seconds + 0.5)
+    local h, m, s = math.floor(seconds / 3600), math.floor(seconds % 3600 / 60), seconds % 60
+    if h > 0 then return string.format("%d:%02d:%02d", h, m, s) end
+    return string.format("%d:%02d", m, s)
+end
+
+-- Clear time (D-104): entering to the kill that completed the run. Friends send it
+-- as run.clear (1.7.0+). nil when the run was not completed by its final boss.
+function DungeonsModel.ClearTime(run)
+    if not run or not run.completed then return nil end
+    if run.clear then return run.clear end
+    if run.completedAt and run.entered and run.completedAt >= run.entered then return run.completedAt - run.entered end
+    return nil
+end
+
 -- Runs of my characters (charKey nil = all), entered on or after fromKey (nil = all),
 -- newest first. An ongoing run that already counts is included as in progress.
 -- Returns { { charKey, char, run, live = bool } }.
@@ -73,7 +92,9 @@ function DungeonsModel.ByDungeon(runs, now)
         local dur = durationOf(e, now)
         if e.run.completed then
             d.completed = d.completed + 1
-            if dur and (not d.best or dur < d.best) then d.best = dur end
+            -- Best = fastest clear (entering to the final boss), else time inside (D-104).
+            local t = DungeonsModel.ClearTime(e.run) or dur
+            if t and (not d.best or t < d.best) then d.best = t end
         end
         if dur and not e.live then d.total, d.timed = d.total + dur, d.timed + 1 end
         if e.run.entered > d.last then d.last = e.run.entered end
@@ -107,7 +128,8 @@ end
 function DungeonsModel.Bosses(run)
     local list = {}
     for i, b in ipairs(run.bosses or {}) do
-        list[i] = { n = i, name = b.name or "?", offset = b.at and run.entered and (b.at - run.entered) or nil, at = b.at }
+        list[i] = { n = i, name = b.name or "?", offset = b.at and run.entered and (b.at - run.entered) or nil, at = b.at,
+            fight = b.fight }
     end
     if run.completed and run.completedBy == "lastBoss" and #list > 0 then
         local final = list[#list]
@@ -148,6 +170,30 @@ function DungeonsModel.FriendRows(friends, isBlocked, fromKey, todayKey)
     return out
 end
 
+-- Friends' fastest clear per dungeon over the range (D-104), from their shared runs
+-- (clear time from 1.7.0+, else time inside): { [dungeon] = { time, friend, name } }.
+function DungeonsModel.FriendBest(friends, isBlocked, fromKey, dateFn)
+    local best = {}
+    for id, f in pairs(friends or {}) do
+        if not (isBlocked and isBlocked(f)) then
+            for key, c in pairs(f.characters or {}) do
+                if not (isBlocked and isBlocked(f, key)) then
+                    for _, r in ipairs(c.runs or {}) do
+                        if r.completed and r.name and r.entered and (not fromKey or dateFn("%Y-%m-%d", r.entered) >= fromKey) then
+                            local t = DungeonsModel.ClearTime(r) or r.duration
+                            local b = best[r.name]
+                            if t and t > 0 and (not b or t < b.time) then
+                                best[r.name] = { time = t, friend = f.name or id, name = c.display or c.name or key }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return best
+end
+
 -- Lines --------------------------------------------------------------------------
 
 local function seg(x, w, text, role, font, align)
@@ -157,8 +203,8 @@ end
 -- Column layouts (fractions of the width).
 DungeonsModel.RUN_COLS = { { 0, .12 }, { .12, .24 }, { .36, .20 }, { .56, .07, "RIGHT" }, { .63, .07, "RIGHT" },
     { .70, .07, "RIGHT" }, { .78, .12 }, { .90, .10 } }
-DungeonsModel.DUNGEON_COLS = { { 0, .34 }, { .34, .10, "RIGHT" }, { .44, .12, "RIGHT" }, { .56, .10, "RIGHT" },
-    { .66, .12, "RIGHT" }, { .78, .22, "RIGHT" } }
+DungeonsModel.DUNGEON_COLS = { { 0, .26 }, { .26, .08, "RIGHT" }, { .34, .10, "RIGHT" }, { .44, .10, "RIGHT" },
+    { .54, .10, "RIGHT" }, { .67, .19 }, { .86, .14, "RIGHT" } }
 DungeonsModel.FRIEND_COLS = { { 0, .20 }, { .20, .30 }, { .50, .15, "RIGHT" }, { .65, .15, "RIGHT" }, { .80, .15, "RIGHT" } }
 
 local function row(cols, texts, role, font, roles)
@@ -189,12 +235,21 @@ function DungeonsModel.Lines(o)
     if #by == 0 then
         lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_RUNS }
     else
+        local fbest = DungeonsModel.FriendBest(o.friends, o.isBlocked, o.fromKey, o.dateFn)
         lines[#lines + 1] = { kind = "grid", rules = { { 0, 1 } }, segments = row(DungeonsModel.DUNGEON_COLS,
-            { L.DCOL_DUNGEON, L.DCOL_RUNS, L.DCOL_COMPLETED, L.DCOL_BEST, L.DCOL_AVERAGE, L.DCOL_LAST }, "muted", "small") }
+            { L.DCOL_DUNGEON, L.DCOL_RUNS, L.DCOL_COMPLETED, L.DCOL_BEST, L.DCOL_AVERAGE, L.DCOL_FRIEND_BEST, L.DCOL_LAST }, "muted", "small") }
         for i, d in ipairs(by) do
+            local fb = fbest[d.name]
+            -- The faster of you and your fastest friend is drawn green.
+            local mineFaster = d.best and (not fb or d.best <= fb.time)
             lines[#lines + 1] = { kind = "grid", shade = i % 2 == 0, segments = row(DungeonsModel.DUNGEON_COLS,
-                { d.name, tostring(d.runs), tostring(d.completed), DungeonsModel.Minutes(d.best),
-                  DungeonsModel.Minutes(d.average), when(d.last) }) }
+                { d.name, tostring(d.runs), tostring(d.completed), DungeonsModel.Clock(d.best),
+                  DungeonsModel.Minutes(d.average), fb and string.format(L.DUNGEONS_FRIEND_BEST, DungeonsModel.Clock(fb.time), fb.friend) or "-",
+                  when(d.last) }, nil, nil,
+                { nil, nil, nil, (mineFaster and fb) and "good" or nil, nil, (fb and d.best and fb.time < d.best) and "good" or "muted" }),
+                tooltip = fb and function()
+                    return d.name, { string.format(L.DUNGEONS_FRIEND_BEST_TIP, fb.friend, fb.name, DungeonsModel.Clock(fb.time)) }
+                end or nil }
         end
     end
     lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
@@ -235,16 +290,23 @@ function DungeonsModel.Lines(o)
                     lines[#lines + 1] = { kind = "grid", inset = inset, box = "single",
                         segments = { seg(0, 1, L.DUNGEONS_NO_BOSSES, "muted") } }
                 else
+                    local clear = DungeonsModel.ClearTime(run)
+                    local head = string.format(L.DUNGEONS_INSIDE, DungeonsModel.Minutes(dur))
+                    if clear then head = string.format(L.DUNGEONS_CLEARED_IN, DungeonsModel.Clock(clear)) .. "     " .. head end
+                    -- Columns (D-104): killed at (time after entering), fight (pull to kill).
                     lines[#lines + 1] = { kind = "grid", inset = inset, box = "top",
-                        segments = { seg(0, .6, L.DUNGEONS_TIMELINE, "muted", "small"),
-                            seg(.6, .4, string.format(L.DUNGEONS_INSIDE, DungeonsModel.Minutes(dur)), "muted", "small", "RIGHT") } }
+                        segments = { seg(0, .30, L.DUNGEONS_TIMELINE, "muted", "small"),
+                            seg(.36, .12, L.DUNGEONS_KILLED_AT, "muted", "small", "RIGHT"),
+                            seg(.49, .10, L.DUNGEONS_FIGHT, "muted", "small", "RIGHT"),
+                            seg(.60, .40, head, "muted", "small", "RIGHT") } }
                     for j, b in ipairs(list) do
                         local frac = (b.offset and dur and dur > 0) and math.max(0, math.min(1, b.offset / dur)) or 0
                         lines[#lines + 1] = { kind = "grid", inset = inset, box = j == #list and "bottom" or "middle",
                             segments = { seg(0, .04, tostring(b.n), "muted", nil, "RIGHT"),
                                 seg(.06, .30, b.name, b.final and "good" or "text"),
-                                seg(.36, .12, b.offset and ("+" .. DungeonsModel.Minutes(b.offset)) or "", "muted", nil, "RIGHT"),
-                                { x = .50, w = .36, bar = frac },
+                                seg(.36, .12, b.offset and DungeonsModel.Clock(b.offset) or "", "muted", nil, "RIGHT"),
+                                seg(.49, .10, b.fight and DungeonsModel.Clock(b.fight) or "-", b.fight and "text" or "muted", nil, "RIGHT"),
+                                { x = .62, w = .24, bar = frac },
                                 seg(.87, .13, b.final and L.DUNGEONS_FINAL or "", "good", "small") } }
                     end
                 end

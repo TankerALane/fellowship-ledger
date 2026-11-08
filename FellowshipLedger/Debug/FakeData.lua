@@ -106,7 +106,8 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
                     local names = FAKE_BOSSES
                     local kills = done and 3 or 1
                     for k = 1, kills do
-                        run.bosses[k] = { name = names[(#c.dungeons + k - 2) % #names + 1], at = run.entered + math.floor(run.duration * k / 3.4) }
+                        run.bosses[k] = { name = names[(#c.dungeons + k - 2) % #names + 1], at = run.entered + math.floor(run.duration * k / 3.4),
+                            fight = 35 + ((#c.dungeons * 17 + k * 29) % 70) } -- made up, no random draws (D-104)
                     end
                     run.bossCount = 3
                     if done then run.completedAt = run.bosses[kills].at end

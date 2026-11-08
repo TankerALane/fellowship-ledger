@@ -211,8 +211,19 @@ function Codec.EncodeData(key, char, shared, since)
         table.sort(runs, function(a, b) return a.entered < b.entered end)
         for i = math.max(1, #runs - Codec.MAX_RUNS + 1), #runs do
             local r = runs[i]
+            -- 1.7.0 (D-104) adds <clear>,<splits>: seconds from entering to the final boss
+            -- (0 = not cleared) and "<killedAt>/<fight>;..." per boss in kill order
+            -- (fight empty when unknown). Older versions read only the first 8 fields.
+            local clear = (r.completed and r.completedAt and r.entered and r.completedAt >= r.entered) and (r.completedAt - r.entered) or 0
+            local splits = {}
+            for _, b in ipairs(r.bosses or {}) do
+                if b.at and r.entered then
+                    splits[#splits + 1] = string.format("%d/%s", b.at - r.entered, b.fight and string.format("%d", b.fight) or "")
+                end
+            end
             recs[#recs + 1] = table.concat({ "u", tostring(r.entered), Codec.Escape(r.name), tostring(r.duration or 0),
-                r.completed and "1" or "0", tostring(#(r.bosses or {})), tostring(r.bossCount or 0), tostring(r.deaths or 0) }, ",")
+                r.completed and "1" or "0", tostring(#(r.bosses or {})), tostring(r.bossCount or 0), tostring(r.deaths or 0),
+                string.format("%d", clear), table.concat(splits, ";") }, ",")
         end
     end
     local sessions = {}
@@ -280,6 +291,15 @@ function Codec.DecodeData(body)
             local run = { entered = tonumber(f[2]), name = Codec.Unescape(f[3] or ""), duration = tonumber(f[4]) or 0,
                 completed = f[5] == "1" or nil, kills = math.max(0, tonumber(f[6]) or 0), bossCount = count > 0 and count or nil,
                 deaths = tonumber(f[8]) or 0 }
+            -- Boss times (1.7.0+, D-104).
+            local clear = tonumber(f[9])
+            if clear and clear > 0 then run.clear = clear end
+            if f[10] and f[10] ~= "" then
+                run.splits = {}
+                for at, fight in f[10]:gmatch("(%d+)/(%d*)") do
+                    run.splits[#run.splits + 1] = { at = tonumber(at), fight = tonumber(fight) }
+                end
+            end
             out.runs = out.runs or {}
             out.runs[#out.runs + 1] = run
         elseif f[1] == "s" and tonumber(f[2]) then

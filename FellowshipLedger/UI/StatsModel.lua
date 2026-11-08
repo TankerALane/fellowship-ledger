@@ -422,8 +422,23 @@ function StatsModel.FriendDungeons(sum, runs, shared, L, dateFn, version, fromKe
     for i = 1, math.min(#list, StatsModel.FRIEND_RUNS_SHOWN) do
         local r = list[i]
         local kills = r.kills or 0
-        out[#out + 1] = { segs = { seg(0, .16, when(dateFn, r.entered)), seg(.17, .37, r.name or "?"),
-            seg(.55, .10, ns.DungeonsModel.Minutes(r.duration), "text", nil, "RIGHT"),
+        -- Time: the clear time when shared (1.7.0+, D-104), else the time inside.
+        -- Hover for the boss times.
+        local DM = ns.DungeonsModel
+        local clear = DM.ClearTime(r)
+        local splits = r.splits
+        out[#out + 1] = { tooltip = function()
+                local tip = {}
+                if clear then tip[#tip + 1] = string.format(L.DUNGEONS_CLEARED_IN, DM.Clock(clear)) end
+                tip[#tip + 1] = string.format(L.DUNGEONS_INSIDE, DM.Minutes(r.duration))
+                for n, s in ipairs(splits or {}) do
+                    tip[#tip + 1] = string.format(L.DUNGEONS_FRIEND_SPLIT, n, DM.Clock(s.at), s.fight and DM.Clock(s.fight) or "-")
+                end
+                if not splits and kills > 0 then tip[#tip + 1] = L.DUNGEONS_FRIEND_SPLITS_NONE end
+                return r.name or "?", tip
+            end,
+            segs = { seg(0, .16, when(dateFn, r.entered)), seg(.17, .37, r.name or "?"),
+            seg(.55, .10, clear and DM.Clock(clear) or DM.Minutes(r.duration), "text", nil, "RIGHT"),
             seg(.66, .10, r.bossCount and (kills .. " / " .. r.bossCount) or tostring(kills), "text", nil, "RIGHT"),
             seg(.77, .09, tostring(r.deaths or 0), "text", nil, "RIGHT"),
             seg(.88, .12, r.completed and L.DUNGEONS_COMPLETED or L.DUNGEONS_NOT_DONE, r.completed and "good" or "muted") } }
@@ -439,7 +454,8 @@ end
 function StatsModel.Wrap(tabLine, parts, layout)
     local lines = { tabLine }
     for _, p in ipairs(parts) do
-        local line = { kind = "grid", inset = StatsModel.INSET, segments = p.segs, rules = p.rules, onClick = p.onClick }
+        local line = { kind = "grid", inset = StatsModel.INSET, segments = p.segs, rules = p.rules, onClick = p.onClick,
+            tooltip = p.tooltip }
         lines[#lines + 1] = line
     end
     if layout ~= "list" then
