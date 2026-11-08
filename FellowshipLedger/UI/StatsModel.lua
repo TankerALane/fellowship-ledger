@@ -82,8 +82,13 @@ end
 -- Gold by source for a range: sum = Days.Sum over the range (money_<source>, moneyIn, moneyOut, moneyNet).
 function StatsModel.Gold(sum, L)
     local Format = ns.Format
-    local out = { { segs = { seg(0, 1, string.format(L.STATS_GOLD_SUM, Format.Money(sum.moneyIn or 0), Format.Money(sum.moneyOut or 0),
-        Format.Money(sum.moneyNet or 0, true)), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
+    -- The headline (D-101): the net after everything, green when up, red when down.
+    local net = sum.moneyNet or ((sum.moneyIn or 0) - (sum.moneyOut or 0))
+    local netRole = net > 0 and "good" or net < 0 and "bad" or "text"
+    local out = { { height = 26, segs = { seg(0, .30, net < 0 and L.STATS_GOLD_TOTAL_LOST or L.STATS_GOLD_TOTAL, "heading", "large"),
+            seg(.30, .40, Format.Money(net, true), netRole, "large") } },
+        { segs = { seg(0, 1, string.format(L.STATS_GOLD_SUM, Format.Money(sum.moneyIn or 0), Format.Money(sum.moneyOut or 0),
+            Format.Money(net, true)), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
     local gains, any = 0, false
     for _, s in ipairs(StatsModel.GOLD_SOURCES) do
         local v = sum["money_" .. s] or 0
@@ -107,6 +112,8 @@ function StatsModel.Gold(sum, L)
             out[#out + 1] = { segs = segs }
         end
     end
+    out[#out + 1] = { segs = { seg(0, .16, L.STATS_GOLD_TOTAL_ROW, "heading"), seg(.17, .16, Format.Money(net, true), netRole, nil, "RIGHT") },
+        rules = { { 0, .34 } } }
     out[#out + 1] = { segs = {} }
     out[#out + 1] = { segs = { seg(0, 1, L.STATS_GOLD_NOTE, "muted", "small") } }
     return out

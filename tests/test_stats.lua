@@ -60,6 +60,14 @@ H.test("stats: gold by source with shares; losses in red, no bar", function()
     H.ok(textOf(S.Gold({}, L)):find("No gold changes", 1, true))
 end)
 
+H.test("stats: gold headline and Net row show the total after everything (D-101)", function()
+    local parts = S.Gold({ moneyIn = 40000, moneyOut = 5000, moneyNet = 35000, money_loot = 30000, money_quest = 10000, money_vendor = -5000 }, L)
+    H.eq(parts[1].segs[1].text, "Total gained"); H.eq(parts[1].segs[2].text, "+3g 50s 00c"); H.eq(parts[1].segs[2].role, "good")
+    H.ok(textOf(parts):find("Net | +3g 50s 00c", 1, true), textOf(parts))
+    parts = S.Gold({ moneyIn = 1000, moneyOut = 6000, moneyNet = -5000, money_vendor = -5000, money_loot = 1000 }, L)
+    H.eq(parts[1].segs[1].text, "Total lost"); H.eq(parts[1].segs[2].role, "bad")
+end)
+
 H.test("stats: kills by type follow the range; All uses the all-time table", function()
     local kills = { total = 400, rare = 3, elite = 11, byType = { Beast = 200, Humanoid = 150, Undead = 50 } }
     local week = { kills = 40, rareKills = 1, eliteKills = 2, ["killType:Beast"] = 30, ["killType:Humanoid"] = 10 }
