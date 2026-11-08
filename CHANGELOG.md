@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.0 - 2026-11-07
 
 ### Added
 - **Quest details**: in Quest chains, click a quest to open it: its objective, where it starts and ends, its levels, and what it gives: XP, money, reputation, the items you choose from and the items you also get (in their quality colors), and when you turned it in and what you got. XP for quests you have not picked up comes from Questie when it is installed. Item rewards show once you have had the quest in your log or seen it at the quest giver (the game only tells addons then); they are remembered for all your characters.
