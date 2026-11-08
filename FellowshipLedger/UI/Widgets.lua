@@ -187,6 +187,21 @@ function W.Tooltip(owner, title, lines)
     tip:Show()
 end
 
+-- The game's own item tooltip, as in your bags (D-102). item = { id, link }.
+-- Tries GameTooltip:SetHyperlink with the link (or "item:<id>"), then SetItemByID.
+-- Returns true when the game filled the tooltip.
+function W.ItemTooltip(owner, item)
+    local tip = _G.GameTooltip
+    if not tip or type(item) ~= "table" or not item.id then return false end
+    tip:SetOwner(owner, "ANCHOR_RIGHT")
+    local link = item.link or ("item:" .. tostring(item.id))
+    local ok = type(tip.SetHyperlink) == "function" and pcall(tip.SetHyperlink, tip, link)
+    if not ok and type(tip.SetItemByID) == "function" then ok = pcall(tip.SetItemByID, tip, item.id) end
+    if not ok then return false end
+    tip:Show()
+    return true
+end
+
 function W.HideTooltip()
     if _G.GameTooltip then _G.GameTooltip:Hide() end
 end

@@ -97,7 +97,8 @@ local function itemText(it, L, skin)
     local name = it.name or string.format(L.QUEST_ITEM_UNKNOWN, it.id or 0)
     if it.count then name = string.format(L.QUEST_ITEM_COUNT, name, it.count) end
     local color = skin and ns.Palette and ns.Palette.QualityColor(it.quality, skin)
-    return color and (ns.Palette.Code(color) .. name .. "|r") or name
+    local icon = it.icon and ("|T" .. tostring(it.icon) .. ":14:14:0:0|t ") or ""
+    return icon .. (color and (ns.Palette.Code(color) .. name .. "|r") or name)
 end
 
 -- The text lines of one opened quest. q: the chain's quest (name, level, req, start,
@@ -108,7 +109,9 @@ function ChainModel.QuestMore(q, more, L, opts)
     more = more or {}
     local F = ns.Format
     local out = {}
-    local function add(text, role) out[#out + 1] = { text = text, role = role or "text" } end
+    local function add(text, role, item)
+        out[#out + 1] = { text = text, role = role or "text", item = item }
+    end
     if more.objectives then
         for _, l in ipairs(ChainModel.Wrap(words(more.objectives), ChainModel.WRAP, " ", L.QUEST_OBJECTIVE)) do add(l, "muted") end
     end
@@ -127,15 +130,20 @@ function ChainModel.QuestMore(q, more, L, opts)
         gives[#gives + 1] = string.format(L.QUEST_REP, r.value >= 0 and "+" or "", r.value, r.name or L.QUEST_REP_UNKNOWN)
     end
     if #gives > 0 then add(L.QUEST_REWARDS .. table.concat(gives, ", ")) end
+    -- One line per item (D-102), so hovering it shows the game's own item tooltip.
     local choose, also = {}, {}
     for _, it in ipairs(more.items or {}) do
         local list = it.choice and choose or also
-        list[#list + 1] = itemText(it, L, opts.skin)
+        list[#list + 1] = it
     end
-    if #choose > 0 then for _, l in ipairs(ChainModel.Wrap(choose, ChainModel.WRAP, ", ", L.QUEST_CHOOSE)) do add(l) end end
-    if #also > 0 then
-        for _, l in ipairs(ChainModel.Wrap(also, ChainModel.WRAP, ", ", #choose > 0 and L.QUEST_ALSO or L.QUEST_ITEMS)) do add(l) end
+    local function items(list, head)
+        add(head)
+        for _, it in ipairs(list) do
+            add("    " .. itemText(it, L, opts.skin), "text", { id = it.id, link = it.link })
+        end
     end
+    if #choose > 0 then items(choose, L.QUEST_CHOOSE) end
+    if #also > 0 then items(also, #choose > 0 and L.QUEST_ALSO or L.QUEST_ITEMS) end
     if not more.seen then add(L.QUEST_ITEMS_UNSEEN, "muted")
     elseif #choose == 0 and #also == 0 then add(L.QUEST_ITEMS_NONE, "muted") end
     if more.done then
@@ -195,7 +203,12 @@ local function body(c, L, opts)
             if isOpen then
                 local more = opts.more and opts.more(q) or nil
                 for _, l in ipairs(ChainModel.QuestMore(q, more, L, opts)) do
-                    add({ seg({ C.quest[1], 1 - C.quest[1] }, l.text, l.role) })
+                    local extra = nil
+                    if l.item then
+                        local item = l.item
+                        extra = { item = item, onClick = function() if opts.onItem then opts.onItem(item) end end }
+                    end
+                    add({ seg({ C.quest[1], 1 - C.quest[1] }, l.text, l.role) }, extra)
                 end
             end
         end

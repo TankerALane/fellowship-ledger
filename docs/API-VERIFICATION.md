@@ -249,7 +249,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | PASS | ? |
 | `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | PASS | ? |
 | `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | PASS | ? |
-| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | INFO | ? |
+| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | PASS | ? |
 | `x:dungeon.instance` | custom | GetInstanceInfo returns readable values here | `/dump GetInstanceInfo()` | INFO | INFO |
 | `ev:ENCOUNTER_START` | event | boss pull: pause sending | `/dump C_EventUtils.IsEventValid("ENCOUNTER_START")` -> true | PASS | PASS |
 | `ev:ENCOUNTER_END` | event | boss kill (args: encounterID, name, difficulty, size, success) | `/dump C_EventUtils.IsEventValid("ENCOUNTER_END")` -> true | PASS | PASS |
@@ -298,8 +298,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
-| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | INFO | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | INFO | ? |
+| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | PASS | ? |
 
 ### Reputation
 
@@ -331,7 +331,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | PASS | PASS |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | PASS | PASS |
 | `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | PASS | ? |
-| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | INFO | ? |
+| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | PASS | ? |
 
 ### Kills
 
@@ -472,30 +472,35 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `ev:QUEST_DETAIL` | event | a quest giver shows a quest: its rewards are read | `/dump C_EventUtils.IsEventValid("QUEST_DETAIL")` -> true | ? | ? |
-| `GetQuestID` | api | the quest in the open quest dialog | `/dump type(GetQuestID)` -> "function" | ? | ? |
-| `GetNumQuestRewards` | api | quest dialog: items you always get | `/dump type(GetNumQuestRewards)` -> "function" | ? | ? |
-| `GetNumQuestChoices` | api | quest dialog: items you choose from | `/dump type(GetNumQuestChoices)` -> "function" | ? | ? |
-| `GetQuestItemInfo` | api | quest dialog item (6th value itemID) | `/dump type(GetQuestItemInfo)` -> "function" | ? | ? |
-| `GetQuestItemLink` | api | quest dialog item link (itemID fallback) | `/dump type(GetQuestItemLink)` -> "function" | ? | ? |
-| `GetRewardMoney` | api | quest dialog money reward | `/dump type(GetRewardMoney)` -> "function" | ? | ? |
-| `GetRewardXP` | api | quest dialog XP reward | `/dump type(GetRewardXP)` -> "function" | ? | ? |
-| `GetNumQuestLogRewards` | api | log quest reward items, by questID | `/dump type(GetNumQuestLogRewards)` -> "function" | ? | ? |
-| `GetQuestLogRewardInfo` | api | log quest reward item (index, questID) | `/dump type(GetQuestLogRewardInfo)` -> "function" | ? | ? |
-| `GetNumQuestLogChoices` | api | log quest choice items, by questID | `/dump type(GetNumQuestLogChoices)` -> "function" | ? | ? |
-| `GetQuestLogChoiceInfo` | api | log quest choice item (index, questID) | `/dump type(GetQuestLogChoiceInfo)` -> "function" | ? | ? |
-| `GetQuestLogRewardMoney` | api | log quest money, by questID | `/dump type(GetQuestLogRewardMoney)` -> "function" | ? | ? |
-| `GetQuestLogRewardXP` | api | log quest XP, by questID | `/dump type(GetQuestLogRewardXP)` -> "function" | ? | ? |
-| `C_Item.RequestLoadItemDataByID` | api | load a reward item's name | `/dump type(C_Item.RequestLoadItemDataByID)` -> "function" | ? | ? |
-| `x:quest.rewards` | custom | rewards read for the quests in your log, and from the last quest dialog (D-100) | have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log | ? | ? |
-| `x:questie.xp` | custom | Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100) | `/dump QuestieLoader:ImportModule("QuestXP").GetQuestLogRewardXP` | ? | ? |
+| `ev:QUEST_DETAIL` | event | a quest giver shows a quest: its rewards are read | `/dump C_EventUtils.IsEventValid("QUEST_DETAIL")` -> true | PASS | ? |
+| `GetQuestID` | api | the quest in the open quest dialog | `/dump type(GetQuestID)` -> "function" | PASS | ? |
+| `GetNumQuestRewards` | api | quest dialog: items you always get | `/dump type(GetNumQuestRewards)` -> "function" | PASS | ? |
+| `GetNumQuestChoices` | api | quest dialog: items you choose from | `/dump type(GetNumQuestChoices)` -> "function" | PASS | ? |
+| `GetQuestItemInfo` | api | quest dialog item (6th value itemID) | `/dump type(GetQuestItemInfo)` -> "function" | PASS | ? |
+| `GetQuestItemLink` | api | quest dialog item link (itemID fallback) | `/dump type(GetQuestItemLink)` -> "function" | PASS | ? |
+| `GetRewardMoney` | api | quest dialog money reward | `/dump type(GetRewardMoney)` -> "function" | PASS | ? |
+| `GetRewardXP` | api | quest dialog XP reward | `/dump type(GetRewardXP)` -> "function" | PASS | ? |
+| `GetNumQuestLogRewards` | api | log quest reward items, by questID | `/dump type(GetNumQuestLogRewards)` -> "function" | PASS | ? |
+| `GetQuestLogRewardInfo` | api | log quest reward item (index, questID) | `/dump type(GetQuestLogRewardInfo)` -> "function" | PASS | ? |
+| `GetNumQuestLogChoices` | api | log quest choice items, by questID | `/dump type(GetNumQuestLogChoices)` -> "function" | PASS | ? |
+| `GetQuestLogChoiceInfo` | api | log quest choice item (index, questID) | `/dump type(GetQuestLogChoiceInfo)` -> "function" | PASS | ? |
+| `GetQuestLogRewardMoney` | api | log quest money, by questID | `/dump type(GetQuestLogRewardMoney)` -> "function" | PASS | ? |
+| `GetQuestLogRewardXP` | api | log quest XP, by questID | `/dump type(GetQuestLogRewardXP)` -> "function" | PASS | ? |
+| `C_Item.RequestLoadItemDataByID` | api | load a reward item's name | `/dump type(C_Item.RequestLoadItemDataByID)` -> "function" | PASS | ? |
+| `x:quest.rewards` | custom | rewards read for the quests in your log, and from the last quest dialog (D-100) | have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log | PASS | ? |
+| `x:questie.xp` | custom | Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100) | `/dump QuestieLoader:ImportModule("QuestXP").GetQuestLogRewardXP` | PASS | ? |
 
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `TooltipDataProcessor` | api | add a line to unit tooltips (modern clients) | `/dump type(TooltipDataProcessor)` -> "table" | ? | ? |
-| `x:tooltip.unit` | custom | the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099) | `/fl verify; then hover a friend's character` | ? | ? |
+| `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | ? | ? |
+| `GameTooltip.SetItemByID` | api | fallback for the item tooltip (D-102) | `/dump type(GameTooltip.SetItemByID)` -> "function" | ? | ? |
+| `IsShiftKeyDown` | api | shift-click a reward item to link it in chat (D-102) | `/dump type(IsShiftKeyDown)` -> "function" | ? | ? |
+| `ChatEdit_InsertLink` | api | put a reward item's link in the chat box (D-102) | `/dump type(ChatEdit_InsertLink)` -> "function" | ? | ? |
+| `m:itemtooltip` | manual | hovering a reward item in an opened quest (Quest chains) shows the game's item tooltip with its stats, as in your bags; shift-click links it in chat | open a quest with item rewards; hover an item; shift-click it with the chat box open | ? | ? |
+| `TooltipDataProcessor` | api | add a line to unit tooltips (modern clients) | `/dump type(TooltipDataProcessor)` -> "table" | PASS | ? |
+| `x:tooltip.unit` | custom | the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099) | `/fl verify; then hover a friend's character` | PASS | ? |
 | `m:notices` | manual | friend notices: several at once become one, "While you were away" after login, a click opens the friend's page, right click only closes | log in while friends on 1.7.0 have played; click the notice | ? | ? |
 | `m:minimap` | manual | minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered | look at the minimap; click, right-click, drag, /reload | pending | ? |
 | `m:options` | manual | Options > AddOns lists Fellowship Ledger and its button opens Settings | Esc > Options > AddOns > Fellowship Ledger | pending | ? |

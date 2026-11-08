@@ -7,6 +7,7 @@
 --   { cells = { "text", ... }, kind = "row"|"total"|"group"|"detail", indent = bool,
 --     text = "..." (group/detail lines), onClick = fn, action = { label, onClick },
 --     tooltip = fn() -> title, lines (shown on hover), shade = true (grid lines: shaded background),
+--     item = { id, link } (hover shows the game's item tooltip instead, D-102),
 --     align = "right" (group/detail text next to its action button) }
 -- or a "grid" line (UI/DetailModel.lua): text placed at fractions of the width,
 -- with optional small buttons, rules and a shaded box spanning several lines.
@@ -136,6 +137,7 @@ function Obj:Line(i)
         if btn.line and btn.line.onClick then btn.line.onClick() end
     end)
     w:SetScript("OnEnter", function(btn)
+        if btn.line and btn.line.item and W.ItemTooltip(btn, btn.line.item) then return end
         local tip = btn.line and btn.line.tooltip
         if not tip then return end
         local ok, title, lines = pcall(tip)

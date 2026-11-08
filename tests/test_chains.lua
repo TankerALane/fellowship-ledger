@@ -141,8 +141,16 @@ H.test("quest details: objective, rewards, items to choose, your turn-in", funct
     H.ok(#out[1].text <= M.WRAP and out[2].text:find("^   "), "long objectives wrap onto indented lines")
     H.ok(text:find("Starts: Gryan, Westfall    Turn in: ?", 1, true), text)
     H.ok(text:find("Rewards: 1,250 XP, 1g 23s 45c, +250 Stormwind", 1, true), text)
-    H.ok(text:find("Choose one: |c", 1, true) and text:find("Sword|r, Mace", 1, true), "green item colored: " .. text)
-    H.ok(text:find("You also get: Potion x5", 1, true), text)
+    H.ok(text:find("Choose one: \n    |c", 1, true) and text:find("Sword|r\n    Mace", 1, true), "green item colored, one per line: " .. text)
+    H.ok(text:find("You also get: \n    Potion x5", 1, true), text)
+    -- Each item line carries its id for the game's item tooltip (D-102).
+    local ids = {}
+    for _, l in ipairs(out) do if l.item then ids[#ids + 1] = l.item.id end end
+    H.eq(table.concat(ids, ","), "1,2,3")
+    local withIcon = M.QuestMore(q, { seen = true, items = { { id = 9, name = "Ring", icon = 1234, link = "|Hitem:9|h" } } }, L, {})
+    local ring
+    for _, l in ipairs(withIcon) do if l.item then ring = l end end
+    H.ok(ring.text:find("|T1234:14:14:0:0|t Ring", 1, true), ring.text); H.eq(ring.item.link, "|Hitem:9|h")
     H.ok(text:find("You turned it in 11-05 14:20 and got 1,250 XP, 1g 23s 45c.", 1, true), text)
     -- Not seen yet; seen with no items; an old XP number from when you saw it.
     text = M.QuestMore(q, { xp = 300, xpLevel = 9 }, L, {})
@@ -159,11 +167,15 @@ H.test("quest details: a click opens a quest inside its chain", function()
     local clicked
     local opts = { playerLevel = 16, openQuest = { ["q:1|3"] = true },
         onQuest = function(k, id) clicked = k .. "|" .. id end,
-        more = function(q2) return { seen = true, xp = q2.id * 100 } end }
+        more = function(q2) return { seen = true, xp = q2.id * 100, items = { { id = 77, name = "Cloak", link = "L77" } } } end }
+    local picked
+    opts.onItem = function(item) picked = item.link end
     local lines = M.Lines(view, L, opts)
     local text = textOf(lines)
     H.ok(text:find("- Three", 1, true), text)
     H.ok(text:find("Rewards: 300 XP", 1, true), text)
+    for _, l in ipairs(lines) do if l.item then H.eq(l.item.id, 77); l.onClick() end end
+    H.eq(picked, "L77")
     for _, l in ipairs(lines) do
         for _, s in ipairs(l.segments or {}) do if s.text == "+ Four" then l.onClick() end end
     end

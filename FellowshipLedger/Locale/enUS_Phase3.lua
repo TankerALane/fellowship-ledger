@@ -297,7 +297,7 @@ ns.Locale.Set({
     SHOTS_DONE = "Screenshots done: %d pictures in the game's Screenshots folder. Your skin and settings are back. Type /reload so the crop script can find them.",
     SHOTS_FAILED = "Screenshots stopped: %s. Your skin and settings are back.",
     SHOTS_NO_API = "This client has no Screenshot function, so /fl shots cannot run. Use Print Screen instead.",
-    CHAIN_LEGEND ="Check mark: done. Arrow: in your quest log. A red Req is above your level. Click a quest for its objective and rewards; hover for where to turn it in.",
+    CHAIN_LEGEND ="Check mark: done. Arrow: in your quest log. A red Req is above your level. Click a quest for its objective and rewards; hover a reward item for its stats.",
     -- Notices (D-099)
     TOAST_SHOWN = "Show notices on screen",
     TOAST_CHAT = "Also write notices in chat",

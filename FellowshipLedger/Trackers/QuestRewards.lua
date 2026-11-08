@@ -139,13 +139,15 @@ end
 
 -- Item name and quality for display; nil name until the game has the item cached.
 function QuestRewards.ItemInfo(id)
-    local ok, name, _, quality = ns.Compat.Try("C_Item.GetItemInfo", id)
+    -- C_Item.GetItemInfo: name, link, quality, ..., the icon is the 10th value.
+    local ok, name, link, quality, _, _, _, _, _, _, icon = ns.Compat.Try("C_Item.GetItemInfo", id)
     name, quality = ok and plain(name) or nil, ok and plain(quality) or nil
     if type(name) ~= "string" then
         ns.Compat.Try("C_Item.RequestLoadItemDataByID", id)
         return nil
     end
-    return name, quality
+    link, icon = plain(link), plain(icon)
+    return name, quality, type(link) == "string" and link or nil, (type(icon) == "number" or type(icon) == "string") and icon or nil
 end
 
 -- Everything the quest details show about one quest (see ChainModel.QuestMore).
@@ -168,8 +170,9 @@ function QuestRewards.More(questID, inLog, turnedIn)
         more.money = seen.money
         more.seen = true
         for _, it in ipairs(seen.items or {}) do
-            local name, quality = QuestRewards.ItemInfo(it.id)
-            more.items[#more.items + 1] = { id = it.id, name = name, quality = quality or it.q, count = it.n, choice = it.choice }
+            local name, quality, link, icon = QuestRewards.ItemInfo(it.id)
+            more.items[#more.items + 1] = { id = it.id, name = name, quality = quality or it.q, count = it.n, choice = it.choice,
+                link = link, icon = icon }
         end
     end
     if turnedIn then more.done = { at = turnedIn.at, xp = turnedIn.xp, money = turnedIn.money } end

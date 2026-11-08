@@ -10,6 +10,7 @@
 - **A friend joined your ledger**: a notice the first time a friend's ledger says hello.
 - **This session** line at the top of the Me tab: time played, levels, quests, dungeons, gold and deaths so far.
 - **Tooltip line**: hover a friend's character in the world or in your group and the game's tooltip shows "Ledger: Hamlet's character, 12 quests and 2 dungeons this week".
+- **Reward item tooltips**: in an opened quest, each reward item has its own line with its icon; hover it for the game's own tooltip with its stats, as in your bags. Shift-click links it in chat.
 - **Gold total**: the Gold page (yours and friends') now starts with a large "Total gained" (or "Total lost") for the chosen range, and the source table ends with a Net row.
 - Settings > Notices: a switch for each of these, plus "Show notices on screen" (turn all on-screen notices off; chat still gets them) and "Also write notices in chat".
 

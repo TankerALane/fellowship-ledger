@@ -308,6 +308,11 @@ ns.VerifyChecks = {
     { id = "x:quest.rewards", kind = "custom", area = "Quests", why = "rewards read for the quests in your log, and from the last quest dialog (D-100)", test = "have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log" },
     { id = "x:questie.xp", kind = "custom", area = "Quests", why = "Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100)", test = "/dump QuestieLoader:ImportModule(\"QuestXP\").GetQuestLogRewardXP" },
     -- Friend's character in the game's tooltip (D-099).
+    { id = "GameTooltip.SetHyperlink", kind = "api", area = "UI", why = "show a reward item's own tooltip on hover in Quest chains (D-102)" },
+    { id = "GameTooltip.SetItemByID", kind = "api", area = "UI", why = "fallback for the item tooltip (D-102)" },
+    { id = "IsShiftKeyDown", kind = "api", area = "UI", why = "shift-click a reward item to link it in chat (D-102)" },
+    { id = "ChatEdit_InsertLink", kind = "api", area = "UI", why = "put a reward item's link in the chat box (D-102)" },
+    { id = "m:itemtooltip", kind = "manual", area = "UI", why = "hovering a reward item in an opened quest (Quest chains) shows the game's item tooltip with its stats, as in your bags; shift-click links it in chat", test = "open a quest with item rewards; hover an item; shift-click it with the chat box open" },
     { id = "TooltipDataProcessor", kind = "api", area = "UI", why = "add a line to unit tooltips (modern clients)", expect = "table" },
     { id = "x:tooltip.unit", kind = "custom", area = "UI", why = "the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099)", test = "/fl verify; then hover a friend's character" },
     { id = "m:notices", kind = "manual", area = "UI", why = "friend notices: several at once become one, \"While you were away\" after login, a click opens the friend's page, right click only closes", test = "log in while friends on 1.7.0 have played; click the notice" },
