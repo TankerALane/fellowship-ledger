@@ -79,7 +79,7 @@ function SettingsTab.Refresh()
             row.track:SetDisabled(unavailable)
             row.share:SetDisabled(unavailable or not ns.TrackerList.IsTracking(char, row.id) or S().sharingPaused)
         end
-        row.note:SetText(L["STATUS_" .. t.status:upper()])
+        row.note:SetText(L["STATUS_" .. ns.TrackerList.Status(t, ns.Compat.flavor):upper()])
     end
     for _, t in ipairs(ui.toggles) do t:Refresh() end
     for skin, b in pairs(ui.skinButtons) do b:SetSelected(S().skin == skin) end

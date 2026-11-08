@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Settings no longer says "(not yet confirmed in-game)" next to Dungeons, Reputation, Flight paths and Notable items on WoW Forever, where all four are confirmed. On retail the note stays on Flight paths and Notable items until a retail player confirms them.
+
 ## 1.7.0 - 2026-11-07
 
 ### Added

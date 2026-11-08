@@ -59,8 +59,14 @@ H.test("tracker flags default on; share needs track and no pause", function()
     H.ok(not TL.IsSharing(char, "quests"), "no share without track")
     TL.byId.items.status = "unavailable" -- a tracker whose APIs are missing
     H.ok(not TL.IsTracking(char, "items"), "unavailable trackers never track")
-    TL.byId.items.status = "unverified"
+    TL.byId.items.status = "ready"
     H.ok(not TL.IsTracking(char, "nonsense"))
+    -- The "not yet confirmed" note follows the client
+    H.eq(TL.Status(TL.byId.items, "Forever"), "ready")
+    H.eq(TL.Status(TL.byId.items, "Retail"), "unverified")
+    H.eq(TL.Status(TL.byId.dungeons, "Retail"), "ready")
+    H.eq(TL.Status(TL.byId.reputation, "Forever"), "ready")
+    H.eq(TL.Status(TL.byId.items, nil), "ready")
     char.flags.levels.track = false
     TL.EnsureFlags(char)
     H.eq(char.flags.levels.track, false, "EnsureFlags keeps existing choices")

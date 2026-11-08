@@ -25,6 +25,7 @@ H.test("dynamic keys exist", function()
     for _, t in ipairs(ns.TrackerList.ORDER) do
         need[#need + 1] = "TRACKER_" .. t.id
         need[#need + 1] = "STATUS_" .. t.status:upper()
+        need[#need + 1] = "STATUS_" .. ns.TrackerList.Status(t, "Retail"):upper()
     end
     for _, id in ipairs(ns.GraphModel.CHARTS) do
         need[#need + 1] = "CHART_" .. id:upper()

@@ -4,9 +4,11 @@
 -- Both default to on. Share is meaningless while Track is off (the UI greys it out).
 --
 -- status:
---   "ready"       built on APIs that passed /fl verify on retail
+--   "ready"       confirmed working in-game
 --   "unverified"  built, but depends on something not yet confirmed in-game
 --   "unavailable" not built yet: needs an API that is unverified or blocked
+-- unverifiedOn = { Retail = true } shows "unverified" only on that client
+-- (the names are FlavorLogic.FOREVER / RETAIL). See TrackerList.Status.
 
 local _, ns = ...
 
@@ -16,18 +18,26 @@ ns.TrackerList = TrackerList
 TrackerList.ORDER = {
     { id = "levels", status = "ready" },
     { id = "quests", status = "ready" },
-    { id = "dungeons", status = "unverified" },  -- last-boss detection via the journal
+    { id = "dungeons", status = "ready" },       -- completion via our final-boss list, seen on Forever
     { id = "gold", status = "ready" },
     { id = "professions", status = "ready" },
     { id = "deaths", status = "ready" },
     { id = "zones", status = "ready" },
-    { id = "reputation", status = "unverified" }, -- FactionData field names
-    { id = "kills", status = "ready" },           -- PARTY_KILL args readable on retail (Forever pending)
-    { id = "flightPaths", status = "unverified" },-- taxi node fields
+    { id = "reputation", status = "ready" },     -- gains recorded on Forever
+    { id = "kills", status = "ready" },
+    { id = "flightPaths", status = "ready", unverifiedOn = { Retail = true } }, -- seen on Forever only
     { id = "achievements", status = "ready" },
     { id = "partyLevels", status = "ready" },
-    { id = "items", status = "unverified" },      -- loot window functions on the verify list
+    { id = "items", status = "ready", unverifiedOn = { Retail = true } },       -- seen on Forever only
 }
+
+-- The status to show on this client.
+function TrackerList.Status(t, flavor)
+    if t.status == "ready" and t.unverifiedOn and flavor and t.unverifiedOn[flavor] then
+        return "unverified"
+    end
+    return t.status
+end
 
 TrackerList.byId = {}
 for i, t in ipairs(TrackerList.ORDER) do
