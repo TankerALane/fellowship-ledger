@@ -498,3 +498,35 @@ H.test("a friend's cleared dungeon reaches you as a notice; switched off, it doe
     network({ A, B }, 65)
     H.ok(not Mock.chatContains(A, "cleared Wailing Caverns"), "switched off")
 end)
+
+H.test("weekly recap: once per reset, on the first login after it, with you and your friends (D-109)", function()
+    local A, nsA = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    giveData(A, 4); giveData(B, 3)
+    network({ A, B }, 60)
+    local shown = {}
+    local real = nsA.Toast.Show
+    nsA.Toast.Show = function(title, lines, opts) shown[#shown + 1] = { title = title, lines = lines, opts = opts } end
+    -- The week before: move both clients' data back seven days so "last week" has it.
+    local db = A.FellowshipLedgerDB
+    local last = nsA.Sync.LastReset()
+    local fromKey = nsA.Weekly.Range(last, os.date)
+    db.characters["Alice-Realm"].days[fromKey] = { quests = 4, active = 3000 }
+    for _, c in pairs(db.friends["bn:Bob#1"].characters) do c.days[fromKey] = { quests = 3, active = 1200 } end
+    db.weeklyRecapSeen = nil
+    nsA.Sync.CheckWeekly()
+    nsA.Sync.CheckWeekly()
+    H.eq(#shown, 1, "shown once")
+    H.eq(shown[1].title, "Last week in your ledger")
+    H.ok(shown[1].lines[1]:find("^You: ") and shown[1].lines[2]:find("^Bob: "), table.concat(shown[1].lines, " / "))
+    H.eq(db.weeklyRecapSeen, last)
+    -- The next reset: shown again; switched off: not.
+    db.weeklyRecapSeen = last - nsA.Weekly.WEEK
+    db.settings.weeklyRecap = false
+    nsA.Sync.CheckWeekly()
+    H.eq(#shown, 1, "off by its switch")
+    db.settings.weeklyRecap = true
+    nsA.Sync.CheckWeekly()
+    H.eq(#shown, 2)
+    nsA.Toast.Show = real
+end)

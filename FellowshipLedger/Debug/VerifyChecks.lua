@@ -319,6 +319,8 @@ ns.VerifyChecks = {
     { id = "C_PartyInfo.InviteUnit", kind = "api", area = "Friends", why = "right-click Invite by character name (D-108)" },
     { id = "InviteUnit", kind = "api", area = "Friends", why = "older name for the invite (D-108)" },
     { id = "m:friendmenu", kind = "manual", area = "Friends", why = "right-click a friend (or their character) on the Friends tab: Whisper opens a whisper to them; Invite (only on the character they are on) sends a group invite (D-108)", test = "with a friend online, right-click their row; try both" },
+    { id = "C_DateAndTime.GetSecondsUntilWeeklyReset", kind = "api", area = "UI", why = "the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109)" },
+    { id = "m:weeklyrecap", kind = "manual", area = "UI", why = "the first login after the weekly reset shows \"Last week in your ledger\" (you and friends), once; a click opens the Friends tab's weekly panel with Last week on top (D-109)", test = "log in after Tuesday's reset; /reload: it does not show again" },
     { id = "GameTooltip.SetHyperlink", kind = "api", area = "UI", why = "show a reward item's own tooltip on hover in Quest chains (D-102)" },
     { id = "GameTooltip.SetItemByID", kind = "api", area = "UI", why = "fallback for the item tooltip (D-102)" },
     { id = "IsShiftKeyDown", kind = "api", area = "UI", why = "shift-click a reward item to link it in chat (D-102)" },

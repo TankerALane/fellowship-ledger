@@ -367,6 +367,32 @@ function Sync.CommTestReport()
     ns.CopyWindow:Show(L.COMMTEST_TITLE, ns.db.dev.commtest)
 end
 
+-- Weekly recap (D-109) ---------------------------------------------------------------
+-- Once per weekly reset, on the first login after it (or when a reset passes while
+-- playing): last week for you and each friend. A click opens the Friends tab's weekly
+-- panel, which lists it too.
+Sync.WEEKLY_DELAY = 25 -- seconds after login, after the "While you were away" notice starts
+function Sync.LastReset()
+    local okR, secs = ns.Compat.Try("C_DateAndTime.GetSecondsUntilWeeklyReset")
+    return ns.Weekly.LastReset(now(), okR and ns.Trackers.Plain(secs) or nil)
+end
+
+function Sync.CheckWeekly()
+    if ns.Data.IsFake() then return end
+    local settings = ns.db.settings
+    local last = Sync.LastReset()
+    if not ns.Weekly.Due(settings, ns.db.weeklyRecapSeen, last) then return end
+    ns.db.weeklyRecapSeen = last
+    local fromKey, toKey = ns.Weekly.Range(last, date)
+    local rows = ns.Weekly.Rows(ns.db.characters, ns.db.friends, ns.db.blocklist, fromKey, toKey, L)
+    local title, lines = ns.Weekly.Notice(rows, L)
+    if title then
+        ns.Toast.Show(title, lines, { onClick = function()
+            if ns.FriendsTab and ns.FriendsTab.OpenWeekly then ns.FriendsTab.OpenWeekly() end
+        end })
+    end
+end
+
 -- Start ----------------------------------------------------------------------------
 
 local started = false
@@ -381,6 +407,9 @@ function Sync.Start()
     local okMax, maxLevel = ns.Compat.Try("GetMaxLevelForPlayerExpansion")
     if not (okMax and type(maxLevel) == "number" and maxLevel > 0) then maxLevel = ns.Compat.Resolve("MAX_PLAYER_LEVEL") end
     Merge.maxLevel = type(maxLevel) == "number" and maxLevel > 0 and maxLevel or nil
+    -- The weekly recap works without sharing too (your own week).
+    ns.Events.After(Sync.WEEKLY_DELAY, function() pcall(Sync.CheckWeekly) end)
+    ns.Events.Every(600, "weekly", function() pcall(Sync.CheckWeekly) end)
     Transport.Start()
     if ns.Compat.IsDisabled("comms") then return end
     Friends.Refresh()

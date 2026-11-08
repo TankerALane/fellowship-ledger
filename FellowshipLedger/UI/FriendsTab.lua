@@ -41,7 +41,17 @@ function FriendsTab.Block(tag)
 end
 
 local function weeklyLines()
-    local out = { { kind = "group", text = L.WEEKLY_TITLE } }
+    local out = {}
+    -- Last week, reset to reset, you included (D-109): what the weekly recap showed.
+    if not ns.Data.IsFake() and ns.Sync and ns.Sync.LastReset then
+        local last = ns.Sync.LastReset()
+        local fromKey, toKey = ns.Weekly.Range(last, date)
+        out[#out + 1] = { kind = "group", text = string.format(L.WEEKLY_LAST_TITLE, date("%m-%d", last - ns.Weekly.WEEK), date("%m-%d", last)) }
+        local rows = ns.Weekly.Rows(ns.db.characters, ns.db.friends, ns.db.blocklist, fromKey, toKey, L)
+        for _, t in ipairs(rows) do out[#out + 1] = { kind = "detail", indent = true, text = ns.Weekly.Line(t, L) } end
+        if #rows == 0 then out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_LAST_EMPTY } end
+    end
+    out[#out + 1] = { kind = "group", text = L.WEEKLY_TITLE }
     local list = ns.Merge.Weekly(ns.Data.Friends(), ns.db.blocklist, ns.Store.Today(), time, date)
     for _, t in ipairs(list) do
         out[#out + 1] = { kind = "detail", indent = true, text = string.format(L.WEEKLY_LINE, t.name, t.levels, t.quests,
@@ -232,6 +242,12 @@ function FriendsTab.Open(friendId, key, view)
         if view then state.detailView[id] = view end
         state.focus = id
     end
+    ns.MainWindow.Open("friends")
+end
+
+-- The weekly recap's click (D-109): the Friends tab with its weekly panel open.
+function FriendsTab.OpenWeekly()
+    state.weekly = true
     ns.MainWindow.Open("friends")
 end
 

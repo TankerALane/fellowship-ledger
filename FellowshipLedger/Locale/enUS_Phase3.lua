@@ -94,6 +94,13 @@ ns.Locale.Set({
     WEEKLY_TITLE = "This week in the fellowship (last 7 days)",
     WEEKLY_LINE = "%s: %d level(s), %d quest(s), %d dungeon(s), %s active",
     WEEKLY_EMPTY = "No friends' ledgers yet.",
+    -- Weekly recap (D-109)
+    WEEKLY_YOU = "You",
+    WEEKLY_RECAP_TITLE = "Last week in your ledger",
+    WEEKLY_LAST_TITLE = "Last week, reset to reset (%s to %s)",
+    WEEKLY_LAST_EMPTY = "Nobody played last week.",
+    WEEKLY_MORE = "...and %d more. Click for everyone.",
+    TOAST_WEEKLY = "Weekly recap after the weekly reset (Tuesday morning)",
     SYNC_NOW = "Sync now",
     SYNC_STATUS = "%d friend(s) online here, last sync %s, %d message(s) waiting",
     SYNC_STATUS_FAKE = "Fake data: nothing is sent or received.",
