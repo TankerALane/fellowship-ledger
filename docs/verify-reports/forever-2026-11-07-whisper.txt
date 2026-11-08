@@ -1,0 +1,116 @@
+Fellowship Ledger verify report
+addon=1.6.0 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70862 at=2026-11-07 22:02
+summary pass=233 fail=11 error=0 info=10 manual=17
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+FAIL MAX_PLAYER_LEVEL: is nil, expected number
+FAIL GetQuestsCompleted: is nil, expected function
+FAIL ChatFrame_SendBNetTell: is nil, expected function
+FAIL InviteUnit: is nil, expected function
+-- details
+PASS x:build.interface: 16001 -> Forever
+INFO x:build.version: 1.60.1 (70862)
+PASS x:build.tocflavor: loaded Forever TOC
+INFO x:build.projectid: WOW_PROJECT_ID=18; constants: CAMELOT=18 CLASSIC=2 ID=18 MAINLINE=1
+INFO x:addon.questie: loaded=true version=12.6.4
+PASS x:sv.persist: loads=152 lastLogoutSaved=2026-11-07 21:38 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=104 lastLogoutSaved=2026-11-07 21:38 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=1413 name readable
+INFO x:quest.questline: checked 31 quests, 0 returned a quest line.
+PASS x:dungeon.journal: Ragefire Chasm: 4 bosses killed, completed=true, lastBossID=nil via nil, lookups=10, lastBossName=nil; final-boss list: Bazzalan; journal: 0 instances (); by name: nil; now: last=nil (nil) of nil via nil
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=1
+INFO x:prof.list: GetProfessions gave 7 slots, 4 with readable rank
+INFO x:death.recap: no death recap this session; die once (a fall will do) and run /fl verify again
+PASS x:death.killerlevel: newest death: killer Gesharahan, level 20
+PASS x:rep.fields: fields: atWarWith,canSetInactive,canToggleAtWar,currentReactionThreshold,currentStanding,description,factionID,hasBonusRepGain,isAccountWide,isChild,isCollapsed,isHeader,isHeaderWithRep,isWatched,name,nextReactionThreshold,reaction
+PASS x:flight.paths: known=8 counted=6 baseline=true; message this session=no; map this session=no; newest counted: Ratchet, The Barrens at 11-07 15:33
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=65 online=21; account fields: accountName,appearOffline,battleTag,bnetAccountID,customMessage,customMessageTime,friendLevel,friendTags,gameAccountInfo,isAFK,isBattleTagFriend,isDND,isFavorite,isFriend,lastOnlineTime,note,rafLinkType; game fields: areaName,canSummon,characterLevel,characterName,classFilename,classID,className,clientProgram,factionName,gameAccountID,hasFocus,isAppearOffline,isGameAFK,isGameBusy,isInCurrentRegion,isOnline,playerGuid,raceName,realmDisplayName,realmID,realmName,regionID,richPresence,subIcon,wowProjectID; online client/project: App/nil x19, BSAp/nil x10, WoW/1 x5, WoW/18 x10
+PASS x:comms.prefix: FLDGF register returned 1; registered=true
+INFO x:friends.charfields: no character friends to inspect
+INFO x:graphs.menu: not opened this session; open Graphs, click the character name or Compare, then /fl verify
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes SetTexCoord=yes SetVertexColor=yes GetStringWidth=yes
+PASS x:ui.compartment: RegisterAddon is function
+PASS x:questie.db: state=ready; log: 1221 none, 1061 1/2 questie, 896 none, 852 3/4 questie, 899 none, 1069 none, 95774 none, 891 none, 1483 1/5 questie, 883 none, 1486 none, 962 none, 1491 2/2 questie, 959 none, 1487 none, 914 6/6 questie, 496 1/2 questie, 498 1/6 questie, 549 1/2 questie, 527 1/7 questie, 567 none, 97291 4/5 questie, 1098 none, 1013 none, 1014 none, 424 4/5 questie, 479 5/6 questie, 530 6/6 questie, 95981 5/5 questie, 516 none, 442 8/8 questie
+PASS x:quest.completed: 170 completed via GetAllCompletedQuestIDs; quest 8 = A Rogue's Deal in Deathknell; 1 without a name (hidden)
+PASS x:questie.details: quest 1061 "The Spirits of Stonetalon": level 17, needs 13; starts npc Zor Lonetree in Orgrimmar at 38.9, 38.4
+PASS x:quest.rewards: 1221 xp=5000 money=nil items=r6755 from=log; 1061 xp=320 money=nil items=- from=log; 896 xp=1700 money=nil items=r5335 from=log; 852 xp=1100 money=800 items=r5351 from=dialog; 899 xp=1950 money=nil items=c5314/c6477 from=log; 1069 xp=1950 money=2500 items=- from=log; 95774 xp=1550 money=900 items=- from=log; 891 xp=1550 money=nil items=c5309/c5310 from=log; 1483 xp=420 money=nil items=- from=log; 883 xp=1300 money=nil items=- from=log; 1486 xp=3100 money=1800 items=r918/r6480 from=log; 962 xp=3300 money=2000 items=c10919/c270008/c270009 from=log; 1491 xp=2650 money=1000 items=- from=log; 959 xp=2650 money=1000 items=- from=log; 1487 xp=4000 money=2500 items=c6476/c8071/c6481 from=log; 914 xp=4300 money=nil items=c6505/c6504/c270018 from=dialog; 496 xp=180 money=150 items=- from=log; 498 xp=2200 money=nil items=r3734/c3752/c3733 from=log; 549 xp=1750 money=1400 items=r276720 from=log; 527 xp=1950 money=1700 items=- from=log; 567 xp=2300 money=nil items=r3732/c3742/c3743/c5250 from=log; 97291 xp=1650 money=1300 items=- from=log; 1098 xp=5350 money=1800 items=c3324/c270023/c270024 from=log; 1013 xp=5600 money=nil items=c6335/c4534/c270030 from=log; 1014 xp=8850 money=nil items=r6414 from=log; 424 xp=850 money=700 items=- from=log; 479 xp=1150 money=800 items=- from=log; 530 xp=1550 money=1200 items=r3235 from=log; 95981 xp=1550 money=nil items=r281265 from=log; 516 xp=1250 money=nil items=r5252 from=log; 442 xp=1950 money=nil items=c3461/c3462/c270020/c276722 from=log; no quest dialog seen since the reload
+PASS x:questie.xp: 1221=2100 1061=320 896=1700 852=1100 899=1950 1069=1950
+PASS x:tooltip.unit: hook=processor
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:commtest, m:sync, m:bosstimes, m:friendextras, m:questlink, m:commonquests, m:friendmenu, m:weeklyrecap,
+MANUAL m:itemtooltip, m:notices, m:minimap, m:options, m:fakeviews, m:copywindow
+-- api pass
+GetBuildInfo, C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded, C_EventUtils.IsEventValid, UnitName, UnitFullName, GetRealmName, GetNormalizedRealmName,
+UnitClass, UnitRace, UnitFactionGroup, UnitLevel, UnitXP, UnitXPMax, GetXPExhaustion, GetMoney, GetLocale, IsTrialAccount, IsVeteranTrialAccount, issecretvalue,
+canaccessvalue, issecrettable, canaccesssecrets, C_Timer.After, C_Timer.NewTicker, GetServerTime, GetTime, RequestTimePlayed, UnitIsAFK, GetUnitSpeed,
+InCombatLockdown, UnitAffectingCombat, C_Map.GetBestMapForUnit, C_Map.GetMapInfo, GetZoneText, GetRealZoneText, GetSubZoneText, C_Map.GetAreaInfo,
+C_MapExplorationInfo.GetExploredAreaIDsAtPosition, GetGameMessageInfo, ERR_ZONE_EXPLORED, ERR_ZONE_EXPLORED_XP, C_QuestLog.GetNumQuestLogEntries,
+C_QuestLog.GetInfo, C_QuestLog.GetTitleForQuestID, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLine.GetQuestLineInfo, C_QuestLine.GetQuestLineQuests,
+C_QuestLine.GetAvailableQuestLines, C_QuestLine.RequestQuestLinesForMap, IsInInstance, GetInstanceInfo, GetDifficultyInfo, IsInGroup, UnitIsPlayer,
+GetNumGroupMembers, UnitGroupRolesAssigned, EJ_GetInstanceForMap, EJ_SelectInstance, EJ_GetEncounterInfoByIndex, EJ_GetNumTiers, EJ_SelectTier,
+EJ_GetInstanceByIndex, GetProfessions, GetProfessionInfo, C_TradeSkillUI.GetBaseProfessionInfo, C_DeathRecap.GetRecapEvents, C_DeathRecap.HasRecapEvents,
+GetDeathRecapLink, C_Reputation.GetNumFactions, C_Reputation.GetFactionDataByIndex, C_Reputation.GetFactionDataByID, GetAchievementInfo,
+C_TaxiMap.GetAllTaxiNodes, NumTaxiNodes, TaxiNodeName, GetTaxiMapID, Enum.FlightPathState, ERR_NEWTAXIPATH, UnitGUID, UnitExists, UnitIsDead, UnitClassification,
+UnitCreatureType, C_Item.GetItemInfo, C_Item.GetItemQualityByID, C_Spell.GetSpellInfo, GetNumLootItems, GetLootSlotInfo, GetLootSlotLink,
+C_BattleNet.SendGameData, BNGetInfo, BNGetNumFriends, C_BattleNet.GetFriendAccountInfo, C_BattleNet.GetFriendNumGameAccounts,
+C_BattleNet.GetFriendGameAccountInfo, C_BattleNet.GetGameAccountInfoByID, C_BattleNet.GetAccountInfoByID, WOW_PROJECT_ID, BNET_CLIENT_WOW,
+LE_PARTY_CATEGORY_INSTANCE, C_ChatInfo.RegisterAddonMessagePrefix, C_ChatInfo.IsAddonMessagePrefixRegistered, C_ChatInfo.SendAddonMessage,
+C_ChatInfo.InChatMessagingLockdown, C_FriendList.GetNumFriends, C_FriendList.GetFriendInfoByIndex, C_FriendList.ShowFriends, CreateFrame, BackdropTemplateMixin,
+UISpecialFrames, Minimap, GetCursorPosition, Settings.RegisterCanvasLayoutCategory, Settings.RegisterAddOnCategory, Settings.OpenToCategory,
+AddonCompartmentFrame, GetMaxLevelForPlayerExpansion, MenuUtil.CreateContextMenu, CreateColor, Screenshot, PlaySound, SOUNDKIT, GameTooltip,
+C_QuestLog.GetAllCompletedQuestIDs, GetQuestID, GetNumQuestRewards, GetNumQuestChoices, GetQuestItemInfo, GetQuestItemLink, GetRewardMoney, GetRewardXP,
+GetNumQuestLogRewards, GetQuestLogRewardInfo, GetNumQuestLogChoices, GetQuestLogChoiceInfo, GetQuestLogRewardMoney, GetQuestLogRewardXP,
+C_Item.RequestLoadItemDataByID, GetQuestLink, ChatFrameUtil.SendBNetTell, ChatFrameUtil.SendTell, ChatFrame_SendTell, BNInviteFriend, C_PartyInfo.InviteUnit,
+C_DateAndTime.GetSecondsUntilWeeklyReset, GameTooltip.SetHyperlink, GameTooltip.SetItemByID, IsShiftKeyDown, ChatEdit_InsertLink, TooltipDataProcessor
+-- event pass (exists; fired counts are under probe)
+TIME_PLAYED_MSG, PLAYER_FLAGS_CHANGED, PLAYER_STARTED_MOVING, PLAYER_STOPPED_MOVING, PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_SUCCEEDED,
+ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD, PLAYER_LOGOUT, PLAYER_LEAVING_WORLD, PLAYER_LEVEL_UP, PLAYER_XP_UPDATE, UNIT_LEVEL, ZONE_CHANGED,
+ZONE_CHANGED_NEW_AREA, UI_INFO_MESSAGE, QUEST_ACCEPTED, QUEST_TURNED_IN, QUEST_REMOVED, QUEST_LOG_UPDATE, QUEST_COMPLETE, ENCOUNTER_START, ENCOUNTER_END,
+BOSS_KILL, LFG_COMPLETION_REWARD, SCENARIO_COMPLETED, UPDATE_INSTANCE_INFO, GROUP_ROSTER_UPDATE, SKILL_LINES_CHANGED, TRADE_SKILL_SHOW, NEW_RECIPE_LEARNED,
+PLAYER_MONEY, MERCHANT_SHOW, MERCHANT_CLOSED, MAIL_SHOW, MAIL_CLOSED, AUCTION_HOUSE_SHOW, AUCTION_HOUSE_CLOSED, LOOT_READY, LOOT_OPENED, LOOT_CLOSED,
+PLAYER_DEAD, PLAYER_ALIVE, PLAYER_UNGHOST, UPDATE_FACTION, ACHIEVEMENT_EARNED, TAXIMAP_OPENED, PLAYER_TARGET_CHANGED, PARTY_KILL, LOOT_SLOT_CLEARED, ITEM_PUSH,
+BAG_UPDATE_DELAYED, BN_CHAT_MSG_ADDON, BN_FRIEND_ACCOUNT_ONLINE, BN_FRIEND_ACCOUNT_OFFLINE, BN_FRIEND_INFO_CHANGED, CHAT_MSG_ADDON, FRIENDLIST_UPDATE,
+ADDON_ACTION_FORBIDDEN, QUEST_DETAIL
+-- probe (off, since 2026-11-04 15:30, 34 events seen)
+ADDON_LOADED=13 | (Blizzard_TrainerUI, false) | (Blizzard_PlayerSpells, false) | (Bagnon_Config, false)
+BAG_UPDATE_DELAYED=94 | () | () | ()
+BN_FRIEND_ACCOUNT_ONLINE=1 | (18, false)
+BN_FRIEND_INFO_CHANGED=140 | (23) | (23) | (nil)
+CHAT_MSG_ADDON=6
+ITEM_PUSH=61 | (0, 132889) | (0, 132794) | (0, 134360)
+LOOT_CLOSED=65 | () | () | ()
+LOOT_OPENED=41 | (true, false) | (true, false) | (true, false)
+LOOT_READY=91 | (true) | (true) | (true)
+LOOT_SLOT_CLEARED=97 | (1) | (1) | (2)
+MERCHANT_CLOSED=4 | () | () | ()
+MERCHANT_SHOW=2 | () | ()
+PARTY_KILL=24 | (Player-6921-00217B17, Creature-0-6825-0-2-1501-879D7EE3DD) | (Player-6921-00217B17, Creature-0-6825-0-2-1512-B6198AFD0D) | (Player-6921-00217B17, Creature-0-6825-0-2-1512-C44EC6B988)
+PLAYER_ENTERING_WORLD=2 | (false, true) | (false, true)
+PLAYER_LEAVING_WORLD=2 | () | ()
+PLAYER_LEVEL_UP=2 | (3, 15, 25, 0, 0, 0, 0, 1, 1, 1) | (4, 15, 26, 0, 0, 1, 1, 0, 1, 2)
+PLAYER_LOGOUT=2 | () | ()
+PLAYER_MONEY=27 | () | () | ()
+PLAYER_REGEN_DISABLED=30 | () | () | ()
+PLAYER_REGEN_ENABLED=30 | () | () | ()
+PLAYER_STARTED_MOVING=298 | () | () | ()
+PLAYER_STOPPED_MOVING=298 | () | () | ()
+PLAYER_TARGET_CHANGED=183 | () | () | ()
+PLAYER_XP_UPDATE=52 | (player) | (targettarget) | (player)
+QUEST_ACCEPTED=6 | (6395) | (3097) | (3901)
+QUEST_COMPLETE=6 | () | () | ()
+QUEST_LOG_UPDATE=83 | () | () | ()
+QUEST_REMOVED=6 | (376, false) | (364, false) | (3097, false)
+QUEST_TURNED_IN=6 | (376, 170, 0) | (364, 170, 17) | (3097, 40, 0)
+SKILL_LINES_CHANGED=38 | () | () | ()
+UI_INFO_MESSAGE=40 | (315, Mindless Zombie slain: 7/8) | (315, Mindless Zombie slain: 8/8) | (314, Objective Complete.)
+UNIT_LEVEL=3 | (player) | (player) | (player)
+UPDATE_FACTION=14 | () | () | ()
+UPDATE_INSTANCE_INFO=2 | () | ()

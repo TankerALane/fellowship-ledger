@@ -515,8 +515,8 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `ChatFrame_SendBNetTell` | api | right-click Whisper to a Battle.net friend (D-108) | `/dump type(ChatFrame_SendBNetTell)` -> "function" | FAIL | ? |
-| `ChatFrameUtil.SendBNetTell` | api | right-click Whisper to a Battle.net friend on newer clients (Forever has no ChatFrame_SendBNetTell) | `/dump type(ChatFrameUtil.SendBNetTell)` -> "function" | ? | ? |
-| `ChatFrameUtil.SendTell` | api | right-click Whisper by name on newer clients | `/dump type(ChatFrameUtil.SendTell)` -> "function" | ? | ? |
+| `ChatFrameUtil.SendBNetTell` | api | right-click Whisper to a Battle.net friend on newer clients (Forever has no ChatFrame_SendBNetTell) | `/dump type(ChatFrameUtil.SendBNetTell)` -> "function" | PASS | ? |
+| `ChatFrameUtil.SendTell` | api | right-click Whisper by name on newer clients | `/dump type(ChatFrameUtil.SendTell)` -> "function" | PASS | ? |
 | `ChatFrame_SendTell` | api | right-click Whisper by character name (D-108) | `/dump type(ChatFrame_SendTell)` -> "function" | PASS | ? |
 | `BNInviteFriend` | api | right-click Invite a Battle.net friend's game account (D-108) | `/dump type(BNInviteFriend)` -> "function" | PASS | ? |
 | `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | PASS | ? |
