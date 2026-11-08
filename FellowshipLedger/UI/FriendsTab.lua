@@ -62,10 +62,16 @@ local function weeklyLines()
 end
 
 -- Whisper / Invite (D-108). Each call is guarded; a missing one falls to the next.
+-- Newer clients moved these into ChatFrameUtil; Forever has no ChatFrame_SendBNetTell
+-- (verified 2026-11-07), so the ChatFrameUtil names come first.
 function FriendsTab.Whisper(peer)
-    if peer.kind == "bnet" and peer.accountName and ns.Compat.Try("ChatFrame_SendBNetTell", peer.accountName) then return true end
+    if peer.kind == "bnet" and peer.accountName then
+        if ns.Compat.Try("ChatFrameUtil.SendBNetTell", peer.accountName) then return true end
+        if ns.Compat.Try("ChatFrame_SendBNetTell", peer.accountName) then return true end
+    end
     local name = peer.kind == "char" and peer.target or peer.character
-    return name and ns.Compat.Try("ChatFrame_SendTell", name) or false
+    if not name then return false end
+    return ns.Compat.Try("ChatFrameUtil.SendTell", name) or ns.Compat.Try("ChatFrame_SendTell", name) or false
 end
 
 function FriendsTab.Invite(peer)

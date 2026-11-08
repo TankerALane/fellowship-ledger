@@ -314,6 +314,8 @@ ns.VerifyChecks = {
     { id = "m:questlink", kind = "manual", area = "Quests", why = "shift-click a quest in Quest chains (or in a friend's \"In both your quest logs\") puts a working quest link in chat; others can click it (D-107)", test = "open the chat box, shift-click a quest, send it, click the link" },
     { id = "m:commonquests", kind = "manual", area = "Quests", why = "a quest a friend also has shows \"with <friend>\" in Quest chains, in its details, in the friend's Quests view and their row tooltip (D-106)", test = "both pick up the same quest; open Quest chains and the friend's Quests" },
     { id = "ChatFrame_SendBNetTell", kind = "api", area = "Friends", why = "right-click Whisper to a Battle.net friend (D-108)" },
+    { id = "ChatFrameUtil.SendBNetTell", kind = "api", area = "Friends", why = "right-click Whisper to a Battle.net friend on newer clients (Forever has no ChatFrame_SendBNetTell)" },
+    { id = "ChatFrameUtil.SendTell", kind = "api", area = "Friends", why = "right-click Whisper by name on newer clients" },
     { id = "ChatFrame_SendTell", kind = "api", area = "Friends", why = "right-click Whisper by character name (D-108)" },
     { id = "BNInviteFriend", kind = "api", area = "Friends", why = "right-click Invite a Battle.net friend's game account (D-108)" },
     { id = "C_PartyInfo.InviteUnit", kind = "api", area = "Friends", why = "right-click Invite by character name (D-108)" },

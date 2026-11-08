@@ -298,7 +298,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | INFO | ? |
 | `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | PASS | ? |
 
 ### Reputation
@@ -444,7 +444,7 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
-| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | ? |
+| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | INFO | ? |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
 | `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | PASS | ? |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |
@@ -506,7 +506,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `GetQuestLink` | api | a quest's chat link; used only when it names the quest (some clients take a log index), else the link is built (D-107) | `/dump type(GetQuestLink)` -> "function" | ? | ? |
+| `GetQuestLink` | api | a quest's chat link; used only when it names the quest (some clients take a log index), else the link is built (D-107) | `/dump type(GetQuestLink)` -> "function" | PASS | ? |
 | `m:questlink` | manual | shift-click a quest in Quest chains (or in a friend's "In both your quest logs") puts a working quest link in chat; others can click it (D-107) | open the chat box, shift-click a quest, send it, click the link | ? | ? |
 | `m:commonquests` | manual | a quest a friend also has shows "with <friend>" in Quest chains, in its details, in the friend's Quests view and their row tooltip (D-106) | both pick up the same quest; open Quest chains and the friend's Quests | ? | ? |
 
@@ -514,18 +514,20 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `ChatFrame_SendBNetTell` | api | right-click Whisper to a Battle.net friend (D-108) | `/dump type(ChatFrame_SendBNetTell)` -> "function" | ? | ? |
-| `ChatFrame_SendTell` | api | right-click Whisper by character name (D-108) | `/dump type(ChatFrame_SendTell)` -> "function" | ? | ? |
-| `BNInviteFriend` | api | right-click Invite a Battle.net friend's game account (D-108) | `/dump type(BNInviteFriend)` -> "function" | ? | ? |
-| `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | ? | ? |
-| `InviteUnit` | api | older name for the invite (D-108) | `/dump type(InviteUnit)` -> "function" | ? | ? |
+| `ChatFrame_SendBNetTell` | api | right-click Whisper to a Battle.net friend (D-108) | `/dump type(ChatFrame_SendBNetTell)` -> "function" | FAIL | ? |
+| `ChatFrameUtil.SendBNetTell` | api | right-click Whisper to a Battle.net friend on newer clients (Forever has no ChatFrame_SendBNetTell) | `/dump type(ChatFrameUtil.SendBNetTell)` -> "function" | ? | ? |
+| `ChatFrameUtil.SendTell` | api | right-click Whisper by name on newer clients | `/dump type(ChatFrameUtil.SendTell)` -> "function" | ? | ? |
+| `ChatFrame_SendTell` | api | right-click Whisper by character name (D-108) | `/dump type(ChatFrame_SendTell)` -> "function" | PASS | ? |
+| `BNInviteFriend` | api | right-click Invite a Battle.net friend's game account (D-108) | `/dump type(BNInviteFriend)` -> "function" | PASS | ? |
+| `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | PASS | ? |
+| `InviteUnit` | api | older name for the invite (D-108) | `/dump type(InviteUnit)` -> "function" | FAIL | ? |
 | `m:friendmenu` | manual | right-click a friend (or their character) on the Friends tab: Whisper opens a whisper to them; Invite (only on the character they are on) sends a group invite (D-108) | with a friend online, right-click their row; try both | ? | ? |
 
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `C_DateAndTime.GetSecondsUntilWeeklyReset` | api | the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109) | `/dump type(C_DateAndTime.GetSecondsUntilWeeklyReset)` -> "function" | ? | ? |
+| `C_DateAndTime.GetSecondsUntilWeeklyReset` | api | the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109) | `/dump type(C_DateAndTime.GetSecondsUntilWeeklyReset)` -> "function" | PASS | ? |
 | `m:weeklyrecap` | manual | the first login after the weekly reset shows "Last week in your ledger" (you and friends), once; a click opens the Friends tab's weekly panel with Last week on top (D-109) | log in after Tuesday's reset; /reload: it does not show again | ? | ? |
 | `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | PASS | ? |
 | `GameTooltip.SetItemByID` | api | fallback for the item tooltip (D-102) | `/dump type(GameTooltip.SetItemByID)` -> "function" | PASS | ? |
