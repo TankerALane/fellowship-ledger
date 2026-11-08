@@ -220,11 +220,7 @@ local function chainLines()
         -- Quest details (D-100): click a quest for its objective, rewards and your turn-in.
         skin = skin, dateFn = date, openQuest = state.chainQuest,
         -- Shift-click a reward item to link it in chat, as from your bags (D-102).
-        onItem = function(item)
-            if not item.link then return end
-            local okShift, shift = ns.Compat.Try("IsShiftKeyDown")
-            if okShift and shift then ns.Compat.Try("ChatEdit_InsertLink", item.link) end
-        end,
+        onItem = function(item) W.LinkItem(item) end,
         onQuest = function(key, questID)
             local k = tostring(key) .. "|" .. tostring(questID)
             state.chainQuest[k] = not state.chainQuest[k] or nil

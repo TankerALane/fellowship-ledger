@@ -192,14 +192,23 @@ end
 -- Returns true when the game filled the tooltip.
 function W.ItemTooltip(owner, item)
     local tip = _G.GameTooltip
-    if not tip or type(item) ~= "table" or not item.id then return false end
+    if not tip or type(item) ~= "table" then return false end
+    local id = tonumber(item.id) or (type(item.link) == "string" and tonumber(item.link:match("item:(%d+)")))
+    if not id and type(item.link) ~= "string" then return false end
     tip:SetOwner(owner, "ANCHOR_RIGHT")
-    local link = item.link or ("item:" .. tostring(item.id))
+    local link = item.link or ("item:" .. tostring(id))
     local ok = type(tip.SetHyperlink) == "function" and pcall(tip.SetHyperlink, tip, link)
-    if not ok and type(tip.SetItemByID) == "function" then ok = pcall(tip.SetItemByID, tip, item.id) end
-    if not ok then return false end
+    if not ok and id and type(tip.SetItemByID) == "function" then ok = pcall(tip.SetItemByID, tip, id) end
+    if not ok then tip:Hide(); return false end
     tip:Show()
     return true
+end
+
+-- Shift-click: put the item's link in the chat box, as from your bags (D-102).
+function W.LinkItem(item)
+    if type(item) ~= "table" or type(item.link) ~= "string" then return end
+    local okShift, shift = ns.Compat.Try("IsShiftKeyDown")
+    if okShift and shift then ns.Compat.Try("ChatEdit_InsertLink", item.link) end
 end
 
 function W.HideTooltip()

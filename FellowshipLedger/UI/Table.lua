@@ -121,7 +121,7 @@ function Obj:Line(i)
     w.full:SetPoint("LEFT", 0, 0)
     w.full:SetPoint("RIGHT", -(ACTION_W + GAP), 0)
     w.full:SetWordWrap(false)
-    w.segs, w.segButtons, w.rules, w.bars = {}, {}, {}, {}
+    w.segs, w.segButtons, w.rules, w.bars, w.segHovers = {}, {}, {}, {}, {}
     -- The shaded box of a "card" (UI/DetailModel.lua): fill plus edges.
     w.box = w:CreateTexture(nil, "BACKGROUND", nil, 1)
     W.Fill(w.box, "panel")
@@ -208,6 +208,7 @@ local function hideGrid(w)
     for _, b in ipairs(w.segButtons) do b:Hide() end
     for _, r in ipairs(w.rules) do r:Hide() end
     for _, b in ipairs(w.bars) do b:Hide() end
+    for _, h in ipairs(w.segHovers) do h:Hide() end
     w.box:Hide()
     for _, t in pairs(w.boxEdges) do t:Hide() end
 end
@@ -215,7 +216,7 @@ end
 function Obj:RenderGrid(w, line)
     local inset = line.inset or 0
     local span = self:LineWidth() - inset - (line.action and (ACTION_W + GAP) or 0)
-    local nText, nBtn, nBar = 0, 0, 0
+    local nText, nBtn, nBar, nHover = 0, 0, 0, 0
     for _, sg in ipairs(line.segments or {}) do
         local x, width = inset + span * sg.x, span * sg.w
         if sg.button then
@@ -261,8 +262,28 @@ function Obj:RenderGrid(w, line)
             fs:SetJustifyH(sg.align or "LEFT")
             fs:SetText(sg.text or "")
             fs:Show()
+            if sg.item then
+                -- Only this segment shows the item's tooltip (D-103): in the card layout
+                -- a loot row shares its line with a level row.
+                nHover = nHover + 1
+                local h = w.segHovers[nHover]
+                if not h then
+                    h = CreateFrame("Frame", nil, w)
+                    h:EnableMouse(true)
+                    h:SetScript("OnEnter", function(f) W.ItemTooltip(f, f.item) end)
+                    h:SetScript("OnLeave", function() W.HideTooltip() end)
+                    h:SetScript("OnMouseUp", function(f) W.LinkItem(f.item) end)
+                    w.segHovers[nHover] = h
+                end
+                h.item = sg.item
+                h:ClearAllPoints()
+                h:SetPoint("LEFT", x, 0)
+                h:SetSize(math.max(1, width - 2), ROW_H)
+                h:Show()
+            end
         end
     end
+    for i = nHover + 1, #w.segHovers do w.segHovers[i]:Hide() end
     for i = nText + 1, #w.segs do w.segs[i]:Hide() end
     for i = nBtn + 1, #w.segButtons do w.segButtons[i]:Hide() end
     for i = nBar + 1, #w.bars do w.bars[i]:Hide() end

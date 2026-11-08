@@ -105,6 +105,7 @@ function DetailModel.Data(char, L, dateFn, all, arrow)
         out.loot.rows[#out.loot.rows + 1] = {
             when = when(dateFn, it.at), name = it.name or it.link or "?", quality = it.quality,
             qualityText = q or tostring(it.quality or ""), zone = it.zone or "",
+            link = type(it.link) == "string" and it.link:find("item:", 1, true) and it.link or nil,
         }
     end
 
@@ -186,7 +187,10 @@ local function section(title, sec, cols, x0, x1, kind, L, skin, onToggle, emptyT
         else
             local color = Palette and Palette.QualityColor(r.quality, skin)
             local name = color and (Palette.Code(color) .. r.name .. "|r") or r.name
-            segs = { seg(cols[1], r.when, "muted"), seg(cols[2], name), seg(cols[3], r.qualityText, "muted"), seg(cols[4], r.zone, "muted") }
+            local nameSeg = seg(cols[2], name)
+            -- Hover the name for the game's item tooltip; shift-click links it (D-103).
+            if r.link then nameSeg.item = { link = r.link } end
+            segs = { seg(cols[1], r.when, "muted"), nameSeg, seg(cols[3], r.qualityText, "muted"), seg(cols[4], r.zone, "muted") }
         end
         out[#out + 1] = { segs = segs }
     end

@@ -58,6 +58,26 @@ H.test("details: newest first, last 10 levels / 5 deaths / 5 loot, Show all list
     H.ok(all.levels.rows[21].zone:find("(partial)", 1, true), "partial levels are marked")
 end)
 
+H.test("details: a notable loot name carries its link for the item tooltip, only on that segment (D-103)", function()
+    local ns = H.pureNamespace()
+    local D, L = ns.DetailModel, ns.L
+    local c = sampleChar(3, 0, 2)
+    c.items[2].link = "|cff1eff00|Hitem:2589::::::::|h[Linen Cloth]|h|r"
+    for _, layout in ipairs({ "card", "list" }) do
+        local found, others = nil, 0
+        for _, line in ipairs(D.Lines(D.Data(c, L, DATE), layout, L, {})) do
+            H.eq(line.item, nil, "the whole line is not an item")
+            for _, s in ipairs(line.segments or {}) do
+                if s.item then
+                    if s.item.link == c.items[2].link then found = s else others = others + 1 end
+                end
+            end
+        end
+        H.ok(found and found.text:find("Item2", 1, true), layout .. ": the name segment has the link")
+        H.eq(others, 0, layout .. ": an item without a link gets no hover")
+    end
+end)
+
 H.test("details: levels use our arrow image, tinted to the text color", function()
     local D, L = H.pureNamespace().DetailModel, H.pureNamespace().L
     local code = D.ArrowCode({ 1, 0.5, 0, 1 })
