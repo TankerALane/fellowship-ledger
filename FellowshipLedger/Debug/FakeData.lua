@@ -179,7 +179,10 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
           chars = { { "Wren", "ROGUE", 8 } } },
     }
     for _, f in ipairs(friends) do
-        local friend = { kind = f.kind, name = f.name, tag = f.tag, online = f.online, fake = true,
+        -- At least 1.7.0, so the fake friends show what 1.7.0 shares (D-104, D-105).
+        local version = ns.VERSION
+        if ns.Merge and ns.Merge.CompareVersions(version, "1.7.0") ~= 1 then version = "1.7.0" end
+        local friend = { kind = f.kind, name = f.name, tag = f.tag, online = f.online, fake = true, version = version,
             playing = f.playing and ns.Character.Key(f.playing, FakeData.REALM) or nil,
             lastUpdated = now - rng.int(5, 3 * 24 * 60) * 60, characters = {} }
         for _, cs in ipairs(f.chars) do
@@ -189,9 +192,21 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
             -- What a 1.5.0+ friend shares of their runs (D-095).
             fc.runs = {}
             for _, r in ipairs(fc.dungeons or {}) do
+                -- Boss times as a 1.7.0 friend shares them (D-104); no random draws.
+                local splits = {}
+                for _, b in ipairs(r.bosses or {}) do splits[#splits + 1] = { at = b.at - r.entered, fight = b.fight } end
                 fc.runs[#fc.runs + 1] = { name = r.name, entered = r.entered, duration = r.duration, completed = r.completed,
-                    kills = #(r.bosses or {}), bossCount = r.bossCount, deaths = r.deaths }
+                    kills = #(r.bosses or {}), bossCount = r.bossCount, deaths = r.deaths,
+                    clear = r.completedAt and (r.completedAt - r.entered) or nil, splits = splits }
             end
+            -- Blue or better loot as a 1.7.0 friend shares it (D-105); fake items keep their name.
+            fc.loot = {}
+            for _, it in ipairs(fc.items or {}) do
+                if (it.quality or 0) >= 3 then
+                    fc.loot[#fc.loot + 1] = { at = it.at, name = it.name, quality = it.quality, zone = it.zone, count = 1 }
+                end
+            end
+            fc.items = nil
             if f.playing == cs[1] then
                 -- On this character now: just played, and its data just arrived (shows "now").
                 fc.lastSeen = now - 15

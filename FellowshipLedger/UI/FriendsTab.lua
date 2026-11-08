@@ -135,8 +135,8 @@ function FriendsTab.DetailLines(id, char)
         -- and quality come from our own game (loaded on first sight).
         local view_ = setmetatable({ items = {} }, { __index = char })
         for _, it in ipairs(char.loot or {}) do
-            local name, quality, link
-            if ns.QuestRewards and ns.QuestRewards.ItemInfo then
+            local name, quality, link = it.name, nil, nil -- a name only in fake data
+            if not name and it.id and ns.QuestRewards and ns.QuestRewards.ItemInfo then
                 local ok, n, q, l = pcall(ns.QuestRewards.ItemInfo, it.id)
                 if ok then name, quality, link = n, q, l end
             end
