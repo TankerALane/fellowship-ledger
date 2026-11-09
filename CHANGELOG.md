@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.1 - 2026-11-08
 
 ### Fixed
 - **Dying in a dungeon no longer makes a second run.** Releasing, or going out to repair, and coming back within 30 minutes now continues the same run, with its bosses, deaths and time. Runs already split this way are joined once when you log in. If the dungeon was reset while you were out (a boss you killed dies again), that is still a new run.

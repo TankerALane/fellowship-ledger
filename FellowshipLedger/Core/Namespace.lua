@@ -5,7 +5,7 @@
 local ADDON_NAME, ns = ...
 
 ns.ADDON_NAME = ADDON_NAME or "FellowshipLedger"
-ns.VERSION = "1.7.0" -- overwritten at runtime from the TOC metadata when available
+ns.VERSION = "1.7.1" -- overwritten at runtime from the TOC metadata when available
 
 -- Small helpers shared by pure modules.
 ns.util = ns.util or {}
