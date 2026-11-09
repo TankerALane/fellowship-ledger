@@ -173,7 +173,7 @@ H.test("logout writes a per-character backup; a wiped ledger offers restore", fu
 end)
 
 H.test("dungeon: entered, bosses, last boss completes, party class and role only", function()
-    local env = boot(RETAIL)
+    local env, ns = boot(RETAIL)
     local st = env.__state
     st.units.party1 = { class = "PRIEST", role = "HEALER", level = 20 }
     st.units.party2 = { class = "WARRIOR", role = "TANK", level = 21 }
@@ -210,6 +210,9 @@ H.test("dungeon: entered, bosses, last boss completes, party class and role only
     H.eq(run.completedBy, "lastBoss")
     st.instance = { "Westfall", "none", 0, "", 5, 0, false, 0 }
     Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    H.ok(char(env).currentRun, "completed, but leaving only pauses it (D-112)")
+    Mock.advance(env, 1801)
+    ns.Trackers.byId.dungeons:OnTick()
     local done = char(env).dungeons[1]
     H.eq(done.name, "The Deadmines")
     H.eq(done.deaths, 1)
@@ -268,6 +271,10 @@ local function deadmines(env)
     st.instance = DEADMINES
     Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
 end
+local function waitOut(env, ns)
+    Mock.advance(env, 1801)
+    ns.Trackers.byId.dungeons:OnTick()
+end
 local function go(env, where, secs)
     if secs then Mock.advance(env, secs) end
     env.__state.instance = where
@@ -275,7 +282,7 @@ local function go(env, where, secs)
 end
 
 H.test("dungeon: dying, releasing outside and running back is one run (D-110)", function()
-    local env = boot(RETAIL)
+    local env, ns = boot(RETAIL)
     local enteredAt = env.time()
     deadmines(env)
     Mock.advance(env, 400)
@@ -293,7 +300,8 @@ H.test("dungeon: dying, releasing outside and running back is one run (D-110)", 
     go(env, DEADMINES, 200)
     Mock.advance(env, 500)
     Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
-    go(env, WESTFALL, 60)                       -- completed: leaving closes it now
+    go(env, WESTFALL, 60)
+    waitOut(env, ns)
     local runs = char(env).dungeons
     H.eq(#runs, 1, "one run")
     H.eq(#runs[1].bosses, 3)
@@ -375,6 +383,83 @@ H.test("dungeon: a reset by you or the leader ends the paused run (D-111)", func
     H.eq(today(env).dungeonsEntered, 2)
 end)
 
+local function guid(map, zone, npc) return string.format("Creature-0-6825-%d-%d-%d-0000ABCDEF", map, zone, npc or 1000) end
+
+H.test("dungeon copy: read from a creature GUID, this dungeon's map only (D-112)", function()
+    local _, ns = boot(RETAIL)
+    local D = ns.Trackers.byId.dungeons
+    H.eq(D.CopyOf("Creature-0-6825-36-2148-644-0000ABCDEF", 36), "6825-2148")
+    H.eq(D.CopyOf("Vehicle-0-6825-36-2148-644-0000ABCDEF", 36), "6825-2148")
+    H.eq(D.CopyOf("Creature-0-6825-0-2-1501-879D7EE3DD", 36), nil, "a creature outside, on another map")
+    H.eq(D.CopyOf("Player-6921-00217B17", 36), nil)
+    H.eq(D.CopyOf("Pet-0-6825-36-2148-644-0100ABCDEF", 36), nil)
+    H.eq(D.CopyOf(nil, 36), nil)
+end)
+
+H.test("dungeon: out and back in after the final boss, same copy, is one run (D-112)", function()
+    local env, ns = boot(RETAIL)
+    deadmines(env)
+    Mock.fire(env, "PARTY_KILL", "Player-1", guid(36, 2148))
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.fire(env, "ENCOUNTER_END", 5, "Sneed", 1, 5, 1)
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
+    H.ok(char(env).currentRun.completed)
+    go(env, WESTFALL, 30)
+    go(env, DEADMINES, 360)                     -- 6 minutes out, then back in
+    env.__state.guid.target = guid(36, 2148)
+    Mock.fire(env, "PLAYER_TARGET_CHANGED")
+    Mock.advance(env, 60)
+    go(env, WESTFALL, 0)
+    waitOut(env, ns)
+    H.eq(#char(env).dungeons, 1, "one run")
+    H.eq(today(env).dungeonsEntered, 1)
+    H.eq(char(env).dungeons[1].copy, nil, "the copy is not saved")
+end)
+
+H.test("dungeon: back in to a new copy (a reset by anyone, or another leader) is a new run", function()
+    local env = boot(RETAIL)
+    deadmines(env)
+    Mock.fire(env, "PARTY_KILL", "Player-1", guid(36, 2148))
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
+    go(env, WESTFALL, 30)
+    local back = env.time() + 120
+    go(env, DEADMINES, 120)                     -- no reset line reached us
+    Mock.advance(env, 20)
+    Mock.fire(env, "PARTY_KILL", "Player-1", guid(36, 3301))
+    local runs = char(env).dungeons
+    H.eq(#runs, 1, "the first run closed")
+    H.ok(runs[1].completed)
+    H.eq(runs[1].duration, 1230, "ended when we last left")
+    local cur = char(env).currentRun
+    H.eq(cur.entered, back, "the new run began when we came back")
+    H.eq(cur.copy, "6825-3301")
+    Mock.fire(env, "PARTY_KILL", "Player-1", guid(36, 3301))
+    H.eq(#char(env).dungeons, 1, "the same new copy changes nothing")
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    H.eq(#char(env).dungeons, 1, "no second split on the boss")
+    H.eq(#char(env).currentRun.bosses, 1)
+    H.eq(today(env).dungeonsEntered, 2)
+end)
+
+H.test("friend runs: a piece inside another run of the same dungeon is dropped", function()
+    local _, ns = boot(RETAIL)
+    local list = {
+        { name = "Wailing Caverns", entered = 1000, duration = 4842 },
+        { name = "Wailing Caverns", entered = 3580, duration = 2260 },  -- a joined-away piece
+        { name = "Ragefire Chasm", entered = 4000, duration = 600 },    -- another dungeon: kept
+        { name = "Wailing Caverns", entered = 7000, duration = 2000 },
+    }
+    H.eq(ns.Merge.DropInside(list), 1)
+    H.eq(#list, 3)
+    H.eq(list[2].name, "Ragefire Chasm")
+    H.eq(list[3].entered, 7000)
+end)
+
 H.test("dungeon: runs split by a death before 1.7.1 are joined once at login", function()
     local T0 = os.time({ year = 2026, month = 11, day = 7, hour = 18 })
     local db = { characters = { ["Alt-Elsewhere"] = { name = "Alt", realm = "Elsewhere",
@@ -408,6 +493,27 @@ H.test("dungeon: runs split by a death before 1.7.1 are joined once at login", f
     H.eq(env.FellowshipLedgerDB.characters["Alt-Elsewhere"].dungeons[2].entered, T0 + 2700)
 end)
 
+H.test("dungeon: pass 2 joins going back in after the final boss, even after pass 1 ran", function()
+    local T0 = os.time({ year = 2026, month = 11, day = 8, hour = 1, min = 12 })
+    local db = { characters = { ["Alt-Elsewhere"] = { name = "Alt", realm = "Elsewhere",
+        days = { ["2026-11-08"] = { dungeonsEntered = 2, dungeonsCompleted = 1 } }, sessions = {}, levels = {},
+        dungeonBlipsDropped = true, dungeonSplitsMerged = true, dungeons = {
+            { name = "Ruins of Lordaeron", entered = T0, left = T0 + 1652, duration = 1652, deaths = 0, completed = true,
+              completedAt = T0 + 1600, partyFrozen = true, party = { { class = "PRIEST" }, { class = "MAGE" } },
+              bosses = { { id = 1, at = T0 + 300 }, { id = 2, at = T0 + 900 }, { id = 3, at = T0 + 1600 } } },
+            { name = "Ruins of Lordaeron", entered = T0 + 1920, left = T0 + 2100, duration = 180, deaths = 0,
+              party = { { class = "HUNTER" } }, bosses = { { id = 7, at = T0 + 2000 } } },
+        } } } }
+    local env = boot(RETAIL, db)
+    local alt = env.FellowshipLedgerDB.characters["Alt-Elsewhere"]
+    H.eq(#alt.dungeons, 1, "the 3-minute piece after the clear is joined")
+    H.ok(alt.dungeons[1].completed)
+    H.eq(alt.dungeons[1].completedAt, T0 + 1600, "the clear time is unchanged")
+    H.eq(alt.dungeons[1].party[1].class, "PRIEST", "the frozen group stays")
+    H.eq(alt.days["2026-11-08"].dungeonsEntered, 1)
+    H.eq(alt.dungeonSplitsMerged, 2)
+end)
+
 H.test("dungeon blips are cleaned on every character at login, not only the one playing", function()
     local T0 = os.time({ year = 2026, month = 11, day = 6, hour = 0, min = 20 })
     local db = { characters = { ["Alt-Elsewhere"] = { name = "Alt", realm = "Elsewhere", days = { ["2026-11-06"] = { dungeonsEntered = 2 } },
@@ -424,7 +530,7 @@ H.test("dungeon blips are cleaned on every character at login, not only the one 
 end)
 
 H.test("dungeon group: joins count, leaving after a boss does not shrink it, frozen at the final boss", function()
-    local env = boot(RETAIL)
+    local env, ns = boot(RETAIL)
     local st = env.__state
     st.units.party1 = { class = "PRIEST", role = "HEALER", level = 20 }
     st.ejInstance = 63
@@ -456,6 +562,8 @@ H.test("dungeon group: joins count, leaving after a boss does not shrink it, fro
     H.eq(run.party[1].class, "PRIEST")
     st.instance = { "Westfall", "none", 0, "", 5, 0, false, 0 }
     Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    Mock.advance(env, 1801)
+    ns.Trackers.byId.dungeons:OnTick()
     H.eq(#char(env).dungeons[1].party, 3, "saved with that group")
 end)
 

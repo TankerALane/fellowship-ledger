@@ -423,6 +423,19 @@ custom["x:quest.completed"] = function()
     return #ids > 0 and "PASS" or "INFO", detail
 end
 
+-- Which copy of the dungeon we are in (D-112): from the last creature GUID seen in a run.
+custom["x:dungeon.copy"] = function()
+    local D = ns.Trackers and ns.Trackers.byId and ns.Trackers.byId.dungeons
+    local run = ns.Store and ns.Store.char and ns.Store.char.currentRun
+    local seen = D and D.lastCopy
+    local detail = string.format("open run: %s (map %s), copy=%s, back in=%s", tostring(run and run.name), tostring(run and run.instanceID),
+        tostring(run and run.copy), tostring(run and run.backAt ~= nil))
+    if not seen then return "INFO", detail .. "; no creature seen yet this session (target one inside a dungeon)" end
+    detail = detail .. string.format("; last seen: copy=%s, GUID map=%s, run map=%s, %ds ago", tostring(seen.copy), tostring(seen.guid),
+        tostring(seen.runMap), (ns.Store.Now() - (seen.at or 0)))
+    return seen.copy and "PASS" or "FAIL", detail
+end
+
 -- Dungeon completion (D-085): the newest run, and the journal's boss list for it by name.
 custom["x:dungeon.journal"] = function()
     local char = ns.Store and ns.Store.char

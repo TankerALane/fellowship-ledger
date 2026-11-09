@@ -154,7 +154,7 @@ local function closeRun(char)
     if not run then return end
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
-    run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset = nil, nil, nil, nil, nil
+    run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset, run.copy = nil, nil, nil, nil, nil, nil
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
         char.currentRun = nil
@@ -188,9 +188,11 @@ end
 
 -- Leaving the dungeon only pauses the run (D-110): dying and running back, or going
 -- out to repair, is still one run. Coming back into the same dungeon within
--- RESUME_SECONDS of last being inside continues it. It closes when that time passes
--- (checked here, each minute and at login), when another dungeon is entered, or on
--- leaving after the run was completed.
+-- RESUME_SECONDS of last being inside continues it, completed or not (Austin,
+-- 2026-11-08: a new run needs a reset or another leader's instance, D-112). It closes
+-- when that time passes (checked here, each minute and at login), when another
+-- dungeon is entered, on a reset line, or when coming back finds a new copy of the
+-- dungeon (seeCopy) or a boss killed again.
 local function check()
     local char = Store.char
     local t = Store.Now()
@@ -211,12 +213,26 @@ local function check()
         closeRun(char)
         startRun(char, t, T.Plain(name), instanceID, T.Plain(difficultyID))
     elseif run then
-        if run.completed or run.wasReset or t - (run.lastSeen or run.entered) > RESUME_SECONDS then
+        if run.wasReset or t - (run.lastSeen or run.entered) > RESUME_SECONDS then
             closeRun(char)
         elseif not run.outside then
             run.outside = t
         end
     end
+end
+
+-- Coming back found a different dungeon: the old run ended when we last left, and a
+-- new one began when we came back in. Returns the new run.
+local function splitAtBack(run)
+    local char = Store.char
+    local backAt = run.backAt
+    run.lastSeen = run.seenBefore or run.lastSeen
+    run.pull = nil
+    closeRun(char)
+    local _, _, diff = GetInstanceInfo()
+    local new = startRun(char, backAt, run.name, run.instanceID, T.Plain(diff) or run.difficultyID)
+    new.lastSeen = Store.Now()
+    return new
 end
 
 local function complete(run, how)
@@ -302,15 +318,21 @@ end
 -- Once per character (D-110): before 1.7.1, leaving the dungeon (a death and a
 -- release, or going out to repair) closed the run, so coming back made a second one.
 -- Join two saved runs of the same dungeon when the second began within
--- RESUME_SECONDS of the first ending, the first was not completed, and no boss died
--- in both (that would be a reset, so two real runs).
+-- RESUME_SECONDS of the first ending, and no boss died in both (that would be a
+-- reset, so two real runs). Pass 1 (1.7.1) joined only unfinished first halves; pass 2
+-- (1.7.2, D-112) also joins going back in after the final boss.
+local MERGE_PASS = 2
 function Dungeons.MergeSplits(char)
-    if char.dungeonSplitsMerged then return 0 end
-    char.dungeonSplitsMerged = true
+    local done = char.dungeonSplitsMerged
+    done = done == true and 1 or tonumber(done) or 0
+    if done >= MERGE_PASS then return 0 end
+    char.dungeonSplitsMerged = MERGE_PASS
     local list = char.dungeons or {}
     local merged = 0
-    for i = #list, 2, -1 do
-        local a, b = list[i - 1], list[i]
+    -- Forwards, so each piece is compared with everything already joined before it.
+    local i = 1
+    while i < #list do
+        local a, b = list[i], list[i + 1]
         local aEnd = a.left or ((a.entered or 0) + (a.duration or 0))
         local gap = (b.entered or 0) - aEnd
         local same = a.name ~= nil and a.name == b.name and (a.instanceID == nil or b.instanceID == nil or a.instanceID == b.instanceID)
@@ -320,19 +342,26 @@ function Dungeons.MergeSplits(char)
                 if (x.id ~= nil and x.id == y.id) or (x.id == nil and x.name ~= nil and x.name == y.name) then repeated = true end
             end
         end
-        if same and not a.completed and gap >= 0 and gap <= RESUME_SECONDS and not repeated then
+        if same and gap >= 0 and gap <= RESUME_SECONDS and not repeated then
             for _, y in ipairs(b.bosses or {}) do a.bosses[#a.bosses + 1] = y end
             a.deaths = (a.deaths or 0) + (b.deaths or 0)
             a.left = b.left or ((b.entered or 0) + (b.duration or 0))
             a.duration = a.left - a.entered
-            if #(b.party or {}) > 0 then a.party = b.party end
-            for _, k in ipairs({ "completed", "completedBy", "completedAt", "partyFrozen", "lastBossID", "lastBossName", "bossCount", "lookup" }) do
-                if b[k] ~= nil then a[k] = b[k] end
+            if not a.partyFrozen and #(b.party or {}) > 0 then a.party = b.party end
+            if not a.completed then
+                for _, k in ipairs({ "completed", "completedBy", "completedAt", "partyFrozen" }) do
+                    if b[k] ~= nil then a[k] = b[k] end
+                end
+            end
+            for _, k in ipairs({ "lastBossID", "lastBossName", "bossCount", "lookup" }) do
+                if a[k] == nil then a[k] = b[k] end
             end
             if (a.difficultyID or 0) == 0 then a.difficultyID = b.difficultyID end
-            table.remove(list, i)
+            table.remove(list, i + 1)
             uncount(char, b.entered)
             merged = merged + 1
+        else
+            i = i + 1
         end
     end
     return merged
@@ -418,15 +447,8 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     -- out, so the old run ended when we left and a new one began when we came back.
     if run.backAt then
         for _, b in ipairs(run.bosses) do
-            if b.id == encounterID and (b.at or 0) < run.backAt then
-                local backAt = run.backAt
-                run.lastSeen = run.seenBefore or run.lastSeen
-                run.pull = nil
-                local char = Store.char
-                closeRun(char)
-                local _, _, diff = GetInstanceInfo()
-                run = startRun(char, backAt, run.name, run.instanceID, T.Plain(diff) or run.difficultyID)
-                run.lastSeen = t
+            if encounterID ~= nil and b.id == encounterID and (b.at or 0) < run.backAt then
+                run = splitAtBack(run)
                 break
             end
         end
@@ -473,6 +495,44 @@ Dungeons.events.CHAT_MSG_SYSTEM = function(_, message)
     if not name or not sameDungeon(name, run.name) then return end
     run.wasReset = true
     check() -- outside (it always is, a reset fails with anyone inside): closes the run now
+end
+
+-- Which copy of the dungeon we are in (D-112). A creature's GUID reads
+-- Creature-0-<server>-<map>-<zoneUID>-<npcID>-<spawnUID>; the server and zone UID
+-- name this copy. A reset (by anyone) or another leader's instance is a new copy,
+-- so this needs no chat. Only creatures of this dungeon's map count; nothing but the
+-- "<server>-<zoneUID>" pair is kept, and only while the run is open.
+function Dungeons.CopyOf(guid, mapID)
+    if type(guid) ~= "string" then return nil end
+    local kind, server, map, zone = guid:match("^(%a+)%-%d+%-(%d+)%-(%d+)%-(%d+)%-")
+    if kind ~= "Creature" and kind ~= "Vehicle" then return nil end
+    if mapID ~= nil and tonumber(map) ~= mapID then return nil end
+    return server .. "-" .. zone
+end
+Dungeons.lastCopy = nil -- for /fl verify: { copy, guidMap, runMap, at }
+
+local function seeCopy(guid)
+    local run = Store.char and Store.char.currentRun
+    if not run or run.outside or guid == nil or ns.Compat.IsSecret(guid) then return end
+    local copy = Dungeons.CopyOf(guid, run.instanceID)
+    if type(guid) == "string" then
+        Dungeons.lastCopy = { copy = copy, guid = guid:match("^%a+%-%d+%-%d+%-(%d+)"), runMap = run.instanceID, at = Store.Now() }
+    end
+    if not copy then return end
+    if not run.copy then
+        run.copy = copy
+    elseif copy == run.copy then
+        run.backAt, run.seenBefore = nil, nil -- back in the same copy: the same run
+    elseif run.backAt then
+        splitAtBack(run).copy = copy
+    end
+end
+
+Dungeons.events.PARTY_KILL = function(_, _, target) seeCopy(target) end
+Dungeons.events.PLAYER_TARGET_CHANGED = function()
+    if not (Store.char and Store.char.currentRun) then return end
+    local ok, guid = ns.Compat.Try("UnitGUID", "target")
+    if ok then seeCopy(guid) end
 end
 
 Dungeons.events.PLAYER_DEAD = function()

@@ -16,6 +16,30 @@ Merge.MAX_RUNS_KEPT = 50
 Merge.MAX_DEATHS_KEPT = 20 -- a friend character's recent deaths kept (D-105)
 Merge.MAX_LOOT_KEPT = 30   -- a friend character's blue+ loot kept (D-105)
 
+-- One character is never in two runs at once: drop any run (list sorted by entry)
+-- that starts inside an earlier run of the same dungeon. Returns how many went.
+function Merge.DropInside(list)
+    local dropped = 0
+    local i = 2
+    while i <= #list do
+        local r, inside = list[i], false
+        for j = 1, i - 1 do
+            local o = list[j]
+            if o.name == r.name and r.entered > o.entered and r.entered < o.entered + (o.duration or 0) then
+                inside = true
+                break
+            end
+        end
+        if inside then
+            table.remove(list, i)
+            dropped = dropped + 1
+        else
+            i = i + 1
+        end
+    end
+    return dropped
+end
+
 -- friends: db.friends; peer: { id, kind, name, tag, online }
 function Merge.Friend(friends, peer)
     local f = friends[peer.id]
@@ -125,7 +149,9 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
         c.professions = nil
     end
     -- Dungeon runs (1.5.0+ senders, D-095): upsert by entry time, keep 90 days and the
-    -- newest MAX_RUNS_KEPT; cleared when Dungeons is not shared.
+    -- newest MAX_RUNS_KEPT; cleared when Dungeons is not shared. A run that starts inside
+    -- an earlier run of the same dungeon is a piece the friend's ledger has since joined
+    -- into it (D-110, D-112), so it goes (Merge.DropInside).
     if ns.Codec.MaskToSet(data.mask or "").dungeons then
         if data.runs then
             local byEntered = {}
@@ -135,6 +161,7 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
             local list = {}
             for _, r in pairs(byEntered) do if r.entered >= from then list[#list + 1] = r end end
             table.sort(list, function(a, b) return a.entered < b.entered end)
+            Merge.DropInside(list)
             while #list > Merge.MAX_RUNS_KEPT do table.remove(list, 1) end
             c.runs = list
         end
