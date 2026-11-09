@@ -494,6 +494,10 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `INSTANCE_RESET_SUCCESS` | api | the game's "%s has been reset." text, to spot a reset by you or your group leader (D-111) | `/dump type(INSTANCE_RESET_SUCCESS)` -> "string" | ? | ? |
+| `ev:CHAT_MSG_SYSTEM` | event | system lines, read only for "<dungeon> has been reset." (the one chat event the ledger reads, D-111) (probe counts only, no arguments stored) (not probed: too noisy) | `/dump C_EventUtils.IsEventValid("CHAT_MSG_SYSTEM")` -> true | ? | ? |
+| `m:deathrun` | manual | dying, releasing and running back (or going out to repair) stays one run; old split runs are joined at login (D-110) | die in a dungeon, release, run back and finish; the Dungeons tab shows one run with the death | ? | ? |
+| `m:instancereset` | manual | a reset by you or your group leader ends the paused run, so going back in is a new run (D-111) | in a group, leave the dungeon, have the leader reset it, go back in; the Dungeons tab shows two runs | ? | ? |
 | `m:bosstimes` | manual | ENCOUNTER_START fires at the pull, so an opened run shows each boss's fight length; Best is the clear time; Friends' best fills from friends on 1.7.0+ (D-104) | run a dungeon; open the run on the Dungeons tab and compare the fight times with a stopwatch | ? | ? |
 
 ### Friends

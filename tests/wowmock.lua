@@ -184,6 +184,7 @@ function M.new(opts)
         return "ERR_OTHER"
     end
     env.ERR_NEWTAXIPATH = "New flight path discovered!"
+    env.INSTANCE_RESET_SUCCESS = "%s has been reset."
     -- Flight map: state.taxiNodes = { { nodeID, name, state } } (state 0 current, 1 reachable, 2 unreachable).
     env.GetTaxiMapID = function() return 1415 end
     env.C_TaxiMap = { GetAllTaxiNodes = function() return state.taxiNodes or {} end }

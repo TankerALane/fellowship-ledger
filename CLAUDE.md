@@ -11,7 +11,7 @@ A progress-tracking and friend-sharing addon for World of Warcraft, by Decoupled
 5. **No external libraries** in the addon: plain Lua 5.1 against Blizzard's API. Ask before adding any.
 6. **No Blizzard art, logos or trademarks.** The license is MIT. Describe the addon as "for World of Warcraft" in text only.
 7. **Forever and retail data never mix.** Each flavor uses its own message prefix (`FLDGF` / `FLDGR`) and a flavor code in every payload. Drop anything that does not match.
-8. **Never read the combat log or player chat.** Only the addon-message events (`CHAT_MSG_ADDON`, `BN_CHAT_MSG_ADDON`) are allowed. Respect Midnight secret values: check with `ns.Compat.IsSecret` before using a value.
+8. **Never read the combat log or player chat.** Only the addon-message events (`CHAT_MSG_ADDON`, `BN_CHAT_MSG_ADDON`) are allowed, plus one exception Austin approved (D-111): `CHAT_MSG_SYSTEM` in `Trackers/Dungeons.lua`, matched only against the game's `INSTANCE_RESET_SUCCESS` text, with nothing else kept. A test enforces this list; ask before adding any other chat event. Respect Midnight secret values: check with `ns.Compat.IsSecret` before using a value.
 9. **Pure modules** (time math, aggregation, protocol, graph scaling, report formatting) must not touch WoW globals at load time. List them in `tests/harness.lua` (`PURE_FILES`). The purity test loads them in a strict environment.
 10. Every user-facing string goes through `ns.L` (`FellowshipLedger/Locale/enUS.lua`).
 

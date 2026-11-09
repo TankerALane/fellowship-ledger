@@ -154,7 +154,7 @@ local function closeRun(char)
     if not run then return end
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
-    run.pull, run.outside, run.backAt, run.seenBefore = nil, nil, nil, nil
+    run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset = nil, nil, nil, nil, nil
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
         char.currentRun = nil
@@ -198,7 +198,7 @@ local function check()
     instanceType, instanceID = T.Plain(instanceType), T.Plain(instanceID)
     local run = char.currentRun
     if instanceType == "party" then
-        if run and run.instanceID == instanceID and t - (run.lastSeen or run.entered) <= RESUME_SECONDS then
+        if run and not run.wasReset and run.instanceID == instanceID and t - (run.lastSeen or run.entered) <= RESUME_SECONDS then
             if run.outside then
                 -- Back in: remember when, in case a reset shows this is a new run.
                 run.outside = nil
@@ -211,7 +211,7 @@ local function check()
         closeRun(char)
         startRun(char, t, T.Plain(name), instanceID, T.Plain(difficultyID))
     elseif run then
-        if run.completed or t - (run.lastSeen or run.entered) > RESUME_SECONDS then
+        if run.completed or run.wasReset or t - (run.lastSeen or run.entered) > RESUME_SECONDS then
             closeRun(char)
         elseif not run.outside then
             run.outside = t
@@ -448,6 +448,31 @@ end
 Dungeons.events.LFG_COMPLETION_REWARD = function()
     local run = Store.char.currentRun
     if run then complete(run, "finder") end
+end
+
+-- A reset by you or by your group leader (D-111). The game says so only in a system
+-- line, "<dungeon> has been reset." (INSTANCE_RESET_SUCCESS). This is the one chat
+-- event the ledger reads (Austin, 2026-11-08): system messages only, never player
+-- chat; every line that is not that exact text is ignored at once, and nothing from
+-- it is kept but the fact that this run's dungeon was reset.
+function Dungeons.ResetName(message, template)
+    if type(message) ~= "string" or type(template) ~= "string" then return nil end
+    local s, e = template:find("%s", 1, true)
+    if not s then return nil end
+    local function esc(x) return (x:gsub("[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%0")) end
+    return message:match("^" .. esc(template:sub(1, s - 1)) .. "(.+)" .. esc(template:sub(e + 1)) .. "$")
+end
+
+Dungeons.events.CHAT_MSG_SYSTEM = function(_, message)
+    local run = Store.char and Store.char.currentRun
+    if not run then return end
+    if ns.Compat.IsSecret(message) then return end
+    local template = _G.INSTANCE_RESET_SUCCESS
+    if ns.Compat.IsSecret(template) then return end
+    local name = Dungeons.ResetName(message, template)
+    if not name or not sameDungeon(name, run.name) then return end
+    run.wasReset = true
+    check() -- outside (it always is, a reset fails with anyone inside): closes the run now
 end
 
 Dungeons.events.PLAYER_DEAD = function()
