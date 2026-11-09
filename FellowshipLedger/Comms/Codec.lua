@@ -211,6 +211,15 @@ function Codec.EncodeData(key, char, shared, since)
         for _, r in ipairs(char.dungeons or {}) do
             if r.entered and (not from or r.entered >= from) then runs[#runs + 1] = r end
         end
+        -- A completed run stays open after the final boss (D-112): send it now, so
+        -- friends see the clear without waiting for it to close. It has the same entry
+        -- time, so the closed run replaces it later.
+        local cur = char.currentRun
+        if cur and cur.completed and cur.entered and (not from or cur.entered >= from) then
+            runs[#runs + 1] = { entered = cur.entered, name = cur.name, completed = true, completedAt = cur.completedAt,
+                duration = math.max(0, (cur.lastSeen or cur.entered) - cur.entered), bosses = cur.bosses,
+                bossCount = cur.bossCount, deaths = cur.deaths }
+        end
         table.sort(runs, function(a, b) return a.entered < b.entered end)
         for i = math.max(1, #runs - Codec.MAX_RUNS + 1), #runs do
             local r = runs[i]

@@ -430,9 +430,15 @@ custom["x:dungeon.copy"] = function()
     local seen = D and D.lastCopy
     local detail = string.format("open run: %s (map %s), copy=%s, back in=%s", tostring(run and run.name), tostring(run and run.instanceID),
         tostring(run and run.copy), tostring(run and run.backAt ~= nil))
-    if not seen then return "INFO", detail .. "; no creature seen yet this session (target one inside a dungeon)" end
-    detail = detail .. string.format("; last seen: copy=%s, GUID map=%s, run map=%s, %ds ago", tostring(seen.copy), tostring(seen.guid),
-        tostring(seen.runMap), (ns.Store.Now() - (seen.at or 0)))
+    -- How far each creature got (target / kill, then the step that stopped it).
+    local stats, keys = D and D.copyStats or {}, {}
+    for k in pairs(stats) do keys[#keys + 1] = k end
+    table.sort(keys)
+    for i, k in ipairs(keys) do keys[i] = k .. "=" .. stats[k] end
+    detail = detail .. "; seen: " .. (#keys > 0 and table.concat(keys, " ") or "none")
+    if not seen then return "INFO", detail .. "; no creature GUID read yet this session (target one inside a dungeon)" end
+    detail = detail .. string.format("; last: %s, copy=%s, GUID map=%s, run map=%s, %ds ago", tostring(seen.kind), tostring(seen.copy),
+        tostring(seen.guid), tostring(seen.runMap), (ns.Store.Now() - (seen.at or 0)))
     return seen.copy and "PASS" or "FAIL", detail
 end
 

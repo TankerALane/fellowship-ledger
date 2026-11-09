@@ -237,3 +237,20 @@ H.test("compare alignment by level and by day", function()
     H.ok(G.CanCompare("timePerLevel") and G.CanCompare("questsPerDay"))
     H.ok(not G.CanCompare("goldPerSession"))
 end)
+
+H.test("a completed run still open after the final boss is sent (D-112)", function()
+    local ns = ns_()
+    local C = ns.Codec
+    local c = sampleChar(ns)
+    c.dungeons = { { name = "Deadmines", entered = 100, duration = 900, completed = true, bosses = {} } }
+    c.currentRun = { name = "Wailing Caverns", entered = 5000, lastSeen = 7400, completed = true, completedAt = 7000,
+        bosses = { { id = 1, at = 7000 } }, bossCount = 1, deaths = 2 }
+    local shared = C.SharedTrackers(c, false)
+    shared.dungeons = true
+    local d = C.DecodeData(C.EncodeData("Vel-Testrealm", c, shared, nil))
+    H.eq(#d.runs, 2)
+    local r = d.runs[2]
+    H.eq(r.name, "Wailing Caverns"); H.eq(r.duration, 2400); H.ok(r.completed); H.eq(r.clear, 2000); H.eq(r.deaths, 2)
+    c.currentRun.completed = nil
+    H.eq(#C.DecodeData(C.EncodeData("Vel-Testrealm", c, shared, nil)).runs, 1, "an unfinished open run is not sent")
+end)

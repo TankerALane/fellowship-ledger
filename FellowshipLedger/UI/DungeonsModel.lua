@@ -267,8 +267,10 @@ function DungeonsModel.Lines(o)
             local runKey = tostring(e.charKey) .. "|" .. tostring(run.entered)
             local open = o.expanded and o.expanded[runKey]
             local result, resultRole
-            if e.live then result, resultRole = L.DUNGEONS_IN_PROGRESS, "muted"
-            elseif run.completed then result, resultRole = L.DUNGEONS_COMPLETED, "good"
+            -- Completed wins over in progress: after the final boss the run stays open
+            -- (D-112) but is done (Austin, 2026-11-09).
+            if run.completed then result, resultRole = L.DUNGEONS_COMPLETED, "good"
+            elseif e.live then result, resultRole = L.DUNGEONS_IN_PROGRESS, "muted"
             else result, resultRole = L.DUNGEONS_NOT_DONE, "muted" end
             local bosses = #(run.bosses or {})
             local bossText = run.bossCount and (bosses .. " / " .. run.bossCount) or tostring(bosses)

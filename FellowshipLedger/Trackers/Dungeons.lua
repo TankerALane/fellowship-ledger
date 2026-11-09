@@ -510,15 +510,24 @@ function Dungeons.CopyOf(guid, mapID)
     return server .. "-" .. zone
 end
 Dungeons.lastCopy = nil -- for /fl verify: { copy, guidMap, runMap, at }
+-- For /fl verify (Austin's 1.7.1 check saw no creature after two kills): how far each
+-- creature got, by source and by the step that stopped it. Counts only, this session.
+Dungeons.copyStats = {}
+local function stat(key) Dungeons.copyStats[key] = (Dungeons.copyStats[key] or 0) + 1 end
 
-local function seeCopy(guid)
+local function seeCopy(guid, source)
+    stat(source)
     local run = Store.char and Store.char.currentRun
-    if not run or run.outside or guid == nil or ns.Compat.IsSecret(guid) then return end
+    if not run then return stat("noRun") end
+    if run.outside then return stat("outside") end
+    if guid == nil then return stat("nilGuid") end
+    if ns.Compat.IsSecret(guid) then return stat("secret") end
+    if type(guid) ~= "string" then return stat("notText") end
     local copy = Dungeons.CopyOf(guid, run.instanceID)
-    if type(guid) == "string" then
-        Dungeons.lastCopy = { copy = copy, guid = guid:match("^%a+%-%d+%-%d+%-(%d+)"), runMap = run.instanceID, at = Store.Now() }
-    end
-    if not copy then return end
+    Dungeons.lastCopy = { copy = copy, guid = guid:match("^%a+%-%d+%-%d+%-(%d+)"), kind = guid:match("^(%a+)%-"),
+        runMap = run.instanceID, at = Store.Now() }
+    if not copy then return stat("notThisMap") end
+    stat("ok")
     if not run.copy then
         run.copy = copy
     elseif copy == run.copy then
@@ -528,11 +537,11 @@ local function seeCopy(guid)
     end
 end
 
-Dungeons.events.PARTY_KILL = function(_, _, target) seeCopy(target) end
+Dungeons.events.PARTY_KILL = function(_, _, target) seeCopy(target, "kill") end
 Dungeons.events.PLAYER_TARGET_CHANGED = function()
     if not (Store.char and Store.char.currentRun) then return end
     local ok, guid = ns.Compat.Try("UnitGUID", "target")
-    if ok then seeCopy(guid) end
+    if ok then seeCopy(guid, "target") else stat("guidFailed") end
 end
 
 Dungeons.events.PLAYER_DEAD = function()

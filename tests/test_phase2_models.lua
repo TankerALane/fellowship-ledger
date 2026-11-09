@@ -490,3 +490,25 @@ H.test("axis labels are short and steps are round (gold, time)", function()
     H.eq(G.FormatAxis("goldPerSession", 40000), "+4g")
     H.eq(G.FormatAxis("timePerLevel", 3600), "1h")
 end)
+
+H.test("an open run after the final boss shows Completed (D-112)", function()
+    local ns = H.pureNamespace()
+    local M, L = ns.DungeonsModel, ns.L
+    local E = os.time({ year = 2026, month = 11, day = 9, hour = 10, min = 0 })
+    local chars = { ["Tara-R"] = { display = "Tara R", dungeons = {},
+        currentRun = { name = "Wailing Caverns", entered = E, lastSeen = E + 2000, completed = true, completedAt = E + 1900, bosses = {} } } }
+    local function text()
+        local out = {}
+        for _, l in ipairs(M.Lines({ chars = chars, friends = {}, isBlocked = function() return false end, now = E + 2100,
+            dateFn = os.date, L = L, todayKey = "2026-11-09", expanded = {}, toggle = function() end })) do
+            if l.text then out[#out + 1] = l.text end
+            for _, sg in ipairs(l.segments or {}) do if sg.text then out[#out + 1] = sg.text end end
+        end
+        return table.concat(out, "|")
+    end
+    local all = text()
+    H.ok(all:find(L.DUNGEONS_COMPLETED, 1, true) and not all:find(L.DUNGEONS_IN_PROGRESS, 1, true), all)
+    chars["Tara-R"].currentRun.completed = nil
+    all = text()
+    H.ok(all:find(L.DUNGEONS_IN_PROGRESS, 1, true), all)
+end)
