@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.2 - 2026-11-09
 
 ### Fixed
 - **Going out and back in after the last boss stays one run.** A new run now starts only when the dungeon was reset or you are in another leader's dungeon.
