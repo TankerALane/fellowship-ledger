@@ -298,8 +298,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | INFO | ? |
-| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | PASS | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
+| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | INFO | ? |
 
 ### Reputation
 
@@ -444,7 +444,7 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
-| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | INFO | ? |
+| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | ? |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
 | `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | PASS | ? |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |
@@ -494,8 +494,8 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `INSTANCE_RESET_SUCCESS` | api | the game's "%s has been reset." text, to spot a reset by you or your group leader (D-111) | `/dump type(INSTANCE_RESET_SUCCESS)` -> "string" | ? | ? |
-| `ev:CHAT_MSG_SYSTEM` | event | system lines, read only for "<dungeon> has been reset." (the one chat event the ledger reads, D-111) (probe counts only, no arguments stored) (not probed: too noisy) | `/dump C_EventUtils.IsEventValid("CHAT_MSG_SYSTEM")` -> true | ? | ? |
+| `INSTANCE_RESET_SUCCESS` | api | the game's "%s has been reset." text, to spot a reset by you or your group leader (D-111) | `/dump type(INSTANCE_RESET_SUCCESS)` -> "string" | PASS | ? |
+| `ev:CHAT_MSG_SYSTEM` | event | system lines, read only for "<dungeon> has been reset." (the one chat event the ledger reads, D-111) (probe counts only, no arguments stored) (not probed: too noisy) | `/dump C_EventUtils.IsEventValid("CHAT_MSG_SYSTEM")` -> true | PASS | ? |
 | `m:deathrun` | manual | dying, releasing and running back (or going out to repair) stays one run; old split runs are joined at login (D-110) | die in a dungeon, release, run back and finish; the Dungeons tab shows one run with the death | ? | ? |
 | `x:dungeon.copy` | custom | which copy of the dungeon you are in, read from a creature's GUID (server and zone UID); a reset or another leader's instance is a new copy (D-112) | inside a dungeon, target a creature, then /fl verify; after a reset, go back in, target one again and /fl verify | ? | ? |
 | `m:instancereset` | manual | a reset by you or your group leader starts a new run when you go back in and target or kill something (D-111, D-112) | in a group, leave the dungeon, have the leader reset it, go back in and fight; the Dungeons tab shows two runs | ? | ? |

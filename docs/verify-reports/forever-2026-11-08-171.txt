@@ -1,0 +1,82 @@
+Fellowship Ledger verify report
+addon=1.7.1 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70862 at=2026-11-08 22:55
+summary pass=236 fail=11 error=0 info=9 manual=19
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+FAIL MAX_PLAYER_LEVEL: is nil, expected number
+FAIL GetQuestsCompleted: is nil, expected function
+FAIL ChatFrame_SendBNetTell: is nil, expected function
+FAIL InviteUnit: is nil, expected function
+-- details
+PASS x:build.interface: 16001 -> Forever
+INFO x:build.version: 1.60.1 (70862)
+PASS x:build.tocflavor: loaded Forever TOC
+INFO x:build.projectid: WOW_PROJECT_ID=18; constants: CAMELOT=18 CLASSIC=2 ID=18 MAINLINE=1
+INFO x:addon.questie: loaded=true version=12.6.4
+PASS x:sv.persist: loads=160 lastLogoutSaved=2026-11-08 21:57 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=108 lastLogoutSaved=2026-11-08 20:54 firstSeen=2026-11-04 15:13 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=1458 name readable
+INFO x:quest.questline: checked 29 quests, 0 returned a quest line.
+PASS x:dungeon.journal: Ruins of Lordaeron: 0 bosses killed, completed=false, lastBossID=nil via nil, lookups=10, lastBossName=nil; final-boss list: Rath'mael; journal: 0 instances (); by name: nil; now: last=nil (nil) of nil via nil
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 7 slots, 4 with readable rank
+PASS x:death.recap: recap 1: 10 events; fields amount,critical,crushing,currentHP,destFlags,destGUID,destName,destRaidFlags,event,glancing,hideCaster,isOffHand,overkill,school,sourceFlags,sourceGUID,sourceName,sourceRaidFlags,timestamp; source/spell readable
+INFO x:death.killerlevel: newest death: killer Deep Widow was not your target, so no level; at death: target none, recap source Deep Widow, matched by nothing
+PASS x:rep.fields: fields: atWarWith,canSetInactive,canToggleAtWar,currentReactionThreshold,currentStanding,description,factionID,hasBonusRepGain,isAccountWide,isChild,isCollapsed,isHeader,isHeaderWithRep,isWatched,name,nextReactionThreshold,reaction
+PASS x:flight.paths: known=8 counted=6 baseline=true; message this session=no; map this session=22:00 (22 nodes, 0 new); newest counted: Ratchet, The Barrens at 11-07 15:33
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=65 online=22; account fields: accountName,appearOffline,battleTag,bnetAccountID,customMessage,customMessageTime,friendLevel,friendTags,gameAccountInfo,isAFK,isBattleTagFriend,isDND,isFavorite,isFriend,lastOnlineTime,note,rafLinkType; game fields: areaName,canSummon,characterLevel,characterName,classFilename,classID,className,clientProgram,factionName,gameAccountID,hasFocus,isAppearOffline,isGameAFK,isGameBusy,isInCurrentRegion,isOnline,playerGuid,raceName,realmDisplayName,realmID,realmName,regionID,richPresence,subIcon,wowProjectID; online client/project: App/nil x17, BSAp/nil x12, WoW/1 x2, WoW/18 x6
+PASS x:comms.prefix: FLDGF register returned 1; registered=true
+INFO x:friends.charfields: no character friends to inspect
+PASS x:graphs.menu: opened at 22:07 with 18 choices
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes SetTexCoord=yes SetVertexColor=yes GetStringWidth=yes
+PASS x:ui.compartment: RegisterAddon is function
+PASS x:questie.db: state=ready
+PASS x:quest.completed: 172 completed via GetAllCompletedQuestIDs; quest 8 = A Rogue's Deal in Deathknell; 2 without a name (hidden)
+PASS x:questie.details: quest 496 "Elixir of Suffering": level 22, needs 19; starts npc Apothecary Lydon in Hillsbrad Foothills at 61.4, 19.1
+PASS x:quest.rewards: (29 log quests read, see the pasted report)
+PASS x:questie.xp: 496=180 498=2200 549=1750 527=1950 567=2300 97291=nil
+PASS x:tooltip.unit: hook=processor
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:commtest, m:sync, m:deathrun, m:instancereset, m:bosstimes, m:friendextras, m:questlink, m:commonquests,
+MANUAL m:friendmenu, m:weeklyrecap, m:itemtooltip, m:notices, m:minimap, m:options, m:fakeviews, m:copywindow
+-- api pass
+GetBuildInfo, C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded, C_EventUtils.IsEventValid, UnitName, UnitFullName, GetRealmName, GetNormalizedRealmName,
+UnitClass, UnitRace, UnitFactionGroup, UnitLevel, UnitXP, UnitXPMax, GetXPExhaustion, GetMoney, GetLocale, IsTrialAccount, IsVeteranTrialAccount, issecretvalue,
+canaccessvalue, issecrettable, canaccesssecrets, C_Timer.After, C_Timer.NewTicker, GetServerTime, GetTime, RequestTimePlayed, UnitIsAFK, GetUnitSpeed,
+InCombatLockdown, UnitAffectingCombat, C_Map.GetBestMapForUnit, C_Map.GetMapInfo, GetZoneText, GetRealZoneText, GetSubZoneText, C_Map.GetAreaInfo,
+C_MapExplorationInfo.GetExploredAreaIDsAtPosition, GetGameMessageInfo, ERR_ZONE_EXPLORED, ERR_ZONE_EXPLORED_XP, C_QuestLog.GetNumQuestLogEntries,
+C_QuestLog.GetInfo, C_QuestLog.GetTitleForQuestID, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLine.GetQuestLineInfo, C_QuestLine.GetQuestLineQuests,
+C_QuestLine.GetAvailableQuestLines, C_QuestLine.RequestQuestLinesForMap, IsInInstance, GetInstanceInfo, GetDifficultyInfo, IsInGroup, UnitIsPlayer,
+GetNumGroupMembers, UnitGroupRolesAssigned, EJ_GetInstanceForMap, EJ_SelectInstance, EJ_GetEncounterInfoByIndex, EJ_GetNumTiers, EJ_SelectTier,
+EJ_GetInstanceByIndex, GetProfessions, GetProfessionInfo, C_TradeSkillUI.GetBaseProfessionInfo, C_DeathRecap.GetRecapEvents, C_DeathRecap.HasRecapEvents,
+GetDeathRecapLink, C_Reputation.GetNumFactions, C_Reputation.GetFactionDataByIndex, C_Reputation.GetFactionDataByID, GetAchievementInfo,
+C_TaxiMap.GetAllTaxiNodes, NumTaxiNodes, TaxiNodeName, GetTaxiMapID, Enum.FlightPathState, ERR_NEWTAXIPATH, UnitGUID, UnitExists, UnitIsDead, UnitClassification,
+UnitCreatureType, C_Item.GetItemInfo, C_Item.GetItemQualityByID, C_Spell.GetSpellInfo, GetNumLootItems, GetLootSlotInfo, GetLootSlotLink,
+C_BattleNet.SendGameData, BNGetInfo, BNGetNumFriends, C_BattleNet.GetFriendAccountInfo, C_BattleNet.GetFriendNumGameAccounts,
+C_BattleNet.GetFriendGameAccountInfo, C_BattleNet.GetGameAccountInfoByID, C_BattleNet.GetAccountInfoByID, WOW_PROJECT_ID, BNET_CLIENT_WOW,
+LE_PARTY_CATEGORY_INSTANCE, C_ChatInfo.RegisterAddonMessagePrefix, C_ChatInfo.IsAddonMessagePrefixRegistered, C_ChatInfo.SendAddonMessage,
+C_ChatInfo.InChatMessagingLockdown, C_FriendList.GetNumFriends, C_FriendList.GetFriendInfoByIndex, C_FriendList.ShowFriends, CreateFrame, BackdropTemplateMixin,
+UISpecialFrames, Minimap, GetCursorPosition, Settings.RegisterCanvasLayoutCategory, Settings.RegisterAddOnCategory, Settings.OpenToCategory,
+AddonCompartmentFrame, GetMaxLevelForPlayerExpansion, MenuUtil.CreateContextMenu, CreateColor, Screenshot, PlaySound, SOUNDKIT, GameTooltip,
+C_QuestLog.GetAllCompletedQuestIDs, GetQuestID, GetNumQuestRewards, GetNumQuestChoices, GetQuestItemInfo, GetQuestItemLink, GetRewardMoney, GetRewardXP,
+GetNumQuestLogRewards, GetQuestLogRewardInfo, GetNumQuestLogChoices, GetQuestLogChoiceInfo, GetQuestLogRewardMoney, GetQuestLogRewardXP,
+C_Item.RequestLoadItemDataByID, INSTANCE_RESET_SUCCESS, GetQuestLink, ChatFrameUtil.SendBNetTell, ChatFrameUtil.SendTell, ChatFrame_SendTell, BNInviteFriend,
+C_PartyInfo.InviteUnit, C_DateAndTime.GetSecondsUntilWeeklyReset, GameTooltip.SetHyperlink, GameTooltip.SetItemByID, IsShiftKeyDown, ChatEdit_InsertLink,
+TooltipDataProcessor
+-- event pass (exists; fired counts are under probe)
+TIME_PLAYED_MSG, PLAYER_FLAGS_CHANGED, PLAYER_STARTED_MOVING, PLAYER_STOPPED_MOVING, PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_SUCCEEDED,
+ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD, PLAYER_LOGOUT, PLAYER_LEAVING_WORLD, PLAYER_LEVEL_UP, PLAYER_XP_UPDATE, UNIT_LEVEL, ZONE_CHANGED,
+ZONE_CHANGED_NEW_AREA, UI_INFO_MESSAGE, QUEST_ACCEPTED, QUEST_TURNED_IN, QUEST_REMOVED, QUEST_LOG_UPDATE, QUEST_COMPLETE, ENCOUNTER_START, ENCOUNTER_END,
+BOSS_KILL, LFG_COMPLETION_REWARD, SCENARIO_COMPLETED, UPDATE_INSTANCE_INFO, GROUP_ROSTER_UPDATE, SKILL_LINES_CHANGED, TRADE_SKILL_SHOW, NEW_RECIPE_LEARNED,
+PLAYER_MONEY, MERCHANT_SHOW, MERCHANT_CLOSED, MAIL_SHOW, MAIL_CLOSED, AUCTION_HOUSE_SHOW, AUCTION_HOUSE_CLOSED, LOOT_READY, LOOT_OPENED, LOOT_CLOSED,
+PLAYER_DEAD, PLAYER_ALIVE, PLAYER_UNGHOST, UPDATE_FACTION, ACHIEVEMENT_EARNED, TAXIMAP_OPENED, PLAYER_TARGET_CHANGED, PARTY_KILL, LOOT_SLOT_CLEARED, ITEM_PUSH,
+BAG_UPDATE_DELAYED, BN_CHAT_MSG_ADDON, BN_FRIEND_ACCOUNT_ONLINE, BN_FRIEND_INFO_CHANGED, CHAT_MSG_ADDON, FRIENDLIST_UPDATE,
+ADDON_ACTION_FORBIDDEN, QUEST_DETAIL, CHAT_MSG_SYSTEM
