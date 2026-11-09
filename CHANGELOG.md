@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Fixed
+- **Dying in a dungeon no longer makes a second run.** Releasing, or going out to repair, and coming back within 30 minutes now continues the same run, with its bosses, deaths and time. Runs already split this way are joined once when you log in. If the dungeon was reset while you were out (a boss you killed dies again), that is still a new run.
 - Settings no longer says "(not yet confirmed in-game)" next to Dungeons, Reputation, Flight paths and Notable items on WoW Forever, where all four are confirmed. On retail the note stays on Flight paths and Notable items until a retail player confirms them.
 
 ## 1.7.0 - 2026-11-07

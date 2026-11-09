@@ -154,7 +154,7 @@ local function closeRun(char)
     if not run then return end
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
-    run.pull = nil
+    run.pull, run.outside, run.backAt, run.seenBefore = nil, nil, nil, nil
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
         char.currentRun = nil
@@ -165,6 +165,32 @@ local function closeRun(char)
     Days.PruneList(char.dungeons, "entered", Store.Now(), Character.LIST_KEEP_SECONDS)
 end
 
+local function startRun(char, t, name, instanceID, difficultyID)
+    local lastBoss, bossCount, how, lastName = findLastBoss(name)
+    char.currentRun = {
+        name = name,
+        instanceID = instanceID,
+        difficultyID = difficultyID,
+        entered = t,
+        lastSeen = t,
+        deaths = 0,
+        bosses = {},
+        party = partySnapshot(),
+        lastBossID = lastBoss or nil,
+        lastBossName = lastName,
+        bossCount = bossCount,
+        lookup = how,
+        lookups = 1,
+        pending = true, -- counted as entered after 5 minutes or a boss kill
+    }
+    return char.currentRun
+end
+
+-- Leaving the dungeon only pauses the run (D-110): dying and running back, or going
+-- out to repair, is still one run. Coming back into the same dungeon within
+-- RESUME_SECONDS of last being inside continues it. It closes when that time passes
+-- (checked here, each minute and at login), when another dungeon is entered, or on
+-- leaving after the run was completed.
 local function check()
     local char = Store.char
     local t = Store.Now()
@@ -173,30 +199,23 @@ local function check()
     local run = char.currentRun
     if instanceType == "party" then
         if run and run.instanceID == instanceID and t - (run.lastSeen or run.entered) <= RESUME_SECONDS then
+            if run.outside then
+                -- Back in: remember when, in case a reset shows this is a new run.
+                run.outside = nil
+                run.backAt, run.seenBefore = t, run.lastSeen
+            end
             run.lastSeen = t
             countIfReady(run, t)
             return
         end
         closeRun(char)
-        local lastBoss, bossCount, how, lastName = findLastBoss(T.Plain(name))
-        char.currentRun = {
-            name = T.Plain(name),
-            instanceID = instanceID,
-            difficultyID = T.Plain(difficultyID),
-            entered = t,
-            lastSeen = t,
-            deaths = 0,
-            bosses = {},
-            party = partySnapshot(),
-            lastBossID = lastBoss or nil,
-            lastBossName = lastName,
-            bossCount = bossCount,
-            lookup = how,
-            lookups = 1,
-            pending = true, -- counted as entered after 5 minutes or a boss kill
-        }
+        startRun(char, t, T.Plain(name), instanceID, T.Plain(difficultyID))
     elseif run then
-        closeRun(char)
+        if run.completed or t - (run.lastSeen or run.entered) > RESUME_SECONDS then
+            closeRun(char)
+        elseif not run.outside then
+            run.outside = t
+        end
     end
 end
 
@@ -248,6 +267,19 @@ function Dungeons.Repair(char)
     return fixed
 end
 
+-- Take one off a run's day and session "entered" count.
+local function uncount(char, at)
+    local day = char.days and char.days[Days.Key(at or 0, date)]
+    if day and (day.dungeonsEntered or 0) > 0 then day.dungeonsEntered = day.dungeonsEntered - 1 end
+    for _, s in ipairs(char.sessions or {}) do
+        local e = at or 0
+        if s.counts and e >= (s.start or 0) and e <= (s.stop or e) then
+            if (s.counts.dungeonsEntered or 0) > 0 then s.counts.dungeonsEntered = s.counts.dungeonsEntered - 1 end
+            break
+        end
+    end
+end
+
 -- Once per character: drop saved runs from before the 5-minute rule that were only
 -- a walk in and out (under 5 minutes, no boss, not completed), and take them back
 -- off that day's and that session's "entered" count.
@@ -261,24 +293,55 @@ function Dungeons.DropBlips(char)
         if not run.completed and #(run.bosses or {}) == 0 and (run.duration or 0) < MIN_RUN_SECONDS then
             table.remove(list, i)
             dropped = dropped + 1
-            local day = char.days and char.days[Days.Key(run.entered or 0, date)]
-            if day and (day.dungeonsEntered or 0) > 0 then day.dungeonsEntered = day.dungeonsEntered - 1 end
-            for _, s in ipairs(char.sessions or {}) do
-                local e = run.entered or 0
-                if s.counts and e >= (s.start or 0) and e <= (s.stop or e) then
-                    if (s.counts.dungeonsEntered or 0) > 0 then s.counts.dungeonsEntered = s.counts.dungeonsEntered - 1 end
-                    break
-                end
-            end
+            uncount(char, run.entered)
         end
     end
     return dropped
 end
 
+-- Once per character (D-110): before 1.7.1, leaving the dungeon (a death and a
+-- release, or going out to repair) closed the run, so coming back made a second one.
+-- Join two saved runs of the same dungeon when the second began within
+-- RESUME_SECONDS of the first ending, the first was not completed, and no boss died
+-- in both (that would be a reset, so two real runs).
+function Dungeons.MergeSplits(char)
+    if char.dungeonSplitsMerged then return 0 end
+    char.dungeonSplitsMerged = true
+    local list = char.dungeons or {}
+    local merged = 0
+    for i = #list, 2, -1 do
+        local a, b = list[i - 1], list[i]
+        local aEnd = a.left or ((a.entered or 0) + (a.duration or 0))
+        local gap = (b.entered or 0) - aEnd
+        local same = a.name ~= nil and a.name == b.name and (a.instanceID == nil or b.instanceID == nil or a.instanceID == b.instanceID)
+        local repeated = false
+        for _, x in ipairs(a.bosses or {}) do
+            for _, y in ipairs(b.bosses or {}) do
+                if (x.id ~= nil and x.id == y.id) or (x.id == nil and x.name ~= nil and x.name == y.name) then repeated = true end
+            end
+        end
+        if same and not a.completed and gap >= 0 and gap <= RESUME_SECONDS and not repeated then
+            for _, y in ipairs(b.bosses or {}) do a.bosses[#a.bosses + 1] = y end
+            a.deaths = (a.deaths or 0) + (b.deaths or 0)
+            a.left = b.left or ((b.entered or 0) + (b.duration or 0))
+            a.duration = a.left - a.entered
+            if #(b.party or {}) > 0 then a.party = b.party end
+            for _, k in ipairs({ "completed", "completedBy", "completedAt", "partyFrozen", "lastBossID", "lastBossName", "bossCount", "lookup" }) do
+                if b[k] ~= nil then a[k] = b[k] end
+            end
+            if (a.difficultyID or 0) == 0 then a.difficultyID = b.difficultyID end
+            table.remove(list, i)
+            uncount(char, b.entered)
+            merged = merged + 1
+        end
+    end
+    return merged
+end
+
 function Dungeons:OnLogin()
     -- Every character on this account, not only the one logging in: a character
     -- not played since the update would otherwise keep its old walk-in runs.
-    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c) end
+    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c); Dungeons.MergeSplits(c) end
     check()
     Dungeons.Repair(Store.char)
 end
@@ -287,10 +350,12 @@ function Dungeons:OnTick()
     local run = Store.char.currentRun
     if run then
         local _, instanceType = GetInstanceInfo()
-        if T.Plain(instanceType) == "party" then
+        if T.Plain(instanceType) == "party" and not run.outside then
             run.lastSeen = Store.Now()
             countIfReady(run, run.lastSeen)
             ensureLastBoss(run)
+        else
+            check() -- outside: close the run once the time to come back has passed
         end
     end
 end
@@ -349,6 +414,23 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     encounterID = T.Plain(encounterID)
     if T.Dedupe("boss:" .. tostring(encounterID), 10) then return end
     local t = Store.Now()
+    -- A boss this run already killed died again: the dungeon was reset while we were
+    -- out, so the old run ended when we left and a new one began when we came back.
+    if run.backAt then
+        for _, b in ipairs(run.bosses) do
+            if b.id == encounterID and (b.at or 0) < run.backAt then
+                local backAt = run.backAt
+                run.lastSeen = run.seenBefore or run.lastSeen
+                run.pull = nil
+                local char = Store.char
+                closeRun(char)
+                local _, _, diff = GetInstanceInfo()
+                run = startRun(char, backAt, run.name, run.instanceID, T.Plain(diff) or run.difficultyID)
+                run.lastSeen = t
+                break
+            end
+        end
+    end
     -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.
     local fight = pull and pull.at and (pull.id == nil or pull.id == encounterID) and t - pull.at or nil
     if fight and (fight < 0 or fight > 3600) then fight = nil end
@@ -370,5 +452,5 @@ end
 
 Dungeons.events.PLAYER_DEAD = function()
     local run = Store.char.currentRun
-    if run then run.deaths = run.deaths + 1 end
+    if run and not run.outside then run.deaths = run.deaths + 1 end -- not a death out in the world
 end

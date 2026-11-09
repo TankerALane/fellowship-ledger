@@ -241,7 +241,11 @@ H.test("dungeon: in and straight out is not a run; 5 minutes is; old blips are c
     H.eq(today(env).dungeonsEntered, 1, "counted after 5 minutes")
     st.instance = outside
     Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
-    H.eq(#char(env).dungeons, 1)
+    H.eq(#(char(env).dungeons or {}), 0, "left but not completed: paused, not saved yet (D-110)")
+    Mock.advance(env, 1801)
+    ns.Trackers.byId.dungeons:OnTick()
+    H.eq(#char(env).dungeons, 1, "saved once the time to come back has passed")
+    H.eq(char(env).currentRun, nil)
     -- Saved data from before the rule: a 1-second run is dropped once, and uncounted.
     local c = char(env)
     local D = ns.Trackers.byId.dungeons
@@ -253,6 +257,129 @@ H.test("dungeon: in and straight out is not a run; 5 minutes is; old blips are c
     H.eq(#c.dungeons, 1, "the real run stays")
     H.eq(c.days[day].dungeonsEntered, 1)
     H.eq(D.DropBlips(c), 0, "only once")
+end)
+
+local DEADMINES = { "The Deadmines", "party", 1, "Normal", 5, 0, false, 36 }
+local WESTFALL = { "Westfall", "none", 0, "", 5, 0, false, 0 }
+local function deadmines(env)
+    local st = env.__state
+    st.ejInstance = 63
+    st.ejBosses = { { name = "Rhahk'Zor", id = 1 }, { name = "Sneed", id = 5 }, { name = "Captain Cookie", id = 9 } }
+    st.instance = DEADMINES
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+end
+local function go(env, where, secs)
+    if secs then Mock.advance(env, secs) end
+    env.__state.instance = where
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+end
+
+H.test("dungeon: dying, releasing outside and running back is one run (D-110)", function()
+    local env = boot(RETAIL)
+    local enteredAt = env.time()
+    deadmines(env)
+    Mock.advance(env, 400)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.fire(env, "PLAYER_DEAD")
+    go(env, WESTFALL, 20)                      -- released: the graveyard is outside
+    H.ok(char(env).currentRun, "still open while outside")
+    H.eq(#(char(env).dungeons or {}), 0)
+    go(env, DEADMINES, 240)                     -- ran back in
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 5, "Sneed", 1, 5, 1)
+    Mock.fire(env, "PLAYER_DEAD")
+    go(env, WESTFALL, 10)
+    Mock.fire(env, "PLAYER_DEAD")               -- died again on the way back: not in the dungeon
+    go(env, DEADMINES, 200)
+    Mock.advance(env, 500)
+    Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
+    go(env, WESTFALL, 60)                       -- completed: leaving closes it now
+    local runs = char(env).dungeons
+    H.eq(#runs, 1, "one run")
+    H.eq(#runs[1].bosses, 3)
+    H.eq(runs[1].deaths, 2)
+    H.ok(runs[1].completed)
+    H.eq(runs[1].entered, enteredAt)
+    H.eq(runs[1].outside, nil, "no working fields saved")
+    H.eq(runs[1].backAt, nil)
+    H.eq(today(env).dungeonsEntered, 1)
+    H.eq(today(env).dungeonsCompleted, 1)
+    H.eq(char(env).currentRun, nil)
+end)
+
+H.test("dungeon: back after more than 30 minutes, or into another dungeon, is a new run", function()
+    local env, ns = boot(RETAIL)
+    deadmines(env)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    go(env, WESTFALL, 60)
+    go(env, DEADMINES, 1900)
+    H.eq(#char(env).dungeons, 1, "the first run closed")
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    go(env, WESTFALL, 60)
+    go(env, { "Shadowfang Keep", "party", 1, "Normal", 5, 0, false, 33 }, 60)
+    H.eq(#char(env).dungeons, 2, "entering another dungeon closes the paused one")
+    H.eq(char(env).currentRun.name, "Shadowfang Keep")
+    H.eq(today(env).dungeonsEntered, 2)
+    -- A paused run with nobody coming back closes on the minute tick.
+    go(env, WESTFALL, 400)
+    Mock.advance(env, 1801)
+    ns.Trackers.byId.dungeons:OnTick()
+    H.eq(#char(env).dungeons, 3)
+end)
+
+H.test("dungeon: a boss killed again after coming back means a reset: two runs", function()
+    local env = boot(RETAIL)
+    deadmines(env)
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.fire(env, "ENCOUNTER_END", 5, "Sneed", 1, 5, 1)
+    go(env, WESTFALL, 100)
+    local back = env.time() + 120
+    go(env, DEADMINES, 120)
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    local runs = char(env).dungeons
+    H.eq(#runs, 1, "the first run closed")
+    H.eq(#runs[1].bosses, 2)
+    H.eq(runs[1].duration, 400, "ended when we last left")
+    local cur = char(env).currentRun
+    H.eq(cur.entered, back, "the new run began when we came back")
+    H.eq(#cur.bosses, 1)
+    H.eq(cur.bosses[1].name, "Rhahk'Zor")
+    H.eq(today(env).dungeonsEntered, 2)
+end)
+
+H.test("dungeon: runs split by a death before 1.7.1 are joined once at login", function()
+    local T0 = os.time({ year = 2026, month = 11, day = 7, hour = 18 })
+    local db = { characters = { ["Alt-Elsewhere"] = { name = "Alt", realm = "Elsewhere",
+        days = { ["2026-11-07"] = { dungeonsEntered = 4, dungeonsCompleted = 1 } }, sessions = {}, levels = {},
+        dungeonBlipsDropped = true, dungeons = {
+            { name = "The Deadmines", instanceID = 36, entered = T0, left = T0 + 900, duration = 900, deaths = 1,
+              bosses = { { id = 1, name = "Rhahk'Zor", at = T0 + 400 } }, party = { { class = "PRIEST" } } },
+            { name = "The Deadmines", instanceID = 36, entered = T0 + 1100, left = T0 + 2500, duration = 1400, deaths = 0,
+              completed = true, completedBy = "lastBoss", completedAt = T0 + 2400,
+              bosses = { { id = 5, name = "Sneed", at = T0 + 1500 }, { id = 9, name = "Captain Cookie", at = T0 + 2400 } },
+              party = { { class = "PRIEST" }, { class = "MAGE" } } },
+            -- A reset: Rhahk'Zor again, so a real second run
+            { name = "The Deadmines", instanceID = 36, entered = T0 + 2700, left = T0 + 4000, duration = 1300, deaths = 0,
+              bosses = { { id = 1, name = "Rhahk'Zor", at = T0 + 3000 } } },
+            -- Over 30 minutes later: separate
+            { name = "The Deadmines", instanceID = 36, entered = T0 + 6000, left = T0 + 7000, duration = 1000, deaths = 0,
+              bosses = { { id = 5, name = "Sneed", at = T0 + 6500 } } },
+        } } } }
+    local env = boot(RETAIL, db)
+    local alt = env.FellowshipLedgerDB.characters["Alt-Elsewhere"]
+    H.eq(#alt.dungeons, 3)
+    local a = alt.dungeons[1]
+    H.eq(#a.bosses, 3)
+    H.eq(a.deaths, 1)
+    H.ok(a.completed)
+    H.eq(a.completedAt, T0 + 2400)
+    H.eq(a.duration, 2500)
+    H.eq(#a.party, 2)
+    H.eq(alt.days["2026-11-07"].dungeonsEntered, 3)
+    H.ok(alt.dungeonSplitsMerged)
+    H.eq(env.FellowshipLedgerDB.characters["Alt-Elsewhere"].dungeons[2].entered, T0 + 2700)
 end)
 
 H.test("dungeon blips are cleaned on every character at login, not only the one playing", function()
