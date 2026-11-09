@@ -106,3 +106,10 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [ ] `/fl fake` pass on both clients; retail `/fl probe`
 - [x] 1.6.0 with friends on Forever (2026-11-07): friend notices for chains, dungeon clears and professions, friends' shared dungeon runs, friends' quest chains and profession ranks
 - [ ] Friend level-cap notice: fires when a friend reaches 60 (GetMaxLevelForPlayerExpansion returns 60; no friend has reached it yet)
+
+## Possible additions (not scheduled)
+Ideas only. Nothing here is planned yet: new features wait until the dungeon run logic has settled (see the D-112/D-113 group checks).
+- [ ] **Invite a friend**: a button that whispers a friend a short note saying you use Fellowship Ledger, with the CurseForge link. No new APIs.
+- [ ] **Personal bests**: fastest level, most quests in a day, fastest clear of each dungeon, worked out from data already stored, with a notice when one is beaten.
+- [ ] **Goals**: set a target such as "level 40 by Friday" and show it as a pace line on the Graphs tab.
+- [ ] **Guild sharing** (optional, off by default): share over the guild addon channel. Addon messages are allowed under rule 8, but it raises privacy questions, so Austin decides before any work starts.
