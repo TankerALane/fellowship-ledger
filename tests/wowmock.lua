@@ -93,6 +93,8 @@ function M.new(opts)
     env.UnitRace = function() return "Human", "Human" end
     env.UnitFactionGroup = function() return "Alliance" end
     env.UnitExists = function(unit) return unit == "player" or state.units[unit] ~= nil end
+    -- Group leader: state.leader = "player" or a unit with state.units[unit].
+    env.UnitIsGroupLeader = function(unit) return state.leader ~= nil and state.leader == unit end
     env.UnitGroupRolesAssigned = function(unit) return state.units[unit] and state.units[unit].role or "NONE" end
     env.UnitGUID = function(unit) return state.guid[unit] end
     env.UnitCreatureType = function(unit) return state.units[unit] and state.units[unit].ctype end

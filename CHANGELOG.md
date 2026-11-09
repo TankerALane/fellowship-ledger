@@ -3,11 +3,12 @@
 ## Unreleased
 
 ### Fixed
-- **Going out and back in after the last boss stays one run.** A new run now starts only when the dungeon was reset (by you or your group leader) or you are in another leader's dungeon. The ledger tells by the creatures inside: each copy of a dungeon has its own number in the game, so no chat is needed, and it works when someone else presses Reset.
+- **Going out and back in after the last boss stays one run.** A new run now starts only when the dungeon was reset or you are in another leader's dungeon.
 - Runs that 1.7.1 joined showed up twice on friends' screens (the joined run and its old second half). The old half is now removed when their data arrives.
 - Runs where you went back in after the last boss are joined into that run once at login.
 - A run shows **Completed** as soon as the last boss dies, even while you can still go back in, and friends see the clear right away.
-- `/fl verify` shows more about how the dungeon copy is read (for testing).
+- A new run also starts when you go back in under a group leader who was not in the run's group (another leader's copy of the dungeon).
+- `/fl verify` shows how the dungeon copy and the group leader are read (for testing). On WoW Forever creature IDs are hidden inside dungeons, so the copy check does not work there; a reset by another player is caught when a boss of the run dies again.
 
 ## 1.7.1 - 2026-11-08
 

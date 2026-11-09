@@ -436,10 +436,36 @@ custom["x:dungeon.copy"] = function()
     table.sort(keys)
     for i, k in ipairs(keys) do keys[i] = k .. "=" .. stats[k] end
     detail = detail .. "; seen: " .. (#keys > 0 and table.concat(keys, " ") or "none")
+    if not seen and (stats.secret or 0) > 0 then
+        return "INFO", detail .. "; creature GUIDs are hidden here, so the copy is not known (the reset line, a boss killed again and the leader check still work)"
+    end
     if not seen then return "INFO", detail .. "; no creature GUID read yet this session (target one inside a dungeon)" end
     detail = detail .. string.format("; last: %s, copy=%s, GUID map=%s, run map=%s, %ds ago", tostring(seen.kind), tostring(seen.copy),
         tostring(seen.guid), tostring(seen.runMap), (ns.Store.Now() - (seen.at or 0)))
     return seen.copy and "PASS" or "FAIL", detail
+end
+
+-- The leader check (D-113): can the leader and the run's group be read? No names shown.
+custom["x:dungeon.leader"] = function()
+    local run = ns.Store and ns.Store.char and ns.Store.char.currentRun
+    local lead, n = nil, 0
+    for _, unit in ipairs({ "player", "party1", "party2", "party3", "party4" }) do
+        if unit == "player" or UnitExists(unit) then
+            n = n + 1
+            local ok, l = ns.Compat.Try("UnitIsGroupLeader", unit)
+            if ok and ns.Compat.IsSecret(l) then lead = lead or ("secret on " .. unit)
+            elseif ok and l == true then
+                local okN, name = ns.Compat.Try("UnitName", unit)
+                lead = (okN and ns.Compat.IsSecret(name)) and ("name secret on " .. unit) or (unit .. ", name readable=" .. tostring(okN and type(name) == "string"))
+            end
+        end
+    end
+    local members = 0
+    for _ in pairs(run and run.members or {}) do members = members + 1 end
+    local detail = string.format("group of %d; leader: %s; open run: %s, its group: %d names", n, tostring(lead or "none (solo)"),
+        tostring(run and run.name), members)
+    if n == 1 then return "INFO", detail .. "; join a group inside a dungeon and /fl verify again" end
+    return (lead and not lead:find("secret", 1, true)) and "PASS" or "FAIL", detail
 end
 
 -- Dungeon completion (D-085): the newest run, and the journal's boss list for it by name.

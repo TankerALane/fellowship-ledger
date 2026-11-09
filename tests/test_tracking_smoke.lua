@@ -898,3 +898,41 @@ H.test("unsupported or newer data: no tracking, no errors", function()
     H.eq(ns2.tracking, nil)
     H.ok(Mock.chatContains(env2, "newer version"))
 end)
+
+H.test("dungeon: back in under a leader from outside the run's group is a new run (D-113)", function()
+    local env, ns = boot(RETAIL)
+    local st = env.__state
+    st.units.party1 = { class = "PRIEST", role = "HEALER", level = 20, name = "Ann" }
+    st.leader = "party1"
+    deadmines(env)
+    Mock.advance(env, 400)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
+    local first = char(env).currentRun
+    H.ok(first.completed and first.members.Ann and first.members.Tester, "the run's group: you and Ann")
+    -- Out and back with the same leader: the same run.
+    go(env, WESTFALL, 60)
+    go(env, DEADMINES, 60)
+    H.eq(char(env).currentRun, first)
+    -- Leader passed to you: you were in the run, so still the same run.
+    go(env, WESTFALL, 60)
+    st.leader = "player"
+    go(env, DEADMINES, 60)
+    H.eq(char(env).currentRun, first)
+    -- A new group, led by Bob, who was not in the run: his copy, so a new run.
+    go(env, WESTFALL, 60)
+    st.units.party1 = { class = "MAGE", role = "DAMAGER", level = 20, name = "Bob" }
+    st.leader = "party1"
+    H.ok(not first.members.Bob, "joining while outside does not add to the run's group")
+    go(env, DEADMINES, 60)
+    local now = char(env).currentRun
+    H.ok(now ~= first, "a new run")
+    H.eq(#char(env).dungeons, 1); H.ok(char(env).dungeons[1].completed)
+    H.eq(char(env).dungeons[1].members, nil, "names are not kept in the saved run")
+    H.ok(now.members.Bob)
+    -- Solo (no leader): no change.
+    go(env, WESTFALL, 60)
+    st.units.party1, st.leader = nil, nil
+    go(env, DEADMINES, 60)
+    H.eq(char(env).currentRun, now)
+end)

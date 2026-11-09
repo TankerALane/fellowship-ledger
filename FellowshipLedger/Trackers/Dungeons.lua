@@ -33,6 +33,42 @@ local function partySnapshot()
     return party
 end
 
+-- "Name-Realm" (or "Name") of a unit, nil when unknown or secret.
+local function unitKey(unit)
+    local ok, name, realm = ns.Compat.Try("UnitName", unit)
+    name, realm = ok and T.Plain(name) or nil, ok and T.Plain(realm) or nil
+    if type(name) ~= "string" or name == "" then return nil end
+    return (type(realm) == "string" and realm ~= "") and (name .. "-" .. realm) or name
+end
+
+-- Who was in the run (D-113): you and everyone in the group while you were inside.
+-- Only to tell, when you come back in, whether the leader is from this run's group;
+-- cleared when the run closes, never shared.
+local function noteMembers(run)
+    if not run or run.outside then return end
+    run.members = run.members or {}
+    local me = unitKey("player")
+    if me then run.members[me] = true end
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists(unit) then
+            local key = unitKey(unit)
+            if key then run.members[key] = true end
+        end
+    end
+end
+
+-- The group leader's key, or nil when solo, unknown or secret.
+local function leaderKey()
+    for _, unit in ipairs({ "player", "party1", "party2", "party3", "party4" }) do
+        if unit == "player" or UnitExists(unit) then
+            local ok, lead = ns.Compat.Call("dungeonLeader", "UnitIsGroupLeader", unit)
+            if ok and T.Plain(lead) == true then return unitKey(unit) end
+        end
+    end
+    return nil
+end
+
 -- Journal lookup of the final boss's encounter ID (D-085). First by the map you are
 -- on; if that gives nothing (Forever's first Ragefire Chasm run, 2026-11-05), by the
 -- dungeon's name in the journal's instance lists, which also works after the run.
@@ -155,6 +191,7 @@ local function closeRun(char)
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
     run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset, run.copy = nil, nil, nil, nil, nil, nil
+    run.members = nil -- names are kept only while the run is open, never saved with it
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
         char.currentRun = nil
@@ -183,6 +220,7 @@ local function startRun(char, t, name, instanceID, difficultyID)
         lookups = 1,
         pending = true, -- counted as entered after 5 minutes or a boss kill
     }
+    noteMembers(char.currentRun)
     return char.currentRun
 end
 
@@ -200,7 +238,11 @@ local function check()
     instanceType, instanceID = T.Plain(instanceType), T.Plain(instanceID)
     local run = char.currentRun
     if instanceType == "party" then
-        if run and not run.wasReset and run.instanceID == instanceID and t - (run.lastSeen or run.entered) <= RESUME_SECONDS then
+        -- Back in with a leader who was not in this run's group: their dungeon, so a new
+        -- run (Austin, 2026-11-08; D-113). Solo or an unknown leader: no change.
+        local lead = run and run.outside and leaderKey()
+        local newLeader = lead and run.members and next(run.members) ~= nil and not run.members[lead]
+        if run and not run.wasReset and not newLeader and run.instanceID == instanceID and t - (run.lastSeen or run.entered) <= RESUME_SECONDS then
             if run.outside then
                 -- Back in: remember when, in case a reset shows this is a new run.
                 run.outside = nil
@@ -383,6 +425,7 @@ function Dungeons:OnTick()
             run.lastSeen = Store.Now()
             countIfReady(run, run.lastSeen)
             ensureLastBoss(run)
+            noteMembers(run)
         else
             check() -- outside: close the run once the time to come back has passed
         end
@@ -399,6 +442,7 @@ Dungeons.events.ZONE_CHANGED_NEW_AREA = function() check() end
 local function refreshParty()
     local run = Store.char and Store.char.currentRun
     if not run then return end
+    noteMembers(run) -- a late arrival is part of this run's group
     local party = partySnapshot()
     if run.partyFrozen then
         for _, p in ipairs(party) do
