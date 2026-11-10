@@ -114,6 +114,9 @@ Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass
 - [x] **Session goals** (D-116, D-117): off by default
 - [x] **Dungeon Leaderboard** (D-115, D-117): a Leaderboard tab
 - [ ] Austin, in game: `/fl verify` on both clients (new: BNSendWhisper, C_ChatInfo.SendChatMessage, SendChatMessage), then m:invite, m:bests, m:goals, m:leaderboard, m:dungeonlevels
+  - [x] Forever `/fl verify` (2026-11-10): the three whisper APIs exist
+  - [x] Friends tab invite section (2026-11-10): shows from login with the one-minute checking line, a gap above it, and redraws itself after the minute
+  - [ ] Retail `/fl verify`; sending an invite (m:invite); m:bests, m:goals, m:leaderboard, m:dungeonlevels
 - [x] CurseForge address for Copy link confirmed by Austin; dungeon level ranges taken from the DungeonJournal addon (D-118)
 
 ## Possible additions (not scheduled)
