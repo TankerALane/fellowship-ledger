@@ -107,7 +107,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] 1.6.0 with friends on Forever (2026-11-07): friend notices for chains, dungeon clears and professions, friends' shared dungeon runs, friends' quest chains and profession ranks
 - [ ] Friend level-cap notice: fires when a friend reaches 60 (GetMaxLevelForPlayerExpansion returns 60; no friend has reached it yet)
 
-## 1.8.0 (built on `feature/1.8-fun`, not released)
+## 1.8.0 (released 2026-11-10)
 Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass; the in-game checks are below.
 - [x] **Invite a friend** (D-114, D-117)
 - [x] **Personal bests** (D-115, D-117): a Bests view on each character, records kept for good
