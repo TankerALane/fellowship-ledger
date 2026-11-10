@@ -236,20 +236,25 @@ local function lines()
         end
     end
     if hidden > 0 then out[#out + 1] = { kind = "detail", text = string.format(L.BLOCKED_HIDDEN, hidden) } end
-    for _, l in ipairs(FriendsTab.InviteLines(now)) do out[#out + 1] = l end
+    for _, l in ipairs(FriendsTab.InviteLines(now, #rows > 0)) do out[#out + 1] = l end
     return out, #rows
 end
 
 -- "Online, not using the ledger" (D-114): friends online on this version who never said
 -- hello, each with Invite. While the week after an invite runs there is no button;
 -- after it the button is back and the line still says when the last one went out.
-function FriendsTab.InviteLines(now)
+-- With nobody to invite the section stays, with one line saying so (Austin, 2026-11-10),
+-- unless there are no ledger friends either: then the tab's empty text explains.
+function FriendsTab.InviteLines(now, hasLedgerFriends)
     local out = {}
     if ns.Data.IsFake() or not (ns.Friends and ns.Sync and ns.Sync.startedAt) then return out end
     if now - ns.Sync.startedAt < ns.Invites.SETTLE_SECONDS then return out end
     local list = ns.Invites.Candidates(ns.Friends.peers, ns.db.friends, ns.Friends.IsBlocked)
-    if #list == 0 then return out end
+    if #list == 0 and not hasLedgerFriends then return out end
     out[#out + 1] = { kind = "group", text = string.format(L.INVITE_GROUP, #list) }
+    if #list == 0 then
+        out[#out + 1] = { kind = "detail", indent = true, text = L.INVITE_NOBODY }
+    end
     for _, c in ipairs(list) do
         local status = ns.Invites.Status((ns.db.invites or {})[c.id], now)
         local peer = ns.Friends.peers[c.id]

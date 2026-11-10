@@ -368,6 +368,29 @@ H.test("Friends tab: says who is online before anyone shares, then rows carry to
     H.ok(lines[1]:find("^Level 12"), lines[1])
 end)
 
+H.test("Friends tab: the invite section stays, with one line, when nobody is left to invite", function()
+    local A, nsA = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    nsA.Friends.Refresh()
+    local function inviteLines(now)
+        local found = {}
+        for _, line in ipairs((nsA.FriendsTab.Lines())) do
+            if line.text and (line.text:find("not using the ledger", 1, true) or line.text == nsA.L.INVITE_NOBODY) then
+                found[#found + 1] = line.text
+            end
+        end
+        return found
+    end
+    nsA.Sync.startedAt = nsA.Sync.startedAt - 600 -- past the wait for hellos
+    H.eq(#nsA.FriendsTab.InviteLines(A.time(), false), 2, "Bob online without a ledger: a group and his line")
+    giveData(B, 3)
+    network({ A, B }, 60)
+    local found = inviteLines()
+    H.eq(found[1], "Online, not using the ledger (0)")
+    H.eq(found[2], nsA.L.INVITE_NOBODY)
+    H.eq(#nsA.FriendsTab.InviteLines(A.time(), false), 0, "no ledger friends and nobody to invite: the empty text explains")
+end)
+
 H.test("a character removed by a friend disappears from my Friends tab at the next sync", function()
     local A, nsA = client("Alice", 1, "Bob#1", 2, "Bob")
     local B, nsB = client("Bob", 2, "Alice#1", 1, "Alice")
