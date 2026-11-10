@@ -36,6 +36,7 @@ Core\Summary.lua
 Core\Notices.lua
 Core\Weekly.lua
 Core\Invites.lua
+Core\Bests.lua
 Core\QuestChainLogic.lua
 Core\DungeonBosses.lua
 UI\Palette.lua
@@ -71,6 +72,7 @@ Trackers\Extras.lua
 Trackers\Items.lua
 Trackers\QuestChains.lua
 Trackers\QuestRewards.lua
+Trackers\Records.lua
 Comms\Friends.lua
 Comms\Transport.lua
 Comms\Sync.lua

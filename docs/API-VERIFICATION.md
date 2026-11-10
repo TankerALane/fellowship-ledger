@@ -540,6 +540,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `m:bests` | manual | an opened character on the Me tab has a Bests view (this character, all characters, held by); beating a record of all your characters gives one "New personal best" notice that opens it (D-115) | open your character > Bests; turn in more quests in a day than your best | ? | ? |
 | `C_DateAndTime.GetSecondsUntilWeeklyReset` | api | the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109) | `/dump type(C_DateAndTime.GetSecondsUntilWeeklyReset)` -> "function" | PASS | ? |
 | `m:weeklyrecap` | manual | the first login after the weekly reset shows "Last week in your ledger" (you and friends), once; a click opens the Friends tab's weekly panel with Last week on top (D-109) | log in after Tuesday's reset; /reload: it does not show again | ? | ? |
 | `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | PASS | ? |

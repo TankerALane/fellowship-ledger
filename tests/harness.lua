@@ -99,6 +99,7 @@ H.PURE_FILES = {
     "Core/Notices.lua",
     "Core/Weekly.lua",
     "Core/Invites.lua",
+    "Core/Bests.lua",
     "Core/QuestChainLogic.lua",
     "Core/DungeonBosses.lua",
     "UI/Palette.lua",

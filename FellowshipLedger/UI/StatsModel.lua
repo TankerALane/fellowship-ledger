@@ -9,10 +9,10 @@ local _, ns = ...
 local StatsModel = {}
 ns.StatsModel = StatsModel
 
-StatsModel.TABS = { "overview", "quests", "gold", "kills", "professions", "completed" }
+StatsModel.TABS = { "overview", "quests", "gold", "kills", "professions", "completed", "bests" }
 StatsModel.TAB_LABEL = { overview = "DETAIL_TAB_OVERVIEW", quests = "DETAIL_TAB_QUESTS", gold = "DETAIL_TAB_GOLD",
     kills = "DETAIL_TAB_KILLS", professions = "DETAIL_TAB_PROFESSIONS", completed = "DETAIL_TAB_COMPLETED",
-    dungeons = "DETAIL_TAB_DUNGEONS" }
+    dungeons = "DETAIL_TAB_DUNGEONS", bests = "DETAIL_TAB_BESTS" }
 StatsModel.INSET = 18
 StatsModel.QUEST_LIMIT = 10
 StatsModel.POINT_LIMIT = 10
@@ -485,6 +485,31 @@ end
 
 -- The tab line plus a view's lines, boxed like the card when layout is "card", with a
 -- blank line after (as DetailModel.Lines ends).
+-- Personal bests (D-115): rows from Bests.Rows. holderName(key) -> the character's shown name.
+function StatsModel.Bests(rows, L, holderName)
+    local out = { { segs = { seg(0, 1, L.BESTS_INTRO, "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
+    local any = false
+    for _, r in ipairs(rows) do if not r.section then any = true end end
+    if not any then
+        out[#out + 1] = { segs = { seg(0, 1, L.BESTS_NONE, "muted") } }
+        return out
+    end
+    out[#out + 1] = { segs = { seg(0, .34, L.BESTS_COL_RECORD, "muted", "small"), seg(.35, .15, L.BESTS_COL_MINE, "muted", "small", "RIGHT"),
+        seg(.52, .15, L.BESTS_COL_ALL, "muted", "small", "RIGHT"), seg(.70, .30, L.BESTS_COL_HOLDER, "muted", "small") }, rules = { { 0, 1 } } }
+    for i, r in ipairs(rows) do
+        local nextRow = rows[i + 1]
+        if r.section then
+            -- A section with no rows under it is left out.
+            if nextRow and not nextRow.section then out[#out + 1] = { segs = { seg(0, 1, r.section, "heading") } } end
+        else
+            local holder = r.holder and ((holderName and holderName(r.holder)) or r.holder) or ""
+            out[#out + 1] = { segs = { seg(0, .34, r.label), seg(.35, .15, r.mine, r.mineIsAll and "good" or "text", nil, "RIGHT"),
+                seg(.52, .15, r.all, "text", nil, "RIGHT"), seg(.70, .30, holder ~= "" and (holder .. ", " .. (r.when or "")) or "", "muted") } }
+        end
+    end
+    return out
+end
+
 function StatsModel.Wrap(tabLine, parts, layout)
     local lines = { tabLine }
     for _, p in ipairs(parts) do

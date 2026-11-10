@@ -101,6 +101,13 @@ function Me.DetailLines(key, char, name)
     elseif view == "professions" then
         parts = S.Professions(char.professions, inRange, L, date, state.openProf[key],
             function(prof) toggleIn(state.openProf, key, prof) end, sum.skillUps)
+    elseif view == "bests" then
+        local all = ns.Data.IsFake() and ns.Bests.New() or ns.db.bests
+        local rows = ns.Bests.Rows(char.bests, all, L, { Duration = ns.Format.Duration, Number = ns.Format.Number }, date, char.levels)
+        parts = S.Bests(rows, L, function(k)
+            local c = ns.db.characters[k]
+            return c and (c.display or c.name) or k
+        end)
     else
         if key ~= ns.Store.key or ns.Data.IsFake() then
             parts = { { segs = { { x = 0, w = 1, text = L.STATS_COMPLETED_OTHER_CHAR, role = "muted", font = "body" } } } }
@@ -269,6 +276,15 @@ function Me.Remove(key)
         if ns.Sync and ns.tracking then pcall(ns.Sync.SyncAll, true) end
     end
     ns.MainWindow.Refresh()
+end
+
+-- Open one character's view (a clicked "New personal best" notice).
+function Me.OpenView(key, view)
+    if not key then return end
+    state.mode = "characters"
+    state.expanded[key] = true
+    state.detailView[key] = view
+    ns.MainWindow.Open("me")
 end
 
 function Me.Refresh()

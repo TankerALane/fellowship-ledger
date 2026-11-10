@@ -24,8 +24,9 @@ end
 H.test("stats: tab row, selected tab, picking", function()
     local picked
     local line = S.TabLine("gold", L, function(id) picked = id end)
-    H.eq(#line.segments, 6)
+    H.eq(#line.segments, 7)
     H.eq(line.segments[1].button.label, "Overview"); H.eq(line.segments[6].button.label, "All completed")
+    H.eq(line.segments[7].button.label, "Bests")
     H.eq(line.segments[3].button.selected, true); H.eq(line.segments[1].button.selected, false)
     line.segments[4].button.onClick(); H.eq(picked, "kills")
 end)
@@ -151,6 +152,7 @@ H.test("stats: every tab in the window, with tracked kills by type and the compl
         Me.state.detailView[key] = view
         Me.Refresh()
     end
+    Me.state.detailView[key] = "completed"; Me.Refresh()
     local seen = {}
     for _, line in ipairs(Me.ui.table.lines) do
         for _, s in ipairs(line.segments or {}) do if s.text then seen[#seen + 1] = s.text end end

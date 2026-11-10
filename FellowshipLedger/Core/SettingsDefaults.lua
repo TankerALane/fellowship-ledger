@@ -29,6 +29,7 @@ SettingsDefaults.VALUES = {
     friendToastsJoined = true,       -- a friend's first hello: they now run the ledger (D-099)
     friendToastsLoot = true,         -- a friend looted a blue or better item (D-105)
     weeklyRecap = true,              -- last week's recap after the weekly reset (D-109)
+    bestToasts = true,               -- a record of all your characters was beaten (D-115)
     sharingPaused = false,    -- master "pause all sharing"
     shareNameInDungeons = false, -- opt-in: party members who also run the ledger may see your name
     welcomeSeen = false,
