@@ -203,7 +203,7 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetZoneText` | api | zone name fallback | `/dump type(GetZoneText)` -> "function" | PASS | PASS |
 | `GetRealZoneText` | api | zone name inside instances | `/dump type(GetRealZoneText)` -> "function" | PASS | PASS |
 | `GetSubZoneText` | api | subzone name | `/dump type(GetSubZoneText)` -> "function" | PASS | PASS |
-| `C_Map.GetAreaInfo` | api | zone name from an area ID (start zone of a Questie chain) | `/dump type(C_Map.GetAreaInfo)` -> "function" | PASS | ? |
+| `C_Map.GetAreaInfo` | api | zone name from an area ID (start zone of a Questie chain) | `/dump type(C_Map.GetAreaInfo)` -> "function" | PASS | PASS |
 | `C_MapExplorationInfo.GetExploredAreaIDsAtPosition` | api | zones discovered | `/dump type(C_MapExplorationInfo.GetExploredAreaIDsAtPosition)` -> "function" | PASS | PASS |
 | `GetGameMessageInfo` | api | name of a UI info message type (ERR_ZONE_EXPLORED = discovered an area) | `/dump type(GetGameMessageInfo)` -> "function" | PASS | PASS |
 | `ERR_ZONE_EXPLORED` | api | client's own 'Discovered: %s' format, to recognise discoveries in any language | `/dump type(ERR_ZONE_EXPLORED)` -> "string" | PASS | PASS |
@@ -246,10 +246,10 @@ These come from addons already installed in Austin's game folders. They are good
 | `EJ_GetInstanceForMap` | api | find a dungeon's journal entry (to know the last boss) | `/dump type(EJ_GetInstanceForMap)` -> "function" | PASS | PASS |
 | `EJ_SelectInstance` | api | select journal instance before listing bosses | `/dump type(EJ_SelectInstance)` -> "function" | PASS | PASS |
 | `EJ_GetEncounterInfoByIndex` | api | list bosses in order (last one = completion) | `/dump type(EJ_GetEncounterInfoByIndex)` -> "function" | PASS | PASS |
-| `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | PASS | ? |
-| `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | PASS | ? |
-| `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | PASS | ? |
-| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | PASS | ? |
+| `EJ_GetNumTiers` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_GetNumTiers)` -> "function" | PASS | PASS |
+| `EJ_SelectTier` | api | journal tiers, to find a dungeon by name (D-085) | `/dump type(EJ_SelectTier)` -> "function" | PASS | PASS |
+| `EJ_GetInstanceByIndex` | api | journal instance list, to find a dungeon by name (D-085) | `/dump type(EJ_GetInstanceByIndex)` -> "function" | PASS | PASS |
+| `x:dungeon.journal` | custom | the newest run's boss list from the journal, by map or by name, so completion can be counted (D-085) | after a dungeon run, /fl verify | PASS | PASS |
 | `x:dungeon.instance` | custom | GetInstanceInfo returns readable values here | `/dump GetInstanceInfo()` | INFO | INFO |
 | `ev:ENCOUNTER_START` | event | boss pull: pause sending | `/dump C_EventUtils.IsEventValid("ENCOUNTER_START")` -> true | PASS | PASS |
 | `ev:ENCOUNTER_END` | event | boss kill (args: encounterID, name, difficulty, size, success) | `/dump C_EventUtils.IsEventValid("ENCOUNTER_END")` -> true | PASS | PASS |
@@ -298,8 +298,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_DeathRecap.GetRecapEvents` | api | what killed you (may be secret) | `/dump type(C_DeathRecap.GetRecapEvents)` -> "function" | PASS | PASS |
 | `C_DeathRecap.HasRecapEvents` | api | is a death recap available | `/dump type(C_DeathRecap.HasRecapEvents)` -> "function" | PASS | PASS |
 | `GetDeathRecapLink` | api | death recap fallback | `/dump type(GetDeathRecapLink)` -> "function" | PASS | PASS |
-| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | ? |
-| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | INFO | ? |
+| `x:death.recap` | custom | the newest death recap can be found and its killing blow (source, spell) is readable, not secret | die once, then /fl verify (or /dump C_DeathRecap.GetRecapEvents(1)) | PASS | INFO |
+| `x:death.killerlevel` | custom | killer's level (1.0.1): your target's name and level (at death, or targeted in the last 5 minutes) are kept if the recap's killer has that name | target a monster, let it kill you, then /fl verify (the line shows target and recap source at death) | INFO | INFO |
 
 ### Reputation
 
@@ -330,8 +330,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetTaxiMapID` | api | map ID of the open flight map | `/dump type(GetTaxiMapID)` -> "function" | PASS | PASS |
 | `Enum.FlightPathState` | api | which taxi nodes are known (Unreachable = unknown) | `/dump type(Enum.FlightPathState)` -> "table" | PASS | PASS |
 | `ev:TAXIMAP_OPENED` | event | flight map opened (diff known nodes) | `/dump C_EventUtils.IsEventValid("TAXIMAP_OPENED")` -> true | PASS | PASS |
-| `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | PASS | ? |
-| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | PASS | ? |
+| `ERR_NEWTAXIPATH` | api | the client's "New flight path discovered!" text (D-080) | `/dump type(ERR_NEWTAXIPATH)` -> "string" | PASS | PASS |
+| `x:flight.paths` | custom | flight paths known and counted; whether the discovery message and the flight map were seen this session (D-080) | talk to a flight master you don't know yet, then /fl verify | PASS | INFO |
 
 ### Kills
 
@@ -355,10 +355,10 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetItemStats` | api | reported missing on Forever; not planned, listed to confirm | `/dump type(GetItemStats)` -> "function" | FAIL | FAIL |
 | `C_Spell.GetSpellInfo` | api | spell names | `/dump type(C_Spell.GetSpellInfo)` -> "function" | PASS | PASS |
 | `GetSpellInfo` | api | fallback (reported missing on Forever) | `/dump type(GetSpellInfo)` -> "function" | FAIL | FAIL |
-| `GetNumLootItems` | api | how many slots the open loot window has | `/dump type(GetNumLootItems)` -> "function" | PASS | ? |
-| `GetLootSlotInfo` | api | loot slot name, quantity, currency, quality | `/dump type(GetLootSlotInfo)` -> "function" | PASS | ? |
-| `GetLootSlotLink` | api | item link of a loot slot | `/dump type(GetLootSlotLink)` -> "function" | PASS | ? |
-| `ev:LOOT_SLOT_CLEARED` | event | a loot slot was taken: the item counts as looted | `/dump C_EventUtils.IsEventValid("LOOT_SLOT_CLEARED")` -> true | PASS | ? |
+| `GetNumLootItems` | api | how many slots the open loot window has | `/dump type(GetNumLootItems)` -> "function" | PASS | PASS |
+| `GetLootSlotInfo` | api | loot slot name, quantity, currency, quality | `/dump type(GetLootSlotInfo)` -> "function" | PASS | PASS |
+| `GetLootSlotLink` | api | item link of a loot slot | `/dump type(GetLootSlotLink)` -> "function" | PASS | PASS |
+| `ev:LOOT_SLOT_CLEARED` | event | a loot slot was taken: the item counts as looted | `/dump C_EventUtils.IsEventValid("LOOT_SLOT_CLEARED")` -> true | PASS | PASS |
 | `ev:ITEM_PUSH` | event | item went into your bags | `/dump C_EventUtils.IsEventValid("ITEM_PUSH")` -> true | PASS | PASS |
 | `ev:BAG_UPDATE_DELAYED` | event | bags settled (diff for new items) | `/dump C_EventUtils.IsEventValid("BAG_UPDATE_DELAYED")` -> true | PASS | PASS |
 
@@ -385,9 +385,9 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `WOW_PROJECT_ID` | api | our project ID, compared with friends' wowProjectID so only same-flavor friends are messaged | `/dump type(WOW_PROJECT_ID)` -> "number" | PASS | ? |
-| `BNET_CLIENT_WOW` | api | the clientProgram value of a friend playing WoW | `/dump type(BNET_CLIENT_WOW)` -> "string" | PASS | ? |
-| `LE_PARTY_CATEGORY_INSTANCE` | api | tell finder groups (INSTANCE_CHAT) from home parties for the dungeon-name note | `/dump type(LE_PARTY_CATEGORY_INSTANCE)` -> "number" | PASS | ? |
+| `WOW_PROJECT_ID` | api | our project ID, compared with friends' wowProjectID so only same-flavor friends are messaged | `/dump type(WOW_PROJECT_ID)` -> "number" | PASS | PASS |
+| `BNET_CLIENT_WOW` | api | the clientProgram value of a friend playing WoW | `/dump type(BNET_CLIENT_WOW)` -> "string" | PASS | PASS |
+| `LE_PARTY_CATEGORY_INSTANCE` | api | tell finder groups (INSTANCE_CHAT) from home parties for the dungeon-name note | `/dump type(LE_PARTY_CATEGORY_INSTANCE)` -> "number" | PASS | PASS |
 | `m:commtest` | manual | addon whispers to yourself arrive; shows real size limits, result codes and CHAT_MSG_ADDON argument types | `/fl commtest, then paste the report` | PASS | PASS |
 
 ### Battle.net friends
@@ -436,17 +436,17 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `GetMaxLevelForPlayerExpansion` | api | the level cap, for the 'friend reached the level cap' notice (D-098); returns 60 on Forever (2026-11-06) | `/dump type(GetMaxLevelForPlayerExpansion)` -> "function" | PASS | ? |
-| `MAX_PLAYER_LEVEL` | api | fallback level cap for the same notice | `/dump type(MAX_PLAYER_LEVEL)` -> "number" | FAIL | ? |
+| `GetMaxLevelForPlayerExpansion` | api | the level cap, for the 'friend reached the level cap' notice (D-098); returns 60 on Forever (2026-11-06) | `/dump type(GetMaxLevelForPlayerExpansion)` -> "function" | PASS | PASS |
+| `MAX_PLAYER_LEVEL` | api | fallback level cap for the same notice | `/dump type(MAX_PLAYER_LEVEL)` -> "number" | FAIL | FAIL |
 
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `MenuUtil.CreateContextMenu` | api | right-click menus; the Graphs character and Compare drop-downs | `/dump type(MenuUtil.CreateContextMenu)` -> "function" | PASS | PASS |
-| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | ? |
+| `x:graphs.menu` | custom | the Graphs drop-downs open and fill (CreateTitle, CreateRadio, CreateDivider on the menu description); without them the buttons cycle | open Graphs, click the character name or Compare, then /fl verify | PASS | INFO |
 | `CreateColor` | api | colors | `/dump type(CreateColor)` -> "function" | PASS | PASS |
-| `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | PASS | ? |
+| `Screenshot` | api | /fl shots takes the addon-page pictures (D-088) | `/dump type(Screenshot)` -> "function" | PASS | PASS |
 | `PlaySound` | api | toast sound | `/dump type(PlaySound)` -> "function" | PASS | PASS |
 | `SOUNDKIT` | api | sound IDs | `/dump type(SOUNDKIT)` -> "table" | PASS | PASS |
 | `x:ui.frame` | custom | frame and texture methods the window uses (SetResizeBounds or SetMinResize, StartSizing, SetShown, SetColorTexture; for sort arrows SetTexCoord, SetVertexColor, GetStringWidth) | `/dump CreateFrame("Frame").SetResizeBounds` | PASS | PASS |
@@ -458,49 +458,49 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `C_QuestLog.GetAllCompletedQuestIDs` | api | every quest this character completed (All completed view, D-081) | `/dump type(C_QuestLog.GetAllCompletedQuestIDs)` -> "function" | PASS | ? |
-| `GetQuestsCompleted` | api | older form of the completed-quest list (a set of IDs); only a fallback, missing on Forever (2026-11-05) | `/dump type(GetQuestsCompleted)` -> "function" | FAIL | ? |
-| `x:quest.completed` | custom | the completed-quest list is readable, and Questie names and zones for it (D-081) | `/fl verify on a character that has done quests` | PASS | ? |
+| `C_QuestLog.GetAllCompletedQuestIDs` | api | every quest this character completed (All completed view, D-081) | `/dump type(C_QuestLog.GetAllCompletedQuestIDs)` -> "function" | PASS | PASS |
+| `GetQuestsCompleted` | api | older form of the completed-quest list (a set of IDs); only a fallback, missing on Forever (2026-11-05) | `/dump type(GetQuestsCompleted)` -> "function" | FAIL | FAIL |
+| `x:quest.completed` | custom | the completed-quest list is readable, and Questie names and zones for it (D-081) | `/fl verify on a character that has done quests` | PASS | PASS |
 
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `x:questie.details` | custom | quest-chain drop-downs (D-078): Questie's questLevel, requiredLevel, startedBy, and QueryNPCSingle name/spawns with the zone from C_Map.GetAreaInfo and map coordinates (D-079) | have a quest in your log, then /fl verify (the line shows the quest, its levels and who starts it where, with coordinates; compare with Questie's map) | PASS | ? |
+| `x:questie.details` | custom | quest-chain drop-downs (D-078): Questie's questLevel, requiredLevel, startedBy, and QueryNPCSingle name/spawns with the zone from C_Map.GetAreaInfo and map coordinates (D-079) | have a quest in your log, then /fl verify (the line shows the quest, its levels and who starts it where, with coordinates; compare with Questie's map) | PASS | INFO |
 
 ### Quests
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `ev:QUEST_DETAIL` | event | a quest giver shows a quest: its rewards are read | `/dump C_EventUtils.IsEventValid("QUEST_DETAIL")` -> true | PASS | ? |
-| `GetQuestID` | api | the quest in the open quest dialog | `/dump type(GetQuestID)` -> "function" | PASS | ? |
-| `GetNumQuestRewards` | api | quest dialog: items you always get | `/dump type(GetNumQuestRewards)` -> "function" | PASS | ? |
-| `GetNumQuestChoices` | api | quest dialog: items you choose from | `/dump type(GetNumQuestChoices)` -> "function" | PASS | ? |
-| `GetQuestItemInfo` | api | quest dialog item (6th value itemID) | `/dump type(GetQuestItemInfo)` -> "function" | PASS | ? |
-| `GetQuestItemLink` | api | quest dialog item link (itemID fallback) | `/dump type(GetQuestItemLink)` -> "function" | PASS | ? |
-| `GetRewardMoney` | api | quest dialog money reward | `/dump type(GetRewardMoney)` -> "function" | PASS | ? |
-| `GetRewardXP` | api | quest dialog XP reward | `/dump type(GetRewardXP)` -> "function" | PASS | ? |
-| `GetNumQuestLogRewards` | api | log quest reward items, by questID | `/dump type(GetNumQuestLogRewards)` -> "function" | PASS | ? |
-| `GetQuestLogRewardInfo` | api | log quest reward item (index, questID) | `/dump type(GetQuestLogRewardInfo)` -> "function" | PASS | ? |
-| `GetNumQuestLogChoices` | api | log quest choice items, by questID | `/dump type(GetNumQuestLogChoices)` -> "function" | PASS | ? |
-| `GetQuestLogChoiceInfo` | api | log quest choice item (index, questID) | `/dump type(GetQuestLogChoiceInfo)` -> "function" | PASS | ? |
-| `GetQuestLogRewardMoney` | api | log quest money, by questID | `/dump type(GetQuestLogRewardMoney)` -> "function" | PASS | ? |
-| `GetQuestLogRewardXP` | api | log quest XP, by questID | `/dump type(GetQuestLogRewardXP)` -> "function" | PASS | ? |
-| `C_Item.RequestLoadItemDataByID` | api | load a reward item's name | `/dump type(C_Item.RequestLoadItemDataByID)` -> "function" | PASS | ? |
-| `x:quest.rewards` | custom | rewards read for the quests in your log, and from the last quest dialog (D-100) | have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log | PASS | ? |
-| `x:questie.xp` | custom | Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100) | `/dump QuestieLoader:ImportModule("QuestXP").GetQuestLogRewardXP` | PASS | ? |
+| `ev:QUEST_DETAIL` | event | a quest giver shows a quest: its rewards are read | `/dump C_EventUtils.IsEventValid("QUEST_DETAIL")` -> true | PASS | PASS |
+| `GetQuestID` | api | the quest in the open quest dialog | `/dump type(GetQuestID)` -> "function" | PASS | PASS |
+| `GetNumQuestRewards` | api | quest dialog: items you always get | `/dump type(GetNumQuestRewards)` -> "function" | PASS | PASS |
+| `GetNumQuestChoices` | api | quest dialog: items you choose from | `/dump type(GetNumQuestChoices)` -> "function" | PASS | PASS |
+| `GetQuestItemInfo` | api | quest dialog item (6th value itemID) | `/dump type(GetQuestItemInfo)` -> "function" | PASS | PASS |
+| `GetQuestItemLink` | api | quest dialog item link (itemID fallback) | `/dump type(GetQuestItemLink)` -> "function" | PASS | PASS |
+| `GetRewardMoney` | api | quest dialog money reward | `/dump type(GetRewardMoney)` -> "function" | PASS | PASS |
+| `GetRewardXP` | api | quest dialog XP reward | `/dump type(GetRewardXP)` -> "function" | PASS | PASS |
+| `GetNumQuestLogRewards` | api | log quest reward items, by questID | `/dump type(GetNumQuestLogRewards)` -> "function" | PASS | PASS |
+| `GetQuestLogRewardInfo` | api | log quest reward item (index, questID) | `/dump type(GetQuestLogRewardInfo)` -> "function" | PASS | PASS |
+| `GetNumQuestLogChoices` | api | log quest choice items, by questID | `/dump type(GetNumQuestLogChoices)` -> "function" | PASS | PASS |
+| `GetQuestLogChoiceInfo` | api | log quest choice item (index, questID) | `/dump type(GetQuestLogChoiceInfo)` -> "function" | PASS | PASS |
+| `GetQuestLogRewardMoney` | api | log quest money, by questID | `/dump type(GetQuestLogRewardMoney)` -> "function" | PASS | PASS |
+| `GetQuestLogRewardXP` | api | log quest XP, by questID | `/dump type(GetQuestLogRewardXP)` -> "function" | PASS | PASS |
+| `C_Item.RequestLoadItemDataByID` | api | load a reward item's name | `/dump type(C_Item.RequestLoadItemDataByID)` -> "function" | PASS | PASS |
+| `x:quest.rewards` | custom | rewards read for the quests in your log, and from the last quest dialog (D-100) | have quests in your log, talk to a quest giver, then /fl verify; compare with the quest log | PASS | PASS |
+| `x:questie.xp` | custom | Questie's QuestXP:GetQuestLogRewardXP gives XP for quests you have not seen (D-100) | `/dump QuestieLoader:ImportModule("QuestXP").GetQuestLogRewardXP` | PASS | INFO |
 
 ### Dungeons
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `INSTANCE_RESET_SUCCESS` | api | the game's "%s has been reset." text, to spot a reset by you or your group leader (D-111) | `/dump type(INSTANCE_RESET_SUCCESS)` -> "string" | PASS | ? |
-| `ev:CHAT_MSG_SYSTEM` | event | system lines, read only for "<dungeon> has been reset." (the one chat event the ledger reads, D-111) (probe counts only, no arguments stored) (not probed: too noisy) | `/dump C_EventUtils.IsEventValid("CHAT_MSG_SYSTEM")` -> true | PASS | ? |
+| `INSTANCE_RESET_SUCCESS` | api | the game's "%s has been reset." text, to spot a reset by you or your group leader (D-111) | `/dump type(INSTANCE_RESET_SUCCESS)` -> "string" | PASS | PASS |
+| `ev:CHAT_MSG_SYSTEM` | event | system lines, read only for "<dungeon> has been reset." (the one chat event the ledger reads, D-111) (probe counts only, no arguments stored) (not probed: too noisy) | `/dump C_EventUtils.IsEventValid("CHAT_MSG_SYSTEM")` -> true | PASS | PASS |
 | `m:deathrun` | manual | dying, releasing and running back (or going out to repair) stays one run; old split runs are joined at login (D-110) | die in a dungeon, release, run back and finish; the Dungeons tab shows one run with the death | ? | ? |
-| `x:dungeon.copy` | custom | which copy of the dungeon you are in, read from a creature's GUID (server and zone UID); a reset or another leader's instance is a new copy (D-112). Forever 1.60.1 hides creature GUIDs inside dungeons (2026-11-09), so there it only reports that | inside a dungeon, target a creature, then /fl verify; after a reset, go back in, target one again and /fl verify | ? | ? |
+| `x:dungeon.copy` | custom | which copy of the dungeon you are in, read from a creature's GUID (server and zone UID); a reset or another leader's instance is a new copy (D-112). Forever 1.60.1 hides creature GUIDs inside dungeons (2026-11-09), so there it only reports that | inside a dungeon, target a creature, then /fl verify; after a reset, go back in, target one again and /fl verify | ? | INFO |
 | `m:instancereset` | manual | a reset by you or your group leader starts a new run when you go back in and target or kill something (D-111, D-112) | in a group, leave the dungeon, have the leader reset it, go back in and fight; the Dungeons tab shows two runs | ? | ? |
-| `UnitIsGroupLeader` | api | who leads the group, to start a new run when you come back in under a leader who was not in the run (D-113) | `/dump type(UnitIsGroupLeader)` -> "function" | ? | ? |
-| `x:dungeon.leader` | custom | the group leader and the open run's group can be read inside a dungeon (names not shown) (D-113) | in a group, inside a dungeon, /fl verify | ? | ? |
+| `UnitIsGroupLeader` | api | who leads the group, to start a new run when you come back in under a leader who was not in the run (D-113) | `/dump type(UnitIsGroupLeader)` -> "function" | ? | PASS |
+| `x:dungeon.leader` | custom | the group leader and the open run's group can be read inside a dungeon (names not shown) (D-113) | in a group, inside a dungeon, /fl verify | ? | INFO |
 | `m:newleader` | manual | finish a run, then join another group and go into its leader's copy of the same dungeon within 30 minutes: a new run (D-113) | the Dungeons tab shows two runs | ? | ? |
 | `m:samecopy` | manual | going out and back in after the final boss, with no reset, stays the same run (D-112) | finish a dungeon, walk out and back in, target something; the Dungeons tab still shows one run | ? | ? |
 | `m:bosstimes` | manual | ENCOUNTER_START fires at the pull, so an opened run shows each boss's fight length; Best is the clear time; Friends' best fills from friends on 1.7.0+ (D-104) | run a dungeon; open the run on the Dungeons tab and compare the fight times with a stopwatch | ? | ? |
@@ -515,7 +515,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `GetQuestLink` | api | a quest's chat link; used only when it names the quest (some clients take a log index), else the link is built (D-107) | `/dump type(GetQuestLink)` -> "function" | PASS | ? |
+| `GetQuestLink` | api | a quest's chat link; used only when it names the quest (some clients take a log index), else the link is built (D-107) | `/dump type(GetQuestLink)` -> "function" | PASS | PASS |
 | `m:questlink` | manual | shift-click a quest in Quest chains (or in a friend's "In both your quest logs") puts a working quest link in chat; others can click it (D-107) | open the chat box, shift-click a quest, send it, click the link | ? | ? |
 | `m:commonquests` | manual | a quest a friend also has shows "with <friend>" in Quest chains, in its details, in the friend's Quests view and their row tooltip (D-106) | both pick up the same quest; open Quest chains and the friend's Quests | ? | ? |
 
@@ -523,17 +523,17 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `ChatFrame_SendBNetTell` | api | right-click Whisper to a Battle.net friend (D-108) | `/dump type(ChatFrame_SendBNetTell)` -> "function" | FAIL | ? |
-| `ChatFrameUtil.SendBNetTell` | api | right-click Whisper to a Battle.net friend on newer clients (Forever has no ChatFrame_SendBNetTell) | `/dump type(ChatFrameUtil.SendBNetTell)` -> "function" | PASS | ? |
-| `ChatFrameUtil.SendTell` | api | right-click Whisper by name on newer clients | `/dump type(ChatFrameUtil.SendTell)` -> "function" | PASS | ? |
-| `ChatFrame_SendTell` | api | right-click Whisper by character name (D-108) | `/dump type(ChatFrame_SendTell)` -> "function" | PASS | ? |
-| `BNInviteFriend` | api | right-click Invite a Battle.net friend's game account (D-108) | `/dump type(BNInviteFriend)` -> "function" | PASS | ? |
-| `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | PASS | ? |
-| `InviteUnit` | api | older name for the invite (D-108) | `/dump type(InviteUnit)` -> "function" | FAIL | ? |
+| `ChatFrame_SendBNetTell` | api | right-click Whisper to a Battle.net friend (D-108) | `/dump type(ChatFrame_SendBNetTell)` -> "function" | FAIL | FAIL |
+| `ChatFrameUtil.SendBNetTell` | api | right-click Whisper to a Battle.net friend on newer clients (Forever has no ChatFrame_SendBNetTell) | `/dump type(ChatFrameUtil.SendBNetTell)` -> "function" | PASS | PASS |
+| `ChatFrameUtil.SendTell` | api | right-click Whisper by name on newer clients | `/dump type(ChatFrameUtil.SendTell)` -> "function" | PASS | PASS |
+| `ChatFrame_SendTell` | api | right-click Whisper by character name (D-108) | `/dump type(ChatFrame_SendTell)` -> "function" | PASS | PASS |
+| `BNInviteFriend` | api | right-click Invite a Battle.net friend's game account (D-108) | `/dump type(BNInviteFriend)` -> "function" | PASS | PASS |
+| `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | PASS | PASS |
+| `InviteUnit` | api | older name for the invite (D-108) | `/dump type(InviteUnit)` -> "function" | FAIL | FAIL |
 | `m:friendmenu` | manual | right-click a friend (or their character) on the Friends tab: Whisper opens a whisper to them; Invite (only on the character they are on) sends a group invite (D-108) | with a friend online, right-click their row; try both | ? | ? |
-| `BNSendWhisper` | api | Invite a friend: the invite whisper to a Battle.net friend (D-114) | `/dump type(BNSendWhisper)` -> "function" | PASS | ? |
-| `C_ChatInfo.SendChatMessage` | api | Invite a friend: the invite whisper to a character friend on newer clients (D-114) | `/dump type(C_ChatInfo.SendChatMessage)` -> "function" | PASS | ? |
-| `SendChatMessage` | api | Invite a friend: the invite whisper on clients without C_ChatInfo.SendChatMessage (D-114) | `/dump type(SendChatMessage)` -> "function" | PASS | ? |
+| `BNSendWhisper` | api | Invite a friend: the invite whisper to a Battle.net friend (D-114) | `/dump type(BNSendWhisper)` -> "function" | PASS | PASS |
+| `C_ChatInfo.SendChatMessage` | api | Invite a friend: the invite whisper to a character friend on newer clients (D-114) | `/dump type(C_ChatInfo.SendChatMessage)` -> "function" | PASS | PASS |
+| `SendChatMessage` | api | Invite a friend: the invite whisper on clients without C_ChatInfo.SendChatMessage (D-114) | `/dump type(SendChatMessage)` -> "function" | PASS | PASS |
 | `m:invite` | manual | Friends tab lists online friends without the ledger under "Online, not using the ledger"; Invite opens an editable preview; Send whispers it once; the line then says "invited today" with no button for 7 days (D-114) | with a friend online who does not run the ledger: Friends tab > Invite > Send; check they got one whisper | ? | ? |
 
 ### UI
@@ -554,15 +554,15 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `C_DateAndTime.GetSecondsUntilWeeklyReset` | api | the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109) | `/dump type(C_DateAndTime.GetSecondsUntilWeeklyReset)` -> "function" | PASS | ? |
+| `C_DateAndTime.GetSecondsUntilWeeklyReset` | api | the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109) | `/dump type(C_DateAndTime.GetSecondsUntilWeeklyReset)` -> "function" | PASS | PASS |
 | `m:weeklyrecap` | manual | the first login after the weekly reset shows "Last week in your ledger" (you and friends), once; a click opens the Friends tab's weekly panel with Last week on top (D-109) | log in after Tuesday's reset; /reload: it does not show again | ? | ? |
-| `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | PASS | ? |
-| `GameTooltip.SetItemByID` | api | fallback for the item tooltip (D-102) | `/dump type(GameTooltip.SetItemByID)` -> "function" | PASS | ? |
-| `IsShiftKeyDown` | api | shift-click a reward item to link it in chat (D-102) | `/dump type(IsShiftKeyDown)` -> "function" | PASS | ? |
-| `ChatEdit_InsertLink` | api | put a reward item's link in the chat box (D-102) | `/dump type(ChatEdit_InsertLink)` -> "function" | PASS | ? |
+| `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | PASS | PASS |
+| `GameTooltip.SetItemByID` | api | fallback for the item tooltip (D-102) | `/dump type(GameTooltip.SetItemByID)` -> "function" | PASS | PASS |
+| `IsShiftKeyDown` | api | shift-click a reward item to link it in chat (D-102) | `/dump type(IsShiftKeyDown)` -> "function" | PASS | PASS |
+| `ChatEdit_InsertLink` | api | put a reward item's link in the chat box (D-102) | `/dump type(ChatEdit_InsertLink)` -> "function" | PASS | PASS |
 | `m:itemtooltip` | manual | hovering a reward item in an opened quest (Quest chains) shows the game's item tooltip with its stats, as in your bags; shift-click links it in chat | open a quest with item rewards; hover an item; shift-click it with the chat box open | PASS | ? |
-| `TooltipDataProcessor` | api | add a line to unit tooltips (modern clients) | `/dump type(TooltipDataProcessor)` -> "table" | PASS | ? |
-| `x:tooltip.unit` | custom | the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099) | `/fl verify; then hover a friend's character` | PASS | ? |
+| `TooltipDataProcessor` | api | add a line to unit tooltips (modern clients) | `/dump type(TooltipDataProcessor)` -> "table" | PASS | PASS |
+| `x:tooltip.unit` | custom | the unit tooltip hook is in place (TooltipDataProcessor or OnTooltipSetUnit) (D-099) | `/fl verify; then hover a friend's character` | PASS | PASS |
 | `m:notices` | manual | friend notices: several at once become one, "While you were away" after login, a click opens the friend's page, right click only closes | log in while friends on 1.7.0 have played; click the notice | ? | ? |
 | `m:minimap` | manual | minimap button shows the icon, left click toggles, right click opens Settings, drag moves and the spot is remembered | look at the minimap; click, right-click, drag, /reload | pending | ? |
 | `m:options` | manual | Options > AddOns lists Fellowship Ledger and its button opens Settings | Esc > Options > AddOns > Fellowship Ledger | pending | ? |

@@ -1,0 +1,86 @@
+Fellowship Ledger verify report
+addon=1.7.2 flavor=Retail toc=Retail interface=120105 client=12.1.5 build=70783 at=2026-11-10 07:39
+summary pass=234 fail=11 error=0 info=17 manual=26
+# 1.8.0 branch code (version number not yet raised); probe section left out
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+FAIL MAX_PLAYER_LEVEL: is nil, expected number
+FAIL GetQuestsCompleted: is nil, expected function
+FAIL ChatFrame_SendBNetTell: is nil, expected function
+FAIL InviteUnit: is nil, expected function
+-- details
+PASS x:build.interface: 120105 -> Retail
+INFO x:build.version: 12.1.5 (70783)
+PASS x:build.tocflavor: loaded Retail TOC
+INFO x:build.projectid: WOW_PROJECT_ID=1; constants: CLASSIC=2 ID=1 MAINLINE=1
+INFO x:addon.questie: loaded=false version=nil
+PASS x:sv.persist: loads=22 lastLogoutSaved=2026-11-10 07:39 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:sv.backup: loads=22 lastLogoutSaved=2026-11-10 07:39 firstSeen=2026-11-04 11:21 (count grew, so data survived a reload)
+PASS x:secret.ownvalues: level ok, xp ok, xpMax ok, money ok
+PASS x:map.current: mapID=50 name readable
+INFO x:quest.questline: checked 14 quests, 3 returned a quest line. e.g. questLineID=414 with 60 quests; fields: floorLocation,inProgress,isAccountCompleted,isCampaign,isCombatAllyQuest,isDaily,isHidden,isImportant,isLegendary,isLocalStory,isMeta,isQuestStart,questID,questLineID,questLineName,questName,startMapID,x,y
+PASS x:dungeon.journal: The Nokhud Offensive: 4 bosses killed, completed=true, lastBossID=nil via nil, lookups=nil, lastBossName=nil; final-boss list: not listed; journal: 231 instances (Blackfathom Deeps, Blackrock Depths, Deadmines, Dire Maul - Capital Gardens, Dire Maul - Gordok Commons, Dire Maul - Warpwood Quarter); by name: 1198 bosses Granyth[2637/2498] The Raging Tempest[2636/2497] Teera and Maruuk[2581/2478] Balakar Khan[2580/2477]; now: last=2580 (Balakar Khan) of 4 via name
+INFO x:dungeon.instance: returned 11 values; type=none difficultyID=0 instanceID=0
+INFO x:prof.list: GetProfessions gave 6 slots, 3 with readable rank
+INFO x:death.recap: no death recap this session; die once (a fall will do) and run /fl verify again
+INFO x:death.killerlevel: no deaths on this character yet; target a monster, let it kill you, then run /fl verify
+PASS x:rep.fields: fields: atWarWith,canSetInactive,canToggleAtWar,currentReactionThreshold,currentStanding,description,factionID,hasBonusRepGain,isAccountWide,isChild,isCollapsed,isHeader,isHeaderWithRep,isWatched,name,nextReactionThreshold,reaction
+INFO x:flight.paths: known=52 counted=0 baseline=true; message this session=no; map this session=no; talk to a flight master you don't know yet, then /fl verify
+PASS x:comms.enum: AddOnMessageLockdown=11 AddonMessageThrottle=3 ChannelThrottle=8 GeneralError=9 InvalidChannel=7 InvalidChatType=4 InvalidMessage=2 InvalidPrefix=1 NotInGroup=5 NotInGuild=10 Success=0 TargetOffline=12 TargetRequired=6
+INFO x:friends.bnfields: friends=64 online=21; account fields: accountName,appearOffline,battleTag,bnetAccountID,customMessage,customMessageTime,friendLevel,friendTags,gameAccountInfo,isAFK,isBattleTagFriend,isDND,isFavorite,isFriend,lastOnlineTime,note,rafLinkType; game fields: canSummon,clientProgram,gameAccountID,hasFocus,isAppearOffline,isGameAFK,isGameBusy,isInCurrentRegion,isOnline,regionID,richPresence; online client/project: App/nil x12, BSAp/nil x14
+PASS x:comms.prefix: FLDGR register returned 1; registered=true
+INFO x:friends.charfields: no character friends to inspect
+INFO x:graphs.menu: not opened this session; open Graphs, click the character name or Compare, then /fl verify
+PASS x:ui.frame: SetResizeBounds=yes SetMinResize=no StartSizing=yes SetShown=yes SetResizable=yes SetClampedToScreen=yes SetColorTexture=yes SetTexCoord=yes SetVertexColor=yes GetStringWidth=yes
+PASS x:ui.compartment: RegisterAddon is function
+INFO x:questie.db: Questie not loaded
+PASS x:quest.completed: 690 completed via GetAllCompletedQuestIDs; quest 845 = The Zhevra in nil; 279 without a name (hidden)
+INFO x:questie.details: Questie not ready (missing)
+PASS x:quest.rewards: 94210 xp=388 money=4320 items=- from=log; 95440 xp=17125 money=341600 items=r269010 from=log; 26302 xp=1562 money=21600 items=- from=log; 26350 xp=388 money=4320 items=- from=log; 26340 xp=388 money=4320 items=- from=log; 72292 xp=3875 money=86400 items=- from=log; 95552 xp=nil money=341600 items=- from=log; 77718 xp=nil money=nil items=- from=log; 77732 xp=nil money=nil items=- from=log; 92758 xp=nil money=nil items=- from=log; 92761 xp=nil money=nil items=- from=log; 92762 xp=nil money=nil items=- from=log; 92768 xp=nil money=nil items=- from=log; 92770 xp=nil money=nil items=- from=log; no quest dialog seen since the reload
+INFO x:questie.xp: Questie not loaded
+INFO x:dungeon.copy: open run: nil (map nil), copy=nil, back in=nil; seen: none; no creature GUID read yet this session (target one inside a dungeon)
+INFO x:dungeon.leader: group of 1; leader: none (solo); open run: nil, its group: 0 names; join a group inside a dungeon and /fl verify again
+PASS x:tooltip.unit: hook=processor
+-- manual (check by eye, see docs/API-VERIFICATION.md)
+MANUAL m:toc.icon, m:toc.suffix, m:slash, m:commtest, m:sync, m:deathrun, m:instancereset, m:newleader, m:samecopy, m:bosstimes, m:friendextras, m:questlink,
+MANUAL m:commonquests, m:friendmenu, m:invite, m:bests, m:goals, m:dungeonlevels, m:leaderboard, m:weeklyrecap, m:itemtooltip, m:notices, m:minimap, m:options,
+MANUAL m:fakeviews, m:copywindow
+-- api pass
+GetBuildInfo, C_AddOns.GetAddOnMetadata, C_AddOns.IsAddOnLoaded, C_EventUtils.IsEventValid, UnitName, UnitFullName, GetRealmName, GetNormalizedRealmName,
+UnitClass, UnitRace, UnitFactionGroup, UnitLevel, UnitXP, UnitXPMax, GetXPExhaustion, GetMoney, GetLocale, IsTrialAccount, IsVeteranTrialAccount, issecretvalue,
+canaccessvalue, issecrettable, canaccesssecrets, C_Timer.After, C_Timer.NewTicker, GetServerTime, GetTime, RequestTimePlayed, UnitIsAFK, GetUnitSpeed,
+InCombatLockdown, UnitAffectingCombat, C_Map.GetBestMapForUnit, C_Map.GetMapInfo, GetZoneText, GetRealZoneText, GetSubZoneText, C_Map.GetAreaInfo,
+C_MapExplorationInfo.GetExploredAreaIDsAtPosition, GetGameMessageInfo, ERR_ZONE_EXPLORED, ERR_ZONE_EXPLORED_XP, C_QuestLog.GetNumQuestLogEntries,
+C_QuestLog.GetInfo, C_QuestLog.GetTitleForQuestID, C_QuestLog.IsQuestFlaggedCompleted, C_QuestLine.GetQuestLineInfo, C_QuestLine.GetQuestLineQuests,
+C_QuestLine.GetAvailableQuestLines, C_QuestLine.RequestQuestLinesForMap, IsInInstance, GetInstanceInfo, GetDifficultyInfo, IsInGroup, UnitIsPlayer,
+GetNumGroupMembers, UnitGroupRolesAssigned, EJ_GetInstanceForMap, EJ_SelectInstance, EJ_GetEncounterInfoByIndex, EJ_GetNumTiers, EJ_SelectTier,
+EJ_GetInstanceByIndex, GetProfessions, GetProfessionInfo, C_TradeSkillUI.GetBaseProfessionInfo, C_DeathRecap.GetRecapEvents, C_DeathRecap.HasRecapEvents,
+GetDeathRecapLink, C_Reputation.GetNumFactions, C_Reputation.GetFactionDataByIndex, C_Reputation.GetFactionDataByID, GetAchievementInfo,
+C_TaxiMap.GetAllTaxiNodes, NumTaxiNodes, TaxiNodeName, GetTaxiMapID, Enum.FlightPathState, ERR_NEWTAXIPATH, UnitGUID, UnitExists, UnitIsDead, UnitClassification,
+UnitCreatureType, C_Item.GetItemInfo, C_Item.GetItemQualityByID, C_Spell.GetSpellInfo, GetNumLootItems, GetLootSlotInfo, GetLootSlotLink,
+C_BattleNet.SendGameData, BNGetInfo, BNGetNumFriends, C_BattleNet.GetFriendAccountInfo, C_BattleNet.GetFriendNumGameAccounts,
+C_BattleNet.GetFriendGameAccountInfo, C_BattleNet.GetGameAccountInfoByID, C_BattleNet.GetAccountInfoByID, WOW_PROJECT_ID, BNET_CLIENT_WOW,
+LE_PARTY_CATEGORY_INSTANCE, C_ChatInfo.RegisterAddonMessagePrefix, C_ChatInfo.IsAddonMessagePrefixRegistered, C_ChatInfo.SendAddonMessage,
+C_ChatInfo.InChatMessagingLockdown, C_FriendList.GetNumFriends, C_FriendList.GetFriendInfoByIndex, C_FriendList.ShowFriends, CreateFrame, BackdropTemplateMixin,
+UISpecialFrames, Minimap, GetCursorPosition, Settings.RegisterCanvasLayoutCategory, Settings.RegisterAddOnCategory, Settings.OpenToCategory,
+AddonCompartmentFrame, GetMaxLevelForPlayerExpansion, MenuUtil.CreateContextMenu, CreateColor, Screenshot, PlaySound, SOUNDKIT, GameTooltip,
+C_QuestLog.GetAllCompletedQuestIDs, GetQuestID, GetNumQuestRewards, GetNumQuestChoices, GetQuestItemInfo, GetQuestItemLink, GetRewardMoney, GetRewardXP,
+GetNumQuestLogRewards, GetQuestLogRewardInfo, GetNumQuestLogChoices, GetQuestLogChoiceInfo, GetQuestLogRewardMoney, GetQuestLogRewardXP,
+C_Item.RequestLoadItemDataByID, INSTANCE_RESET_SUCCESS, UnitIsGroupLeader, GetQuestLink, ChatFrameUtil.SendBNetTell, ChatFrameUtil.SendTell, ChatFrame_SendTell,
+BNInviteFriend, C_PartyInfo.InviteUnit, BNSendWhisper, C_ChatInfo.SendChatMessage, SendChatMessage, C_DateAndTime.GetSecondsUntilWeeklyReset,
+GameTooltip.SetHyperlink, GameTooltip.SetItemByID, IsShiftKeyDown, ChatEdit_InsertLink, TooltipDataProcessor
+-- event pass (exists; fired counts are under probe)
+TIME_PLAYED_MSG, PLAYER_FLAGS_CHANGED, PLAYER_STARTED_MOVING, PLAYER_STOPPED_MOVING, PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_SUCCEEDED,
+ADDON_LOADED, PLAYER_LOGIN, PLAYER_ENTERING_WORLD, PLAYER_LOGOUT, PLAYER_LEAVING_WORLD, PLAYER_LEVEL_UP, PLAYER_XP_UPDATE, UNIT_LEVEL, ZONE_CHANGED,
+ZONE_CHANGED_NEW_AREA, UI_INFO_MESSAGE, QUEST_ACCEPTED, QUEST_TURNED_IN, QUEST_REMOVED, QUEST_LOG_UPDATE, QUEST_COMPLETE, ENCOUNTER_START, ENCOUNTER_END,
+BOSS_KILL, LFG_COMPLETION_REWARD, SCENARIO_COMPLETED, UPDATE_INSTANCE_INFO, GROUP_ROSTER_UPDATE, SKILL_LINES_CHANGED, TRADE_SKILL_SHOW, NEW_RECIPE_LEARNED,
+PLAYER_MONEY, MERCHANT_SHOW, MERCHANT_CLOSED, MAIL_SHOW, MAIL_CLOSED, AUCTION_HOUSE_SHOW, AUCTION_HOUSE_CLOSED, LOOT_READY, LOOT_OPENED, LOOT_CLOSED,
+PLAYER_DEAD, PLAYER_ALIVE, PLAYER_UNGHOST, UPDATE_FACTION, ACHIEVEMENT_EARNED, TAXIMAP_OPENED, PLAYER_TARGET_CHANGED, PARTY_KILL, LOOT_SLOT_CLEARED, ITEM_PUSH,
+BAG_UPDATE_DELAYED, BN_CHAT_MSG_ADDON, BN_FRIEND_ACCOUNT_ONLINE, BN_FRIEND_ACCOUNT_OFFLINE, BN_FRIEND_INFO_CHANGED, CHAT_MSG_ADDON, FRIENDLIST_UPDATE,
+ADDON_ACTION_FORBIDDEN, QUEST_DETAIL, CHAT_MSG_SYSTEM
