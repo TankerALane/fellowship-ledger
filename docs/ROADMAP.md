@@ -109,7 +109,7 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 
 ## Possible additions (not scheduled)
 Ideas only. Nothing here is planned yet: new features wait until the dungeon run logic has settled (see the D-112/D-113 group checks).
-- [ ] **Invite a friend**: a button that whispers a friend a short note saying you use Fellowship Ledger, with the CurseForge link. No new APIs.
+- [ ] **Invite a friend** (design agreed, D-114): an "Online, not using the ledger" list on the Friends tab with an Invite button per friend. A click opens an editable preview (Send / Cancel, plus Copy link); Send whispers it (Battle.net or character whisper). Then "Invited 3 days ago", greyed out for 7 days; after that it can be sent again but still shows when the last invite went out ("Invited 2 weeks ago"). Battle.net and character friends, same flavor only, only on a click. Needs the whisper-sending APIs in `/fl verify` first.
 - [ ] **Personal bests**: fastest level, most quests in a day, fastest clear of each dungeon, worked out from data already stored, with a notice when one is beaten.
 - [ ] **Goals**: set a target such as "level 40 by Friday" and show it as a pace line on the Graphs tab.
 - [ ] **Guild sharing** (optional, off by default): share over the guild addon channel. Addon messages are allowed under rule 8, but it raises privacy questions, so Austin decides before any work starts.
