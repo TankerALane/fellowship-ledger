@@ -381,8 +381,14 @@ H.test("Friends tab: the invite section stays, with one line, when nobody is lef
         end
         return found
     end
+    H.eq(#nsA.FriendsTab.InviteLines(A.time(), false), 0, "first minute, no ledger friends: the empty text explains")
+    local wait = nsA.FriendsTab.InviteLines(A.time(), true)
+    H.eq(wait[1].kind, "grid", "a blank line above the section")
+    H.eq(wait[2].text, nsA.L.INVITE_GROUP_WAIT)
+    H.eq(wait[3].text, nsA.L.INVITE_CHECKING, "shown at login, saying it takes a minute")
     nsA.Sync.startedAt = nsA.Sync.startedAt - 600 -- past the wait for hellos
     H.eq(#nsA.FriendsTab.InviteLines(A.time(), false), 2, "Bob online without a ledger: a group and his line")
+    H.eq(#nsA.FriendsTab.InviteLines(A.time(), true), 3, "with ledger friends above: a blank line first")
     giveData(B, 3)
     network({ A, B }, 60)
     local found = inviteLines()

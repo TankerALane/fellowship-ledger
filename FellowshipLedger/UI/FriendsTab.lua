@@ -243,14 +243,34 @@ end
 -- "Online, not using the ledger" (D-114): friends online on this version who never said
 -- hello, each with Invite. While the week after an invite runs there is no button;
 -- after it the button is back and the line still says when the last one went out.
--- With nobody to invite the section stays, with one line saying so (Austin, 2026-11-10),
--- unless there are no ledger friends either: then the tab's empty text explains.
+-- The section shows from login (Austin, 2026-11-10): for the first minute it says the
+-- list is still being checked, since friends' hellos take that long to arrive, and the
+-- tab redraws itself when the minute is up. With nobody to invite it says so, unless
+-- there are no ledger friends either: then the tab's empty text explains. A blank line
+-- keeps it apart from the friends above.
+local settleRefresh
 function FriendsTab.InviteLines(now, hasLedgerFriends)
     local out = {}
-    if ns.Data.IsFake() or not (ns.Friends and ns.Sync and ns.Sync.startedAt) then return out end
-    if now - ns.Sync.startedAt < ns.Invites.SETTLE_SECONDS then return out end
+    if ns.Data.IsFake() or not (ns.Friends and ns.Sync) then return out end
+    local started = ns.Sync.startedAt
+    local left = started and (started + ns.Invites.SETTLE_SECONDS - now) or ns.Invites.SETTLE_SECONDS
+    if left > 0 then
+        if not hasLedgerFriends then return out end
+        if started and not settleRefresh and ns.Events and ns.Events.After then
+            settleRefresh = true
+            ns.Events.After(left + 1, function()
+                settleRefresh = nil
+                if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then FriendsTab.Refresh() end
+            end)
+        end
+        out[#out + 1] = { kind = "grid", segments = {} }
+        out[#out + 1] = { kind = "group", text = L.INVITE_GROUP_WAIT }
+        out[#out + 1] = { kind = "detail", indent = true, text = L.INVITE_CHECKING }
+        return out
+    end
     local list = ns.Invites.Candidates(ns.Friends.peers, ns.db.friends, ns.Friends.IsBlocked)
     if #list == 0 and not hasLedgerFriends then return out end
+    if hasLedgerFriends then out[#out + 1] = { kind = "grid", segments = {} } end
     out[#out + 1] = { kind = "group", text = string.format(L.INVITE_GROUP, #list) }
     if #list == 0 then
         out[#out + 1] = { kind = "detail", indent = true, text = L.INVITE_NOBODY }
@@ -266,8 +286,6 @@ function FriendsTab.InviteLines(now, hasLedgerFriends)
     return out
 end
 
--- Open the Friends tab on one friend's character and view (a clicked notice, D-099).
--- Without a character it just opens the tab.
 function FriendsTab.Open(friendId, key, view)
     if friendId and key then
         local id = tostring(friendId) .. "|" .. tostring(key)

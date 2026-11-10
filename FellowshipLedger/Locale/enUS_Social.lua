@@ -10,6 +10,8 @@ ns.Locale.Set({
     -- Invite a friend (D-114)
     INVITE_GROUP = "Online, not using the ledger (%d)",
     INVITE_NONE_YET = "None of your online friends has shared a ledger yet. You can invite them below.",
+    INVITE_GROUP_WAIT = "Online, not using the ledger",
+    INVITE_CHECKING = "Checking which friends use the ledger. This takes about a minute after login.",
     INVITE_NOBODY = "No friends online in this version of the game without the ledger right now.",
     INVITE_BUTTON = "Invite",
     INVITE_UNKNOWN_GAME = "(game version unknown)",
