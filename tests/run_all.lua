@@ -36,6 +36,7 @@ local FILES = {
     "test_dungeon_bosses",
     "test_notices",
     "test_weekly",
+    "test_social",
 }
 
 for _, name in ipairs(FILES) do

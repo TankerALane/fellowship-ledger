@@ -18,6 +18,7 @@ Locale\Locale.lua
 Locale\enUS.lua
 Locale\enUS_Phase2.lua
 Locale\enUS_Phase3.lua
+Locale\enUS_Social.lua
 Core\Log.lua
 Core\Migrations.lua
 Compat\FlavorLogic.lua
@@ -34,6 +35,7 @@ Core\SettingsDefaults.lua
 Core\Summary.lua
 Core\Notices.lua
 Core\Weekly.lua
+Core\Invites.lua
 Core\QuestChainLogic.lua
 Core\DungeonBosses.lua
 UI\Palette.lua
@@ -77,6 +79,7 @@ UI\Table.lua
 UI\MainWindow.lua
 UI\MeTab.lua
 UI\FriendsTab.lua
+UI\InviteDialog.lua
 UI\Graph.lua
 UI\GraphsTab.lua
 UI\DungeonsTab.lua
