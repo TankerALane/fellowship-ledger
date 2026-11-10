@@ -11,7 +11,7 @@ ns.Invites = Invites
 Invites.COOLDOWN = 7 * 86400 -- one invite per friend per week (Austin, D-114)
 Invites.MAX_LETTERS = 255    -- the longest whisper the game sends
 Invites.SETTLE_SECONDS = 60  -- after login, wait this long for friends' hellos before listing anyone
--- The addon's CurseForge page, for Copy link. Austin: check the address once the page is public.
+-- The addon's CurseForge page, for Copy link (confirmed by Austin, 2026-11-09).
 Invites.URL = "https://www.curseforge.com/wow/addons/fellowship-ledger"
 
 -- Online friends on this flavor who have never said hello (so do not run the ledger,

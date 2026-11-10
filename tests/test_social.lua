@@ -175,13 +175,13 @@ end)
 H.test("goals: a dungeon in range not yet cleared, professions not maxed", function()
     local ns = H.pureNamespace()
     local G, DL = ns.Goals, ns.DungeonLevels
-    H.eq(DL.InRange(20)[1], "The Deadmines")
+    H.eq(DL.InRange(20)[1], "Hall of Thanes")
     local list = G.Suggest({ level = 20, sessions = sessions(3, 3600), dungeons = DL.InRange(20),
-        cleared = { ["The Deadmines"] = true },
+        cleared = { ["Hall of Thanes"] = true },
         professions = { [164] = { name = "Blacksmithing", rank = 100, max = 150 }, [186] = { name = "Mining", rank = 150, max = 150 } } })
     local kinds = {}
     for _, g in ipairs(list) do kinds[g.kind] = g end
-    H.eq(kinds.dungeon.name, "Wailing Caverns", "the Deadmines was cleared")
+    H.eq(kinds.dungeon.name, "Ruins of Lordaeron", "Hall of Thanes was cleared; lowest range next")
     H.eq(kinds.dungeon.on, false, "not ticked by default")
     H.eq(kinds.profession.name, "Blacksmithing"); H.eq(kinds.profession.target, 106)
     H.eq(G.Adjust(kinds.profession, -1), 105)
@@ -278,7 +278,7 @@ H.test("leaderboard: one run seen by me and a friend is shown once, with both na
     H.eq(e.mine, true)
     H.eq(d.bosses[1].name, "Rhahk'Zor"); H.eq(d.bosses[1].fight, 35, "the fastest kill of each boss")
     H.eq(d.bosses[2].name, "Edwin VanCleef", "bosses in the order they die")
-    H.eq(d.range[1], 15)
+    H.eq(d.range[1], 17)
 end)
 
 H.test("leaderboard: top 5 by clear time, over-level runs only under All runs", function()
@@ -286,13 +286,13 @@ H.test("leaderboard: top 5 by clear time, over-level runs only under All runs", 
     local LB = ns.Leaderboard
     local runs = {}
     for i = 1, 7 do runs[i] = myRun("The Deadmines", i * 86400, 1000 + i * 100, { levelMax = 22 }) end
-    runs[8] = myRun("The Deadmines", 9 * 86400, 600, { levelMax = 26 }) -- 4 over 22: a carry
-    runs[9] = myRun("The Deadmines", 10 * 86400, 700, { levelMax = 25 }) -- 3 over: still at level
+    runs[8] = myRun("The Deadmines", 9 * 86400, 600, { levelMax = 30 }) -- 4 over 26: a carry
+    runs[9] = myRun("The Deadmines", 10 * 86400, 700, { levelMax = 29 }) -- 3 over: still at level
     runs[10] = myRun("The Deadmines", 11 * 86400, 30) -- too short to be a real clear
-    runs[11] = myRun("Hall of Thanes", 12 * 86400, 900, { levelMax = 60 }) -- no range known: always counts
+    runs[11] = myRun("Some New Dungeon", 12 * 86400, 900, { levelMax = 60 }) -- no range known: always counts
     local chars = { ["Me-R"] = { name = "Austin", dungeons = runs } }
     local board = LB.Build(LB.Entries(chars, {}), true)
-    H.eq(board[1].dungeon, "The Deadmines"); H.eq(board[2].dungeon, "Hall of Thanes", "unlisted dungeons last")
+    H.eq(board[1].dungeon, "The Deadmines"); H.eq(board[2].dungeon, "Some New Dungeon", "unlisted dungeons last")
     local c = board[1].clears
     H.eq(#c, 5); H.eq(c[1].clear, 700); H.eq(c[1].rank, 1); H.eq(c[2].clear, 1100); H.eq(c[5].clear, 1400)
     local all = LB.Build(LB.Entries(chars, {}), false)
@@ -300,8 +300,12 @@ H.test("leaderboard: top 5 by clear time, over-level runs only under All runs", 
     H.eq(LB.RankOf(board, "The Deadmines", T0 + 10 * 86400 + 700), 1)
     H.eq(LB.RankOf(board, "The Deadmines", T0 + 7 * 86400 + 1700), nil, "6th is off the board")
     H.eq(ns.DungeonLevels.AtLevel("The Deadmines", nil), true, "unknown level counts")
-    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery Armory", 48), true)
-    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery Armory", 49), false)
+    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery: Armory", 45), true)
+    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery: Armory", 46), false)
+    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery Armory", 46), false, "punctuation does not matter")
+    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery", 48), true, "the whole name: its widest range")
+    H.eq(ns.DungeonLevels.For("The Deadmines")[2], 26, "from the DungeonJournal addon")
+    H.eq(ns.DungeonLevels.For("Ruins of Lordaeron")[1], 15)
 end)
 
 H.test("leaderboard: blocked friends and friends without the new fields", function()
@@ -337,7 +341,7 @@ H.test("leaderboard in the mock client: the tab draws, a top-5 clear gives a not
         for _, s in ipairs(line.segments or {}) do if s.text then seen[#seen + 1] = s.text end end
     end
     local text = table.concat(seen, " | ")
-    H.ok(text:find("The Deadmines (15-22)", 1, true) and text:find("25m 00s", 1, true), text)
+    H.ok(text:find("The Deadmines (17-26)", 1, true) and text:find("25m 00s", 1, true), text)
     ns.db.settings.leaderToasts = false
     H.eq(ns.LeaderboardTab.CheckRun(run), nil, "the switch turns it off")
 end)

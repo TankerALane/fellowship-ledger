@@ -114,7 +114,7 @@ Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass
 - [x] **Session goals** (D-116, D-117): off by default
 - [x] **Dungeon Leaderboard** (D-115, D-117): a Leaderboard tab
 - [ ] Austin, in game: `/fl verify` on both clients (new: BNSendWhisper, C_ChatInfo.SendChatMessage, SendChatMessage), then m:invite, m:bests, m:goals, m:leaderboard, m:dungeonlevels
-- [ ] Austin: confirm the CurseForge address used by Copy link (Core/Invites.lua)
+- [x] CurseForge address for Copy link confirmed by Austin; dungeon level ranges taken from the DungeonJournal addon (D-118)
 
 ## Possible additions (not scheduled)
 - [ ] **Guild sharing** (optional, off by default): share a summary over the guild addon channel. It would help spread the addon, but guildmates are often not Battle.net or character friends, so it is not the best way to grow it; kept for later (Austin, 2026-11-09). Privacy questions to settle before any work starts.
