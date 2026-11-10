@@ -497,6 +497,64 @@ H.test("/fl shots: every planned picture with fake data, then settings put back"
     H.ok(Mock.chatContains(env, "Screenshots done"))
 end)
 
+H.test("/fl shots: the 1.8.0 pictures have something to show, and fake friends are never whispered", function()
+    local env, ns = boot()
+    local seen = {}
+    env.Screenshot = function()
+        local step = ns.Screenshots.PLAN[#seen + 1]
+        local info = { step = step }
+        if step.tab == "leaderboard" then info.board = ns.LeaderboardTab.Board() end
+        if step.invites then info.lines = ns.FriendsTab.Lines() end
+        if step.window == "goals" then info.shown = ns.SessionGoals.Frame() and ns.SessionGoals.Frame():IsShown() end
+        if step.window == "invite" then info.shown = ns.InviteDialog.Frame() and ns.InviteDialog.Frame():IsShown() end
+        seen[#seen + 1] = info
+    end
+    local whispers = 0
+    env.BNSendWhisper = function() whispers = whispers + 1 end
+    env.SendChatMessage = function() whispers = whispers + 1 end
+    Mock.slash(env, "shots")
+    for _ = 1, 3 do Mock.runTimers(env) end
+    noErrors(env)
+    H.eq(#seen, #ns.Screenshots.PLAN, "every step took its picture")
+    local checked = {}
+    for i, info in ipairs(seen) do
+        local step = info.step
+        if step.tab == "leaderboard" then
+            H.ok(#info.board > 0, "fake runs on the Leaderboard")
+            local named = false
+            for _, d in ipairs(info.board) do
+                for _, e in ipairs(d.clears) do if #e.names > 1 then named = true end end
+            end
+            H.ok(named, "groups with named friends")
+            checked.leaderboard = true
+        elseif step.window then
+            H.ok(info.shown, step.window .. " window shown")
+            H.ok(ns.db.dev.shots.steps[i].rect == nil or ns.db.dev.shots.steps[i].window == step.window, "window step recorded")
+            checked[step.window] = true
+        elseif step.invites then
+            local group = false
+            for _, l in ipairs(info.lines) do
+                if l.kind == "group" and l.text:find("not using the ledger", 1, true) then group = true end
+            end
+            H.ok(group, "the invite section with fake friends")
+            checked.invites = true
+        end
+    end
+    H.ok(checked.leaderboard and checked.goals and checked.invite and checked.invites, "every new picture checked")
+    -- The fake bests view has records.
+    ns.Data.EnableFake()
+    local rows = ns.Bests.Rows(nil, ns.db.fake.bests, ns.L, { Duration = ns.Format.Duration, Number = ns.Format.Number }, env.date)
+    local any = false
+    for _, r in ipairs(rows) do if not r.section then any = true end end
+    H.ok(any, "fake personal bests")
+    -- Send on a fake friend never whispers.
+    H.eq(ns.InviteDialog.Send({ id = "fake-inv-1", kind = "bnet", name = "Rowan", character = "Ashbel-Fakerealm", bnetAccountID = 5, fake = true }, "hi"), false)
+    H.eq(whispers, 0, "no whisper to a made-up friend")
+    ns.Data.DisableFake()
+    H.ok(not ns.SessionGoals.Frame():IsShown() and not ns.InviteDialog.Frame():IsShown(), "windows closed afterwards")
+    H.eq(ns.FriendsTab.state.weekly, false, "weekly panel put back")
+end)
+
 H.test("/fl shots: no Screenshot function, one message and nothing changed", function()
     local env, ns = boot()
     env.Screenshot = nil

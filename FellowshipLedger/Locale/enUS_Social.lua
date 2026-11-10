@@ -14,6 +14,7 @@ ns.Locale.Set({
     INVITE_CHECKING = "Checking which friends use the ledger. This takes about a minute after login.",
     INVITE_NOBODY = "No friends online in this version of the game without the ledger right now.",
     INVITE_BUTTON = "Invite",
+    INVITE_FAKE = "That friend is made up (fake data), so nothing was sent.",
     INVITE_UNKNOWN_GAME = "(game version unknown)",
     INVITE_LAST = "invited %s",
     INVITE_AGO_TODAY = "today",

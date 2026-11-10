@@ -120,9 +120,16 @@ end
 local win
 local rows = {}
 local current = {} -- the suggestions on show
+local preview = false -- made-up goals (/fl shots): Start sets nothing
+
+local previewXpMax
+local function xpMaxNow()
+    if preview then return previewXpMax end
+    return plain(UnitXPMax("player"))
+end
 
 local function redraw()
-    local xpMax = plain(UnitXPMax("player"))
+    local xpMax = xpMaxNow()
     for i, row in ipairs(rows) do
         local g = current[i]
         row:SetShown(g ~= nil)
@@ -156,7 +163,6 @@ local function build()
     f.intro:SetPoint("RIGHT", -16, 0)
     f.intro:SetWordWrap(true)
     f.intro:SetText(L.GOALS_INTRO)
-    local xpMaxNow = function() return plain(UnitXPMax("player")) end
     for i = 1, SessionGoals.MAX_ROWS do
         local row = CreateFrame("Frame", nil, f)
         row:SetSize(488, 36)
@@ -184,14 +190,14 @@ local function build()
         rows[i] = row
     end
     local start = W.Button(f, L.GOALS_START, 140, 24, function()
-        SessionGoals.Begin(current)
+        if not preview then SessionGoals.Begin(current) end
         f:Hide()
     end)
     start:SetPoint("BOTTOMLEFT", 16, 14)
     local later = W.Button(f, L.GOALS_NOT_NOW, 140, 24, function() f:Hide() end)
     later:SetPoint("BOTTOM", 0, 14)
     local skip = W.Button(f, L.GOALS_SKIP_TODAY, 140, 24, function()
-        ns.Store.char.goalsSkipDay = ns.Store.Today()
+        if not preview then ns.Store.char.goalsSkipDay = ns.Store.Today() end
         f:Hide()
     end)
     skip:SetPoint("BOTTOMRIGHT", -16, 14)
@@ -223,6 +229,13 @@ function SessionGoals.Open(force)
             end
         end
     end
+    local char = ns.Store.char
+    preview = false
+    return SessionGoals.Show(list, char.display or char.name or "?", char.level or 0)
+end
+
+-- Show a list of suggestions in the window.
+function SessionGoals.Show(list, name, level)
     while #list > SessionGoals.MAX_ROWS do table.remove(list) end
     current = list
     if not win then
@@ -233,13 +246,30 @@ function SessionGoals.Open(force)
         end
         win = f
     end
-    local char = ns.Store.char
-    win.title:SetText(string.format(L.GOALS_TITLE, char.display or char.name or "?", char.level or 0))
+    win.title:SetText(string.format(L.GOALS_TITLE, name, level))
     win:SetHeight(120 + #list * 40)
     redraw()
     win:Show()
     return true
 end
+
+-- /fl shots: the window with goals suggested from a made-up character's history.
+-- Nothing is saved: Start and Skip today only close it. xpMax is a stand-in for the
+-- game's XP table, which the fake data does not have.
+function SessionGoals.Preview(char, now)
+    if not char then return false end
+    local level = char.level or 1
+    previewXpMax = 400 + level * level * 60
+    local list = Goals.Suggest({ level = level, maxLevel = ns.Merge.maxLevel or 60, xpMax = previewXpMax,
+        sessions = char.sessions, currentStart = now, levels = char.levels, professions = char.professions,
+        cleared = {}, dungeons = ns.DungeonLevels.InRange(level) })
+    if #list == 0 then return false end
+    preview = true
+    return SessionGoals.Show(list, char.display or char.name or "?", level)
+end
+
+-- The window, for /fl shots (nil until first opened).
+function SessionGoals.Frame() return win end
 
 -- At login: a new session, the switch on, enough sessions, not skipped today.
 function SessionGoals.Start()

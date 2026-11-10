@@ -15,7 +15,10 @@ ns.Screenshots = Shots
 Shots.DELAY = 1.5          -- seconds for the window to redraw before each picture
 Shots.WIDTH, Shots.HEIGHT = 1060, 640
 
--- The steps, in order. me/friends open the first fake character as a card or list.
+-- The steps, in order. me/friends open the first fake character as a card or list;
+-- view: which of its views; weekly: the Friends tab's weekly panel; window: a picture
+-- of that window alone (goals, invite) instead of the main window. New steps go at
+-- the end, so the earlier pictures keep their numbers.
 Shots.PLAN = {
     { tab = "me", skin = "ledger", layout = "card", open = "me" },
     { tab = "me", skin = "leather", layout = "list", open = "me" },
@@ -24,6 +27,13 @@ Shots.PLAN = {
     { tab = "settings", skin = "leather" },
     { tab = "me", skin = "plain", mode = "chains" },
     { tab = "dungeons", skin = "ledger", open = "run" },
+    -- 1.7.0 and 1.8.0
+    { tab = "leaderboard", skin = "leather" },
+    { tab = "me", skin = "ledger", layout = "card", open = "me", view = "bests" },
+    { tab = "friends", skin = "plain", invites = true },
+    { tab = "friends", skin = "leather", weekly = true },
+    { tab = "me", skin = "ledger", window = "goals" },
+    { tab = "friends", skin = "ledger", window = "invite", invites = true },
 }
 
 local function sortedKeys(t)
@@ -63,7 +73,7 @@ local function openCharacter(step)
         for key, c in pairs(ns.Data.Characters()) do
             if not bestLevel or (c.level or 0) > bestLevel then best, bestLevel = key, c.level or 0 end
         end
-        if best then me.expanded[best], me.detailView[best] = true, "overview" end
+        if best then me.expanded[best], me.detailView[best] = true, step.view or "overview" end
     elseif step.open == "run" then
         -- Dungeons: open the newest completed run that has bosses.
         local d = ns.DungeonsTab.state
@@ -94,8 +104,8 @@ end
 
 -- Where the window is, in screen units (UIParent at scale 1 is 768 high); the crop
 -- script scales these to the picture's pixels.
-local function windowRect()
-    local f = ns.MainWindow.frame
+local function windowRect(f)
+    f = f or ns.MainWindow.frame
     local ok, left, top, right, bottom, scale, uiH, uiScale = pcall(function()
         return f:GetLeft(), f:GetTop(), f:GetRight(), f:GetBottom(), f:GetEffectiveScale(),
             UIParent:GetHeight(), UIParent:GetEffectiveScale()
@@ -106,7 +116,34 @@ local function windowRect()
     return { left = left * scale, top = top * scale, right = right * scale, bottom = bottom * scale, screen = uiH * uiScale }
 end
 
+-- The goals window or the invite window, opened with fake data; returns its frame.
+local function openWindow(step)
+    if step.window == "goals" then
+        -- The highest-level fake character below the level cap: the fullest suggestions.
+        local cap = ns.Merge.maxLevel or 60
+        local best
+        for _, c in pairs(ns.Data.Characters()) do
+            if (c.level or 0) < cap and (not best or (c.level or 0) > (best.level or 0)) then best = c end
+        end
+        if ns.SessionGoals.Preview(best, time()) then return ns.SessionGoals.Frame() end
+    elseif step.window == "invite" then
+        local c = ns.db.fake and ns.db.fake.invites and ns.db.fake.invites[1]
+        if c then
+            ns.InviteDialog.Open({ id = c.id, kind = c.kind, name = c.name, character = c.character, fake = true })
+            return ns.InviteDialog.Frame()
+        end
+    end
+    return nil
+end
+
+local function hideWindows()
+    for _, f in ipairs({ ns.SessionGoals.Frame() or false, ns.InviteDialog.Frame() or false }) do
+        if f then f:Hide() end
+    end
+end
+
 local function restore(saved)
+    hideWindows()
     local s = ns.db.settings
     s.skin, s.detailsLayout = saved.skin, saved.layout
     local me = ns.MeTab.state
@@ -115,6 +152,7 @@ local function restore(saved)
     for k in pairs(me.chainOpen) do me.chainOpen[k] = nil end
     for k in pairs(ns.FriendsTab.state.expanded) do ns.FriendsTab.state.expanded[k] = nil end
     for k in pairs(ns.DungeonsTab.state.expanded) do ns.DungeonsTab.state.expanded[k] = nil end
+    ns.FriendsTab.state.weekly = saved.weekly
     if not saved.fake then ns.Data.DisableFake() end
     Shots.active = false
     local f = ns.MainWindow.frame
@@ -134,7 +172,7 @@ function Shots.Run()
     local s = ns.db.settings
     local saved = { skin = s.skin, layout = s.detailsLayout, tab = ns.MainWindow.current, fake = ns.Data.IsFake(),
         mode = ns.MeTab.state.mode, w = f:GetWidth(), h = f:GetHeight(),
-        meRange = ns.MeTab.state.range, friendsRange = ns.FriendsTab.state.range }
+        meRange = ns.MeTab.state.range, friendsRange = ns.FriendsTab.state.range, weekly = ns.FriendsTab.state.weekly }
     ns.MeTab.state.range, ns.FriendsTab.state.range = "all", "all"
     if not saved.fake then ns.Data.EnableFake() end
     Shots.active = true
@@ -164,18 +202,31 @@ function Shots.Run()
             return
         end
         s.skin, s.detailsLayout = step.skin, step.layout or saved.layout
+        hideWindows()
         openCharacter(step)
+        ns.FriendsTab.state.weekly = step.weekly or false
         ns.Widgets.ApplySkin()
         ns.MainWindow.Select(step.tab)
+        if step.invites and ns.FriendsTab.ui.table then
+            -- The invite section is at the bottom: scroll there (the table stops at the last page).
+            ns.FriendsTab.ui.table:ScrollTo(#ns.FriendsTab.ui.table.lines)
+        end
+        local frame = step.window and openWindow(step)
+        if step.window and not frame then
+            -- Nothing to show (no fake character to suggest goals for): skip the picture.
+            ns.Events.After(0, nextStep)
+            return
+        end
         ns.Events.After(Shots.DELAY, safe(function()
-            local rect = windowRect()
+            local rect = windowRect(frame)
             local ok = ns.Compat.Call("screenshots", "Screenshot")
             if not ok then
                 restore(saved)
                 return
             end
             local shots = ns.db.dev.shots.steps
-            shots[#shots + 1] = { tab = step.tab, skin = step.skin, layout = step.layout, mode = step.mode, at = time(), rect = rect }
+            shots[#shots + 1] = { tab = step.tab, skin = step.skin, layout = step.layout, mode = step.mode, view = step.view,
+                weekly = step.weekly or nil, invites = step.invites or nil, window = step.window, at = time(), rect = rect }
             -- Leave time for the picture to be written before the window changes.
             ns.Events.After(Shots.DELAY, nextStep)
         end))

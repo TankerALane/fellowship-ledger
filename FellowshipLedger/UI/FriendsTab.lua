@@ -251,7 +251,8 @@ end
 local settleRefresh
 function FriendsTab.InviteLines(now, hasLedgerFriends)
     local out = {}
-    if ns.Data.IsFake() or not (ns.Friends and ns.Sync) then return out end
+    if ns.Data.IsFake() then return FriendsTab.FakeInviteLines(now) end
+    if not (ns.Friends and ns.Sync) then return out end
     local started = ns.Sync.startedAt
     local left = started and (started + ns.Invites.SETTLE_SECONDS - now) or ns.Invites.SETTLE_SECONDS
     if left > 0 then
@@ -286,6 +287,27 @@ function FriendsTab.InviteLines(now, hasLedgerFriends)
     return out
 end
 
+-- The same section with the made-up friends of /fl fake (and /fl shots). Invite opens
+-- the window, but Send never whispers a fake friend (UI/InviteDialog.lua).
+function FriendsTab.FakeInviteLines(now)
+    local out = {}
+    local list = ns.db.fake and ns.db.fake.invites or {}
+    if #list == 0 then return out end
+    out[#out + 1] = { kind = "grid", segments = {} }
+    out[#out + 1] = { kind = "group", text = string.format(L.INVITE_GROUP, #list) }
+    for _, c in ipairs(list) do
+        local status = c.invitedAgo and ns.Invites.Status(now - c.invitedAgo, now) or nil
+        local peer = { id = c.id, kind = c.kind, name = c.name, character = c.character, fake = true }
+        out[#out + 1] = { kind = "detail", indent = true, text = ns.Invites.Line(c, status, L),
+            action = not (status and status.waiting) and { label = L.INVITE_BUTTON, onClick = function()
+                ns.InviteDialog.Open(peer)
+            end } or nil }
+    end
+    return out
+end
+
+-- Open the Friends tab on one friend's character and view (a clicked notice, D-099).
+-- Without a character it just opens the tab.
 function FriendsTab.Open(friendId, key, view)
     if friendId and key then
         local id = tostring(friendId) .. "|" .. tostring(key)

@@ -102,10 +102,10 @@ function Me.DetailLines(key, char, name)
         parts = S.Professions(char.professions, inRange, L, date, state.openProf[key],
             function(prof) toggleIn(state.openProf, key, prof) end, sum.skillUps)
     elseif view == "bests" then
-        local all = ns.Data.IsFake() and ns.Bests.New() or ns.db.bests
+        local all = ns.Data.IsFake() and (ns.db.fake.bests or ns.Bests.New()) or ns.db.bests
         local rows = ns.Bests.Rows(char.bests, all, L, { Duration = ns.Format.Duration, Number = ns.Format.Number }, date, char.levels)
         parts = S.Bests(rows, L, function(k)
-            local c = ns.db.characters[k]
+            local c = ns.Data.Characters()[k]
             return c and (c.display or c.name) or k
         end)
     else

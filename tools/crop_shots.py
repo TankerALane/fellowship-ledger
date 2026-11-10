@@ -7,7 +7,8 @@ Run after /fl shots and a /reload (the reload writes the saved variables):
 
 It reads db.dev.shots from FellowshipLedger.lua in SavedVariables, pairs each step
 with the newest game screenshots taken since the run started, and writes
-PNGs to assets/screenshots/ named like 01-me-card-ledger.png. Cropping uses Windows'
+PNGs to assets/screenshots/ named like 01-me-card-ledger.png (a window step,
+such as the goals window, is cropped to that window: 12-goals-ledger.png). Cropping uses Windows'
 own System.Drawing through PowerShell, so nothing needs installing.
 """
 import argparse
@@ -156,8 +157,13 @@ def main():
     script.write_text(PS, encoding="utf-8")
     try:
         for n, (step, pic) in enumerate(zip(steps, pics), 1):
-            parts = [step.get("tab"), step.get("layout") if step.get("tab") in ("me", "friends") and not step.get("mode") else None,
-                     step.get("mode"), step.get("skin")]
+            if step.get("window"):
+                parts = [step.get("window"), step.get("skin")]
+            else:
+                opened = step.get("layout") and not step.get("mode") and not step.get("weekly") and not step.get("invites")
+                parts = [step.get("tab"), step.get("layout") if step.get("tab") in ("me", "friends") and opened else None,
+                         step.get("mode"), step.get("view"), "weekly" if step.get("weekly") else None,
+                         "invites" if step.get("invites") else None, step.get("skin")]
             name = f"{n:02d}-" + "-".join(p for p in parts if p) + ".png"
             rect = step.get("rect")
             if not rect:

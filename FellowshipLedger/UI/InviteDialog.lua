@@ -19,6 +19,11 @@ InviteDialog.last = nil -- for /fl verify: { at, kind, ok, how }
 function InviteDialog.Send(peer, text)
     text = Invites.Clean(text)
     if not (peer and text) then return false end
+    if peer.fake then
+        -- A made-up friend from /fl fake or /fl shots: never whispered.
+        ns.Log.Info(L.INVITE_FAKE)
+        return false
+    end
     local ok, how = false, nil
     if peer.kind == "bnet" and peer.bnetAccountID then
         ok = ns.Compat.Call("invite.bnet", "BNSendWhisper", peer.bnetAccountID, text)
@@ -96,6 +101,9 @@ local function build()
     d:Hide()
     return d
 end
+
+-- The window, for /fl shots (nil until first opened).
+function InviteDialog.Frame() return dialog end
 
 -- Open the preview for one friend (a Friends.peers entry).
 function InviteDialog.Open(peer)

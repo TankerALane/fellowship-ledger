@@ -22,6 +22,9 @@ local DUNGEONS = { "The Deadmines", "Wailing Caverns", "Shadowfang Keep", "Black
 local FAKE_BOSSES = { "Grubjaw the Glutton", "Sister Vellis", "The Ashen Warden", "Old Mossback", "Kael the Hollow" }
 local CLASSES = { "WARRIOR", "MAGE", "PRIEST", "ROGUE", "HUNTER", "DRUID", "PALADIN", "WARLOCK", "SHAMAN" }
 local ROLES = { "TANK", "HEALER", "DAMAGER", "DAMAGER", "DAMAGER" }
+-- Group members named on the Leaderboard (friends who run the ledger, D-115): the
+-- fake friends' characters.
+local PARTY_NAMES = { "Grimwald", "Vexa", "Brask", "Seraphel", "Okka", "Lune" }
 
 local function newRng(seed)
     local state = seed % 2147483647
@@ -111,6 +114,12 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
                     end
                     run.bossCount = 3
                     if done then run.completedAt = run.bosses[kills].at end
+                    -- Levels and one or two named friends (D-115); no random draws.
+                    local n = #c.dungeons
+                    run.levelMax = level + n % 3
+                    for p = 1, 4 do party[p].level = math.max(1, level - (n + p) % 3) end
+                    party[1].name, party[1].friend = PARTY_NAMES[n % #PARTY_NAMES + 1], true
+                    if n % 2 == 0 then party[2].name, party[2].friend = PARTY_NAMES[(n + 2) % #PARTY_NAMES + 1], true end
                 end
                 if d < 30 then
                     for q = 1, math.min(quests, 4) do
@@ -168,6 +177,22 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
     for _, spec in ipairs(mine) do
         out.characters[ns.Character.Key(spec.name, FakeData.REALM)] = makeCharacter(rng, spec, now, timeFn, dateFn)
     end
+    -- Personal bests (D-115), worked out from the fake history like Trackers/Records.lua does.
+    if ns.Bests then
+        out.bests = ns.Bests.New()
+        for key, c in pairs(out.characters) do
+            c.bests = ns.Bests.New()
+            ns.Bests.Update(c.bests, c, key, false)
+            ns.Bests.Update(out.bests, c, key, true)
+        end
+    end
+    -- Online friends without the ledger, for the Friends tab's invite list (D-114).
+    -- invitedAgo: seconds since the last invite (nil = never).
+    out.invites = {
+        { id = "fake-inv-1", kind = "bnet", name = "Rowan", character = "Ashbel-" .. FakeData.REALM },
+        { id = "fake-inv-2", kind = "bnet", name = "Delphine", character = "Mirelle-" .. FakeData.REALM, invitedAgo = 2 * 86400 },
+        { id = "fake-inv-3", kind = "char", name = "Corwin-" .. FakeData.REALM, character = "Corwin-" .. FakeData.REALM, invitedAgo = 17 * 86400 },
+    }
     local friends = {
         { id = "fake-bn-1", kind = "bnet", name = "Fennick", tag = "Fennick#0001", online = true, playing = "Grimwald",
           chars = { { "Thistle", "DRUID", 5 }, { "Grimwald", "PALADIN", 20 }, { "Pip", "ROGUE", 1 } } },
@@ -195,9 +220,14 @@ function FakeData.Generate(now, timeFn, dateFn, seed)
                 -- Boss times as a 1.7.0 friend shares them (D-104); no random draws.
                 local splits = {}
                 for _, b in ipairs(r.bosses or {}) do splits[#splits + 1] = { at = b.at - r.entered, fight = b.fight } end
+                -- Boss names, named friends, top level and size as a 1.8.0 friend shares them (D-115).
+                local bossNames, names = {}, {}
+                for _, b in ipairs(r.bosses or {}) do bossNames[#bossNames + 1] = b.name end
+                for _, p in ipairs(r.party or {}) do if p.friend and p.name then names[#names + 1] = p.name end end
                 fc.runs[#fc.runs + 1] = { name = r.name, entered = r.entered, duration = r.duration, completed = r.completed,
                     kills = #(r.bosses or {}), bossCount = r.bossCount, deaths = r.deaths,
-                    clear = r.completedAt and (r.completedAt - r.entered) or nil, splits = splits }
+                    clear = r.completedAt and (r.completedAt - r.entered) or nil, splits = splits,
+                    bossNames = bossNames, names = names, levelMax = r.levelMax, size = 1 + #(r.party or {}) }
             end
             -- Blue or better loot as a 1.7.0 friend shares it (D-105); fake items keep their name.
             fc.loot = {}

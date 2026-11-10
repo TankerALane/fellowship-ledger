@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- `/fl shots` also captures the Leaderboard, the Bests view, the invite list and invite window, the weekly panel and the goals window. `/fl fake` shows made-up data for all of them.
+
 ## 1.8.0 - 2026-11-10
 
 ### Added
