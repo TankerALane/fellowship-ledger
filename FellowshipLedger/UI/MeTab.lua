@@ -130,6 +130,11 @@ local function characterLines()
         local recap = ns.Summary.Recap(ns.Store.session, L)
         if recap then lines[#lines + 1] = { kind = "detail", text = recap } end
     end
+    -- This session's goals (D-116).
+    if not ns.Data.IsFake() and ns.SessionGoals then
+        local ok, goals = pcall(ns.SessionGoals.Line)
+        if ok and goals then lines[#lines + 1] = { kind = "detail", text = goals, onClick = function() ns.SessionGoals.Open(true) end } end
+    end
     if #rows > 1 then
         local total = MeModel.Totals(rows)
         total.name = L.TOTAL_ALL

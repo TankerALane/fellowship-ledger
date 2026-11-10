@@ -100,6 +100,8 @@ H.PURE_FILES = {
     "Core/Weekly.lua",
     "Core/Invites.lua",
     "Core/Bests.lua",
+    "Core/DungeonLevels.lua",
+    "Core/Goals.lua",
     "Core/QuestChainLogic.lua",
     "Core/DungeonBosses.lua",
     "UI/Palette.lua",

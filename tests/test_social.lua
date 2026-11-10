@@ -134,3 +134,112 @@ H.test("bests in the mock client: filled at login, a beaten record gives one not
     H.eq(#ns.Records.Check(), 0, "not again for the same day")
     H.eq(ns.Store.char.bests.day.quests.value, 3, "the character's own store too")
 end)
+
+-- Session goals ---------------------------------------------------------------------
+
+local function sessions(n, active, counts)
+    local list = {}
+    for i = 1, n do list[i] = { start = i * 10000, active = active, counts = counts or { quests = 10, levels = 1, skillUps = 6 } } end
+    return list
+end
+
+H.test("goals: ready after 3 sessions of 20+ active minutes, the current one not counted", function()
+    local G = H.pureNamespace().Goals
+    local list = sessions(2, 1500)
+    list[#list + 1] = { start = 99, active = 600, counts = {} } -- too short
+    H.eq(G.Ready(list, nil), false)
+    list[#list + 1] = { start = 500, active = 5000, counts = {} }
+    H.eq(G.Ready(list, 500), false, "the session being played")
+    H.eq(G.Ready(list, nil), true)
+    local _, n = G.Ready(list, 500)
+    H.eq(n, 2)
+end)
+
+H.test("goals: XP per hour follows the part of a level per hour, so it grows with the level", function()
+    local G = H.pureNamespace().Goals
+    -- Levels near 10 took 30 minutes each: 2 levels per hour.
+    local levels = { [9] = { active = 1800 }, [10] = { active = 1800 }, [30] = { active = 7200 }, [8] = { active = 900, partial = true } }
+    H.eq(G.Pace(levels, 10), 2)
+    H.eq(G.Pace(levels, 30), 0.5, "only levels within 5")
+    H.eq(G.Pace({ [50] = { active = 3600 } }, 10), 1, "falls back to any full level")
+    local low = G.Suggest({ level = 10, xpMax = 7000, sessions = sessions(3, 3600), levels = levels })
+    local high = G.Suggest({ level = 10, xpMax = 70000, sessions = sessions(3, 3600), levels = levels })
+    H.eq(low[1].kind, "xphour"); H.eq(low[1].target, 14000)
+    H.eq(high[1].target, 140000, "ten times the XP per level, ten times the goal")
+    H.eq(low[2].kind, "levels"); H.eq(low[2].target, 2, "2 levels an hour in a typical 1-hour session")
+    H.eq(low[3].kind, "quests"); H.eq(low[3].target, 11, "usual 10, a little more")
+    H.eq(#G.Suggest({ level = 60, maxLevel = 60, xpMax = 0, sessions = sessions(3, 3600), levels = levels }), 1,
+        "at the level cap: only quests")
+end)
+
+H.test("goals: a dungeon in range not yet cleared, professions not maxed", function()
+    local ns = H.pureNamespace()
+    local G, DL = ns.Goals, ns.DungeonLevels
+    H.eq(DL.InRange(20)[1], "The Deadmines")
+    local list = G.Suggest({ level = 20, sessions = sessions(3, 3600), dungeons = DL.InRange(20),
+        cleared = { ["The Deadmines"] = true },
+        professions = { [164] = { name = "Blacksmithing", rank = 100, max = 150 }, [186] = { name = "Mining", rank = 150, max = 150 } } })
+    local kinds = {}
+    for _, g in ipairs(list) do kinds[g.kind] = g end
+    H.eq(kinds.dungeon.name, "Wailing Caverns", "the Deadmines was cleared")
+    H.eq(kinds.dungeon.on, false, "not ticked by default")
+    H.eq(kinds.profession.name, "Blacksmithing"); H.eq(kinds.profession.target, 106)
+    H.eq(G.Adjust(kinds.profession, -1), 105)
+    for _ = 1, 10 do G.Adjust(kinds.profession, -1) end
+    H.eq(kinds.profession.target, 101, "never below one point up")
+    for _ = 1, 100 do G.Adjust(kinds.profession, 1) end
+    H.eq(kinds.profession.target, 150, "never above the cap")
+end)
+
+H.test("goals: progress, the Me tab line and the results at the next login", function()
+    local ns = H.pureNamespace()
+    local G, L = ns.Goals, ns.L
+    local f = { Number = ns.Format.Number }
+    local start = { levelPos = 10.5, xp = 1000, quests = 2, active = 100, at = 50, ranks = { [164] = 100 } }
+    local set = { list = {
+        { kind = "xphour", target = 10000, start = start },
+        { kind = "levels", target = 1, start = start },
+        { kind = "quests", target = 5, start = start },
+        { kind = "dungeon", name = "The Deadmines", target = 1, start = start },
+        { kind = "profession", key = 164, name = "Blacksmithing", target = 105, start = start } } }
+    local now = { levelPos = 11.6, xp = 7000, quests = 6, active = 1900, cleared = { ["The Deadmines"] = 40 }, ranks = { [164] = 105 } }
+    local v, d = G.Progress(set.list[1], now)
+    H.eq(v, 12000); H.eq(d, true)
+    v, d = G.Progress(set.list[4], now)
+    H.eq(d, false, "a clear before the goals started does not count")
+    now.cleared["The Deadmines"] = 60
+    H.eq(select(2, G.Progress(set.list[4], now)), true)
+    H.eq(G.Line(set, now, L, f), "Goals (4 of 5 done): (done) XP per hour 12,000 / 10,000; (done) Levels 1.1 / 1.0; "
+        .. "Quests 4 / 5; (done) Clear The Deadmines; (done) Blacksmithing 105 / 105")
+    local early = { levelPos = 10.5, xp = 1500, quests = 2, active = 400, ranks = {} }
+    H.eq(select(2, G.Progress(set.list[1], early)), false, "XP per hour waits for 10 active minutes")
+    set.last = { { value = 12000, done = true }, { value = 0.4 } }
+    local res = G.Results({ list = { set.list[1], set.list[2] }, last = set.last }, L, f)
+    H.eq(res[1], "Goals: 1 of 2 done"); H.eq(res[3], "  Levels 0.4 / 1.0")
+    for _, k in ipairs({ "GOAL_HINT_XPHOUR", "GOAL_HINT_XPHOUR_RESTED", "GOAL_HINT_LEVELS", "GOAL_HINT_QUESTS",
+        "GOAL_HINT_DUNGEON", "GOAL_HINT_PROFESSION" }) do H.ok(rawget(L, k), k) end
+end)
+
+H.test("goals in the mock client: off by default, /fl goals waits for 3 sessions, then Start", function()
+    local Mock = dofile(H.ROOT .. "/tests/wowmock.lua")
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false, sessionSummary = false } }
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.runTimers(env)
+    H.eq(ns.db.settings.goals, false, "off by default")
+    Mock.slash(env, "goals")
+    H.ok(Mock.chatContains(env, "3 sessions of 20 minutes or more (0 so far)"), "says why")
+    local char = ns.Store.char
+    for i = 1, 3 do table.insert(char.sessions, 1, { start = i, stop = i, active = 3600, played = 3600, counts = { quests = 8 } }) end
+    char.levels[2] = { active = 600 }
+    H.eq(ns.SessionGoals.Open(true), true, "the window opens")
+    ns.SessionGoals.Begin(ns.Goals.Suggest(ns.SessionGoals.Info()))
+    local set = ns.SessionGoals.Current()
+    H.ok(set and #set.list >= 2, "goals set for this session")
+    ns.Store.Count("quests", 20)
+    ns.SessionGoals.Tick()
+    H.ok(ns.SessionGoals.Line():find("Quests 20 / 9", 1, true), ns.SessionGoals.Line())
+    H.eq(#ns.SessionGoals.ResultsFor(ns.Store.session) > 0, true, "results for the summary")
+end)

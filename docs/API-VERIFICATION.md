@@ -541,6 +541,18 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `m:bests` | manual | an opened character on the Me tab has a Bests view (this character, all characters, held by); beating a record of all your characters gives one "New personal best" notice that opens it (D-115) | open your character > Bests; turn in more quests in a day than your best | ? | ? |
+| `m:goals` | manual | with Settings > "Suggest goals when a session starts" on and 3 sessions of 20+ minutes, a new session opens Today's goals; ticks, - and + work; Start shows a Goals line on the Me tab; the next login's summary lists how they went (D-116) | turn the switch on; log in after 30+ minutes away (or /fl goals); Start; turn in a quest | ? | ? |
+
+### Dungeons
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:dungeonlevels` | manual | the level ranges in Core/DungeonLevels.lua match the game's dungeon list (The Deadmines 15-22 confirmed by Austin; the rest are the usual Classic ranges) (D-115) | compare with the game's dungeon finder or journal; report any that differ | ? | ? |
+
+### UI
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
 | `C_DateAndTime.GetSecondsUntilWeeklyReset` | api | the weekly reset time for the weekly recap; without it Tuesday 16:00 UTC (8:00 PST) is used (D-109) | `/dump type(C_DateAndTime.GetSecondsUntilWeeklyReset)` -> "function" | PASS | ? |
 | `m:weeklyrecap` | manual | the first login after the weekly reset shows "Last week in your ledger" (you and friends), once; a click opens the Friends tab's weekly panel with Last week on top (D-109) | log in after Tuesday's reset; /reload: it does not show again | ? | ? |
 | `GameTooltip.SetHyperlink` | api | show a reward item's own tooltip on hover in Quest chains (D-102) | `/dump type(GameTooltip.SetHyperlink)` -> "function" | PASS | ? |

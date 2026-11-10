@@ -37,6 +37,8 @@ Core\Notices.lua
 Core\Weekly.lua
 Core\Invites.lua
 Core\Bests.lua
+Core\DungeonLevels.lua
+Core\Goals.lua
 Core\QuestChainLogic.lua
 Core\DungeonBosses.lua
 UI\Palette.lua
@@ -82,6 +84,7 @@ UI\MainWindow.lua
 UI\MeTab.lua
 UI\FriendsTab.lua
 UI\InviteDialog.lua
+UI\GoalsWindow.lua
 UI\Graph.lua
 UI\GraphsTab.lua
 UI\DungeonsTab.lua
