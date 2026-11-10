@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.0 - not released yet
+
+### Added
+- **Leaderboard tab**: each dungeon's five fastest clears by you and your friends (time, who was in the group, date, the group's top level) and the fastest kill of each boss. At-level runs by default: nobody in the group more than 3 levels over the dungeon (The Deadmines 15-22: nobody above 25). "All runs" shows the rest. A notice when a run of yours makes a top 5.
+- **Personal bests**: a Bests view on each character: most quests, kills and XP in a day, longest session, most levels in a session, fastest clear of each dungeon, and the fastest time for each level across all your characters, with who holds each. Records are kept for good. A notice when you beat one.
+- **Session goals** (off until you turn them on in Settings): after three sessions of 20 minutes or more, a new session suggests goals from your own pace: XP per hour (scaled to your level), levels, quests, a dungeon in your range and profession ranks. Change them with - and +. Progress shows on the Me tab, and the next login's summary says how it went. `/fl goals` opens it any time.
+- **Invite a friend**: the Friends tab lists online friends who don't run the ledger yet. Invite opens a message you can edit, then sends it as one whisper. For a week after an invite there is no button, and the line always says when you last invited them.
+
+### Changed
+- Shared dungeon runs now include boss names, the group's top level and size, and the names of group members who are your friends and run the ledger (no one else's name is ever shared). Friends on older versions still show up on the Leaderboard, without boss times.
+
 ## 1.7.2 - 2026-11-09
 
 ### Fixed

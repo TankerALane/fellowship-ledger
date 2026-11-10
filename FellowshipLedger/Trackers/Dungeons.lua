@@ -10,6 +10,18 @@ local T = ns.Trackers
 local Store, Days, Character = ns.Store, ns.Days, ns.Character
 
 local RESUME_SECONDS = 1800 -- re-entering the same instance within this continues the run
+local unitKey -- below
+
+-- Is this character ("Name" or "Name-Realm") one of my friends who runs the ledger
+-- (has said hello)? Battle.net friends by the character they are on, character
+-- friends by name.
+local function isLedgerFriend(key)
+    if not (key and ns.Friends and ns.Friends.byCharacter) then return false end
+    local full = ns.Friends.FullName(key)
+    local peer = full and ns.Friends.byCharacter[ns.Friends.Normalize(full)]
+    local f = peer and ns.db.friends[peer.id]
+    return f ~= nil and f.version ~= nil and not ns.Friends.IsBlocked(peer)
+end
 
 local function partySnapshot()
     local party = {}
@@ -20,13 +32,20 @@ local function partySnapshot()
             local okRole, role = ns.Compat.Call("dungeons", "UnitGroupRolesAssigned", unit)
             local okPlayer, isPlayer = ns.Compat.Call("dungeons", "UnitIsPlayer", unit)
             -- A name is stored ONLY if that player runs the ledger and sent us their
-            -- "share my name in dungeon records" opt-in (Comms/Sync.lua NAME note).
+            -- "share my name in dungeon records" opt-in (Comms/Sync.lua NAME note), or is
+            -- one of my friends who runs the ledger (Leaderboard, D-115: `friend`; only
+            -- these names are ever shared, and only with my friends).
             local name = T.Plain(UnitName(unit))
+            local friend = isLedgerFriend(unitKey(unit))
+            local okLevel, level = ns.Compat.Try("UnitLevel", unit)
+            level = okLevel and T.Plain(level) or nil
             party[#party + 1] = {
                 class = class,
                 role = okRole and T.Plain(role) or nil,
                 npc = (okPlayer and T.Plain(isPlayer) == false) or nil, -- follower-dungeon companion
-                name = (ns.Sync and ns.Sync.IsOptedIn(name)) and name or nil,
+                name = (friend or (ns.Sync and ns.Sync.IsOptedIn(name))) and name or nil,
+                friend = friend or nil,
+                level = (type(level) == "number" and level > 0) and level or nil,
             }
         end
     end
@@ -34,7 +53,7 @@ local function partySnapshot()
 end
 
 -- "Name-Realm" (or "Name") of a unit, nil when unknown or secret.
-local function unitKey(unit)
+function unitKey(unit)
     local ok, name, realm = ns.Compat.Try("UnitName", unit)
     name, realm = ok and T.Plain(name) or nil, ok and T.Plain(realm) or nil
     if type(name) ~= "string" or name == "" then return nil end
@@ -292,7 +311,17 @@ local function complete(run, how)
     local party = partySnapshot()
     if #party > 0 then run.party = party end
     run.partyFrozen = true
+    -- The group's highest level at the final boss, for the Leaderboard's at-level
+    -- filter (D-115). Unknown levels are left out; nil when none is known.
+    local top = tonumber(Store.char and Store.char.level)
+    for _, p in ipairs(run.party or {}) do
+        if not p.npc and p.level and (not top or p.level > top) then top = p.level end
+    end
+    run.levelMax = top
     Store.Count("dungeonsCompleted")
+    if ns.LeaderboardTab and ns.LeaderboardTab.CheckRun then
+        ns.Events.After(2, function() pcall(ns.LeaderboardTab.CheckRun, run) end)
+    end
 end
 
 local Dungeons = T.Define({ id = "dungeons" })

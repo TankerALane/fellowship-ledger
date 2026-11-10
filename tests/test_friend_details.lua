@@ -287,22 +287,28 @@ H.test("a friend without Questie: their chains are worked out here from their qu
     H.ok(not chat:find("failed") and not chat:find("problem"), chat)
 end)
 
-H.test("dungeon runs travel with Dungeons: which dungeon, when, time, result, bosses, deaths only", function()
+H.test("dungeon runs travel with Dungeons: dungeon, time, result, bosses, deaths; only friends' names", function()
     local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
     local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
     local C, M = ns2.Codec, ns2.Merge
     local E = os.time({ year = 2026, month = 11, day = 6, hour = 10, min = 2 })
     local char = { class = "PRIEST", level = 20, days = {}, levels = {}, sessions = {}, dungeons = {
         { name = "Ruins of Lordaeron", entered = E, duration = 2675, completed = true, bossCount = 6, deaths = 0,
-          party = { { class = "MAGE", role = "DAMAGER", name = "Someone" } },
+          party = { { class = "MAGE", role = "DAMAGER", name = "Someone" }, { class = "ROGUE", name = "Pal", friend = true, level = 22 },
+              { class = "WARRIOR", npc = true } }, levelMax = 22,
           bosses = { { name = "Witherfang", at = E + 300 }, { name = "Rath'mael", at = E + 1860 } } },
         { name = "Ragefire Chasm, Orgrimmar", entered = E - 3 * 86400, duration = 2278, deaths = 1, bosses = {} },
     } }
     local body = C.EncodeData("Tara-R", char, { time = true, dungeons = true }, nil)
-    H.ok(not body:find("Witherfang", 1, true) and not body:find("Someone", 1, true) and not body:find("MAGE,", 1, true),
-        "no boss names, nothing about the group: " .. body)
+    -- Boss names travel since 1.8.0 (Leaderboard, D-115); of the group only my ledger
+    -- friends' names, the top level and the size. An opted-in stranger's name never does.
+    H.ok(not body:find("Someone", 1, true) and not body:find("MAGE", 1, true) and not body:find("ROGUE", 1, true),
+        "nothing about the group but friends' names: " .. body)
     local d = C.DecodeData(body)
     H.eq(#d.runs, 2)
+    H.eq(d.runs[2].bossNames[2], "Rath'mael"); H.eq(d.runs[2].names[1], "Pal"); H.eq(#d.runs[2].names, 1)
+    H.eq(d.runs[2].levelMax, 22); H.eq(d.runs[2].size, 3, "me and two players; the companion is not counted")
+    H.eq(d.runs[1].names, nil); H.eq(d.runs[1].levelMax, nil); H.eq(d.runs[1].size, 1)
     H.eq(d.runs[2].name, "Ruins of Lordaeron"); H.eq(d.runs[2].kills, 2); H.eq(d.runs[2].bossCount, 6)
     H.ok(d.runs[2].completed); H.eq(d.runs[2].duration, 2675)
     H.eq(d.runs[1].name, "Ragefire Chasm, Orgrimmar", "a comma in a name survives"); H.eq(d.runs[1].completed, nil); H.eq(d.runs[1].deaths, 1)

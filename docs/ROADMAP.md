@@ -107,10 +107,14 @@ Each phase is built and tested on both clients. The full scope is in `CLAUDE_COD
 - [x] 1.6.0 with friends on Forever (2026-11-07): friend notices for chains, dungeon clears and professions, friends' shared dungeon runs, friends' quest chains and profession ranks
 - [ ] Friend level-cap notice: fires when a friend reaches 60 (GetMaxLevelForPlayerExpansion returns 60; no friend has reached it yet)
 
+## 1.8.0 (built on `feature/1.8-fun`, not released)
+Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass; the in-game checks are below.
+- [x] **Invite a friend** (D-114, D-117)
+- [x] **Personal bests** (D-115, D-117): a Bests view on each character, records kept for good
+- [x] **Session goals** (D-116, D-117): off by default
+- [x] **Dungeon Leaderboard** (D-115, D-117): a Leaderboard tab
+- [ ] Austin, in game: `/fl verify` on both clients (new: BNSendWhisper, C_ChatInfo.SendChatMessage, SendChatMessage), then m:invite, m:bests, m:goals, m:leaderboard, m:dungeonlevels
+- [ ] Austin: confirm the CurseForge address used by Copy link (Core/Invites.lua)
+
 ## Possible additions (not scheduled)
-Ideas only. Nothing here is planned yet: new features wait until the dungeon run logic has settled (see the D-112/D-113 group checks).
-- [ ] **Invite a friend** (design agreed, D-114): an "Online, not using the ledger" list on the Friends tab with an Invite button per friend. A click opens an editable preview (Send / Cancel, plus Copy link); Send whispers it (Battle.net or character whisper). Then "Invited 3 days ago", greyed out for 7 days; after that it can be sent again but still shows when the last invite went out ("Invited 2 weeks ago"). Battle.net and character friends, same flavor only, only on a click. Needs the whisper-sending APIs in `/fl verify` first.
-- [ ] **Dungeon Leaderboard** (design agreed, D-115): a Leaderboard tab. Each dungeon lists the top 5 clears (time, up to 5 people, date, group level range), and under it the fastest kill of each boss. One run seen by several friends counts once. Names shared only for players who run the ledger and are your friends; others show as "+2". At-level runs only by default (highest level in the group at most 3 above the dungeon's top level), with an "All runs" toggle. Notice when your group takes a spot.
-- [ ] **Personal bests** (D-115): fastest time for each level, most quests, kills and XP in a day, longest session, most levels in a session; saved as records kept forever (not pruned with the 90-day history), filled in from existing history once. A Bests view on each character, and a notice when one is beaten.
-- [ ] **Session goals** (design agreed, D-116): off by default. Once a character has 3 sessions of 20+ active minutes, a new session opens a window of suggested goals from your recent pace at nearby levels and your bests (levels, quests, a dungeon, profession points); tick, adjust with -/+, or Skip today. XP goals are measured as percent of a level per hour, then shown as XP for your current level. Progress on the Me tab; the result in the last-session summary. `/fl goals` opens it any time.
 - [ ] **Guild sharing** (optional, off by default): share a summary over the guild addon channel. It would help spread the addon, but guildmates are often not Battle.net or character friends, so it is not the best way to grow it; kept for later (Austin, 2026-11-09). Privacy questions to settle before any work starts.

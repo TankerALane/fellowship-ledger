@@ -243,3 +243,101 @@ H.test("goals in the mock client: off by default, /fl goals waits for 3 sessions
     H.ok(ns.SessionGoals.Line():find("Quests 20 / 9", 1, true), ns.SessionGoals.Line())
     H.eq(#ns.SessionGoals.ResultsFor(ns.Store.session) > 0, true, "results for the summary")
 end)
+
+-- Leaderboard -----------------------------------------------------------------------
+
+local T0 = 1800000000
+
+-- One of my runs: entered at T0 + off, clear seconds, party and bosses.
+local function myRun(name, off, clear, extra)
+    local r = { name = name, entered = T0 + off, completed = true, completedAt = T0 + off + clear, bosses = {}, party = {} }
+    for k, v in pairs(extra or {}) do r[k] = v end
+    return r
+end
+
+H.test("leaderboard: one run seen by me and a friend is shown once, with both names", function()
+    local ns = H.pureNamespace()
+    local LB, L = ns.Leaderboard, ns.L
+    local chars = { ["Me-R"] = { name = "Austin", dungeons = {
+        myRun("The Deadmines", 0, 1500, { levelMax = 21, party = { { class = "ROGUE", name = "Cain", friend = true, level = 21 },
+            { class = "MAGE" }, { class = "PRIEST" }, { class = "WARRIOR", npc = true } },
+            bosses = { { name = "Rhahk'Zor", fight = 40, at = T0 + 300 }, { name = "Edwin VanCleef", fight = 130, at = T0 + 1500 } } }),
+    } } }
+    -- Hamlet's Cain was in that run: he entered 2 minutes later, and shares the same final boss.
+    local friends = { ["bn:Ham#1"] = { name = "Hamlet", characters = { ["Cain-R"] = { name = "Cain", runs = {
+        { name = "The Deadmines", entered = T0 + 120, completed = true, clear = 1380, size = 4, levelMax = 21, names = { "Austin" },
+          splits = { { at = 170, fight = 35 }, { at = 1380, fight = 130 } }, bossNames = { "Rhahk'Zor", "Edwin VanCleef" } },
+    } } } } }
+    local board = LB.Build(LB.Entries(chars, friends), true)
+    H.eq(#board, 1)
+    local d = board[1]
+    H.eq(#d.clears, 1, "one run, not two")
+    local e = d.clears[1]
+    H.eq(e.clear, 1500, "the longest report: joining late does not make a run faster")
+    H.eq(LB.Group(e, L), "Austin, Cain, +2", "names from both, strangers counted, the companion left out")
+    H.eq(e.mine, true)
+    H.eq(d.bosses[1].name, "Rhahk'Zor"); H.eq(d.bosses[1].fight, 35, "the fastest kill of each boss")
+    H.eq(d.bosses[2].name, "Edwin VanCleef", "bosses in the order they die")
+    H.eq(d.range[1], 15)
+end)
+
+H.test("leaderboard: top 5 by clear time, over-level runs only under All runs", function()
+    local ns = H.pureNamespace()
+    local LB = ns.Leaderboard
+    local runs = {}
+    for i = 1, 7 do runs[i] = myRun("The Deadmines", i * 86400, 1000 + i * 100, { levelMax = 22 }) end
+    runs[8] = myRun("The Deadmines", 9 * 86400, 600, { levelMax = 26 }) -- 4 over 22: a carry
+    runs[9] = myRun("The Deadmines", 10 * 86400, 700, { levelMax = 25 }) -- 3 over: still at level
+    runs[10] = myRun("The Deadmines", 11 * 86400, 30) -- too short to be a real clear
+    runs[11] = myRun("Hall of Thanes", 12 * 86400, 900, { levelMax = 60 }) -- no range known: always counts
+    local chars = { ["Me-R"] = { name = "Austin", dungeons = runs } }
+    local board = LB.Build(LB.Entries(chars, {}), true)
+    H.eq(board[1].dungeon, "The Deadmines"); H.eq(board[2].dungeon, "Hall of Thanes", "unlisted dungeons last")
+    local c = board[1].clears
+    H.eq(#c, 5); H.eq(c[1].clear, 700); H.eq(c[1].rank, 1); H.eq(c[2].clear, 1100); H.eq(c[5].clear, 1400)
+    local all = LB.Build(LB.Entries(chars, {}), false)
+    H.eq(all[1].clears[1].clear, 600); H.eq(all[1].clears[1].atLevel, false)
+    H.eq(LB.RankOf(board, "The Deadmines", T0 + 10 * 86400 + 700), 1)
+    H.eq(LB.RankOf(board, "The Deadmines", T0 + 7 * 86400 + 1700), nil, "6th is off the board")
+    H.eq(ns.DungeonLevels.AtLevel("The Deadmines", nil), true, "unknown level counts")
+    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery Armory", 48), true)
+    H.eq(ns.DungeonLevels.AtLevel("Scarlet Monastery Armory", 49), false)
+end)
+
+H.test("leaderboard: blocked friends and friends without the new fields", function()
+    local ns = H.pureNamespace()
+    local LB, L = ns.Leaderboard, ns.L
+    local old = { name = "Wailing Caverns", entered = T0, completed = true, clear = 1800 } -- a 1.7.x friend
+    local friends = {
+        ["bn:Ham#1"] = { name = "Hamlet", tag = "Ham#1", characters = { ["Cain-R"] = { name = "Cain", runs = { old } } } },
+        ["bn:Blk#1"] = { name = "Blk", tag = "Blk#1", characters = { ["X-R"] = { name = "X", runs = {
+            { name = "Wailing Caverns", entered = T0 + 9999, completed = true, clear = 900 } } } } },
+    }
+    local board = LB.Build(LB.Entries({}, friends, function(f) return f.tag == "Blk#1" end), true)
+    H.eq(#board[1].clears, 1)
+    H.eq(LB.Group(board[1].clears[1], L), "Cain"); H.eq(#board[1].bosses, 0, "no boss names from older versions")
+end)
+
+H.test("leaderboard in the mock client: the tab draws, a top-5 clear gives a notice", function()
+    local Mock = dofile(H.ROOT .. "/tests/wowmock.lua")
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false, sessionSummary = false } }
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.runTimers(env)
+    local now = env.__state.now
+    local run = { name = "The Deadmines", entered = now - 1500, completed = true, completedAt = now, bosses = {}, party = {}, levelMax = 20 }
+    table.insert(ns.Store.char.dungeons, run)
+    H.eq(ns.LeaderboardTab.CheckRun(run), 1)
+    H.ok(Mock.chatContains(env, "#1 on The Deadmines, cleared in 25m 00s"), "the notice")
+    ns.MainWindow.Open("leaderboard")
+    local seen = {}
+    for _, line in ipairs(ns.LeaderboardTab.ui.table.lines) do
+        for _, s in ipairs(line.segments or {}) do if s.text then seen[#seen + 1] = s.text end end
+    end
+    local text = table.concat(seen, " | ")
+    H.ok(text:find("The Deadmines (15-22)", 1, true) and text:find("25m 00s", 1, true), text)
+    ns.db.settings.leaderToasts = false
+    H.eq(ns.LeaderboardTab.CheckRun(run), nil, "the switch turns it off")
+end)

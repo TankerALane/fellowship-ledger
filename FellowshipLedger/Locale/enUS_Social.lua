@@ -84,4 +84,22 @@ ns.Locale.Set({
     GOAL_LINE = "Goals (%d of %d done): %s",
     GOAL_RESULTS = "Goals: %d of %d done",
     GOAL_REACHED_TITLE = "Goal reached",
+
+    -- Leaderboard (D-115)
+    TAB_LEADERBOARD = "Leaderboard",
+    TOAST_LEADER = "A run of yours makes a Leaderboard top 5",
+    LEADER_AT_LEVEL = "At-level runs",
+    LEADER_ALL_RUNS = "All runs",
+    LEADER_INTRO = "Fastest clears by you and your friends. At level: nobody more than %d levels over the dungeon.",
+    LEADER_EMPTY = "No at-level clears yet. Clear a dungeon (or have a friend on 1.8.0 clear one) and it shows here. All runs shows over-level clears too.",
+    LEADER_EMPTY_ALL = "No clears yet. Clear a dungeon (or have a friend on 1.8.0 clear one) and it shows here.",
+    LEADER_COL_TIME = "Time",
+    LEADER_COL_GROUP = "Group",
+    LEADER_COL_DATE = "Date",
+    LEADER_COL_LEVELS = "Top level",
+    LEADER_LEVEL = "level %d",
+    LEADER_MORE = "+%d",
+    LEADER_BOSSES = "Fastest boss kills",
+    LEADER_TOAST_TITLE = "Leaderboard",
+    LEADER_TOAST = "#%d on %s, cleared in %s",
 })

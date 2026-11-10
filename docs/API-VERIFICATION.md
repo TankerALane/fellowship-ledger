@@ -548,6 +548,7 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `m:dungeonlevels` | manual | the level ranges in Core/DungeonLevels.lua match the game's dungeon list (The Deadmines 15-22 confirmed by Austin; the rest are the usual Classic ranges) (D-115) | compare with the game's dungeon finder or journal; report any that differ | ? | ? |
+| `m:leaderboard` | manual | the Leaderboard tab lists each dungeon's top 5 clears and the fastest boss kills; a ledger friend in your group is named (others are "+N"); the top level shows; an over-level run only under All runs; a top-5 clear gives a notice; a friend on 1.8.0 sees the same run once (D-115) | clear a dungeon with a friend on 1.8.0; both open Leaderboard | ? | ? |
 
 ### UI
 

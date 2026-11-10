@@ -218,7 +218,7 @@ function Codec.EncodeData(key, char, shared, since)
         if cur and cur.completed and cur.entered and (not from or cur.entered >= from) then
             runs[#runs + 1] = { entered = cur.entered, name = cur.name, completed = true, completedAt = cur.completedAt,
                 duration = math.max(0, (cur.lastSeen or cur.entered) - cur.entered), bosses = cur.bosses,
-                bossCount = cur.bossCount, deaths = cur.deaths }
+                bossCount = cur.bossCount, deaths = cur.deaths, party = cur.party, levelMax = cur.levelMax }
         end
         table.sort(runs, function(a, b) return a.entered < b.entered end)
         for i = math.max(1, #runs - Codec.MAX_RUNS + 1), #runs do
@@ -227,15 +227,26 @@ function Codec.EncodeData(key, char, shared, since)
             -- (0 = not cleared) and "<killedAt>/<fight>;..." per boss in kill order
             -- (fight empty when unknown). Older versions read only the first 8 fields.
             local clear = (r.completed and r.completedAt and r.entered and r.completedAt >= r.entered) and (r.completedAt - r.entered) or 0
-            local splits = {}
+            local splits, names = {}, {}
             for _, b in ipairs(r.bosses or {}) do
                 if b.at and r.entered then
                     splits[#splits + 1] = string.format("%d/%s", b.at - r.entered, b.fight and string.format("%d", b.fight) or "")
+                    names[#names + 1] = Codec.Escape(b.name or "")
                 end
+            end
+            -- 1.8.0 (D-115, the Leaderboard) adds <bossNames>,<friends>,<levelMax>,<size>:
+            -- each split's boss name; the names of group members who are my friends and run
+            -- the ledger (nobody else's name is ever sent); the group's highest level at the
+            -- final boss (empty if unknown); and how many players were in the group.
+            local friends, size = {}, 1
+            for _, p in ipairs(r.party or {}) do
+                if not p.npc then size = size + 1 end
+                if p.friend and p.name then friends[#friends + 1] = Codec.Escape(p.name) end
             end
             recs[#recs + 1] = table.concat({ "u", tostring(r.entered), Codec.Escape(r.name), tostring(r.duration or 0),
                 r.completed and "1" or "0", tostring(#(r.bosses or {})), tostring(r.bossCount or 0), tostring(r.deaths or 0),
-                string.format("%d", clear), table.concat(splits, ";") }, ",")
+                string.format("%d", clear), table.concat(splits, ";"), table.concat(names, ";"), table.concat(friends, ";"),
+                type(r.levelMax) == "number" and string.format("%d", r.levelMax) or "", string.format("%d", size) }, ",")
         end
     end
     local from = since and Codec.SinceEpoch(since) or nil
@@ -344,6 +355,17 @@ function Codec.DecodeData(body)
                     run.splits[#run.splits + 1] = { at = tonumber(at), fight = tonumber(fight) }
                 end
             end
+            -- Leaderboard fields (1.8.0+, D-115).
+            local function list(field)
+                if not field or field == "" then return nil end
+                local t = {}
+                for piece in (field .. ";"):gmatch("(.-);") do t[#t + 1] = Codec.Unescape(piece) end
+                return t
+            end
+            run.bossNames = list(f[11])
+            run.names = list(f[12])
+            run.levelMax = tonumber(f[13])
+            run.size = tonumber(f[14])
             out.runs = out.runs or {}
             out.runs[#out.runs + 1] = run
         elseif f[1] == "r" and tonumber(f[2]) then

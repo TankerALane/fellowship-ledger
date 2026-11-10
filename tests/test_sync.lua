@@ -530,3 +530,30 @@ H.test("weekly recap: once per reset, on the first login after it, with you and 
     H.eq(#shown, 2)
     nsA.Toast.Show = real
 end)
+
+H.test("leaderboard: a ledger friend in the group is named without opting in; levels and shared names travel (D-115)", function()
+    local A = client("Alice", 1, "Bob#1", 2, "Bob")
+    local B = client("Bob", 2, "Alice#1", 1, "Alice")
+    network({ A, B }, 30) -- they say hello: each now knows the other runs the ledger
+    A.__state.units.party1 = { name = "Bob", class = "PRIEST", role = "HEALER", level = 22 }
+    A.__state.units.party2 = { name = "Dana", class = "MAGE", role = "DAMAGER", level = 19 }
+    A.__state.instance = { "The Deadmines", "party", 1, "Normal", 5, 0, false, 36 }
+    A.__state.ejInstance = 63
+    A.__state.ejBosses = { { name = "Edwin VanCleef", id = 9 } }
+    Mock.fire(A, "PLAYER_ENTERING_WORLD", false, false)
+    Mock.fire(A, "ENCOUNTER_START", 9, "Edwin VanCleef", 1, 5)
+    network({ A, B }, 40)
+    Mock.fire(A, "ENCOUNTER_END", 9, "Edwin VanCleef", 1, 5, 1)
+    local run = A.FellowshipLedgerDB.characters["Alice-Realm"].currentRun
+    H.ok(run.completed)
+    H.eq(run.party[1].name, "Bob"); H.eq(run.party[1].friend, true); H.eq(run.party[1].level, 22)
+    H.eq(run.party[2].name, nil, "a stranger stays nameless")
+    H.ok(run.levelMax >= 22, "the group's top level")
+    network({ A, B }, 90) -- the live update carries the cleared run
+    local f = B.FellowshipLedgerDB.friends["bn:Alice#1"]
+    local shared = f and f.characters["Alice-Realm"] and f.characters["Alice-Realm"].runs
+    H.ok(shared and shared[#shared], "Bob has Alice's run")
+    local r = shared[#shared]
+    H.eq(r.names[1], "Bob"); H.eq(#r.names, 1); H.eq(r.size, 3); H.eq(r.bossNames[1], "Edwin VanCleef")
+    H.eq(r.levelMax, run.levelMax)
+end)

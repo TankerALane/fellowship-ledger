@@ -39,6 +39,7 @@ Core\Invites.lua
 Core\Bests.lua
 Core\DungeonLevels.lua
 Core\Goals.lua
+Core\Leaderboard.lua
 Core\QuestChainLogic.lua
 Core\DungeonBosses.lua
 UI\Palette.lua
@@ -88,6 +89,7 @@ UI\GoalsWindow.lua
 UI\Graph.lua
 UI\GraphsTab.lua
 UI\DungeonsTab.lua
+UI\LeaderboardTab.lua
 UI\SettingsTab.lua
 UI\Toast.lua
 UI\TooltipInfo.lua

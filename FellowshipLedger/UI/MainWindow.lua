@@ -1,5 +1,5 @@
 -- UI/MainWindow.lua
--- The one tabbed window: Me, Friends, Graphs, Dungeons, Settings. Movable, resizable, closes
+-- The one tabbed window: Me, Friends, Graphs, Dungeons, Leaderboard, Settings. Movable, resizable, closes
 -- with Escape, scales; position and size are saved. Shows a banner while fake
 -- data is on.
 
@@ -10,7 +10,7 @@ local W = ns.Widgets
 local Main = {}
 ns.MainWindow = Main
 
-Main.TABS = { "me", "friends", "graphs", "dungeons", "settings" }
+Main.TABS = { "me", "friends", "graphs", "dungeons", "leaderboard", "settings" }
 Main.tabs = {}
 Main.current = nil
 Main.RESIZE_REDRAW = 0.1 -- seconds between redraws while resizing (10 per second)

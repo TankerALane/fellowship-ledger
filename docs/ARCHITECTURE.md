@@ -57,6 +57,11 @@ Phase 3 adds `Comms/`:
 - **Pure:** `Codec.lua` (wire format, share filter, chunking and reassembly), `Merge.lua` (storing friends' data, milestones, the weekly summary) and `RateLimit.lua`.
 - **Runtime:** `Friends.lua` (discovery and peers), `Transport.lua` (queue, send results, receiving) and `Sync.lua` (the HELLO, REQUEST and DATA conversation, the NAME note and `/fl commtest`).
 
+1.8.0 adds (D-114 to D-117):
+- **Pure:** `Core/Invites.lua` (who to invite, when last invited), `Core/Bests.lua` (personal records), `Core/DungeonLevels.lua` (level ranges, at-level test), `Core/Goals.lua` (goal suggestions and progress), `Core/Leaderboard.lua` (fastest clears and boss kills, merged across ledgers) and `Locale/enUS_Social.lua`.
+- **Runtime:** `UI/InviteDialog.lua`, `Trackers/Records.lua` (keeps bests current), `UI/GoalsWindow.lua` (`ns.SessionGoals`) and `UI/LeaderboardTab.lua`.
+- Saved: `db.invites[peerId]` (time of the last invite), `db.bests` and `char.bests`, `char.goals` (this session's goals and progress), `char.goalsSkipDay`.
+
 Friends' data lives in `FellowshipLedgerDB.friends[peerId] = { kind, name, tag, online, lastUpdated, syncedThrough, nameOptIn, characters = { [Name-Realm] = { class, level, days, levels, sessions } } }`, the same character shape the windows already draw. See `docs/PROTOCOL.md`.
 
 Every tracker writes numbers through `Store.Count(field, n)`, which adds them to today's bucket and to the current session at the same time.
