@@ -1,0 +1,21 @@
+Fellowship Ledger verify report
+addon=1.7.2 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=70862 at=2026-11-10 06:10
+summary pass=238 fail=11 error=0 info=13 manual=26
+# trimmed copy: the failures, the friend details and the new invite APIs
+-- problems
+FAIL GetNumSkillLines: is nil, expected function
+FAIL GetSkillLineInfo: is nil, expected function
+FAIL GetNumFactions: is nil, expected function
+FAIL GetFactionInfo: is nil, expected function
+FAIL GetItemInfo: is nil, expected function
+FAIL GetItemStats: is nil, expected function
+FAIL GetSpellInfo: is nil, expected function
+FAIL MAX_PLAYER_LEVEL: is nil, expected number
+FAIL GetQuestsCompleted: is nil, expected function
+FAIL ChatFrame_SendBNetTell: is nil, expected function
+FAIL InviteUnit: is nil, expected function
+-- details
+INFO x:friends.bnfields: friends=65 online=20; online client/project: App/nil x11, BSAp/nil x14, WoW/1 x1
+INFO x:friends.charfields: no character friends to inspect
+-- api pass
+BNSendWhisper, C_ChatInfo.SendChatMessage, SendChatMessage

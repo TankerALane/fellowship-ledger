@@ -531,9 +531,9 @@ These come from addons already installed in Austin's game folders. They are good
 | `C_PartyInfo.InviteUnit` | api | right-click Invite by character name (D-108) | `/dump type(C_PartyInfo.InviteUnit)` -> "function" | PASS | ? |
 | `InviteUnit` | api | older name for the invite (D-108) | `/dump type(InviteUnit)` -> "function" | FAIL | ? |
 | `m:friendmenu` | manual | right-click a friend (or their character) on the Friends tab: Whisper opens a whisper to them; Invite (only on the character they are on) sends a group invite (D-108) | with a friend online, right-click their row; try both | ? | ? |
-| `BNSendWhisper` | api | Invite a friend: the invite whisper to a Battle.net friend (D-114) | `/dump type(BNSendWhisper)` -> "function" | ? | ? |
-| `C_ChatInfo.SendChatMessage` | api | Invite a friend: the invite whisper to a character friend on newer clients (D-114) | `/dump type(C_ChatInfo.SendChatMessage)` -> "function" | ? | ? |
-| `SendChatMessage` | api | Invite a friend: the invite whisper on clients without C_ChatInfo.SendChatMessage (D-114) | `/dump type(SendChatMessage)` -> "function" | ? | ? |
+| `BNSendWhisper` | api | Invite a friend: the invite whisper to a Battle.net friend (D-114) | `/dump type(BNSendWhisper)` -> "function" | PASS | ? |
+| `C_ChatInfo.SendChatMessage` | api | Invite a friend: the invite whisper to a character friend on newer clients (D-114) | `/dump type(C_ChatInfo.SendChatMessage)` -> "function" | PASS | ? |
+| `SendChatMessage` | api | Invite a friend: the invite whisper on clients without C_ChatInfo.SendChatMessage (D-114) | `/dump type(SendChatMessage)` -> "function" | PASS | ? |
 | `m:invite` | manual | Friends tab lists online friends without the ledger under "Online, not using the ledger"; Invite opens an editable preview; Send whispers it once; the line then says "invited today" with no button for 7 days (D-114) | with a friend online who does not run the ledger: Friends tab > Invite > Send; check they got one whisper | ? | ? |
 
 ### UI
