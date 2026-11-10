@@ -50,7 +50,7 @@ function LeaderboardTab.Lines()
         for _, e in ipairs(d.clears) do
             local group = Leaderboard.Group(e, L)
             if e.mine then group = good .. group .. "|r" end
-            out[#out + 1] = { kind = "grid", segments = { seg(0, .05, tostring(e.rank), e.rank == 1 and "heading" or "text"),
+            out[#out + 1] = { kind = "grid", tooltip = function() return L.LEADER_GROUP_TIP, Leaderboard.Members(e, L) end, segments = { seg(0, .05, tostring(e.rank), e.rank == 1 and "heading" or "text"),
                 seg(.06, .12, F.Duration(e.clear), e.rank == 1 and "good" or "text"), seg(.19, .53, group),
                 seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
                 seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") } }
@@ -58,7 +58,7 @@ function LeaderboardTab.Lines()
         if #d.bosses > 0 then
             out[#out + 1] = { kind = "grid", segments = { seg(.06, .94, L.LEADER_BOSSES, "muted", "small") } }
             for _, b in ipairs(d.bosses) do
-                out[#out + 1] = { kind = "grid", segments = { seg(.06, .30, b.name), seg(.37, .12, F.Duration(b.fight), "text", nil, "RIGHT"),
+                out[#out + 1] = { kind = "grid", tooltip = function() return b.name, Leaderboard.Members(b.entry, L) end, segments = { seg(.06, .30, b.name), seg(.37, .12, F.Duration(b.fight), "text", nil, "RIGHT"),
                     seg(.52, .34, Leaderboard.Group(b.entry, L), "muted"), seg(.86, .14, date("%m-%d", b.entry.finishedAt), "muted") } }
             end
         end

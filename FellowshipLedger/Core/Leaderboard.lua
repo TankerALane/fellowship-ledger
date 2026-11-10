@@ -20,6 +20,12 @@ ns.Leaderboard = Leaderboard
 
 Leaderboard.TOP = 5
 Leaderboard.MATCH_SECONDS = 120   -- the same final-boss kill seen by two ledgers
+-- Each computer has its own clock, so two reports of one run can be minutes apart. They
+-- are still one run when they share someone in the group, their clear times are within
+-- CLEAR_MATCH_SECONDS, and they finished less than one clear apart (two runs one after
+-- the other always finish at least a clear apart), up to WIDE_MATCH_SECONDS.
+Leaderboard.WIDE_MATCH_SECONDS = 1800
+Leaderboard.CLEAR_MATCH_SECONDS = 120
 Leaderboard.BOSS_MATCH_SECONDS = 60
 Leaderboard.MIN_CLEAR = 60
 
@@ -29,8 +35,10 @@ local function addName(entry, name)
     entry.names[#entry.names + 1] = name
 end
 
--- Every completed run as an entry: { dungeon, clear, finishedAt, names, size, levelMax,
--- mine, bosses = { { name, fight, at } } }.
+-- Every completed run as an entry: { dungeon, clear, finishedAt, names, lead, size,
+-- levelMax, mine, bosses = { { name, fight, at } } }. lead: the name shown for the
+-- group (your character in your own runs, else the friend's character who reported it);
+-- the rest of `names` show on hover.
 -- chars: my characters (key -> character); friends: db.friends (or fake data);
 -- isBlocked(friend, key); nameOf(key, char) for my characters.
 function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
@@ -45,6 +53,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                 local e = { dungeon = r.name, clear = clear, finishedAt = r.completedAt, names = {}, size = 1,
                     levelMax = r.levelMax, mine = true, bosses = {} }
                 addName(e, nameOf and nameOf(key, c) or c.display or c.name or key)
+                e.lead = e.names[1]
                 for _, p in ipairs(r.party or {}) do
                     if not p.npc then e.size = e.size + 1 end
                     addName(e, p.name)
@@ -64,6 +73,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                         local e = { dungeon = r.name, clear = r.clear, finishedAt = r.entered + r.clear, names = {},
                             size = r.size or (1 + #(r.names or {})), levelMax = r.levelMax, friendId = fid, bosses = {} }
                         addName(e, c.display or c.name or key)
+                        e.lead = e.names[1]
                         for _, n in ipairs(r.names or {}) do addName(e, n) end
                         for i, sp in ipairs(r.splits or {}) do
                             local bossName = r.bossNames and r.bossNames[i]
@@ -86,10 +96,29 @@ function Leaderboard.Merge(entries)
         if a.dungeon ~= b.dungeon then return a.dungeon < b.dungeon end
         return a.finishedAt < b.finishedAt
     end)
+    local function shareName(a, b)
+        for _, x in ipairs(a.names) do
+            for _, y in ipairs(b.names) do if x == y then return true end end
+        end
+        return false
+    end
+    local function same(a, b)
+        if a.dungeon ~= b.dungeon then return false end
+        local gap = math.abs(a.finishedAt - b.finishedAt)
+        if gap <= Leaderboard.MATCH_SECONDS then return true end
+        return gap <= Leaderboard.WIDE_MATCH_SECONDS and gap < math.min(a.clear, b.clear)
+            and math.abs(a.clear - b.clear) <= Leaderboard.CLEAR_MATCH_SECONDS and shareName(a, b)
+    end
     local out = {}
     for _, e in ipairs(entries) do
-        local last = out[#out]
-        if last and last.dungeon == e.dungeon and math.abs(e.finishedAt - last.finishedAt) <= Leaderboard.MATCH_SECONDS then
+        local last
+        for i = #out, 1, -1 do
+            if out[i].dungeon ~= e.dungeon then break end
+            if same(out[i], e) then last = out[i] break end
+        end
+        if last then
+            -- Your own report names the group after your character.
+            if e.mine and not last.mine then last.lead = e.lead end
             last.clear = math.max(last.clear, e.clear)
             for _, n in ipairs(e.names) do addName(last, n) end
             last.size = math.max(last.size, e.size, #last.names)
@@ -157,12 +186,22 @@ function Leaderboard.Build(entries, atLevelOnly)
     return board
 end
 
--- "Austin, Hamlet, Cain, +2"
+-- "Austin +3": the lead name and how many others were in the group.
 function Leaderboard.Group(e, L)
-    local text = table.concat(e.names, ", ")
-    local extra = (e.size or #e.names) - #e.names
-    if extra > 0 then text = text .. ", " .. string.format(L.LEADER_MORE, extra) end
-    return text
+    local others = math.max(#e.names, e.size or 0) - 1
+    local lead = e.lead or e.names[1] or "?"
+    if others > 0 then return lead .. " " .. string.format(L.LEADER_MORE, others) end
+    return lead
+end
+
+-- Everyone in the group, for the hover: the lead first, then the other names, then
+-- "and 2 others" for players nobody named.
+function Leaderboard.Members(e, L)
+    local lines = { e.lead or e.names[1] or "?" }
+    for _, n in ipairs(e.names) do if n ~= lines[1] then lines[#lines + 1] = n end end
+    local unnamed = (e.size or #e.names) - #e.names
+    if unnamed > 0 then lines[#lines + 1] = string.format(unnamed == 1 and L.LEADER_UNNAMED_ONE or L.LEADER_UNNAMED, unnamed) end
+    return lines
 end
 
 -- Where a new run of mine landed: its rank on its dungeon's board (at level), or nil

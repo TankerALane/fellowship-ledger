@@ -274,7 +274,9 @@ H.test("leaderboard: one run seen by me and a friend is shown once, with both na
     H.eq(#d.clears, 1, "one run, not two")
     local e = d.clears[1]
     H.eq(e.clear, 1500, "the longest report: joining late does not make a run faster")
-    H.eq(LB.Group(e, L), "Austin, Cain, +2", "names from both, strangers counted, the companion left out")
+    H.eq(LB.Group(e, L), "Austin +3", "my character leads; the companion is not counted")
+    local m = LB.Members(e, L)
+    H.eq(m[1], "Austin"); H.eq(m[2], "Cain"); H.eq(m[3], "and 2 other players")
     H.eq(e.mine, true)
     H.eq(d.bosses[1].name, "Rhahk'Zor"); H.eq(d.bosses[1].fight, 35, "the fastest kill of each boss")
     H.eq(d.bosses[2].name, "Edwin VanCleef", "bosses in the order they die")
@@ -320,6 +322,31 @@ H.test("leaderboard: blocked friends and friends without the new fields", functi
     local board = LB.Build(LB.Entries({}, friends, function(f) return f.tag == "Blk#1" end), true)
     H.eq(#board[1].clears, 1)
     H.eq(LB.Group(board[1].clears[1], L), "Cain"); H.eq(#board[1].bosses, 0, "no boss names from older versions")
+end)
+
+H.test("leaderboard: clocks minutes apart are still one run; two runs in a row are not", function()
+    local ns = H.pureNamespace()
+    local LB, L = ns.Leaderboard, ns.L
+    -- Kal's computer runs 5 minutes behind mine: his report finishes 300 s "earlier".
+    local chars = { ["Me-R"] = { name = "Tara", dungeons = {
+        myRun("Ruins of Lordaeron", 0, 1654, { party = { { name = "Kal", friend = true }, { name = "Zer", friend = true } } }) } } }
+    local friends = { ["bn:Kal#1"] = { name = "Kal", characters = { ["Kal-R"] = { name = "Kal", runs = {
+        { name = "Ruins of Lordaeron", entered = T0 - 300, completed = true, clear = 1652, names = { "Zer" }, size = 3 },
+        -- the same group straight after: a second run, not the same one
+        { name = "Ruins of Lordaeron", entered = T0 + 1400, completed = true, clear = 1640, names = { "Zer" }, size = 3 } } } } } }
+    local board = LB.Build(LB.Entries(chars, friends), true)
+    local c = board[1].clears
+    H.eq(#c, 2)
+    local mine = c[1].mine and c[1] or c[2]
+    H.eq(mine.clear, 1654); H.eq(LB.Group(mine, L), "Tara +2", "my character leads the merged run")
+    -- A stranger's run at the same moment with no one in common stays separate.
+    friends["bn:Kal#1"].characters["Kal-R"].runs[2] = { name = "Ruins of Lordaeron", entered = T0 - 300, completed = true,
+        clear = 1650, names = {}, size = 5 }
+    friends["bn:Kal#1"].characters["Kal-R"].runs[1].names = { "Zer" }
+    local other = { ["bn:Bo#1"] = { name = "Bo", characters = { ["Bo-R"] = { name = "Bo", runs = {
+        { name = "Ruins of Lordaeron", entered = T0 - 200, completed = true, clear = 1655, size = 5 } } } } } }
+    for k, v in pairs(other) do friends[k] = v end
+    H.eq(#LB.Build(LB.Entries(chars, { ["bn:Bo#1"] = other["bn:Bo#1"] }), true)[1].clears, 2, "no one in common")
 end)
 
 H.test("leaderboard in the mock client: the tab draws, a top-5 clear gives a notice", function()
