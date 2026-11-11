@@ -406,6 +406,14 @@ H.test("goals tracker: shows started goals, follows progress, moves, closes and 
     Mock.fire(env, "QUEST_TURNED_IN", 55, 450, 75)
     T.Refresh()
     H.eq(title(), "All goals done! (1 of 1)")
+    -- Reached goals move to the bottom, as one line without a bar.
+    local lines = T.Lines({ { kind = "quests", target = 1, start = { quests = 0 } }, { kind = "quests", target = 50, start = { quests = 0 } },
+        { kind = "levels", target = 5, start = { levelPos = 0 } } }, { quests = 3, levelPos = 1 })
+    H.eq(#lines, 3)
+    H.eq(lines[1].done, false); H.eq(lines[2].done, false)
+    H.eq(lines[3].done, true, "the reached goal last")
+    H.ok(lines[3].text:find("3 / 1", 1, true), lines[3].text)
+    H.eq(lines[1].fraction, 3 / 50)
     -- Dragging keeps the place.
     f:GetScript("OnDragStop")(f)
     H.eq(ns.db.settings.goalsTrackerPos[1], "CENTER")
