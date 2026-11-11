@@ -14,13 +14,17 @@ RunTimer.MODES = { leader = true, mine = true }
 
 -- The target run for a dungeon from Leaderboard entries (Leaderboard.Entries), joined
 -- across ledgers and at level like the Leaderboard tab. mode: "leader" (#1, anyone)
--- or "mine" (your fastest). Returns { clear, splits = { [boss] = seconds into the run },
+-- or "mine" (your fastest). current: the open run, left out once it is completed (it
+-- is on the Leaderboard then, and would be compared with itself; friends' reports of
+-- it are joined into it). Returns { clear, splits = { [boss] = seconds into the run },
 -- lead, mine } or nil when there is no completed run to compare with.
-function RunTimer.Target(entries, dungeon, mode)
+function RunTimer.Target(entries, dungeon, mode, current)
     if not dungeon then return nil end
+    local doneAt = current and current.completed and current.completedAt
     local best
     for _, e in ipairs(ns.Leaderboard.Merge(entries or {})) do
-        if e.dungeon == dungeon and ns.DungeonLevels.AtLevel(e.dungeon, e.levelMax)
+        local itself = doneAt and e.mine and math.abs(e.finishedAt - doneAt) <= ns.Leaderboard.MATCH_SECONDS
+        if e.dungeon == dungeon and not itself and ns.DungeonLevels.AtLevel(e.dungeon, e.levelMax)
             and (mode ~= "mine" or e.mine) then
             if not best or e.clear < best.clear then best = e end
         end
@@ -55,6 +59,27 @@ function RunTimer.View(run, now, target)
     end
     out.killed = #out.bosses
     if out.done and target then out.delta = out.elapsed - target.clear end
+    -- The +/- next to the run's time, running (Austin, 2026-11-11: "so that I can push
+    -- harder"). Done: the whole clear against the compared clear. Before that: where the
+    -- run stood at its latest boss kill the compared run also has, and, once the clock
+    -- passes the moment the compared run got its next kill (or its clear, after its
+    -- last boss) without that kill here, how far behind it is now, growing each second
+    -- (out.live = true). nil until there is something to compare.
+    if out.delta then
+        out.pace = out.delta
+    elseif target then
+        for i = #out.bosses, 1, -1 do
+            if out.bosses[i].delta then out.pace = out.bosses[i].delta break end
+        end
+        local refs = {}
+        for _, t in pairs(target.splits or {}) do refs[#refs + 1] = t end
+        table.sort(refs)
+        local nextAt = refs[out.killed + 1] or target.clear
+        if nextAt and out.elapsed > nextAt then
+            local behind = out.elapsed - nextAt
+            if not out.pace or behind > out.pace then out.pace, out.live = behind, true end
+        end
+    end
     return out
 end
 

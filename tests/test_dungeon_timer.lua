@@ -23,10 +23,25 @@ H.test("run timer: boss times into the run, ahead or behind the target, final ti
     H.eq(v.bosses[1].name, "Rhahk'Zor", "in kill order")
     H.eq(v.bosses[1].into, 130); H.eq(v.bosses[1].delta, -20, "20 seconds ahead")
     H.eq(v.bosses[2].delta, 20, "20 seconds behind")
+    H.eq(v.pace, 20, "the +/- beside the time: as of the latest kill")
+    H.eq(RT.View({ entered = 0, bosses = {} }, 50, target).pace, nil, "nothing before a boss, while still in time")
+    -- Running: past the compared run's next kill without it, behind and growing.
+    local slow = { entered = 0, bosses = {} }
+    local v1 = RT.View(slow, 170, target)
+    H.eq(v1.pace, 20, "20 seconds past #1's first kill"); H.eq(v1.live, true)
+    H.eq(RT.View(slow, 200, target).pace, 50, "grows each second")
+    slow.bosses[1] = { name = "Rhahk'Zor", at = 140 } -- killed: 10 behind at the kill
+    H.eq(RT.View(slow, 300, target).pace, -10, "10 seconds ahead at that kill (140 vs 150)")
+    H.eq(RT.View(slow, 300, target).live, nil)
+    H.eq(RT.View(slow, 700, target).pace, 20, "past #1's second kill at 680: 20 behind")
+    -- After the compared run's last boss, its clear time is the mark.
+    local all = { entered = 0, bosses = { { name = "Rhahk'Zor", at = 140 }, { name = "Sneed", at = 600 } } }
+    H.eq(RT.View(all, 1520, target).pace, 20, "20 seconds past #1's clear without the final boss")
     run.bosses[3] = { name = "Captain Cookie", at = 2400 }
     run.completed, run.completedAt = true, 2400
     v = RT.View(run, 9999, target)
     H.eq(v.elapsed, 1400, "stops at the final boss"); H.eq(v.done, true); H.eq(v.delta, -100)
+    H.eq(v.pace, -100, "the whole clear once done")
     H.eq(v.bosses[3].delta, nil, "no target time for that boss")
     v = RT.View(run, 9999, nil)
     H.eq(v.bosses[1].delta, nil); H.eq(v.delta, nil)
@@ -87,6 +102,7 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     boss(env, 250, 1, "Rhahk'Zor")
     T.Refresh()
     H.ok(f.compare.text:GetText():find("vs #1: 20:00 by Zip", 1, true), f.compare.text:GetText())
+    H.eq(f.pace:GetText(), "+0:52", "the +/- beside the time")
     H.eq(ns.RunTimer.View(ns.Store.char.currentRun, env.time(), T.Target(ns.Store.char.currentRun, env.time())).bosses[1].delta, 52,
         "Rhahk'Zor 52 seconds behind #1")
     -- Switch to your own best: the first run (Rhahk'Zor at 5:00).
@@ -112,4 +128,10 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     Mock.advance(env, 120)
     H.eq(f.clock:GetText(), stopped, "frozen after the final boss")
     H.ok(f.status:GetText():find("Cleared in", 1, true), f.status:GetText())
+    -- 2 + 250 + 5 + 2 + 400 + 400 seconds = 17:39, against your best 25:00.
+    H.eq(f.pace:GetText(), "-7:21", "the whole clear against your best (17:39 vs 25:00)")
+    H.ok(f.compare.text:GetText():find("vs your best: 25:00", 1, true), "still the earlier run, not this one")
+    -- Against #1 (the friend's 20:00, not this run, which is now on the Leaderboard).
+    f.compare:GetScript("OnClick")()
+    H.eq(f.pace:GetText(), "-2:21", "against #1 (17:39 vs 20:00), not against itself")
 end)

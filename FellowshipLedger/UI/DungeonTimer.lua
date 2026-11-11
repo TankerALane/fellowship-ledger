@@ -83,12 +83,16 @@ local function build()
     W.Border(f, "border", 1)
     f.title = W.Text(f, "body", "heading")
     f.title:SetPoint("TOPLEFT", 10, -8)
-    f.title:SetPoint("RIGHT", f, "RIGHT", -96, 0)
+    f.title:SetPoint("RIGHT", f, "RIGHT", -140, 0)
     f.title:SetJustifyH("LEFT")
     f.title:SetWordWrap(false)
     f.clock = W.Text(f, "large", "heading")
     f.clock:SetPoint("TOPRIGHT", -30, -6)
     f.clock:SetJustifyH("RIGHT")
+    -- The run's +/- against the compared run, beside the time (RunTimer.View pace).
+    f.pace = W.Text(f, "body", "muted")
+    f.pace:SetPoint("RIGHT", f.clock, "LEFT", -6, 0)
+    f.pace:SetJustifyH("RIGHT")
     f.status = W.Text(f, "small", "muted")
     f.status:SetPoint("TOPLEFT", 10, -26)
     f.status:SetPoint("RIGHT", f, "RIGHT", -10, 0)
@@ -119,9 +123,9 @@ end
 -- The run compared with, looked up again every TARGET_EVERY seconds or when the run
 -- or the mode changes.
 function Timer.Target(run, now)
-    local key = tostring(run.entered) .. "|" .. mode()
+    local key = tostring(run.entered) .. "|" .. mode() .. "|" .. tostring(run.completed and true or false)
     if cache.key ~= key or now - cache.at >= Timer.TARGET_EVERY then
-        local ok, t = pcall(RT.Target, ns.LeaderboardTab.Entries(), run.name, mode())
+        local ok, t = pcall(RT.Target, ns.LeaderboardTab.Entries(), run.name, mode(), run)
         cache.key, cache.at, cache.target = key, now, ok and t or nil
     end
     return cache.target
@@ -149,6 +153,8 @@ function Timer.Refresh()
     frame.title:SetText(run.name)
     frame.clock:SetText(RT.Clock(v.elapsed))
     W.SetTextRole(frame.clock, v.done and "good" or "heading")
+    frame.pace:SetText(v.pace and RT.Delta(v.pace) or "")
+    if v.pace then W.SetTextRole(frame.pace, deltaRole(v.pace)) end
     local status = v.total and string.format(L.TIMER_BOSSES_OF, v.killed, v.total) or string.format(L.TIMER_BOSSES, v.killed)
     if v.done then
         status = string.format(L.TIMER_CLEARED, RT.Clock(v.elapsed))
