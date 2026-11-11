@@ -2,7 +2,7 @@
 ## Title: Fellowship Ledger |cffff4040(unsupported client)|r
 ## Notes: Fallback file. Supported clients load FellowshipLedger_Forever.toc or FellowshipLedger_Mainline.toc instead.
 ## Author: Decoupled Lane Studio
-## Version: 1.8.0
+## Version: 1.9.0
 ## X-Flavor: Fallback
 ## X-License: MIT
 
