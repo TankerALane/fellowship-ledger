@@ -66,6 +66,15 @@ local function durationOf(e, now)
     return e.run.duration
 end
 
+-- The Time column (Austin, 2026-11-11): the clear time (entering to the final boss)
+-- once the final boss is dead, so it stops there; before that, and for a run not
+-- completed, the time inside.
+function DungeonsModel.TimeText(run, inside)
+    local clear = DungeonsModel.ClearTime(run)
+    if clear then return DungeonsModel.Clock(clear) end
+    return DungeonsModel.Minutes(inside)
+end
+
 function DungeonsModel.Summary(runs)
     local s = { runs = #runs, completed = 0, bosses = 0, deaths = 0 }
     for _, e in ipairs(runs) do
@@ -95,8 +104,9 @@ function DungeonsModel.ByDungeon(runs, now)
             -- Best = fastest clear (entering to the final boss), else time inside (D-104).
             local t = DungeonsModel.ClearTime(e.run) or dur
             if t and (not d.best or t < d.best) then d.best = t end
+            -- Average: of the clear times too, like the Time column (Austin, 2026-11-11).
+            if t then d.total, d.timed = d.total + t, d.timed + 1 end
         end
-        if dur and not e.live then d.total, d.timed = d.total + dur, d.timed + 1 end
         if e.run.entered > d.last then d.last = e.run.entered end
     end
     for _, d in ipairs(list) do d.average = d.timed > 0 and d.total / d.timed or nil end
@@ -244,7 +254,7 @@ function DungeonsModel.Lines(o)
             local mineFaster = d.best and (not fb or d.best <= fb.time)
             lines[#lines + 1] = { kind = "grid", shade = i % 2 == 0, segments = row(DungeonsModel.DUNGEON_COLS,
                 { d.name, tostring(d.runs), tostring(d.completed), DungeonsModel.Clock(d.best),
-                  DungeonsModel.Minutes(d.average), fb and string.format(L.DUNGEONS_FRIEND_BEST, DungeonsModel.Clock(fb.time), fb.friend) or "-",
+                  d.average and DungeonsModel.Clock(d.average) or "-", fb and string.format(L.DUNGEONS_FRIEND_BEST, DungeonsModel.Clock(fb.time), fb.friend) or "-",
                   when(d.last) }, nil, nil,
                 { nil, nil, nil, (mineFaster and fb) and "good" or nil, nil, (fb and d.best and fb.time < d.best) and "good" or "muted" }),
                 tooltip = fb and function()
@@ -278,7 +288,7 @@ function DungeonsModel.Lines(o)
             lines[#lines + 1] = { kind = "grid", shade = open or i % 2 == 0,
                 segments = row(DungeonsModel.RUN_COLS,
                     { (open and "- " or "+ ") .. when(run.entered), run.name or "?", nameOf(c.display or c.name or e.charKey, c.class),
-                      DungeonsModel.Minutes(durationOf(e, o.now)), bossText, tostring(run.deaths or 0),
+                      DungeonsModel.TimeText(run, durationOf(e, o.now)), bossText, tostring(run.deaths or 0),
                       DungeonsModel.Group(run.party, L), result },
                     nil, nil, { nil, nil, nil, nil, nil, nil, nil, resultRole }),
                 onClick = o.toggle and function() o.toggle(runKey) end or nil,

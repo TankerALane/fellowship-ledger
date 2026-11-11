@@ -556,7 +556,7 @@ function StatsModel.FriendDungeons(sum, runs, shared, L, dateFn, version, fromKe
                 return r.name or "?", tip
             end,
             segs = { seg(0, .16, when(dateFn, r.entered)), seg(.17, .37, r.name or "?"),
-            seg(.55, .10, clear and DM.Clock(clear) or DM.Minutes(r.duration), "text", nil, "RIGHT"),
+            seg(.55, .10, DM.TimeText(r, r.duration), "text", nil, "RIGHT"),
             seg(.66, .10, r.bossCount and (kills .. " / " .. r.bossCount) or tostring(kills), "text", nil, "RIGHT"),
             seg(.77, .09, tostring(r.deaths or 0), "text", nil, "RIGHT"),
             seg(.88, .12, r.completed and L.DUNGEONS_COMPLETED or L.DUNGEONS_NOT_DONE, r.completed and "good" or "muted") } }

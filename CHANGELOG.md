@@ -6,6 +6,9 @@
 - **Dungeon timer**: inside a dungeon, a small window shows the time into the run, each boss killed with its time, and whether you are ahead or behind the Leaderboard's #1 for that dungeon (click the bottom line, or use Settings, to compare with your own best instead). A running +/- beside the time shows how you stand against that run right now, turning red and counting up the moment you fall behind its next boss kill. It stops at the final boss. Drag it where you like; the x hides it for the run and `/fl timer` brings it back. On by default; Settings can turn it off.
 - **Goals tracker**: once you start session goals, a small window on screen shows each goal with a progress bar; a reached goal moves to the bottom as one green line. Under the title it shows the session's played and active time. Drag it where you like (it stays there); the x hides it until your next goals, and `/fl goals tracker` brings it back. Settings can turn it off.
 
+### Changed
+- Dungeons tab and friends' Dungeons view: Time is the time to clear (it stops at the final boss), not the total time inside, and Average is the average clear time. An opened run still shows both.
+
 ## 1.9.0 - 2026-11-10
 
 ### Added

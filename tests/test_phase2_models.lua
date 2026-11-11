@@ -303,7 +303,9 @@ H.test("boss times: clock, clear time, fight length, friends' best (D-104)", fun
         end
     end
     local all = table.concat(text, "|")
-    H.ok(all:find("Ragefire Chasm|1|1|25:00|30m|23:20 Hamlet", 1, true), all)
+    H.ok(all:find("Ragefire Chasm|1|1|25:00|25:00|23:20 Hamlet", 1, true), "average of clear times: " .. all)
+    H.ok(all:find("Ragefire Chasm|Me R|25:00|2|0", 1, true), "Time is the clear, not the 30m inside: " .. all)
+    H.ok(all:find("Cleared in 25:00     30m inside", 1, true), "the opened run still says both")
     H.eq(friendSeg.role, "good", "the faster one is green")
     H.ok(all:find("Oggleflint|6:40|0:42", 1, true) and all:find("Bazzalan|25:00|1:35", 1, true), all)
 end)
