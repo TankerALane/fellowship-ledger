@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.10.0 - 2026-11-11
 
 ### Added
 - **Dungeon timer**: inside a dungeon, a small window shows the time into the run, each boss killed with its time, and whether you are ahead or behind the Leaderboard's #1 for that dungeon (click the bottom line, or use Settings, to compare with your own best instead). A running +/- beside the time shows how you stand against that run right now, turning red and counting up the moment you fall behind its next boss kill. It stops at the final boss. Drag it where you like; the x hides it for the run and `/fl timer` brings it back. On by default; Settings can turn it off.
