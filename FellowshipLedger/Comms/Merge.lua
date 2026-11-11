@@ -135,6 +135,15 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     end
     c.levels = c.levels or {}
     for to, r in pairs(data.levels) do c.levels[to] = r end
+    -- XP by source per level (1.9.0+ senders, D-120); gone when levels are not shared.
+    if ns.Codec.MaskToSet(data.mask or "").levels then
+        if data.levelXP then
+            c.levelXP = c.levelXP or {}
+            for level, t in pairs(data.levelXP) do c.levelXP[level] = t end
+        end
+    else
+        c.levelXP = nil
+    end
     -- Quest chains are "what they are on now": replace them when quests are shared.
     if ns.Codec.MaskToSet(data.mask or "").quests then
         c.chains = data.chains or {}

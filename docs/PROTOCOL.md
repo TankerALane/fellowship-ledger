@@ -54,6 +54,7 @@ q,<YYYY-MM-DD or empty>
 c,<Name-Realm>,<CLASS>,<race>,<faction>,<level>,<lastSeen>,<shareMask>
 d,<YYYY-MM-DD>,<code>=<int>,...                                        day buckets
 l,<toLevel>,<active>,<total>,<partial 0|1>,<at>                        level times (levels tracker)
+lx,<level>,<quest>,<kill>,<explore>,<other>                             XP by source earned at that level (levels tracker; 1.9.0, D-120)
 k,<chainKey>,<name>,<step>,<total>,<firstQuestID>,<firstName>,<startZone>,<source>   quest chains in progress (quests tracker)
 p,<professionKey>,<name>,<rank>,<max>,<lastAt>   profession ranks (professions tracker; 1.2.0), or just "p" when there are none (1.4.0)
 o,<questID>,<questID>,...   quest IDs in the log, or just "o" when it is empty (quests tracker; 1.2.1)

@@ -554,7 +554,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `m:xpsources` | manual | an opened character's XP view splits XP into Quests, Kills, Exploration and Other: a turn-in's XP lands under Quests whichever comes first, the XP bar or QUEST_TURNED_IN; XP right after you or your group kill something under Kills (PARTY_KILL); a discovery's XP (ERR_ZONE_EXPLORED_XP) under Exploration; a friend on the new version shows the same view (D-120) | kill a few monsters, turn in a quest, discover an area; open your character > XP and compare with the XP each gave | ? | ? |
+| `m:xpsources` | manual | an opened character's XP view splits XP into Quests, Kills, Exploration and Other: a turn-in's XP lands under Quests whichever comes first, the XP bar or QUEST_TURNED_IN; XP right after you or your group kill something under Kills (PARTY_KILL); a discovery's XP (ERR_ZONE_EXPLORED_XP) under Exploration; a friend on the new version shows the same view; after a level-up, the By level table has the old level and the new one marked (now) (D-120) | kill a few monsters, turn in a quest, discover an area; open your character > XP and compare with the XP each gave; level up and check By level | ? | ? |
 
 ### UI
 

@@ -166,7 +166,10 @@ function FriendsTab.DetailLines(id, char)
             W.LinkQuest(q.id, q.name, q.level)
         end)
     elseif view == "xp" then
-        parts = shared.levels and S.XP(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
+        parts = shared.levels and S.XP(sum, L, char.levelXP, nil, state.showAll[id .. "|xpLevels"], function()
+            state.showAll[id .. "|xpLevels"] = not state.showAll[id .. "|xpLevels"] or nil
+            FriendsTab.Refresh()
+        end) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "gold" then
         parts = shared.gold and S.Gold(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "kills" then

@@ -119,3 +119,72 @@ H.test("xp sources in the game: kill, quest and discovery XP counted by source a
         H.eq(C.BY_CODE[C.FIELDS[f][1]], f)
     end
 end)
+
+H.test("xp by level: a gain across a level-up is split between the levels, moved XP keeps its level", function()
+    local X = H.pureNamespace().XPSources
+    local byLevel, changes = {}, {}
+    local s = X.New()
+    for _, ch in ipairs(X.Gain(s, 300, 1.0, 14)) do changes[#changes + 1] = ch end
+    for _, ch in ipairs(X.Mark(s, "quest", 300, 1.2)) do changes[#changes + 1] = ch end
+    for _, ch in ipairs(changes) do
+        local src = ch[1]:match("^xp_(%a+)$")
+        byLevel[ch[3]] = byLevel[ch[3]] or {}
+        byLevel[ch[3]][src] = (byLevel[ch[3]][src] or 0) + ch[2]
+    end
+    H.eq(byLevel[14].quest, 300); H.eq(byLevel[14].other, 0)
+    local rows = X.Levels({ [14] = { quest = 300, kill = 100 }, [15] = { kill = 50 }, [13] = {} }, 15)
+    H.eq(#rows, 2, "levels with no XP left out")
+    H.eq(rows[1].level, 15); H.eq(rows[1].current, true)
+    H.eq(rows[2].total, 400)
+end)
+
+H.test("xp by level in the game: a level-up splits the gain, and the table shows both levels", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    local st = env.__state -- level 12, 300 / 2000
+    Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1")
+    st.xp = 1000
+    Mock.fire(env, "PLAYER_XP_UPDATE", "player") -- 700 kill XP at 12
+    st.now = st.now + 10
+    Mock.fire(env, "QUEST_TURNED_IN", 77, 1500, 0)
+    st.level, st.xp, st.xpMax = 13, 500, 2500
+    Mock.fire(env, "PLAYER_XP_UPDATE", "player") -- 1000 to finish 12, 500 into 13
+    local c = env.FellowshipLedgerDB.characters["Tester-TestRealm"]
+    H.eq(c.levelXP[12].kill, 700); H.eq(c.levelXP[12].quest, 1000); H.eq(c.levelXP[13].quest, 500)
+    local text = {}
+    for _, p in ipairs(ns.StatsModel.XP(ns.Days.Sum(c.days, nil, "9999-99-99"), ns.L, c.levelXP, 13)) do
+        for _, sg in ipairs(p.segs or {}) do if sg.text then text[#text + 1] = sg.text end end
+    end
+    text = table.concat(text, " | ")
+    H.ok(text:find("By level (all time)", 1, true), text)
+    H.ok(text:find("13 (now) | 500 | 100%", 1, true), text)
+    H.ok(text:find("12 | 1,700 | 59% | 41%", 1, true), text)
+end)
+
+H.test("xp by level is shared: lx records round trip, merge, and leave with the levels tracker", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    local C, M = ns.Codec, ns.Merge
+    local char = ns.Character.Ensure({ name = "Ann", realm = "R", level = 20, class = "MAGE" }, 1000)
+    char.levelXP = { [19] = { quest = 400, kill = 300, explore = 0, other = 25 } }
+    local all = {}
+    for _, t in ipairs(ns.TrackerList.ORDER) do all[t.id] = true end
+    all.time = true
+    local body = C.EncodeData("Ann-R", char, all)
+    H.ok(body:find("lx,19,400,300,0,25", 1, true), body)
+    local data = C.DecodeData(body)
+    H.eq(data.levelXP[19].kill, 300)
+    local f = { characters = {} }
+    M.Data(f, data, "2026-11-04", "2026-08-07", 1000)
+    H.eq(f.characters["Ann-R"].levelXP[19].quest, 400)
+    -- Without levels shared: not sent, and dropped on the receiving side.
+    all.levels = nil
+    body = C.EncodeData("Ann-R", char, all)
+    H.ok(not body:find("lx,", 1, true), "not sent")
+    M.Data(f, C.DecodeData(body), "2026-11-04", "2026-08-07", 2000)
+    H.eq(f.characters["Ann-R"].levelXP, nil)
+end)

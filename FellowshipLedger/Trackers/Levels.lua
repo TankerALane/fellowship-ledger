@@ -19,8 +19,19 @@ local function clock()
     end
     return Store.Now()
 end
+-- Count each change, and keep it per level too (char.levelXP[level][source], D-120).
 local function apply(changes)
-    for _, c in ipairs(changes) do Store.Count(c[1], c[2]) end
+    local char = Store.char
+    for _, c in ipairs(changes) do
+        Store.Count(c[1], c[2])
+        local level, src = c[3], c[1]:match("^xp_(%a+)$")
+        if char and type(level) == "number" and src then
+            char.levelXP = char.levelXP or {}
+            local t = char.levelXP[level] or {}
+            char.levelXP[level] = t
+            t[src] = math.max(0, (t[src] or 0) + c[2])
+        end
+    end
 end
 -- A quest turn-in or discovery with its XP, or a kill by you or your group (Quests,
 -- Extras). Safe to call before login and when the levels tracker is off.
@@ -105,15 +116,24 @@ Levels.events.PLAYER_XP_UPDATE = function(_, unit)
     if not xp or not xpMax then return end
     if lastXP and lastXPMax then
         local gained
+        local level = T.Plain(UnitLevel("player")) or (Store.char and Store.char.level)
+        local before -- XP that finished the previous level, when it wrapped
         if xp >= lastXP then
             gained = xp - lastXP
         else
-            gained = (lastXPMax - lastXP) + xp -- wrapped past a level
+            before = lastXPMax - lastXP
+            gained = before + xp -- wrapped past a level
         end
         if gained > 0 then
             Store.Count("xp", gained)
             sources = sources or ns.XPSources.New()
-            apply(ns.XPSources.Gain(sources, gained, clock()))
+            local now = clock()
+            if before and before > 0 then
+                apply(ns.XPSources.Gain(sources, before, now, level and level - 1))
+                apply(ns.XPSources.Gain(sources, xp, now, level))
+            else
+                apply(ns.XPSources.Gain(sources, gained, now, level))
+            end
         end
     end
     lastXP, lastXPMax = xp, xpMax

@@ -170,6 +170,16 @@ function Codec.EncodeData(key, char, shared, since)
             recs[#recs + 1] = table.concat({ "l", tostring(to), tostring(r.active or 0), tostring(r.total or 0),
                 r.partial and "1" or "0", tostring(r.at or 0) }, ",")
         end
+        -- XP by source per level (D-120): "lx,<level>,<quest>,<kill>,<explore>,<other>".
+        -- Older clients skip record types they do not know.
+        local xpLevels = {}
+        for level in pairs(char.levelXP or {}) do if type(level) == "number" then xpLevels[#xpLevels + 1] = level end end
+        table.sort(xpLevels)
+        for _, level in ipairs(xpLevels) do
+            local t = char.levelXP[level]
+            recs[#recs + 1] = table.concat({ "lx", tostring(level), tostring(math.floor(t.quest or 0)), tostring(math.floor(t.kill or 0)),
+                tostring(math.floor(t.explore or 0)), tostring(math.floor(t.other or 0)) }, ",")
+        end
     end
     if shared.quests then
         local keys = {}
@@ -320,6 +330,10 @@ function Codec.DecodeData(body)
             out.level, out.lastSeen, out.mask = tonumber(f[6]) or 0, tonumber(f[7]) or 0, f[8] or ""
         elseif f[1] == "d" and f[2] and f[2]:match("^%d%d%d%d%-%d%d%-%d%d$") then
             out.days[f[2]] = decodeCounts(f, 3)
+        elseif f[1] == "lx" and tonumber(f[2]) then
+            out.levelXP = out.levelXP or {}
+            out.levelXP[tonumber(f[2])] = { quest = tonumber(f[3]) or 0, kill = tonumber(f[4]) or 0,
+                explore = tonumber(f[5]) or 0, other = tonumber(f[6]) or 0 }
         elseif f[1] == "l" and tonumber(f[2]) then
             local to = tonumber(f[2])
             out.levels[to] = { from = to - 1, to = to, active = tonumber(f[3]) or 0, total = tonumber(f[4]) or 0,

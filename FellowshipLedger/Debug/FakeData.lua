@@ -141,6 +141,15 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
         end
     end
     c.level = level
+    -- XP by source per level (D-120), from each level's time and pace; no random draws.
+    c.levelXP = {}
+    for to, rec in pairs(c.levels) do
+        local xp = math.floor((rec.xpPerHour or 10000) * (rec.active or 0) / 3600)
+        local q = math.floor(xp * (0.35 + (to % 5) * 0.05))
+        local k = math.floor(xp * (0.30 + (to % 3) * 0.06))
+        local e = math.floor(xp * ((to % 4 == 0) and 0.08 or 0.02))
+        c.levelXP[to - 1] = { quest = q, kill = k, explore = e, other = xp - q - k - e }
+    end
     c.clock = { played = played, active = active, pending = 0, last = now, lastActivity = now }
     c.professions["fake1"] = { name = "Mining", rank = math.min(300, level * 5), max = 300, history = {}, lastAt = now - 86400 }
     c.professions["fake2"] = { name = "Cooking", rank = math.min(300, level * 3), max = 300, history = {}, lastAt = now - 3 * 86400 }

@@ -30,7 +30,38 @@ end
 
 -- XP by source (D-120), laid out like Gold: the total, then each source with its share.
 -- sum: day counts for the range (xp, xp_quest, xp_kill, xp_explore, xp_other, active, levels).
-function StatsModel.XP(sum, L)
+-- byLevel: char.levelXP, for the By level table under it (all time; the range does not
+-- apply to levels); currentLevel marks the level being played; showAll/onToggle: more
+-- than LEVEL_LIMIT levels.
+StatsModel.LEVEL_LIMIT = 10
+local function levelTable(out, byLevel, currentLevel, L, showAll, onToggle)
+    local Format = ns.Format
+    local rows = ns.XPSources.Levels(byLevel, currentLevel)
+    if #rows == 0 then return end
+    out[#out + 1] = { segs = {} }
+    local heading = { segs = { seg(0, .30, L.STATS_XP_BY_LEVEL, "heading") } }
+    if #rows > StatsModel.LEVEL_LIMIT then
+        heading.segs[#heading.segs + 1] = { x = .70, w = .30, text = "", button = { label = showAll and L.DETAIL_SHOW_LESS
+            or string.format(L.DETAIL_SHOW_ALL, #rows), onClick = onToggle } }
+    end
+    out[#out + 1] = heading
+    local cols = { { "quest", .32 }, { "kill", .46 }, { "explore", .60 }, { "other", .76 } }
+    local head = { seg(0, .12, L.STATS_COL_LEVEL, "muted", "small"), seg(.13, .16, L.STATS_COL_XP, "muted", "small", "RIGHT") }
+    for _, c in ipairs(cols) do head[#head + 1] = seg(c[2], .13, L["XP_SOURCE_" .. c[1]:upper()], "muted", "small", "RIGHT") end
+    out[#out + 1] = { segs = head, rules = { { 0, .90 } } }
+    for i, r in ipairs(rows) do
+        if i > StatsModel.LEVEL_LIMIT and not showAll then break end
+        local label = r.current and string.format(L.STATS_XP_LEVEL_NOW, r.level) or tostring(r.level)
+        local segs = { seg(0, .12, label, r.current and "good" or "text"), seg(.13, .16, Format.Number(r.total), "text", nil, "RIGHT") }
+        for _, c in ipairs(cols) do
+            local v = r[c[1]]
+            segs[#segs + 1] = seg(c[2], .13, v > 0 and pct(v, r.total) or "-", v > 0 and "text" or "muted", nil, "RIGHT")
+        end
+        out[#out + 1] = { segs = segs }
+    end
+end
+
+function StatsModel.XP(sum, L, byLevel, currentLevel, showAll, onToggle)
     local Format = ns.Format
     local split = ns.XPSources.Split(sum)
     local out = { { height = 26, segs = { seg(0, .30, L.STATS_XP_TOTAL, "heading", "large"),
@@ -42,6 +73,7 @@ function StatsModel.XP(sum, L)
     out[#out + 1] = { segs = {} }
     if split.total <= 0 then
         out[#out + 1] = { segs = { seg(0, 1, L.STATS_NO_XP, "muted") } }
+        levelTable(out, byLevel, currentLevel, L, showAll, onToggle)
         return out
     end
     out[#out + 1] = { segs = { seg(0, .20, L.STATS_COL_SOURCE, "muted", "small"), seg(.21, .14, L.STATS_COL_XP, "muted", "small", "RIGHT"),
@@ -58,6 +90,7 @@ function StatsModel.XP(sum, L)
     end
     out[#out + 1] = { segs = { seg(0, .20, L.STATS_XP_TOTAL_ROW, "heading"), seg(.21, .14, Format.Number(split.total), "heading", nil, "RIGHT") },
         rules = { { 0, .36 } } }
+    levelTable(out, byLevel, currentLevel, L, showAll, onToggle)
     out[#out + 1] = { segs = {} }
     out[#out + 1] = { segs = { seg(0, 1, L.STATS_XP_NOTE, "muted", "small") } }
     return out

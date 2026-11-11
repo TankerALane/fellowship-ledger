@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- **XP by source**: a new XP view on each character shows where XP came from: quests, kills, exploration and other, with each one's share, for the range you pick. The "This session" line says how much XP you gained and its biggest source. Friends on this version share it too. XP from before this update shows as "Not split".
+- **XP by source**: a new XP view on each character shows where XP came from: quests, kills, exploration and other, with each one's share, for the range you pick. The "This session" line says how much XP you gained and its biggest source. Friends on this version share it too. XP from before this update shows as "Not split". Under it, a By level table shows each level's XP and how much of it came from each source.
 
 ### Changed
 - `/fl shots` also captures the Leaderboard, the Bests view, the invite list and invite window, the weekly panel and the goals window. `/fl fake` shows made-up data for all of them.

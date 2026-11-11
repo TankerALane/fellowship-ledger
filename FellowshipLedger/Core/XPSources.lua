@@ -6,7 +6,9 @@
 --   Mark(kind, amount, now)  a quest turn-in or discovery (with its XP), or a kill by
 --                            you or your group (no amount)
 --   Gain(amount, now)        the XP bar moved by this much
--- and each returns the changes to count: { { field, delta } }. A gain takes what a
+-- and each returns the changes to count: { { field, delta, tag } }. tag: what the
+-- gain was given (the level it was earned at, for the per-level split); a change that
+-- moves XP over later keeps the tag of the gain it moves. A gain takes what a
 -- recent mark explains (quest or exploration first, then a kill takes the rest); what
 -- is left is "other" for now, and a mark that arrives a moment later moves it over.
 -- Counts kept: xp_quest, xp_kill, xp_explore, xp_other (their sum is the XP split
@@ -37,12 +39,12 @@ local function prune(state, now)
     end
 end
 
-local function add(out, field, n)
+local function add(out, field, n, tag)
     if n == 0 then return end
     for _, c in ipairs(out) do
-        if c[1] == field then c[2] = c[2] + n return end
+        if c[1] == field and c[3] == tag then c[2] = c[2] + n return end
     end
-    out[#out + 1] = { field, n }
+    out[#out + 1] = { field, n, tag }
 end
 
 -- A source event. kind: "quest" or "explore" with the XP the game reported, or "kill".
@@ -53,8 +55,8 @@ function XPSources.Mark(state, kind, amount, now)
         -- A gain just before the kill event: it was the kill's.
         for _, r in ipairs(state.recent) do
             if now - r.at <= XPSources.KILL_WINDOW and r.amount > 0 then
-                add(out, "xp_other", -r.amount)
-                add(out, "xp_kill", r.amount)
+                add(out, "xp_other", -r.amount, r.tag)
+                add(out, "xp_kill", r.amount, r.tag)
                 r.amount = 0
             end
         end
@@ -67,8 +69,8 @@ function XPSources.Mark(state, kind, amount, now)
         if amount <= 0 then break end
         local take = math.min(amount, r.amount)
         if take > 0 then
-            add(out, "xp_other", -take)
-            add(out, "xp_" .. kind, take)
+            add(out, "xp_other", -take, r.tag)
+            add(out, "xp_" .. kind, take, r.tag)
             r.amount, amount = r.amount - take, amount - take
         end
     end
@@ -76,8 +78,9 @@ function XPSources.Mark(state, kind, amount, now)
     return out
 end
 
--- The XP bar moved by amount (already worked out across a level-up).
-function XPSources.Gain(state, amount, now)
+-- The XP bar moved by amount. A gain across a level-up is reported as two gains, one
+-- per level (tag).
+function XPSources.Gain(state, amount, now, tag)
     local out = {}
     if type(amount) ~= "number" or amount <= 0 then return out end
     prune(state, now)
@@ -87,22 +90,22 @@ function XPSources.Gain(state, amount, now)
         if left <= 0 then break end
         if m.amount and m.amount > 0 then
             local take = math.min(left, m.amount)
-            add(out, "xp_" .. m.kind, take)
+            add(out, "xp_" .. m.kind, take, tag)
             m.amount, left = m.amount - take, left - take
         end
     end
     if left > 0 then
         for _, m in ipairs(state.marks) do
             if m.kind == "kill" then
-                add(out, "xp_kill", left)
+                add(out, "xp_kill", left, tag)
                 left = 0
                 break
             end
         end
     end
     if left > 0 then
-        add(out, "xp_other", left)
-        state.recent[#state.recent + 1] = { amount = left, at = now }
+        add(out, "xp_other", left, tag)
+        state.recent[#state.recent + 1] = { amount = left, at = now, tag = tag }
     end
     return out
 end
@@ -130,4 +133,23 @@ function XPSources.Top(split)
     end
     if not best or split.total <= 0 then return nil end
     return best.source, best.xp / split.total
+end
+
+-- Per level (D-120): byLevel = char.levelXP ({ [level] = { quest, kill, explore, other } },
+-- keyed by the level the XP was earned at). Rows newest first: { level, total,
+-- quest, kill, explore, other, current }; current: the level being played now.
+function XPSources.Levels(byLevel, currentLevel)
+    local rows = {}
+    for level, t in pairs(byLevel or {}) do
+        if type(level) == "number" and type(t) == "table" then
+            local row = { level = level, total = 0, current = level == currentLevel or nil }
+            for _, src in ipairs(XPSources.SOURCES) do
+                row[src] = math.max(0, t[src] or 0)
+                row.total = row.total + row[src]
+            end
+            if row.total > 0 then rows[#rows + 1] = row end
+        end
+    end
+    table.sort(rows, function(a, b) return a.level > b.level end)
+    return rows
 end
