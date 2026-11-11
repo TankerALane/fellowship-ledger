@@ -275,20 +275,22 @@ local Kills = T.Define({ id = "kills" })
 local RARE = { rare = true, rareelite = true }
 local ELITE = { elite = true, rareelite = true, worldboss = true }
 Kills.events.PARTY_KILL = function(_, attacker, target)
-    if ns.Compat.IsSecret(attacker) or ns.Compat.IsSecret(target) then
-        ns.Compat.Disable("kills", "kill events carry secret values on this client")
-        return
-    end
-    -- Any kill by you or your group: XP right after it is kill XP (D-120).
+    -- Any kill by you or your group: XP right after it is kill XP (D-120). The event
+    -- alone says so, so this comes before any value is read.
     T.XPMark("kill")
+    -- Forever hides creature GUIDs inside dungeons (D-113). A hidden value is skipped,
+    -- never compared, and no longer turns kill tracking off for the session (it did
+    -- until 1.9.0, so kills stopped counting after the first one in a dungeon).
+    if ns.Compat.IsSecret(attacker) then return end
     local ok, me = ns.Compat.Call("kills", "UnitGUID", "player")
-    if not ok or attacker ~= me then return end
+    if not ok or ns.Compat.IsSecret(me) or attacker ~= me then return end
     Store.Touch()
     local char = Store.char
     char.kills.total = char.kills.total + 1
     Store.Count("kills")
+    if ns.Compat.IsSecret(target) then return end -- counted, but no creature type or rank
     local okT, targetGUID = ns.Compat.Call("kills", "UnitGUID", "target")
-    if okT and targetGUID and targetGUID == target then
+    if okT and targetGUID and not ns.Compat.IsSecret(targetGUID) and targetGUID == target then
         local ctype = T.Plain(UnitCreatureType("target"))
         local class = T.Plain(UnitClassification("target"))
         if ctype then

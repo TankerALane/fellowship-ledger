@@ -5,6 +5,9 @@
 ### Added
 - **XP by source**: a new XP view on each character shows where this session's XP came from (for a character you are not on, its last session): quests, kills, exploration and other, with each one's share. The "This session" line says how much XP you gained and its biggest source. Friends on this version share it too. XP from before this update shows as "Not split". Under it, a By level table shows the last 5 levels (Show all for the rest), each with its XP and how much came from each source. The range buttons do not change this view.
 
+### Fixed
+- On WoW Forever, the first kill inside a dungeon turned kill tracking off until logout (the game hides monster IDs there), so kills stopped counting. Kills now keep counting; in dungeons the creature type and rank are skipped.
+
 ### Changed
 - `/fl shots` also captures the Leaderboard, the Bests view, the invite list and invite window, the weekly panel and the goals window. `/fl fake` shows made-up data for all of them.
 

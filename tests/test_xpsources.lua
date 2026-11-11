@@ -217,3 +217,36 @@ H.test("xp by level: the last 5 levels, then Show all", function()
     n, button = rows(true)
     H.eq(n, 8); H.eq(button, "Show less")
 end)
+
+H.test("dungeon kills with hidden GUIDs (Forever, D-113): kill XP still counts and kill tracking stays on", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    local st = env.__state
+    local me = env.UnitGUID("player")
+    st.secrets = { ["Creature-0-1-2-3-4-5"] = true }
+    local before = env.FellowshipLedgerDB.characters["Tester-TestRealm"].kills.total
+    Mock.fire(env, "PARTY_KILL", me, "Creature-0-1-2-3-4-5")
+    st.xp = st.xp + 120
+    Mock.fire(env, "PLAYER_XP_UPDATE", "player")
+    local c = env.FellowshipLedgerDB.characters["Tester-TestRealm"]
+    local day = c.days[os.date("%Y-%m-%d", st.now)]
+    H.eq(day.xp_kill, 120, "kill XP from a kill with a hidden target")
+    H.eq(c.kills.total, before + 1, "the kill is counted")
+    H.ok(not ns.Compat.disabled.kills, "kill tracking not turned off")
+    -- A hidden attacker too: still kill XP, the kill just is not counted as yours.
+    st.secrets["Player-hidden"] = true
+    st.now = st.now + 10
+    Mock.fire(env, "PARTY_KILL", "Player-hidden", "Creature-0-1-2-3-4-5")
+    st.xp = st.xp + 80
+    Mock.fire(env, "PLAYER_XP_UPDATE", "player")
+    H.eq(c.days[os.date("%Y-%m-%d", st.now)].xp_kill, 200)
+    H.eq(c.kills.total, before + 1)
+    -- Outside again: a normal kill still counts.
+    st.now = st.now + 10
+    Mock.fire(env, "PARTY_KILL", me, "Creature-7")
+    H.eq(c.kills.total, before + 2)
+end)
