@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- **Goals tracker**: once you start session goals, a small window on screen shows each goal with a progress bar. Drag it where you like (it stays there); the x hides it until your next goals, and `/fl goals tracker` brings it back. Settings can turn it off.
+
 ## 1.9.0 - 2026-11-10
 
 ### Added

@@ -54,7 +54,7 @@ python tools/apply_verify_report.py docs/verify-reports/<flavor>-<date>.txt
 
 ## In-game commands so far
 
-`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl friends`, `/fl comms`, `/fl commtest`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl shots` (addon-page screenshots with fake data), `/fl goals` (session goals), `/fl version`. `/fellowshipledger` is an alias.
+`/fl` (window), `/fl help`, `/fl export`, `/fl restore`, `/fl test`, `/fl verify` (report window to copy), `/fl verify show`, `/fl friends`, `/fl comms`, `/fl commtest`, `/fl probe on|off|clear`, `/fl debug` (plus the event log), `/fl shots` (addon-page screenshots with fake data), `/fl goals` (session goals; `/fl goals tracker` shows the tracker again), `/fl version`. `/fellowshipledger` is an alias.
 
 ## Status
 

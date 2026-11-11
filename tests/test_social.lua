@@ -372,3 +372,60 @@ H.test("leaderboard in the mock client: the tab draws, a top-5 clear gives a not
     ns.db.settings.leaderToasts = false
     H.eq(ns.LeaderboardTab.CheckRun(run), nil, "the switch turns it off")
 end)
+
+-- Goals tracker (UI/GoalsTracker.lua, D-121) ----------------------------------------
+
+H.test("goals: progress as a fraction for the tracker's bars", function()
+    local G = H.pureNamespace().Goals
+    H.eq(G.Fraction({ kind = "quests", target = 8 }, 2, false), 0.25)
+    H.eq(G.Fraction({ kind = "quests", target = 8 }, 12, false), 1)
+    H.eq(G.Fraction({ kind = "levels", target = 1.5 }, 0.75, false), 0.5)
+    H.eq(G.Fraction({ kind = "dungeon", target = 1 }, 0, false), 0)
+    H.eq(G.Fraction({ kind = "dungeon", target = 1 }, 1, true), 1)
+    H.eq(G.Fraction({ kind = "profession", target = 150, start = { rank = 100 } }, 125, false), 0.5)
+    H.eq(G.Fraction({ kind = "profession", target = 150, start = { ranks = { mining = 140 } }, key = "mining" }, 145, false), 0.5)
+end)
+
+H.test("goals tracker: shows started goals, follows progress, moves, closes and comes back", function()
+    local Mock = dofile(H.ROOT .. "/tests/wowmock.lua")
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    local T = ns.GoalsTracker
+    H.ok(not T.Frame() or not T.Frame():IsShown(), "nothing before goals are started")
+    ns.SessionGoals.Begin({ { kind = "quests", target = 2, on = true }, { kind = "levels", target = 1, on = false } })
+    local f = T.Frame()
+    H.ok(f and f:IsShown(), "shown once goals start")
+    local function title() return f.title:GetText() end
+    H.eq(title(), "Session goals (0 of 1)", "only the ticked goal")
+    Mock.fire(env, "QUEST_TURNED_IN", 54, 450, 75)
+    env.__state.now = env.__state.now + 10
+    Mock.fire(env, "QUEST_TURNED_IN", 55, 450, 75)
+    T.Refresh()
+    H.eq(title(), "All goals done! (1 of 1)")
+    -- Dragging keeps the place.
+    f:GetScript("OnDragStop")(f)
+    H.eq(ns.db.settings.goalsTrackerPos[1], "CENTER")
+    -- Closed: stays closed through refreshes and the minute tick, back with /fl goals tracker.
+    T.Close()
+    H.ok(not f:IsShown())
+    ns.SessionGoals.Tick(); T.Refresh()
+    H.ok(not f:IsShown(), "stays closed")
+    Mock.slash(env, "goals tracker")
+    H.ok(f:IsShown(), "back with /fl goals tracker")
+    -- The setting turns it off.
+    ns.db.settings.goalsTracker = false
+    T.Refresh()
+    H.ok(not f:IsShown(), "off in Settings")
+    Mock.slash(env, "goals tracker")
+    H.ok(Mock.chatContains(env, "turned off in Settings"))
+    ns.db.settings.goalsTracker = true
+    -- Fake data never shows your real goals' tracker.
+    ns.Data.EnableFake(); T.Refresh()
+    H.ok(not f:IsShown(), "hidden with fake data")
+    ns.Data.DisableFake(); T.Refresh()
+    H.ok(f:IsShown())
+end)

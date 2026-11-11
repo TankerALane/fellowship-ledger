@@ -78,11 +78,13 @@ function SessionGoals.Begin(list)
     end
     if #chosen == 0 then
         ns.Store.char.goals = nil
+        if ns.GoalsTracker then ns.GoalsTracker.Refresh() end
         return
     end
     ns.Store.char.goals = { session = ns.Store.session.start, list = chosen }
     SessionGoals.Tick()
     ns.MainWindow.Refresh()
+    if ns.GoalsTracker then ns.GoalsTracker.Refresh() end
 end
 
 -- Each minute: save progress (for the summary at the next login) and say when a goal is reached.
@@ -99,6 +101,7 @@ function SessionGoals.Tick()
             ns.Toast.Show(L.GOAL_REACHED_TITLE, { Goals.Text(g, value, done, L, fmt()) })
         end
     end
+    if ns.GoalsTracker then ns.GoalsTracker.Refresh() end
 end
 
 -- The Me tab line under "This session".

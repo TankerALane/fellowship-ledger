@@ -87,6 +87,7 @@ UI\MeTab.lua
 UI\FriendsTab.lua
 UI\InviteDialog.lua
 UI\GoalsWindow.lua
+UI\GoalsTracker.lua
 UI\Graph.lua
 UI\GraphsTab.lua
 UI\DungeonsTab.lua

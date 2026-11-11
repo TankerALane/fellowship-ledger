@@ -124,5 +124,9 @@ Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass
 - [x] **XP by source** (D-120): an XP view on each character (yours and friends') with Quests, Kills, Exploration and Other, and the biggest source on the "This session" line; a By level table (each level's XP and source shares)
 - [x] Austin, in game (2026-11-10): m:xpsources (kill, turn in a quest, discover an area, then open your character > XP; after a level-up the By level table has both levels)
 
+## 1.10.0 (not released)
+- [x] **Goals tracker** (D-121): a small movable window with each session goal and a progress bar
+- [ ] Austin, in game: m:goalstracker
+
 ## Possible additions (not scheduled)
 - [ ] **Guild sharing** (optional, off by default): share a summary over the guild addon channel. It would help spread the addon, but guildmates are often not Battle.net or character friends, so it is not the best way to grow it; kept for later (Austin, 2026-11-09). Privacy questions to settle before any work starts.

@@ -542,6 +542,7 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:bests` | manual | an opened character on the Me tab has a Bests view (this character, all characters, held by); beating a record of all your characters gives one "New personal best" notice that opens it (D-115) | open your character > Bests; turn in more quests in a day than your best | ? | ? |
 | `m:goals` | manual | with Settings > "Suggest goals when a session starts" on and 3 sessions of 20+ minutes, a new session opens Today's goals; ticks, - and + work; Start shows a Goals line on the Me tab; the next login's summary lists how they went (D-116) | turn the switch on; log in after 30+ minutes away (or /fl goals); Start; turn in a quest | ? | ? |
+| `m:goalstracker` | manual | after Start in the goals window, a small Session goals window shows each goal with a bar that fills as you play; it can be dragged and stays where you left it after a /reload; the x hides it and /fl goals tracker brings it back; Settings can turn it off (D-121) | `/fl goals, Start; turn in a quest; drag it; /reload; x; /fl goals tracker` | ? | ? |
 
 ### Dungeons
 

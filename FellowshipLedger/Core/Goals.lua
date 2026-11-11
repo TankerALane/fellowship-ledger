@@ -161,6 +161,22 @@ function Goals.Progress(goal, now)
     return rank, rank >= goal.target
 end
 
+-- How far along a goal is, 0 to 1, for the tracker's bars. value: from Progress.
+function Goals.Fraction(goal, value, done)
+    if done then return 1 end
+    value = tonumber(value) or 0
+    local target = tonumber(goal.target) or 0
+    if goal.kind == "dungeon" then return 0 end
+    if goal.kind == "profession" then
+        -- From the rank at the start of the session to the target.
+        local from = goal.start and goal.start.rank or (goal.start and goal.start.ranks and goal.start.ranks[goal.key]) or 0
+        if target <= from then return 1 end
+        return math.max(0, math.min(1, (value - from) / (target - from)))
+    end
+    if target <= 0 then return 0 end
+    return math.max(0, math.min(1, value / target))
+end
+
 -- One goal as text: "Quests: 5 / 12", "Clear The Deadmines", with a check when done.
 -- fmt: { Number }.
 function Goals.Text(goal, value, done, L, fmt)

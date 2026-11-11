@@ -103,6 +103,7 @@ function handlers.PLAYER_LOGIN()
     step("quest rewards", ns.QuestRewards.Start)
     step("personal bests", ns.Records.Start)
     step("session goals", ns.SessionGoals.Start)
+    step("goals tracker", ns.GoalsTracker.Start)
     step("options page", ns.OptionsPanel.Register)
     ns.welcomeStep = function()
         step("welcome panel", ns.Welcome.MaybeShow)
@@ -166,8 +167,9 @@ end
 
 commands.help = printHelp
 
-function commands.goals()
-    if ns.tracking then ns.SessionGoals.Open(true) end
+function commands.goals(rest)
+    if not ns.tracking then return end
+    if rest == "tracker" then ns.GoalsTracker.Reopen() else ns.SessionGoals.Open(true) end
 end
 
 function commands.verify(rest)
