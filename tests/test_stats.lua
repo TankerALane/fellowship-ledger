@@ -24,11 +24,12 @@ end
 H.test("stats: tab row, selected tab, picking", function()
     local picked
     local line = S.TabLine("gold", L, function(id) picked = id end)
-    H.eq(#line.segments, 7)
-    H.eq(line.segments[1].button.label, "Overview"); H.eq(line.segments[6].button.label, "All completed")
-    H.eq(line.segments[7].button.label, "Bests")
-    H.eq(line.segments[3].button.selected, true); H.eq(line.segments[1].button.selected, false)
-    line.segments[4].button.onClick(); H.eq(picked, "kills")
+    H.eq(#line.segments, 8)
+    H.eq(line.segments[1].button.label, "Overview"); H.eq(line.segments[2].button.label, "XP")
+    H.eq(line.segments[7].button.label, "All completed")
+    H.eq(line.segments[8].button.label, "Bests")
+    H.eq(line.segments[4].button.selected, true); H.eq(line.segments[1].button.selected, false)
+    line.segments[5].button.onClick(); H.eq(picked, "kills")
 end)
 
 H.test("stats: quests newest first, range, totals, Show all after 10", function()

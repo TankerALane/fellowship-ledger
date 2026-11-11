@@ -120,5 +120,9 @@ Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass
   - [ ] Sending an invite (m:invite); m:bests, m:goals, m:leaderboard, m:dungeonlevels
 - [x] CurseForge address for Copy link confirmed by Austin; dungeon level ranges taken from the DungeonJournal addon (D-118)
 
+## 1.9.0 (not released)
+- [x] **XP by source** (D-120): an XP view on each character (yours and friends') with Quests, Kills, Exploration and Other, and the biggest source on the "This session" line
+- [ ] Austin, in game: m:xpsources (kill, turn in a quest, discover an area, then open your character > XP)
+
 ## Possible additions (not scheduled)
 - [ ] **Guild sharing** (optional, off by default): share a summary over the guild addon channel. It would help spread the addon, but guildmates are often not Battle.net or character friends, so it is not the best way to grow it; kept for later (Austin, 2026-11-09). Privacy questions to settle before any work starts.

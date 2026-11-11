@@ -160,6 +160,16 @@ Zones.events.UI_INFO_MESSAGE = function(_, messageType, message)
     if not discovered then return end
     area = area or message
     if T.Dedupe("discover:" .. tostring(area), 10) then return end
+    -- "Discovered <area>: 120 experience gained" (ERR_ZONE_EXPLORED_XP): the number
+    -- after the area name is the XP (D-120).
+    if type(message) == "string" then
+        local rest = message
+        local s, e = message:find(area, 1, true)
+        if s then rest = message:sub(e + 1) end
+        local digits = rest:match("(%d[%d,%.]*)")
+        local xp = digits and tonumber((digits:gsub("[,%.]", "")))
+        if xp and xp > 0 then T.XPMark("explore", xp) end
+    end
     local list = Store.char.discoveries
     list[#list + 1] = { name = area, at = Store.Now() }
     Days.PruneList(list, "at", Store.Now(), Character.LIST_KEEP_SECONDS)
@@ -269,6 +279,8 @@ Kills.events.PARTY_KILL = function(_, attacker, target)
         ns.Compat.Disable("kills", "kill events carry secret values on this client")
         return
     end
+    -- Any kill by you or your group: XP right after it is kill XP (D-120).
+    T.XPMark("kill")
     local ok, me = ns.Compat.Call("kills", "UnitGUID", "player")
     if not ok or attacker ~= me then return end
     Store.Touch()

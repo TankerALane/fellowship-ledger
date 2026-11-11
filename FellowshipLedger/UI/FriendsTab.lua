@@ -165,6 +165,8 @@ function FriendsTab.DetailLines(id, char)
         parts = S.FriendQuests(sum, ns.QuestChains.FriendChains(char), shared, L, FriendsTab.Common(char), function(q)
             W.LinkQuest(q.id, q.name, q.level)
         end)
+    elseif view == "xp" then
+        parts = shared.levels and S.XP(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "gold" then
         parts = shared.gold and S.Gold(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "kills" then

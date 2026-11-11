@@ -39,6 +39,16 @@ function Summary.Recap(s, L)
         if (n or 0) > 0 then parts[#parts + 1] = string.format(n == 1 and one or many, n) end
     end
     add(c.levels, L.RECAP_LEVEL, L.RECAP_LEVELS)
+    if (c.xp or 0) > 0 then
+        -- "8,200 XP, 62% from quests" (D-120); just the XP while no source is known.
+        local source, share
+        if ns.XPSources then source, share = ns.XPSources.Top(ns.XPSources.Split(c)) end
+        if source then
+            parts[#parts + 1] = string.format(L.SESSION_XP_TOP, F.Number(c.xp), math.floor(share * 100 + 0.5), L["XP_FROM_" .. source:upper()])
+        else
+            parts[#parts + 1] = string.format(L.SESSION_XP, F.Number(c.xp))
+        end
+    end
     add(c.quests, L.RECAP_QUEST, L.RECAP_QUESTS)
     add(c.dungeonsEntered, L.RECAP_DUNGEON, L.RECAP_DUNGEONS)
     if c.moneyNet and c.moneyNet ~= 0 then parts[#parts + 1] = F.Money(c.moneyNet, true) end

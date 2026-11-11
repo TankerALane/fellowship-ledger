@@ -59,6 +59,7 @@ Phase 3 adds `Comms/`:
 
 1.8.0 adds (D-114 to D-117):
 - **Pure:** `Core/Invites.lua` (who to invite, when last invited), `Core/Bests.lua` (personal records), `Core/DungeonLevels.lua` (level ranges, at-level test), `Core/Goals.lua` (goal suggestions and progress), `Core/Leaderboard.lua` (fastest clears and boss kills, merged across ledgers) and `Locale/enUS_Social.lua`.
+- **XP by source (1.9.0, D-120):** `Core/XPSources.lua` (pure) decides where each XP gain came from. `Trackers/Levels.lua` reports each gain; Quests (turn-in XP), Extras (discovery XP, and every PARTY_KILL) report marks through `ns.Trackers.XPMark`. The XP view is `StatsModel.XP`.
 - **Runtime:** `UI/InviteDialog.lua`, `Trackers/Records.lua` (keeps bests current), `UI/GoalsWindow.lua` (`ns.SessionGoals`) and `UI/LeaderboardTab.lua`.
 - Saved: `db.invites[peerId]` (time of the last invite), `db.bests` and `char.bests`, `char.goals` (this session's goals and progress), `char.goalsSkipDay`.
 

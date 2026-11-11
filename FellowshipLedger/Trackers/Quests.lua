@@ -70,4 +70,5 @@ Quests.events.QUEST_TURNED_IN = function(_, questID, xpReward, moneyReward)
     }
     Days.PruneList(char.questLog, "at", Store.Now(), Character.QUEST_LOG_SECONDS)
     Store.Count("quests")
+    T.XPMark("quest", T.Plain(xpReward))
 end

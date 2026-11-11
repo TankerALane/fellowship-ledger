@@ -10,6 +10,26 @@ local Store, Format = ns.Store, ns.Format
 
 local lastXP, lastXPMax
 
+-- Where XP came from (D-120). Seconds from GetTime (fractions matter here), else time().
+local sources
+local function clock()
+    if type(GetTime) == "function" then
+        local ok, t = pcall(GetTime)
+        if ok and type(t) == "number" then return t end
+    end
+    return Store.Now()
+end
+local function apply(changes)
+    for _, c in ipairs(changes) do Store.Count(c[1], c[2]) end
+end
+-- A quest turn-in or discovery with its XP, or a kill by you or your group (Quests,
+-- Extras). Safe to call before login and when the levels tracker is off.
+function T.XPMark(kind, amount)
+    if not (Store.char and ns.XPSources) then return end
+    sources = sources or ns.XPSources.New()
+    apply(ns.XPSources.Mark(sources, kind, amount, clock()))
+end
+
 local function newStart(char, level, partial)
     local clock = char.clock
     char.levelStart = {
@@ -90,7 +110,11 @@ Levels.events.PLAYER_XP_UPDATE = function(_, unit)
         else
             gained = (lastXPMax - lastXP) + xp -- wrapped past a level
         end
-        if gained > 0 then Store.Count("xp", gained) end
+        if gained > 0 then
+            Store.Count("xp", gained)
+            sources = sources or ns.XPSources.New()
+            apply(ns.XPSources.Gain(sources, gained, clock()))
+        end
     end
     lastXP, lastXPMax = xp, xpMax
 end

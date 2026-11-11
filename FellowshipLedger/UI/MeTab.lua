@@ -94,6 +94,8 @@ function Me.DetailLines(key, char, name)
         local zoneOf = function(id) return ns.QuestChains.QuestInfo(id).zone end
         parts = S.Quests(char.questLog, inRange, L, date, state.showAll[key] and state.showAll[key].quests, zoneOf,
             function() toggleIn(state.showAll, key, "quests") end)
+    elseif view == "xp" then
+        parts = S.XP(sum, L)
     elseif view == "gold" then
         parts = S.Gold(sum, L)
     elseif view == "kills" then

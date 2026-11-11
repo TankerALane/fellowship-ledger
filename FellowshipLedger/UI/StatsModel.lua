@@ -9,8 +9,8 @@ local _, ns = ...
 local StatsModel = {}
 ns.StatsModel = StatsModel
 
-StatsModel.TABS = { "overview", "quests", "gold", "kills", "professions", "completed", "bests" }
-StatsModel.TAB_LABEL = { overview = "DETAIL_TAB_OVERVIEW", quests = "DETAIL_TAB_QUESTS", gold = "DETAIL_TAB_GOLD",
+StatsModel.TABS = { "overview", "xp", "quests", "gold", "kills", "professions", "completed", "bests" }
+StatsModel.TAB_LABEL = { overview = "DETAIL_TAB_OVERVIEW", xp = "DETAIL_TAB_XP", quests = "DETAIL_TAB_QUESTS", gold = "DETAIL_TAB_GOLD",
     kills = "DETAIL_TAB_KILLS", professions = "DETAIL_TAB_PROFESSIONS", completed = "DETAIL_TAB_COMPLETED",
     dungeons = "DETAIL_TAB_DUNGEONS", bests = "DETAIL_TAB_BESTS" }
 StatsModel.INSET = 18
@@ -28,8 +28,43 @@ local function pct(part, whole)
     return string.format("%d%%", math.floor(part / whole * 100 + 0.5))
 end
 
+-- XP by source (D-120), laid out like Gold: the total, then each source with its share.
+-- sum: day counts for the range (xp, xp_quest, xp_kill, xp_explore, xp_other, active, levels).
+function StatsModel.XP(sum, L)
+    local Format = ns.Format
+    local split = ns.XPSources.Split(sum)
+    local out = { { height = 26, segs = { seg(0, .30, L.STATS_XP_TOTAL, "heading", "large"),
+        seg(.30, .40, Format.Number(split.total), split.total > 0 and "good" or "text", "large") } } }
+    local active = sum.active or 0
+    local perHour = active >= 60 and math.floor(split.total * 3600 / active) or nil
+    out[#out + 1] = { segs = { seg(0, 1, string.format(L.STATS_XP_SUM, perHour and Format.Number(perHour) or "-",
+        sum.levels or 0, Format.Duration(active)), "muted") }, rules = { { 0, 1 } } }
+    out[#out + 1] = { segs = {} }
+    if split.total <= 0 then
+        out[#out + 1] = { segs = { seg(0, 1, L.STATS_NO_XP, "muted") } }
+        return out
+    end
+    out[#out + 1] = { segs = { seg(0, .20, L.STATS_COL_SOURCE, "muted", "small"), seg(.21, .14, L.STATS_COL_XP, "muted", "small", "RIGHT"),
+        seg(.38, .40, L.STATS_COL_SHARE, "muted", "small") }, rules = { { 0, 1 } } }
+    local rows = {}
+    for _, r in ipairs(split.rows) do rows[#rows + 1] = { label = L["XP_SOURCE_" .. r.source:upper()], xp = r.xp } end
+    if split.before > 0 then rows[#rows + 1] = { label = L.XP_SOURCE_BEFORE, xp = split.before, muted = true } end
+    for _, r in ipairs(rows) do
+        if r.xp > 0 then
+            out[#out + 1] = { segs = { seg(0, .20, r.label, r.muted and "muted" or "text"),
+                seg(.21, .14, Format.Number(r.xp), r.muted and "muted" or "text", nil, "RIGHT"),
+                { x = .38, w = .40, bar = r.xp / split.total }, seg(.80, .08, pct(r.xp, split.total), "muted", nil, "RIGHT") } }
+        end
+    end
+    out[#out + 1] = { segs = { seg(0, .20, L.STATS_XP_TOTAL_ROW, "heading"), seg(.21, .14, Format.Number(split.total), "heading", nil, "RIGHT") },
+        rules = { { 0, .36 } } }
+    out[#out + 1] = { segs = {} }
+    out[#out + 1] = { segs = { seg(0, 1, L.STATS_XP_NOTE, "muted", "small") } }
+    return out
+end
+
 -- A friend's character has no All completed (the game only lists your own).
-StatsModel.FRIEND_TABS = { "overview", "quests", "gold", "kills", "professions", "dungeons" }
+StatsModel.FRIEND_TABS = { "overview", "xp", "quests", "gold", "kills", "professions", "dungeons" }
 
 -- The tab buttons. current: a tab id; onPick(id); tabs: TABS (default) or FRIEND_TABS.
 function StatsModel.TabLine(current, L, onPick, tabs)

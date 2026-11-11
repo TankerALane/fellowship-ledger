@@ -33,6 +33,7 @@ end
 Codec.FIELDS = {
     played = { "pl", "time" }, active = { "ac", "time" },
     levels = { "lv", "levels" }, xp = { "xp", "levels" },
+    xp_quest = { "xq", "levels" }, xp_kill = { "xk", "levels" }, xp_explore = { "xe", "levels" }, xp_other = { "xo", "levels" },
     quests = { "qu", "quests" }, questsAccepted = { "qa", "quests" },
     moneyNet = { "mn", "gold" }, moneyIn = { "mi", "gold" }, moneyOut = { "mo", "gold" },
     money_loot = { "ml", "gold" }, money_vendor = { "mv", "gold" }, money_quest = { "mq", "gold" },

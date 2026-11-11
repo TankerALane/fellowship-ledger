@@ -81,9 +81,10 @@ end)
 
 H.test("friends: the tab row has no All completed, and has Dungeons", function()
     local line = S.TabLine("overview", L, function() end, S.FRIEND_TABS)
-    H.eq(#line.segments, 6)
-    H.eq(line.segments[5].button.label, "Professions")
-    H.eq(line.segments[6].button.label, "Dungeons")
+    H.eq(#line.segments, 7)
+    H.eq(line.segments[2].button.label, "XP")
+    H.eq(line.segments[6].button.label, "Professions")
+    H.eq(line.segments[7].button.label, "Dungeons")
 end)
 
 H.test("profession ranks travel with Professions; older data and junk are fine", function()

@@ -71,6 +71,7 @@ Field codes:
 | `lv`, `xp` | levels, xp | levels |
 | `qu`, `qa` | quests, questsAccepted | quests |
 | `mn`, `mi`, `mo` | moneyNet, moneyIn, moneyOut | gold |
+| `xq`, `xk`, `xe`, `xo` | XP from quests, kills, exploration, other (1.9.0, D-120; older clients ignore them) | levels |
 | `ml`, `mv`, `mq`, `mm`, `ma`, `mx` | money from loot, vendor, quest, mail, auction, other | gold |
 | `de`, `dc`, `bk` | dungeonsEntered, dungeonsCompleted, bossKills | dungeons |
 | `su` | skillUps | professions |

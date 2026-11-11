@@ -34,6 +34,8 @@ Shots.PLAN = {
     { tab = "friends", skin = "leather", weekly = true },
     { tab = "me", skin = "ledger", window = "goals" },
     { tab = "friends", skin = "ledger", window = "invite", invites = true },
+    -- 1.9.0
+    { tab = "me", skin = "leather", layout = "card", open = "me", view = "xp" },
 }
 
 local function sortedKeys(t)

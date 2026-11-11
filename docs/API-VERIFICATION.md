@@ -550,6 +550,12 @@ These come from addons already installed in Austin's game folders. They are good
 | `m:dungeonlevels` | manual | the dungeon names the game reports match the level ranges in Core/DungeonLevels.lua (taken from the DungeonJournal addon; a wing such as "Scarlet Monastery: Armory" or the whole name) (D-115, D-118) | after a run, the Leaderboard shows its range next to the dungeon name, e.g. "The Deadmines (17-26)" | ? | ? |
 | `m:leaderboard` | manual | the Leaderboard tab lists each dungeon's top 5 clears and the fastest boss kills; a ledger friend in your group is named (others are "+N"); the top level shows; an over-level run only under All runs; a top-5 clear gives a notice; a friend on 1.8.0 sees the same run once (D-115) | clear a dungeon with a friend on 1.8.0; both open Leaderboard | ? | ? |
 
+### Levels
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:xpsources` | manual | an opened character's XP view splits XP into Quests, Kills, Exploration and Other: a turn-in's XP lands under Quests whichever comes first, the XP bar or QUEST_TURNED_IN; XP right after you or your group kill something under Kills (PARTY_KILL); a discovery's XP (ERR_ZONE_EXPLORED_XP) under Exploration; a friend on the new version shows the same view (D-120) | kill a few monsters, turn in a quest, discover an area; open your character > XP and compare with the XP each gave | ? | ? |
+
 ### UI
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
