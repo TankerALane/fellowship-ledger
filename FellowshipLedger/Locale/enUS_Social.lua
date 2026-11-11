@@ -88,6 +88,7 @@ ns.Locale.Set({
     HELP_GOALS = "/fl goals - suggested goals for this session; /fl goals tracker - show the goals tracker again",
     SETTINGS_GOALS_TRACKER = "Show the goals tracker on screen while goals are set",
     GOALS_TRACKER_TITLE = "Session goals (%d of %d)",
+    GOALS_TRACKER_TIME = "%s played  -  %s active",
     GOALS_TRACKER_ALL_DONE = "All goals done! (%d of %d)",
     GOALS_TRACKER_NONE = "No goals are set for this session. Type /fl goals to pick some.",
     GOALS_TRACKER_OFF = "The goals tracker is turned off in Settings (Your notices).",

@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- **Goals tracker**: once you start session goals, a small window on screen shows each goal with a progress bar; a reached goal moves to the bottom as one green line. Drag it where you like (it stays there); the x hides it until your next goals, and `/fl goals tracker` brings it back. Settings can turn it off.
+- **Goals tracker**: once you start session goals, a small window on screen shows each goal with a progress bar; a reached goal moves to the bottom as one green line. Under the title it shows the session's played and active time. Drag it where you like (it stays there); the x hides it until your next goals, and `/fl goals tracker` brings it back. Settings can turn it off.
 
 ## 1.9.0 - 2026-11-10
 

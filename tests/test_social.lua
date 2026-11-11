@@ -401,6 +401,9 @@ H.test("goals tracker: shows started goals, follows progress, moves, closes and 
     H.ok(f and f:IsShown(), "shown once goals start")
     local function title() return f.title:GetText() end
     H.eq(title(), "Session goals (0 of 1)", "only the ticked goal")
+    ns.Store.session.played, ns.Store.session.active = 4320, 3480
+    T.Refresh()
+    H.eq(f.time:GetText(), ns.Format.Duration(4320) .. " played  -  " .. ns.Format.Duration(3480) .. " active", "session time")
     Mock.fire(env, "QUEST_TURNED_IN", 54, 450, 75)
     env.__state.now = env.__state.now + 10
     Mock.fire(env, "QUEST_TURNED_IN", 55, 450, 75)

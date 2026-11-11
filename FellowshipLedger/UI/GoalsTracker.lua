@@ -3,7 +3,8 @@
 -- on screen lists each goal with a progress bar. Drag it anywhere (the place is kept
 -- in settings.goalsTrackerPos); the x hides it until the next goals are started, or
 -- /fl goals tracker brings it back. Settings > "Show the goals tracker on screen"
--- turns it off for good. It redraws every few seconds while shown.
+-- turns it off for good. Under the title, the session's played and active time. It
+-- redraws every few seconds while shown.
 
 local _, ns = ...
 local L = ns.L
@@ -16,7 +17,7 @@ ns.GoalsTracker = Tracker
 Tracker.WIDTH = 250
 Tracker.ROW_H = 30
 Tracker.DONE_H = 18 -- a reached goal: one green line, no bar (Austin, 2026-11-11)
-Tracker.TOP = 30
+Tracker.TOP = 46 -- the title and the session time line above the goals
 Tracker.REFRESH = 5 -- seconds between redraws while shown
 
 local frame
@@ -81,6 +82,11 @@ local function build()
     f.title:SetPoint("TOPLEFT", 10, -8)
     f.title:SetPoint("RIGHT", f, "RIGHT", -30, 0)
     f.title:SetJustifyH("LEFT")
+    -- The session's time: played since it started, and active (what XP per hour counts).
+    f.time = W.Text(f, "small", "muted")
+    f.time:SetPoint("TOPLEFT", 10, -26)
+    f.time:SetPoint("RIGHT", f, "RIGHT", -10, 0)
+    f.time:SetJustifyH("LEFT")
     f.close = W.Button(f, "x", 18, 18, function() Tracker.Close() end)
     f.close:SetPoint("TOPRIGHT", -5, -5)
     place(f)
@@ -144,6 +150,8 @@ function Tracker.Refresh()
     for i = #lines + 1, #rows do rows[i]:Hide() end
     frame.title:SetText(done == #lines and string.format(L.GOALS_TRACKER_ALL_DONE, done, #lines)
         or string.format(L.GOALS_TRACKER_TITLE, done, #lines))
+    local s = ns.Store.session or {}
+    frame.time:SetText(string.format(L.GOALS_TRACKER_TIME, ns.Format.Duration(s.played or 0), ns.Format.Duration(s.active or 0)))
     frame:SetHeight(y + 6)
     frame:Show()
     return true
