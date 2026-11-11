@@ -416,6 +416,7 @@ H.test("goals tracker: shows started goals, follows progress, moves, closes and 
     H.eq(lines[1].done, false); H.eq(lines[2].done, false)
     H.eq(lines[3].done, true, "the reached goal last")
     H.ok(lines[3].text:find("3 / 1", 1, true), lines[3].text)
+    H.ok(not lines[3].text:find(ns.L.GOAL_DONE_MARK, 1, true), "no done mark in the tracker")
     H.eq(lines[1].fraction, 3 / 50)
     -- Dragging keeps the place.
     f:GetScript("OnDragStop")(f)

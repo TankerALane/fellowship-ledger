@@ -108,7 +108,8 @@ function Tracker.Lines(list, now)
     local open, reached = {}, {}
     for _, g in ipairs(list or {}) do
         local value, ok = Goals.Progress(g, now)
-        local line = { text = Goals.Text(g, value, ok, L, fmt()), done = ok and true or false,
+        -- No done mark here: a reached goal is green and at the bottom (Austin, 2026-11-11).
+        local line = { text = Goals.Text(g, value, false, L, fmt()), done = ok and true or false,
             fraction = Goals.Fraction(g, value, ok) }
         if ok then reached[#reached + 1] = line else open[#open + 1] = line end
     end

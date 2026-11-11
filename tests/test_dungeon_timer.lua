@@ -101,7 +101,7 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     H.eq(f.title:GetText(), "The Deadmines")
     boss(env, 250, 1, "Rhahk'Zor")
     T.Refresh()
-    H.ok(f.compare.text:GetText():find("vs #1: 20:00 by Zip", 1, true), f.compare.text:GetText())
+    H.ok(f.compare.text:GetText():find("vs #1 Zip, 20:00", 1, true), f.compare.text:GetText())
     H.eq(f.pace:GetText(), "+0:52", "the +/- beside the time")
     H.eq(ns.RunTimer.View(ns.Store.char.currentRun, env.time(), T.Target(ns.Store.char.currentRun, env.time())).bosses[1].delta, 52,
         "Rhahk'Zor 52 seconds behind #1")

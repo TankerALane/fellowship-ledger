@@ -192,7 +192,7 @@ function Timer.Refresh()
     elseif mode() == "mine" then
         label = string.format(L.TIMER_VS_MINE, RT.Clock(target.clear))
     else
-        label = string.format(L.TIMER_VS_LEADER, RT.Clock(target.clear), target.lead or "?")
+        label = string.format(L.TIMER_VS_LEADER, target.lead or "?", RT.Clock(target.clear))
     end
     frame.compare.text:SetText(label)
     frame:SetHeight(Timer.TOP + shown * Timer.ROW_H + 32)
