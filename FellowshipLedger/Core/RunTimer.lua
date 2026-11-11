@@ -31,15 +31,19 @@ function RunTimer.Target(entries, dungeon, mode, current)
     end
     if not best then return nil end
     local start = best.finishedAt - best.clear
-    local splits = {}
+    -- splits: every boss, extras too (an extra boss such as Cookie, killed after the
+    -- final one, is still compared with the same kill, Austin 2026-11-11). refs: the
+    -- run's own kills (up to its final boss) in order, for the running +/-.
+    local splits, refs = {}, {}
     for _, b in ipairs(best.bosses or {}) do
-        -- Kills after the final boss (an extra boss such as Cookie) are not the run's.
-        if b.name and b.at and b.at <= best.finishedAt + 1 then
+        if b.name and b.at then
             local into = b.at - start
             if not splits[b.name] or into < splits[b.name] then splits[b.name] = into end
+            if b.at <= best.finishedAt + 1 then refs[#refs + 1] = into end
         end
     end
-    return { clear = best.clear, splits = splits, lead = best.lead, mine = best.mine }
+    table.sort(refs)
+    return { clear = best.clear, splits = splits, refs = refs, lead = best.lead, mine = best.mine }
 end
 
 -- What the timer shows for an open run at `now`: { elapsed, done, killed, total,
@@ -57,9 +61,9 @@ function RunTimer.View(run, now, target)
     for _, b in ipairs(list) do
         local into = math.max(0, (b.at or entered) - entered)
         -- A kill after the final boss is an extra (Cookie in The Deadmines, Austin
-        -- 2026-11-11): listed, but not part of the run, so no +/- and not counted.
+        -- 2026-11-11): listed and compared with the same kill, but not counted.
         local extra = out.done and (b.at or 0) > run.completedAt + 1 or nil
-        local ref = not extra and target and target.splits[b.name]
+        local ref = target and target.splits[b.name]
         out.bosses[#out.bosses + 1] = { name = b.name or "?", into = into, delta = ref and (into - ref) or nil, extra = extra }
         if not extra then killed = killed + 1 end
     end
@@ -77,9 +81,12 @@ function RunTimer.View(run, now, target)
         for i = #out.bosses, 1, -1 do
             if out.bosses[i].delta then out.pace = out.bosses[i].delta break end
         end
-        local refs = {}
-        for _, t in pairs(target.splits or {}) do refs[#refs + 1] = t end
-        table.sort(refs)
+        local refs = target.refs
+        if not refs then
+            refs = {}
+            for _, t in pairs(target.splits or {}) do refs[#refs + 1] = t end
+            table.sort(refs)
+        end
         local nextAt = refs[out.killed + 1] or target.clear
         if nextAt and out.elapsed > nextAt then
             local behind = out.elapsed - nextAt

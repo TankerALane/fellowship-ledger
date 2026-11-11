@@ -3,12 +3,16 @@
 local H = ...
 local Mock = dofile(H.ROOT .. "/tests/wowmock.lua")
 
-H.test("run timer: the compared run's extra kills after its final boss are left out", function()
+H.test("run timer: the compared run's extra kills are compared, but not part of its run", function()
     local ns = H.pureNamespace()
     local entries = { { dungeon = "The Deadmines", clear = 1200, finishedAt = 2200, names = { "Zip" }, lead = "Zip", size = 5,
         bosses = { { name = "Sneed", at = 1500 }, { name = "VanCleef", at = 2200 }, { name = "Cookie", at = 2300 } } } }
     local t = ns.RunTimer.Target(entries, "The Deadmines", "leader")
-    H.eq(t.splits.Sneed, 500); H.eq(t.splits.VanCleef, 1200); H.eq(t.splits.Cookie, nil)
+    H.eq(t.splits.Sneed, 500); H.eq(t.splits.VanCleef, 1200); H.eq(t.splits.Cookie, 1300, "kept for comparing")
+    H.eq(#t.refs, 2, "the running +/- uses only the run's own kills")
+    -- Past the run's last kill and its clear: behind by the clear, not by Cookie.
+    local v = ns.RunTimer.View({ entered = 0, bosses = { { name = "Sneed", at = 500 } } }, 1250, t)
+    H.eq(v.pace, 50)
 end)
 
 H.test("run timer: clock and delta text", function()
@@ -55,7 +59,8 @@ H.test("run timer: boss times into the run, ahead or behind the target, final ti
     run.bosses[4] = { name = "Cookie", at = 2500 }
     target.splits.Cookie = 1600
     v = RT.View(run, 9999, target)
-    H.eq(v.bosses[4].name, "Cookie"); H.eq(v.bosses[4].extra, true); H.eq(v.bosses[4].delta, nil)
+    H.eq(v.bosses[4].name, "Cookie"); H.eq(v.bosses[4].extra, true)
+    H.eq(v.bosses[4].delta, -100, "an extra is still compared with the same kill (1500 into the run vs 1600)")
     H.eq(v.killed, 3, "the extra is not counted"); H.eq(v.pace, -100)
     run.bosses[4] = nil
     v = RT.View(run, 9999, nil)
