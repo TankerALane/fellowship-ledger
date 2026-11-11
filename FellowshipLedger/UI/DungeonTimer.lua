@@ -179,7 +179,9 @@ function Timer.Refresh()
     for i = 1, shown do
         local b = v.bosses[first + i]
         local r = row(i)
-        r.name:SetText(b.name) -- every boss listed is dead, so no done mark
+        r.name:SetText(b.extra and string.format(L.TIMER_EXTRA, b.name) or b.name) -- all dead: no done mark
+        W.SetTextRole(r.name, b.extra and "muted" or "text")
+        W.SetTextRole(r.into, b.extra and "muted" or "text")
         r.into:SetText(RT.Clock(b.into))
         r.delta:SetText(b.delta and RT.Delta(b.delta) or "")
         if b.delta then W.SetTextRole(r.delta, deltaRole(b.delta)) end

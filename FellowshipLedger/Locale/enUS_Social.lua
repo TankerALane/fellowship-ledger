@@ -95,6 +95,7 @@ ns.Locale.Set({
     TIMER_CLEARED = "Cleared in %s",
     TIMER_VS = "(%s)",
     TIMER_OUTSIDE = "(outside: the clock keeps running)",
+    TIMER_EXTRA = "%s (extra)",
     TIMER_VS_LEADER = "vs #1 %s, %s",
     TIMER_VS_MINE = "vs your best: %s",
     TIMER_NO_LEADER = "No Leaderboard clear here yet",

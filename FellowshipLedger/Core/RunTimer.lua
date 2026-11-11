@@ -33,7 +33,8 @@ function RunTimer.Target(entries, dungeon, mode, current)
     local start = best.finishedAt - best.clear
     local splits = {}
     for _, b in ipairs(best.bosses or {}) do
-        if b.name and b.at then
+        -- Kills after the final boss (an extra boss such as Cookie) are not the run's.
+        if b.name and b.at and b.at <= best.finishedAt + 1 then
             local into = b.at - start
             if not splits[b.name] or into < splits[b.name] then splits[b.name] = into end
         end
@@ -52,12 +53,17 @@ function RunTimer.View(run, now, target)
     local list = {}
     for _, b in ipairs(run.bosses or {}) do list[#list + 1] = b end
     table.sort(list, function(a, b) return (a.at or 0) < (b.at or 0) end)
+    local killed = 0
     for _, b in ipairs(list) do
         local into = math.max(0, (b.at or entered) - entered)
-        local ref = target and target.splits[b.name]
-        out.bosses[#out.bosses + 1] = { name = b.name or "?", into = into, delta = ref and (into - ref) or nil }
+        -- A kill after the final boss is an extra (Cookie in The Deadmines, Austin
+        -- 2026-11-11): listed, but not part of the run, so no +/- and not counted.
+        local extra = out.done and (b.at or 0) > run.completedAt + 1 or nil
+        local ref = not extra and target and target.splits[b.name]
+        out.bosses[#out.bosses + 1] = { name = b.name or "?", into = into, delta = ref and (into - ref) or nil, extra = extra }
+        if not extra then killed = killed + 1 end
     end
-    out.killed = #out.bosses
+    out.killed = killed
     if out.done and target then out.delta = out.elapsed - target.clear end
     -- The +/- next to the run's time, running (Austin, 2026-11-11: "so that I can push
     -- harder"). Done: the whole clear against the compared clear. Before that: where the

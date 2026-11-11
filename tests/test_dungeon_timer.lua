@@ -3,6 +3,14 @@
 local H = ...
 local Mock = dofile(H.ROOT .. "/tests/wowmock.lua")
 
+H.test("run timer: the compared run's extra kills after its final boss are left out", function()
+    local ns = H.pureNamespace()
+    local entries = { { dungeon = "The Deadmines", clear = 1200, finishedAt = 2200, names = { "Zip" }, lead = "Zip", size = 5,
+        bosses = { { name = "Sneed", at = 1500 }, { name = "VanCleef", at = 2200 }, { name = "Cookie", at = 2300 } } } }
+    local t = ns.RunTimer.Target(entries, "The Deadmines", "leader")
+    H.eq(t.splits.Sneed, 500); H.eq(t.splits.VanCleef, 1200); H.eq(t.splits.Cookie, nil)
+end)
+
 H.test("run timer: clock and delta text", function()
     local RT = H.pureNamespace().RunTimer
     H.eq(RT.Clock(872), "14:32")
@@ -43,6 +51,13 @@ H.test("run timer: boss times into the run, ahead or behind the target, final ti
     H.eq(v.elapsed, 1400, "stops at the final boss"); H.eq(v.done, true); H.eq(v.delta, -100)
     H.eq(v.pace, -100, "the whole clear once done")
     H.eq(v.bosses[3].delta, nil, "no target time for that boss")
+    -- An extra boss after the final one: listed, muted, no +/-, not counted.
+    run.bosses[4] = { name = "Cookie", at = 2500 }
+    target.splits.Cookie = 1600
+    v = RT.View(run, 9999, target)
+    H.eq(v.bosses[4].name, "Cookie"); H.eq(v.bosses[4].extra, true); H.eq(v.bosses[4].delta, nil)
+    H.eq(v.killed, 3, "the extra is not counted"); H.eq(v.pace, -100)
+    run.bosses[4] = nil
     v = RT.View(run, 9999, nil)
     H.eq(v.bosses[1].delta, nil); H.eq(v.delta, nil)
 end)
