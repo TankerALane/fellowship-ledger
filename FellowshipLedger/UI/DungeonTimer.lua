@@ -107,6 +107,16 @@ local function build()
         if ns.SettingsTab and ns.SettingsTab.Refresh then pcall(ns.SettingsTab.Refresh) end
     end)
     f.compare:SetPoint("BOTTOMLEFT", 10, 6)
+    -- Keep the text inside the button (cut short rather than spill out), and say on
+    -- hover what a click does.
+    f.compare.text:ClearAllPoints()
+    f.compare.text:SetPoint("LEFT", 6, 0)
+    f.compare.text:SetPoint("RIGHT", -6, 0)
+    f.compare.text:SetWordWrap(false)
+    f.compare:HookScript("OnEnter", function(self)
+        W.Tooltip(self, L.TIMER_SWITCH_TITLE, { settings().dungeonTimerMine and L.TIMER_SWITCH_TO_LEADER or L.TIMER_SWITCH_TO_MINE })
+    end)
+    f.compare:HookScript("OnLeave", function() W.HideTooltip() end)
     place(f)
     f:Hide()
     return f
@@ -169,7 +179,7 @@ function Timer.Refresh()
     for i = 1, shown do
         local b = v.bosses[first + i]
         local r = row(i)
-        r.name:SetText(L.GOAL_DONE_MARK .. b.name)
+        r.name:SetText(b.name) -- every boss listed is dead, so no done mark
         r.into:SetText(RT.Clock(b.into))
         r.delta:SetText(b.delta and RT.Delta(b.delta) or "")
         if b.delta then W.SetTextRole(r.delta, deltaRole(b.delta)) end
