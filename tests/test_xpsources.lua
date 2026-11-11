@@ -68,14 +68,20 @@ H.test("xp view: sources with shares, older XP as its own row, nothing in range"
         for _, p in ipairs(parts) do for _, sg in ipairs(p.segs or {}) do if sg.text then out[#out + 1] = sg.text end end end
         return table.concat(out, " | ")
     end
-    local t = text(S.XP({ xp = 10000, xp_quest = 5000, xp_kill = 3000, xp_other = 500, active = 7200, levels = 2 }, L))
-    H.ok(t:find("Total XP | 10,000", 1, true), t)
+    local t = text(S.XP({ counts = { xp = 10000, xp_quest = 5000, xp_kill = 3000, xp_other = 500, levels = 2 }, active = 7200 }, L))
+    H.ok(t:find("This session | 10,000 XP", 1, true), t)
     H.ok(t:find("5,000 XP per active hour", 1, true), t)
     H.ok(t:find("Quests | 5,000 | 50%", 1, true), t)
     H.ok(t:find("Kills | 3,000 | 30%", 1, true), t)
     H.ok(t:find("Not split (older data) | 1,500 | 15%", 1, true), t)
     H.ok(not t:find("Exploration", 1, true), "empty sources left out")
-    H.ok(text(S.XP({}, L)):find(L.STATS_NO_XP, 1, true))
+    H.ok(text(S.XP(nil, L)):find(L.STATS_NO_XP, 1, true), "no session yet")
+    -- The session to show: the live one, else the newest saved one with its date.
+    local s, title = S.XPSession({ { start = 100 }, { start = 900 } }, nil, L, function() return "11-09" end)
+    H.eq(s.start, 900); H.eq(title, "Last session (11-09)")
+    local live = { start = 1 }
+    s, title = S.XPSession({ { start = 900 } }, live, L, os.date)
+    H.eq(s, live); H.eq(title, "This session")
 end)
 
 H.test("session line: XP and its biggest source", function()
@@ -156,10 +162,11 @@ H.test("xp by level in the game: a level-up splits the gain, and the table shows
     local c = env.FellowshipLedgerDB.characters["Tester-TestRealm"]
     H.eq(c.levelXP[12].kill, 700); H.eq(c.levelXP[12].quest, 1000); H.eq(c.levelXP[13].quest, 500)
     local text = {}
-    for _, p in ipairs(ns.StatsModel.XP(ns.Days.Sum(c.days, nil, "9999-99-99"), ns.L, c.levelXP, 13)) do
+    for _, p in ipairs(ns.StatsModel.XP(ns.Store.session, ns.L, c.levelXP, 13)) do
         for _, sg in ipairs(p.segs or {}) do if sg.text then text[#text + 1] = sg.text end end
     end
     text = table.concat(text, " | ")
+    H.ok(text:find("This session | 2,200 XP", 1, true), text)
     H.ok(text:find("By level (all time)", 1, true), text)
     H.ok(text:find("13 (now) | 500 | 100%", 1, true), text)
     H.ok(text:find("12 | 1,700 | 59% | 41%", 1, true), text)
@@ -187,4 +194,26 @@ H.test("xp by level is shared: lx records round trip, merge, and leave with the 
     H.ok(not body:find("lx,", 1, true), "not sent")
     M.Data(f, C.DecodeData(body), "2026-11-04", "2026-08-07", 2000)
     H.eq(f.characters["Ann-R"].levelXP, nil)
+end)
+
+H.test("xp by level: the last 5 levels, then Show all", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    local byLevel = {}
+    for level = 1, 8 do byLevel[level] = { kill = level * 100 } end
+    local function rows(showAll)
+        local n, button = 0, nil
+        local seenTable = false
+        for _, p in ipairs(ns.StatsModel.XP({ counts = { xp = 50 } }, ns.L, byLevel, 8, showAll, function() end)) do
+            for _, sg in ipairs(p.segs or {}) do
+                if sg.button then button = sg.button.label end
+                if sg.x == 0 and sg.w == .12 and sg.text and (sg.text:match("^%d+$") or sg.text:match("^%d+ %(now%)$")) then n = n + 1 end
+            end
+        end
+        return n, button
+    end
+    local n, button = rows(false)
+    H.eq(n, 5, "five levels"); H.eq(button, "Show all (8)")
+    n, button = rows(true)
+    H.eq(n, 8); H.eq(button, "Show less")
 end)

@@ -95,8 +95,10 @@ function Me.DetailLines(key, char, name)
         parts = S.Quests(char.questLog, inRange, L, date, state.showAll[key] and state.showAll[key].quests, zoneOf,
             function() toggleIn(state.showAll, key, "quests") end)
     elseif view == "xp" then
-        parts = S.XP(sum, L, char.levelXP, key == ns.Store.key and not ns.Data.IsFake() and char.level or nil,
-            state.showAll[key] and state.showAll[key].xpLevels, function() toggleIn(state.showAll, key, "xpLevels") end)
+        local playing = key == ns.Store.key and not ns.Data.IsFake()
+        local session, title = S.XPSession(char.sessions, playing and ns.Store.session or nil, L, date)
+        parts = S.XP(session, L, char.levelXP, playing and char.level or nil,
+            state.showAll[key] and state.showAll[key].xpLevels, function() toggleIn(state.showAll, key, "xpLevels") end, title)
     elseif view == "gold" then
         parts = S.Gold(sum, L)
     elseif view == "kills" then

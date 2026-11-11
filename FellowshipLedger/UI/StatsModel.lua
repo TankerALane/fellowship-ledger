@@ -28,12 +28,13 @@ local function pct(part, whole)
     return string.format("%d%%", math.floor(part / whole * 100 + 0.5))
 end
 
--- XP by source (D-120), laid out like Gold: the total, then each source with its share.
--- sum: day counts for the range (xp, xp_quest, xp_kill, xp_explore, xp_other, active, levels).
--- byLevel: char.levelXP, for the By level table under it (all time; the range does not
--- apply to levels); currentLevel marks the level being played; showAll/onToggle: more
--- than LEVEL_LIMIT levels.
-StatsModel.LEVEL_LIMIT = 10
+-- XP by source (D-120), laid out like Gold. The top is one session (Austin: this
+-- session; for a character not being played, its last one): its XP, then each source
+-- with its share. Under it the By level table, all time. Neither follows the range
+-- buttons. session: { counts, active, start } (nil = none yet); title: the heading.
+-- byLevel: char.levelXP; currentLevel marks the level being played; showAll/onToggle:
+-- more than LEVEL_LIMIT levels.
+StatsModel.LEVEL_LIMIT = 5
 local function levelTable(out, byLevel, currentLevel, L, showAll, onToggle)
     local Format = ns.Format
     local rows = ns.XPSources.Levels(byLevel, currentLevel)
@@ -61,11 +62,26 @@ local function levelTable(out, byLevel, currentLevel, L, showAll, onToggle)
     end
 end
 
-function StatsModel.XP(sum, L, byLevel, currentLevel, showAll, onToggle)
+-- The session for the XP view: the live one for the character being played, else the
+-- newest saved one. Returns session, title.
+function StatsModel.XPSession(sessions, live, L, dateFn)
+    if live then return live, L.STATS_XP_SESSION end
+    local newest
+    for _, s in ipairs(sessions or {}) do
+        if not newest or (s.start or 0) > (newest.start or 0) then newest = s end
+    end
+    if not newest then return nil, L.STATS_XP_SESSION end
+    return newest, string.format(L.STATS_XP_LAST_SESSION, dateFn("%m-%d", newest.start or 0))
+end
+
+function StatsModel.XP(session, L, byLevel, currentLevel, showAll, onToggle, title)
     local Format = ns.Format
+    local sum = {}
+    for k, v in pairs(session and session.counts or {}) do sum[k] = v end
+    sum.active = session and session.active or 0
     local split = ns.XPSources.Split(sum)
-    local out = { { height = 26, segs = { seg(0, .30, L.STATS_XP_TOTAL, "heading", "large"),
-        seg(.30, .40, Format.Number(split.total), split.total > 0 and "good" or "text", "large") } } }
+    local out = { { height = 26, segs = { seg(0, .40, title or L.STATS_XP_SESSION, "heading", "large"),
+        seg(.40, .30, string.format(L.STATS_XP_AMOUNT, Format.Number(split.total)), split.total > 0 and "good" or "text", "large") } } }
     local active = sum.active or 0
     local perHour = active >= 60 and math.floor(split.total * 3600 / active) or nil
     out[#out + 1] = { segs = { seg(0, 1, string.format(L.STATS_XP_SUM, perHour and Format.Number(perHour) or "-",

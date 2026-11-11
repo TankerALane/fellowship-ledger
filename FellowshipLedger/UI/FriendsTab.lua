@@ -166,10 +166,14 @@ function FriendsTab.DetailLines(id, char)
             W.LinkQuest(q.id, q.name, q.level)
         end)
     elseif view == "xp" then
-        parts = shared.levels and S.XP(sum, L, char.levelXP, nil, state.showAll[id .. "|xpLevels"], function()
+        local session, title = S.XPSession(char.sessions, nil, L, date)
+        -- On this character right now: their newest session is the one going on.
+        local friend = ns.Data.Friends()[id:match("^(.-)|") or ""]
+        if friend and friend.playing and friend.playing == id:match("|(.*)$") then title = L.STATS_XP_SESSION end
+        parts = shared.levels and S.XP(session, L, char.levelXP, nil, state.showAll[id .. "|xpLevels"], function()
             state.showAll[id .. "|xpLevels"] = not state.showAll[id .. "|xpLevels"] or nil
             FriendsTab.Refresh()
-        end) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
+        end, title) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "gold" then
         parts = shared.gold and S.Gold(sum, L) or { { segs = { { x = 0, w = 1, text = L.STATS_NOT_SHARED, role = "muted", font = "body" } } } }
     elseif view == "kills" then
