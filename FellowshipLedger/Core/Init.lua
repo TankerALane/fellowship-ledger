@@ -104,6 +104,7 @@ function handlers.PLAYER_LOGIN()
     step("personal bests", ns.Records.Start)
     step("session goals", ns.SessionGoals.Start)
     step("goals tracker", ns.GoalsTracker.Start)
+    step("dungeon timer", ns.DungeonTimer.Start)
     step("options page", ns.OptionsPanel.Register)
     ns.welcomeStep = function()
         step("welcome panel", ns.Welcome.MaybeShow)
@@ -151,7 +152,7 @@ ns.pewRegistered = pcall(frame.RegisterEvent, frame, "PLAYER_ENTERING_WORLD") --
 -- Slash commands ------------------------------------------------------------
 
 local HELP = { "HELP_OPEN", "HELP_SUMMARY", "HELP_FAKE", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
-    "HELP_SYNC", "HELP_FRIENDS", "HELP_COMMS", "HELP_COMMTEST", "HELP_TEST", "HELP_GOALS", "HELP_WELCOME", "HELP_RESTORE", "HELP_SHOTS", "HELP_VERSION" }
+    "HELP_SYNC", "HELP_FRIENDS", "HELP_COMMS", "HELP_COMMTEST", "HELP_TEST", "HELP_GOALS", "HELP_TIMER", "HELP_WELCOME", "HELP_RESTORE", "HELP_SHOTS", "HELP_VERSION" }
 
 local function printHelp()
     Log.Info(L.HELP_HEADER)
@@ -166,6 +167,10 @@ commands[""] = function()
 end
 
 commands.help = printHelp
+
+function commands.timer()
+    if ns.tracking then ns.DungeonTimer.Reopen() end
+end
 
 function commands.goals(rest)
     if not ns.tracking then return end

@@ -86,6 +86,21 @@ ns.Locale.Set({
 
     -- Session goals (D-116)
     HELP_GOALS = "/fl goals - suggested goals for this session; /fl goals tracker - show the goals tracker again",
+    -- Dungeon timer (D-122)
+    SETTINGS_DUNGEON_TIMER = "Show the dungeon timer inside dungeons",
+    SETTINGS_TIMER_MINE = "Dungeon timer compares with your own best clear (instead of the Leaderboard's #1)",
+    HELP_TIMER = "/fl timer - show the dungeon timer again",
+    TIMER_BOSSES_OF = "Bosses %d / %d",
+    TIMER_BOSSES = "Bosses %d",
+    TIMER_CLEARED = "Cleared in %s",
+    TIMER_VS = "(%s)",
+    TIMER_OUTSIDE = "(outside: the clock keeps running)",
+    TIMER_VS_LEADER = "vs #1: %s by %s (click: your best)",
+    TIMER_VS_MINE = "vs your best: %s (click: Leaderboard #1)",
+    TIMER_NO_LEADER = "No clear here on the Leaderboard yet (click: your best)",
+    TIMER_NO_MINE = "No clear of yours here yet (click: Leaderboard #1)",
+    TIMER_OFF = "The dungeon timer is turned off in Settings (Your notices).",
+    TIMER_NO_RUN = "The dungeon timer shows while you are in a dungeon run.",
     SETTINGS_GOALS_TRACKER = "Show the goals tracker on screen while goals are set",
     GOALS_TRACKER_TITLE = "Session goals (%d of %d)",
     GOALS_TRACKER_TIME = "%s played  -  %s active",

@@ -548,6 +548,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `m:dungeontimer` | manual | inside a dungeon a small timer shows the dungeon, the time into the run (stopping at the final boss), each boss killed with its time into the run and +/- against the Leaderboard's #1 (or your best, by clicking the bottom line); it can be dragged, the x hides it for the run, /fl timer brings it back (D-122) | enter a dungeon you have cleared before; kill a boss; click the bottom line; finish the run | ? | ? |
 | `m:dungeonlevels` | manual | the dungeon names the game reports match the level ranges in Core/DungeonLevels.lua (taken from the DungeonJournal addon; a wing such as "Scarlet Monastery: Armory" or the whole name) (D-115, D-118) | after a run, the Leaderboard shows its range next to the dungeon name, e.g. "The Deadmines (17-26)" | ? | ? |
 | `m:leaderboard` | manual | the Leaderboard tab lists each dungeon's top 5 clears and the fastest boss kills; a ledger friend in your group is named (others are "+N"); the top level shows; an over-level run only under All runs; a top-5 clear gives a notice; a friend on 1.8.0 sees the same run once (D-115) | clear a dungeon with a friend on 1.8.0; both open Leaderboard | ? | ? |
 

@@ -103,6 +103,7 @@ H.PURE_FILES = {
     "Core/DungeonLevels.lua",
     "Core/Goals.lua",
     "Core/XPSources.lua",
+    "Core/RunTimer.lua",
     "Core/Leaderboard.lua",
     "Core/QuestChainLogic.lua",
     "Core/DungeonBosses.lua",

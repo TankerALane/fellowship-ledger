@@ -27,6 +27,9 @@ local function entries(fake)
         function(_, c) return c.display or c.name end)
 end
 
+-- Every run as a Leaderboard entry, real data (for the dungeon timer, D-122).
+function LeaderboardTab.Entries() return entries(false) end
+
 function LeaderboardTab.Board()
     return Leaderboard.Build(entries(ns.Data.IsFake()), not state.all)
 end

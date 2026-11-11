@@ -126,7 +126,8 @@ Released once the D-112/D-113 group checks pass. Unit and mock-client tests pass
 
 ## 1.10.0 (not released)
 - [x] **Goals tracker** (D-121): a small movable window with each session goal and a progress bar
-- [ ] Austin, in game: m:goalstracker
+- [x] **Dungeon timer** (D-122): time into the run, boss times, ahead/behind the Leaderboard's #1 or your own best
+- [ ] Austin, in game: m:goalstracker, m:dungeontimer
 
 ## Possible additions (not scheduled)
 - [ ] **Guild sharing** (optional, off by default): share a summary over the guild addon channel. It would help spread the addon, but guildmates are often not Battle.net or character friends, so it is not the best way to grow it; kept for later (Austin, 2026-11-09). Privacy questions to settle before any work starts.

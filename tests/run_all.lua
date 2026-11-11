@@ -38,6 +38,7 @@ local FILES = {
     "test_weekly",
     "test_social",
     "test_xpsources",
+    "test_dungeon_timer",
 }
 
 for _, name in ipairs(FILES) do

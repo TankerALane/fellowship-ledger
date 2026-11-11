@@ -58,8 +58,10 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                     if not p.npc then e.size = e.size + 1 end
                     addName(e, p.name)
                 end
+                -- A kill without its fight length still says when the boss died (the dungeon
+                -- timer's splits, D-122); the fastest-kill list uses only those with one.
                 for _, b in ipairs(r.bosses or {}) do
-                    if b.name and b.fight then e.bosses[#e.bosses + 1] = { name = b.name, fight = b.fight, at = b.at } end
+                    if b.name and (b.fight or b.at) then e.bosses[#e.bosses + 1] = { name = b.name, fight = b.fight, at = b.at } end
                 end
                 out[#out + 1] = e
             end
@@ -77,7 +79,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                         for _, n in ipairs(r.names or {}) do addName(e, n) end
                         for i, sp in ipairs(r.splits or {}) do
                             local bossName = r.bossNames and r.bossNames[i]
-                            if bossName and bossName ~= "" and sp.fight then
+                            if bossName and bossName ~= "" and (sp.fight or sp.at) then
                                 e.bosses[#e.bosses + 1] = { name = bossName, fight = sp.fight, at = r.entered + (sp.at or 0) }
                             end
                         end
@@ -162,11 +164,13 @@ function Leaderboard.Build(entries, atLevelOnly)
         local best, order = {}, {}
         for _, e in ipairs(list) do
             for _, b in ipairs(e.bosses) do
-                local cur = best[b.name]
-                if not cur or b.fight < cur.fight then best[b.name] = { name = b.name, fight = b.fight, entry = e } end
-                local into = (b.at or 0) - (e.finishedAt - e.clear)
-                order[b.name] = order[b.name] or { sum = 0, n = 0 }
-                order[b.name].sum, order[b.name].n = order[b.name].sum + into, order[b.name].n + 1
+                if b.fight then
+                    local cur = best[b.name]
+                    if not cur or b.fight < cur.fight then best[b.name] = { name = b.name, fight = b.fight, entry = e } end
+                    local into = (b.at or 0) - (e.finishedAt - e.clear)
+                    order[b.name] = order[b.name] or { sum = 0, n = 0 }
+                    order[b.name].sum, order[b.name].n = order[b.name].sum + into, order[b.name].n + 1
+                end
             end
         end
         local bosses = {}
