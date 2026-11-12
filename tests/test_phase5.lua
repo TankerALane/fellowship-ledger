@@ -44,6 +44,32 @@ H.test("notable loot: green or better, only what is taken, never currency", func
     H.eq(items[1].zone, "Elwynn Forest")
 end)
 
+H.test("notable loot in a group: only what reaches your bags counts (D-125)", function()
+    local env = boot()
+    local bags = { [400] = 1 } -- one already carried
+    env.C_Item = { GetItemCount = function(id) return bags[id] or 0 end }
+    env.IsInGroup = function() return true end
+    env.__state.loot = {
+        { name = "Mine", quality = 3, link = "|Hitem:400|h[Mine]|h" },
+        { name = "Theirs", quality = 4, link = "|Hitem:500|h[Theirs]|h" },
+    }
+    Mock.fire(env, "LOOT_OPENED", true, false)
+    Mock.fire(env, "LOOT_SLOT_CLEARED", 1)
+    Mock.fire(env, "LOOT_SLOT_CLEARED", 2) -- a group member took it, or won its roll
+    bags[400] = 2
+    Mock.advance(env, 5)
+    local items = char(env).items
+    H.eq(#items, 1, "only the item that reached my bags")
+    H.eq(items[1].name, "Mine")
+    H.eq(today(env).itemsEpic or 0, 0, "their epic is not mine")
+    -- No bag count in a group: nothing is claimed.
+    env.C_Item = nil
+    Mock.fire(env, "LOOT_OPENED", true, false)
+    Mock.fire(env, "LOOT_SLOT_CLEARED", 2)
+    Mock.advance(env, 5)
+    H.eq(#char(env).items, 1)
+end)
+
 H.test("what killed you: newest recap, killing blow by latest timestamp", function()
     local env = boot()
     env.__state.recaps = {

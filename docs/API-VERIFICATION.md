@@ -359,6 +359,8 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetLootSlotInfo` | api | loot slot name, quantity, currency, quality | `/dump type(GetLootSlotInfo)` -> "function" | PASS | PASS |
 | `GetLootSlotLink` | api | item link of a loot slot | `/dump type(GetLootSlotLink)` -> "function" | PASS | PASS |
 | `ev:LOOT_SLOT_CLEARED` | event | a loot slot was taken: the item counts as looted | `/dump C_EventUtils.IsEventValid("LOOT_SLOT_CLEARED")` -> true | PASS | PASS |
+| `C_Item.GetItemCount` | api | bag count: a cleared loot slot counts only if the item reached your bags (D-125) | `/dump type(C_Item.GetItemCount)` -> "function" | ? | ? |
+| `GetItemCount` | api | fallback for the bag count | `/dump type(GetItemCount)` -> "function" | ? | ? |
 | `ev:ITEM_PUSH` | event | item went into your bags | `/dump C_EventUtils.IsEventValid("ITEM_PUSH")` -> true | PASS | PASS |
 | `ev:BAG_UPDATE_DELAYED` | event | bags settled (diff for new items) | `/dump C_EventUtils.IsEventValid("BAG_UPDATE_DELAYED")` -> true | PASS | PASS |
 

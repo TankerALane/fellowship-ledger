@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Notable loot in a group: an item another player looted, or won the roll for, could be counted as yours when your loot window was open on the same body, so friends got a notice that you looted it. An item now counts only once it is in your bags.
+
 ## 1.11.0 - 2026-11-12
 
 ### Added

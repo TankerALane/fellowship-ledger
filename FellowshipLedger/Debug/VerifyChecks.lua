@@ -223,6 +223,8 @@ ns.VerifyChecks = {
     { id = "GetLootSlotInfo", kind = "api", area = "Items", why = "loot slot name, quantity, currency, quality" },
     { id = "GetLootSlotLink", kind = "api", area = "Items", why = "item link of a loot slot" },
     { id = "ev:LOOT_SLOT_CLEARED", kind = "event", area = "Items", why = "a loot slot was taken: the item counts as looted" },
+    { id = "C_Item.GetItemCount", kind = "api", area = "Items", why = "bag count: a cleared loot slot counts only if the item reached your bags (D-125)" },
+    { id = "GetItemCount", kind = "api", area = "Items", why = "fallback for the bag count" },
     { id = "ev:ITEM_PUSH", kind = "event", area = "Items", why = "item went into your bags" },
     { id = "ev:BAG_UPDATE_DELAYED", kind = "event", area = "Items", why = "bags settled (diff for new items)" },
 
