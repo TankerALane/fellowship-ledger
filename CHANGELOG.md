@@ -1,10 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.11.1 - 2026-11-12
 
 ### Changed
 - Dungeon timer and clear times start at the first fight in the dungeon (you entering combat, a kill by your group or a boss pull), not when you walk in. Until then the timer waits at 0:00 with "Starts at the first fight". The Dungeons tab, bests, the Leaderboard and friends (on 1.11.1 or later) count clears the same way. Runs from before keep their old times.
-
 - Group members who run the ledger share one start for the run (the earliest any of them saw), so joining late or waiting while others clear does not shorten your time.
 - A run not timed from the start is marked with a *: when nobody in the group with the ledger saw the start, and your group was already fighting when you came in, a boss was already dead, or your first fight was a boss (unless the boss and at least 5 other mobs died in that fight: a mass pull, timed from the pull). It is timed from when you entered, the reason shows on hover, and it does not count for bests, Leaderboard notices or the timer's #1.
 
