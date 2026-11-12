@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Dungeon timer: a run not timed from the start shows just a * after the time; hover the time for the reason.
+
 ## 1.11.1 - 2026-11-12
 
 ### Changed

@@ -161,7 +161,6 @@ ns.Locale.Set({
     LEADER_TOAST = "#%d on %s, cleared in %s",
     TIMER_WAITING = "Starts at the first fight",
     -- Not timed from the start (D-127)
-    TIMER_PARTIAL = "* not from the start",
     PARTIAL_TIP = "* Not timed from the start: %s. Counted from entering.",
     PARTIAL_COMBAT = "your group was already fighting when you came in",
     PARTIAL_BOSSDEAD = "a boss was already dead when you came in",

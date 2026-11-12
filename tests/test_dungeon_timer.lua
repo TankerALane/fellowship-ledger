@@ -217,7 +217,9 @@ H.test("not timed from the start: the group fighting or a boss dead when you com
     Mock.advance(env, 5)
     local f = ns.DungeonTimer.Frame()
     H.ok(f.clock:GetText():find("*", 1, true), f.clock:GetText())
-    H.ok(f.status:GetText():find("not from the start", 1, true), f.status:GetText())
+    H.ok(not f.status:GetText():find("*", 1, true), "just the * on the clock: " .. f.status:GetText())
+    H.ok(ns.DungeonTimer.ShowWhy(f.clockHover), "hovering the clock says why")
+    H.ok(env.GameTooltip:IsShown(), "tooltip shown")
     -- A saved dungeon with a boss already down.
     local env2, ns2 = boot()
     env2.GetInstanceLockTimeRemaining = function() return 3600, false, 3, 1 end

@@ -91,6 +91,19 @@ local function build()
     f.clock:SetPoint("TOPRIGHT", -30, -6)
     f.clock:SetJustifyH("RIGHT")
     -- The run's +/- against the compared run, beside the time (RunTimer.View pace).
+    -- Over the clock: hovering a run marked * (not timed from the start, D-127) says
+    -- why. Dragging here still moves the window.
+    f.clockHover = CreateFrame("Frame", nil, f)
+    f.clockHover:SetAllPoints(f.clock)
+    f.clockHover:EnableMouse(true)
+    f.clockHover:RegisterForDrag("LeftButton")
+    f.clockHover:SetScript("OnDragStart", function() f:StartMoving() end)
+    f.clockHover:SetScript("OnDragStop", function()
+        f:StopMovingOrSizing()
+        savePosition(f)
+    end)
+    f.clockHover:SetScript("OnEnter", function(self) Timer.ShowWhy(self) end)
+    f.clockHover:SetScript("OnLeave", function() W.HideTooltip() end)
     f.pace = W.Text(f, "body", "muted")
     f.pace:SetPoint("RIGHT", f.clock, "LEFT", -6, 0)
     f.pace:SetJustifyH("RIGHT")
@@ -175,7 +188,6 @@ function Timer.Refresh()
     elseif run.outside then
         status = status .. "  " .. L.TIMER_OUTSIDE
     end
-    if v.partial and not v.waiting then status = status .. "  " .. L.TIMER_PARTIAL end
     frame.status:SetText(status)
     local shown = math.min(#v.bosses, Timer.MAX_ROWS)
     -- The latest kills when there are more than fit.
@@ -203,6 +215,14 @@ function Timer.Refresh()
     frame.compare.text:SetText(label)
     frame:SetHeight(Timer.TOP + shown * Timer.ROW_H + 32)
     frame:Show()
+    return true
+end
+
+-- Hover on the clock: why the run is marked * (nothing for a run timed from the start).
+function Timer.ShowWhy(owner)
+    local run = Timer.Run()
+    if not (run and run.partial) then return false end
+    W.Tooltip(owner, run.name, { ns.DungeonsModel.PartialText(run.partial, L) })
     return true
 end
 
