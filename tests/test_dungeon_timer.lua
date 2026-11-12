@@ -307,3 +307,22 @@ H.test("my first fight goes to the group after combat, and marked runs stay out 
         { dungeons = true }, nil)).runs[1]
     H.eq(u.partial, "boss")
 end)
+
+H.test("a big pull that runs into the boss: timed from the first pull, no * (Austin, 2026-11-12)", function()
+    local env, ns = boot()
+    enter(env)
+    Mock.advance(env, 45) -- buffing
+    local pullAt = env.time() + 1
+    Mock.advance(env, 1)
+    Mock.fire(env, "PLAYER_REGEN_DISABLED") -- the first trash pull
+    Mock.advance(env, 120) -- still in combat, dragging the pack to the boss
+    Mock.fire(env, "ENCOUNTER_START", 1, "Rhahk'Zor", 1, 5)
+    Mock.advance(env, 40)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    local run = ns.Store.char.currentRun
+    H.eq(run.started, pullAt, "the clock started at the first pull, not at the boss")
+    H.eq(run.partial, nil, "not marked: the boss was not the first fight")
+    H.eq(ns.DungeonsModel.Bosses(run)[1].offset, 160, "Rhahk'Zor 2:40 into the run (120 s of trash + 40 s fight)")
+    Mock.advance(env, 2)
+    H.eq(ns.DungeonTimer.Frame().clock:GetText(), "2:42")
+end)
