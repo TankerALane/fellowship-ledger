@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.11.0 - 2026-11-12
 
 ### Added
 - **Progress passed on between mutual friends**: when you and a friend are never online at the same time, another friend you both share with passes on their newer progress, so you are no longer stuck with what you saw last time. You only get it for friends you already share with, a friend's tooltip says who passed it on, and their own data replaces it when you next meet. Nobody you blocked gets yours. Settings > Sharing can turn it off (both ways). Friends need 1.11.0 or later for this.
