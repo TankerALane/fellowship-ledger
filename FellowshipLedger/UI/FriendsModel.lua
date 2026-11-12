@@ -131,6 +131,8 @@ function FriendsModel.Tooltip(row, char, friend, now, L, factionText)
         lines[#lines + 1] = string.format(L.TIP_LAST_PLAYED, FriendsModel.Ago(now, char.lastSeen))
     end
     lines[#lines + 1] = string.format(L.TIP_UPDATED, FriendsModel.Ago(now, friend.lastUpdated))
+    -- Newer data passed on by a mutual friend (D-124), until the friend's own arrives.
+    if char.via then lines[#lines + 1] = string.format(L.TIP_VIA, char.via, FriendsModel.Ago(now, char.viaAt)) end
     if friend.version then lines[#lines + 1] = string.format(L.TIP_VERSION, friend.version) end
     -- row.common: quests in both your logs (D-106).
     if row.common and row.common > 0 then lines[#lines + 1] = string.format(L.TIP_COMMON_QUESTS, row.common) end

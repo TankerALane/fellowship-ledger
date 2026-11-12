@@ -202,6 +202,8 @@ local function build(panel)
     y = y - 32
     toggle(L.SHARING_PAUSE_ALL, "sharingPaused")
     toggle(L.SHARE_NAME_DUNGEONS, "shareNameInDungeons")
+    toggle(L.RELAY_FRIENDS, "relayFriends")
+    note(L.RELAY_FRIENDS_NOTE)
     note(L.SHARING_NOT_LIVE)
 
     -- Appearance -------------------------------------------------------------

@@ -159,4 +159,10 @@ ns.Locale.Set({
     LEADER_BOSSES = "Fastest boss kills",
     LEADER_TOAST_TITLE = "Leaderboard",
     LEADER_TOAST = "#%d on %s, cleared in %s",
+    -- Relaying between mutual friends (D-124)
+    RELAY_FRIENDS = "Pass friends' progress on between mutual friends",
+    RELAY_FRIENDS_NOTE = "When you and a friend are not online together, a friend you both share with passes on their newer progress. You only get it for friends you already share with, and nobody you blocked gets yours. Off: your progress is not passed on, and you do not get others'.",
+    TIP_VIA = "Newer progress via %s, %s",
+    COMMS_RELAY = "Relaying between friends: on; %d characters passed on, %d received, %d not needed",
+    COMMS_RELAY_OFF = "Relaying between friends: off; %d characters passed on, %d received, %d not needed",
 })

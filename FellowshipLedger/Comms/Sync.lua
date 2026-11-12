@@ -24,10 +24,17 @@ Sync.NAME_GAP = 60
 Sync.LIVE_EVERY = 60     -- seconds between live updates of the character being played
 Sync.lastLive = {}       -- peer id -> what the last live update said (lastSeen left out)
 Sync.lastHello, Sync.lastRequest = {}, {}
+Sync.relayed = {}        -- "peer id|character key" -> lastSeen of the copy relayed to them (D-124)
 Sync.optedIn = {}        -- party member names who sent a NAME note this session
 Sync.test = nil
 
 local function now() return time() end
+
+-- Relaying between mutual friends (D-124): on unless switched off or sharing is paused.
+function Sync.RelayOn()
+    local s = ns.db.settings
+    return s.relayFriends ~= false and not s.sharingPaused
+end
 
 local function destFor(peer)
     return { transport = peer.transport, target = peer.target, peerId = peer.id }
@@ -59,8 +66,12 @@ function Sync.SendHello(peer, wantReply, force)
     local removed = {}
     for key in pairs(ns.db.removed or {}) do removed[#removed + 1] = key end
     table.sort(removed)
+    local noRelay = {}
+    for key in pairs(ns.db.blocklist or {}) do noRelay[#noRelay + 1] = ns.Relay.Hash(key) end
+    table.sort(noRelay)
     local body = Codec.EncodeHello({ version = ns.VERSION, nameOptIn = ns.db.settings.shareNameInDungeons,
-        wantReply = wantReply, characters = Sync.MyCharacters(), removed = removed })
+        wantReply = wantReply, characters = Sync.MyCharacters(), removed = removed,
+        relay = Sync.RelayOn(), noRelay = noRelay })
     Transport.Send(destFor(peer), "H", body)
 end
 
@@ -70,7 +81,31 @@ function Sync.RequestFrom(peer)
     Sync.lastRequest[peer.id] = t
     local f = ns.db.friends[peer.id]
     local since = f and f.syncedThrough and ns.Days.Shift(f.syncedThrough, -1, time, date) or nil
-    Transport.Send(destFor(peer), "Q", Codec.EncodeRequest(since))
+    -- What I hold of other friends, so this friend can relay newer copies (only to a
+    -- friend whose ledger relays: older versions would not use it).
+    local known = (Sync.RelayOn() and f and f.relay) and ns.Relay.Known(ns.db.friends, ns.db.blocklist, peer.id) or nil
+    Transport.Send(destFor(peer), "Q", Codec.EncodeRequest(since, known))
+end
+
+-- Relay (D-124): send peer my newer copies of friends' characters they listed.
+function Sync.SendRelays(peer, theirs)
+    if not (theirs and Sync.RelayOn()) or Friends.IsBlocked(peer) then return 0 end
+    local f = ns.db.friends[peer.id]
+    if not (f and f.relay) then return 0 end
+    local n = 0
+    for _, pick in ipairs(ns.Relay.Pick(ns.db.friends, ns.db.blocklist, peer, theirs)) do
+        local memo = peer.id .. "|" .. pick.key
+        if Sync.relayed[memo] ~= pick.char.lastSeen then
+            Sync.relayed[memo] = pick.char.lastSeen
+            local shared = Codec.MaskToSet(pick.char.mask or "")
+            -- From the day before their copy's last play: what they miss, and a little more.
+            local since = date("%Y-%m-%d", pick.theirs - 86400)
+            local body = Codec.EncodeData(pick.key, ns.Relay.AsOwn(pick.char), shared, since)
+            n = n + Transport.Send(destFor(peer), "R", body)
+            Sync.relaySent = (Sync.relaySent or 0) + 1
+        end
+    end
+    return n
 end
 
 function Sync.SendData(peer, since)
@@ -149,7 +184,9 @@ Transport.handlers.H = function(peer, body)
 end
 
 Transport.handlers.Q = function(peer, body)
-    Sync.SendData(peer, Codec.DecodeRequest(body).since)
+    local req = Codec.DecodeRequest(body)
+    Sync.SendData(peer, req.since)
+    Sync.SendRelays(peer, req.known)
 end
 
 -- A friend's chains as { key = { step, total, name } } (theirs plus the ones worked out
@@ -247,6 +284,8 @@ Transport.handlers.D = function(peer, body)
     local known = friend.characters[data.key]
     local chainsBefore = known and chainState(known)
     local events = Merge.Data(friend, data, today, cutoff, now())
+    -- Straight from the friend: no longer "via" anyone (D-124).
+    friend.characters[data.key].via, friend.characters[data.key].viaAt = nil, nil
     -- Finished chains (D-098): only while Quests is shared, and only for a character we knew.
     if chainsBefore and Codec.MaskToSet(data.mask or "").quests then
         local c = friend.characters[data.key]
@@ -257,6 +296,35 @@ Transport.handlers.D = function(peer, body)
     for _, e in ipairs(events) do
         if e.kind == "loot" then itemText(e.itemID) end -- start loading the item's name
         Sync.Notify({ event = e, friendName = friend.name or peer.id, friendId = peer.id })
+    end
+    if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
+end
+
+-- RELAY (D-124): a friend's character's newer data, passed on by peer. Kept only for a
+-- character I already have from that friend directly, only when newer than my copy,
+-- and only while relaying is on. It is merged like their own DATA, marked "via".
+Transport.handlers.R = function(peer, body)
+    if not Sync.RelayOn() then return end
+    local data = Codec.DecodeData(body)
+    if not data then return end
+    local id, friend, c = ns.Relay.Owner(ns.db.friends, ns.db.blocklist, data.key, peer.id)
+    if not friend or (c.lastSeen or 0) >= (data.lastSeen or 0) then
+        Sync.relayDropped = (Sync.relayDropped or 0) + 1
+        return
+    end
+    local today = ns.Store.Today()
+    local cutoff = ns.Days.Shift(today, -(Merge.KEEP_DAYS - 1), time, date)
+    -- A relay carries one character: the friend's next direct REQUEST still asks from
+    -- where their own DATA left off, so their other characters miss nothing.
+    local synced = friend.syncedThrough
+    local events = Merge.Data(friend, data, today, cutoff, now())
+    friend.syncedThrough = synced
+    local merged = friend.characters[data.key]
+    merged.via, merged.viaAt = peer.name or peer.id, now()
+    Sync.relayReceived = (Sync.relayReceived or 0) + 1
+    for _, e in ipairs(events) do
+        if e.kind == "loot" then itemText(e.itemID) end
+        Sync.Notify({ event = e, friendName = friend.name or id, friendId = id })
     end
     if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
 end

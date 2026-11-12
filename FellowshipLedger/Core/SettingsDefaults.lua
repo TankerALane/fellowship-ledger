@@ -38,6 +38,7 @@ SettingsDefaults.VALUES = {
     leaderToasts = true,             -- a run of yours made a top 5 on the Leaderboard (D-115)               -- a record of all your characters was beaten (D-115)
     sharingPaused = false,    -- master "pause all sharing"
     shareNameInDungeons = false, -- opt-in: party members who also run the ledger may see your name
+    relayFriends = true,      -- pass friends' newer data on between mutual friends, and take theirs (D-124)
     welcomeSeen = false,
     welcomeEveryLogin = true, -- show the welcome panel after every loading screen
     rememberTab = false,      -- open the window on the last tab used (default: always Me)

@@ -21,7 +21,7 @@ Every addon message is one piece:
 1|R|D|3a17|2|9|...
 ```
 
-- `type`: `H` HELLO, `Q` REQUEST, `D` DATA, `N` NAME, `T` TEST.
+- `type`: `H` HELLO, `Q` REQUEST, `D` DATA, `N` NAME, `T` TEST, `R` RELAY (1.11.0).
 - `msgId`: hex, unique per sender session.
 - `seq` and `total`: piece number and count. Pieces reassemble in any order, and duplicates are ignored. A half-received message is dropped after 120 s.
 - **Piece size:** 200 bytes by default, header included. Change it with `/fl comms size N` (60 to 255) until `/fl commtest` and two-client tests show the real limits.
@@ -34,6 +34,8 @@ Payloads are records separated by `~`, fields by `,`. Any `% | , ; ~ = newline` 
 h,<addonVersion>,<nameOptIn 0|1>,<wantReply 0|1>
 c,<Name-Realm>,<CLASS>,<level>,<shareMask>,<lastSeen>      (one per sharing character)
 x,<Name-Realm>                                             (1.0.1: one per character I removed)
+f,relay                                                    (1.11.0: my data may be relayed, and I relay)
+b,<hash>,<hash>,...                                        (1.11.0: hashes of what I blocked; never relay my data to them)
 ```
 
 `shareMask` has one `0` or `1` per tracker, in `Core/TrackerList.lua` order.
@@ -44,6 +46,7 @@ x,<Name-Realm>                                             (1.0.1: one per chara
 
 ```
 q,<YYYY-MM-DD or empty>
+v,<hash>,<lastSeen>          (1.11.0, only to friends whose HELLO had f,relay: one per friend character I hold)
 ```
 
 "Send me everything from this day on." The requester asks from the day before the latest day it already holds for that friend, so today's partial numbers refresh; the first request is empty, meaning everything kept. The sender caps it at 90 days.
@@ -86,6 +89,10 @@ Field codes:
 | `in`, `ie` | itemsNotable, itemsEpic | items |
 
 The receiver replaces each day, level and session it receives with the sender's version (the sender is authoritative), and keeps 90 days. Quest chains (`k`) describe what the character is on now, so the received set replaces the stored one. When the sender stops sharing Quests, the stored chains are cleared. Chain keys are `g:<questLineID>` (game data) or `q:<firstQuestID>` (Questie). Quest IDs in the log (`o`, from 1.2.1) are replaced on every DATA and cleared with chains; the receiver works out chains from them with its own game data or Questie and adds them to the chains the sender sent (sent chains win for the same key). Profession ranks (`p`, from 1.2.0) are replaced the same way and cleared when the sender stops sharing Professions; a bare `p` (1.4.0+) means the character has none. A receiver that gets no `p` at all from a friend on 1.2.0 or later shows "no professions"; only before 1.2.0 does it say the friend's version does not send them. 1.2.x receivers skip the bare `p`. Dungeon runs (`u`, from 1.5.0) are merged by entry time (a DATA with fewer runs keeps the others), kept 90 days and at most 50, and cleared when the sender stops sharing Dungeons. Version 1 receivers that predate these records ignore them.
+
+### RELAY (`R`, 1.11.0, D-124)
+
+A DATA body for another friend's character, sent in answer to the `v` records of a REQUEST when my copy is newer (its `lastSeen` is later). Hashes: 8 hex digits of djb2 over `FL:<Name-Realm>` (Comms/Relay.lua). Sent only for owners whose HELLO had `f,relay` and whose `b` list does not hold the asker's BattleTag or character; at most 10 per REQUEST, from the day before the asker's copy. The receiver keeps it only for a character it already holds from that friend directly, only when newer, and marks it as relayed until the friend's own DATA arrives. Older versions are never sent `R` and ignore `f`, `b` and `v`.
 
 ### NAME (`N`)
 

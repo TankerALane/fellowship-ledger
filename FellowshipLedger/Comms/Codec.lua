@@ -17,7 +17,7 @@ Codec.MAX_RUNS = 20             -- dungeon runs sent per character per DATA (the
 Codec.MAX_DEATHS = 10           -- recent deaths sent per character per DATA (D-105)
 Codec.MAX_LOOT = 20             -- notable loot entries sent per character per DATA (D-105)
 Codec.LOOT_MIN_QUALITY = 3      -- only blue (rare) or better is shared (Austin, D-105)
-Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST" }
+Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST", R = "RELAY" }
 
 -- Escaping: the separators and "%" become %XX.
 local SPECIAL = "[%%|,;~=\n\r%z]"
@@ -122,6 +122,13 @@ function Codec.EncodeHello(info)
     -- Characters I removed from my ledger: friends drop them (1.0.1; older
     -- versions ignore record types they do not know).
     for _, key in ipairs(info.removed or {}) do recs[#recs + 1] = "x," .. Codec.Escape(key) end
+    -- Relaying (1.11.0, D-124): "f,relay" when my data may be passed on between mutual
+    -- friends (and I take part), and "b,<hash>,..." for what I blocked, so nobody
+    -- relays my data to them. Older versions skip both.
+    if info.relay then
+        recs[#recs + 1] = "f,relay"
+        if info.noRelay and #info.noRelay > 0 then recs[#recs + 1] = "b," .. table.concat(info.noRelay, ",") end
+    end
     return table.concat(recs, "~")
 end
 
@@ -136,16 +143,37 @@ function Codec.DecodeHello(body)
                 level = tonumber(f[4]) or 0, mask = f[5] or "", lastSeen = tonumber(f[6]) or 0 }
         elseif f[1] == "x" and f[2] and f[2] ~= "" then
             out.removed[#out.removed + 1] = Codec.Unescape(f[2])
+        elseif f[1] == "f" then
+            for i = 2, #f do if f[i] == "relay" then out.relay = true end end
+        elseif f[1] == "b" then
+            out.noRelay = out.noRelay or {}
+            for i = 2, #f do if f[i]:match("^%x+$") then out.noRelay[f[i]] = true end end
         end
     end
     return out
 end
 
--- since: "YYYY-MM-DD" or nil for everything kept.
-function Codec.EncodeRequest(since) return "q," .. (since or "") end
+-- since: "YYYY-MM-DD" or nil for everything kept. known (1.11.0, D-124): friends'
+-- characters I hold, { { hash, lastSeen } }, as "v,<hash>,<lastSeen>" records, so the
+-- friend can relay newer copies (Comms/Relay.lua). Older versions read only "q".
+function Codec.EncodeRequest(since, known)
+    local recs = { "q," .. (since or "") }
+    for _, k in ipairs(known or {}) do
+        recs[#recs + 1] = string.format("v,%s,%d", k.hash, k.lastSeen)
+    end
+    return table.concat(recs, "~")
+end
 function Codec.DecodeRequest(body)
     local since = body:match("^q,(%d%d%d%d%-%d%d%-%d%d)")
-    return { since = since }
+    local known
+    for _, rec in ipairs(split(body, "~")) do
+        local hash, seen = rec:match("^v,(%x+),(%d+)$")
+        if hash then
+            known = known or {}
+            known[hash] = tonumber(seen)
+        end
+    end
+    return { since = since, known = known }
 end
 
 -- One character's shared data since `since` (nil = all). Returns nil if it shares nothing.

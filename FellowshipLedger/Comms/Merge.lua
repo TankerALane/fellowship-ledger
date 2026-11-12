@@ -78,6 +78,9 @@ function Merge.Hello(friend, hello, now)
     friend.version = hello.version
     friend.nameOptIn = hello.nameOptIn
     friend.helloAt = now
+    -- Relaying (D-124): may this friend's data be passed on, and to whom not.
+    friend.relay = hello.relay or nil
+    friend.noRelay = hello.noRelay
     -- Characters the friend removed from their own ledger.
     for _, key in ipairs(hello.removed or {}) do
         if friend.characters then friend.characters[key] = nil end
