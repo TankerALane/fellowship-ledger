@@ -336,15 +336,15 @@ H.test("a mass pull with the boss in the first fight: timed from the pull, no * 
     Mock.fire(env, "PLAYER_REGEN_DISABLED")
     local run = ns.Store.char.currentRun
     H.eq(run.partial, "boss", "marked until the fight shows what it was")
-    for _ = 1, 3 do
+    for _ = 1, 5 do
         Mock.advance(env, 10)
         Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1")
     end
-    H.eq(run.partial, "boss", "3 kills: not yet")
+    H.eq(run.partial, "boss", "5 kills (a boss's adds could be this many): not yet")
     Mock.advance(env, 10)
     Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1") -- the boss
     Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
-    H.eq(run.partial, nil, "the boss and 3 others in the first fight: a mass pull")
+    H.eq(run.partial, nil, "the boss and 5 others in the first fight: a mass pull")
     H.eq(run.started, pullAt, "the clock starts at the pull, not at entering")
     Mock.fire(env, "PLAYER_REGEN_ENABLED")
 end)

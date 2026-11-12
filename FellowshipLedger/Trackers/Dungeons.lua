@@ -566,9 +566,9 @@ end
 -- A boss in the very first fight (Austin, 2026-11-12: "a major pull that has the boss
 -- in the first pull with all the other trash"): marked and timed from entering at
 -- first, but kills are counted until that fight ends. MASS_PULL_KILLS kills in it (the
--- boss and at least 3 others) show a mass pull, not a cleared way: the mark goes and
+-- boss and at least 5 others; bosses often come with a few adds, Austin) show a mass pull, not a cleared way: the mark goes and
 -- the clock starts at the pull.
-Dungeons.MASS_PULL_KILLS = 4
+Dungeons.MASS_PULL_KILLS = 6
 local function markStarted(run, at, how)
     if not run or run.started or run.outside then return end
     if how == "boss" then
