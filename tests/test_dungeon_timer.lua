@@ -326,3 +326,46 @@ H.test("a big pull that runs into the boss: timed from the first pull, no * (Aus
     Mock.advance(env, 2)
     H.eq(ns.DungeonTimer.Frame().clock:GetText(), "2:42")
 end)
+
+H.test("a mass pull with the boss in the first fight: timed from the pull, no * (Austin, 2026-11-12)", function()
+    local env, ns = boot()
+    enter(env)
+    Mock.advance(env, 60) -- buffing
+    local pullAt = env.time()
+    Mock.fire(env, "ENCOUNTER_START", 1, "Rhahk'Zor", 1, 5) -- the boss engages first
+    Mock.fire(env, "PLAYER_REGEN_DISABLED")
+    local run = ns.Store.char.currentRun
+    H.eq(run.partial, "boss", "marked until the fight shows what it was")
+    for _ = 1, 3 do
+        Mock.advance(env, 10)
+        Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1")
+    end
+    H.eq(run.partial, "boss", "3 kills: not yet")
+    Mock.advance(env, 10)
+    Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1") -- the boss
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    H.eq(run.partial, nil, "the boss and 3 others in the first fight: a mass pull")
+    H.eq(run.started, pullAt, "the clock starts at the pull, not at entering")
+    Mock.fire(env, "PLAYER_REGEN_ENABLED")
+end)
+
+H.test("a boss alone as the first fight stays marked *", function()
+    local env, ns = boot()
+    enter(env)
+    local entered = env.time()
+    Mock.advance(env, 60)
+    Mock.fire(env, "ENCOUNTER_START", 1, "Rhahk'Zor", 1, 5)
+    Mock.fire(env, "PLAYER_REGEN_DISABLED")
+    Mock.advance(env, 15)
+    Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1") -- the boss
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.fire(env, "PLAYER_REGEN_ENABLED")
+    local run = ns.Store.char.currentRun
+    -- Trash later, in a new fight, does not count.
+    for _ = 1, 5 do
+        Mock.advance(env, 5)
+        Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-2")
+    end
+    H.eq(run.partial, "boss")
+    H.eq(run.started, entered, "timed from entering")
+end)

@@ -563,13 +563,41 @@ end
 -- shouldn't start until someone starts killing"): you entering combat or a kill by your
 -- group. The clear time counts from here too. A boss as the first fight means the way
 -- to it was cleared without you (D-127): the clock counts from entering, marked *.
+-- A boss in the very first fight (Austin, 2026-11-12: "a major pull that has the boss
+-- in the first pull with all the other trash"): marked and timed from entering at
+-- first, but kills are counted until that fight ends. MASS_PULL_KILLS kills in it (the
+-- boss and at least 3 others) show a mass pull, not a cleared way: the mark goes and
+-- the clock starts at the pull.
+Dungeons.MASS_PULL_KILLS = 4
 local function markStarted(run, at, how)
     if not run or run.started or run.outside then return end
-    if how == "boss" then return Dungeons.MarkPartial(run, "boss") end
+    if how == "boss" then
+        Dungeons.MarkPartial(run, "boss")
+        if run.partial == "boss" then run.bossFirst = { at = at or Store.Now(), kills = 0 } end
+        return
+    end
     run.started = at or Store.Now()
     if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(run) end
 end
 Dungeons.MarkStarted = markStarted
+
+-- A kill during a first fight that began with a boss: enough of them, and it was a mass pull.
+local function countFirstFightKill(run)
+    local first = run and run.bossFirst
+    if not first then return end
+    first.kills = first.kills + 1
+    if first.kills >= Dungeons.MASS_PULL_KILLS and run.partial == "boss" then
+        run.partial, run.bossFirst = nil, nil
+        run.started = first.at
+        if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(run) end
+    end
+end
+
+-- That first fight is over: no more counting.
+Dungeons.events.PLAYER_REGEN_ENABLED = function()
+    local run = Store.char and Store.char.currentRun
+    if run then run.bossFirst = nil end
+end
 
 Dungeons.events.PLAYER_REGEN_DISABLED = function()
     markStarted(Store.char and Store.char.currentRun)
@@ -691,7 +719,9 @@ end
 
 Dungeons.events.PARTY_KILL = function(_, _, target)
     seeCopy(target, "kill")
-    markStarted(Store.char and Store.char.currentRun)
+    local run = Store.char and Store.char.currentRun
+    markStarted(run)
+    countFirstFightKill(run)
 end
 Dungeons.events.PLAYER_TARGET_CHANGED = function()
     if not (Store.char and Store.char.currentRun) then return end
