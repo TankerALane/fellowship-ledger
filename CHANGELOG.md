@@ -9,6 +9,7 @@
 - A run not timed from the start is marked with a *: when nobody in the group with the ledger saw the start, and your group was already fighting when you came in, a boss was already dead, or your first fight was a boss (unless the boss and at least 5 other mobs died in that fight: a mass pull, timed from the pull). It is timed from when you entered, the reason shows on hover, and it does not count for bests, Leaderboard notices or the timer's #1.
 
 ### Fixed
+- A dungeon run already going when the ledger was updated no longer starts its time again at the next fight; runs that did are repaired at login.
 - Notable loot in a group: an item another player looted, or won the roll for, could be counted as yours when your loot window was open on the same body, so friends got a notice that you looted it. An item now counts only once it is in your bags.
 
 ## 1.11.0 - 2026-11-12

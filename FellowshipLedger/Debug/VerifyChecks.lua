@@ -223,6 +223,7 @@ ns.VerifyChecks = {
     { id = "GetLootSlotInfo", kind = "api", area = "Items", why = "loot slot name, quantity, currency, quality" },
     { id = "GetLootSlotLink", kind = "api", area = "Items", why = "item link of a loot slot" },
     { id = "ev:LOOT_SLOT_CLEARED", kind = "event", area = "Items", why = "a loot slot was taken: the item counts as looted" },
+    { id = "GetRaidRosterInfo", kind = "api", area = "Dungeons", why = "a group member's zone, to tell whether they are in this dungeon (C_Map gives no map inside dungeons on Forever) (D-127)" },
     { id = "GetInstanceLockTimeRemaining", kind = "api", area = "Dungeons", why = "bosses already dead when you enter a saved dungeon: the run is marked * (D-127)" },
     { id = "m:partialrun", kind = "manual", area = "Dungeons", why = "a run joined after the group started fighting is marked * (not timed from the start): UnitAffectingCombat and C_Map.GetBestMapForUnit on a party member inside; group members with the ledger share one start (D-127)", test = "with a friend on 1.11.1: they pull first, then you enter; your timer shows their start, no *. With nobody else on the ledger: enter while the group fights; the timer shows *" },
     { id = "C_Item.GetItemCount", kind = "api", area = "Items", why = "bag count: a cleared loot slot counts only if the item reached your bags (D-125)" },

@@ -369,3 +369,56 @@ H.test("a boss alone as the first fight stays marked *", function()
     H.eq(run.partial, "boss")
     H.eq(run.started, entered, "timed from entering")
 end)
+
+H.test("Forever: no map inside dungeons, so the group roster's zone says who is in here (D-127)", function()
+    local env, ns = boot()
+    env.C_Map.GetBestMapForUnit = function() return nil end
+    env.UnitName = function(unit)
+        if unit == "player" then return env.__state.name, nil end
+        if unit == "party1" then return "Tanky", nil end
+        if unit == "party2" then return "Faraway", nil end
+    end
+    env.__state.units.party1 = { class = "WARRIOR", combat = false }
+    env.__state.units.party2 = { class = "PRIEST", combat = true } -- fighting, but out in the world
+    env.UnitAffectingCombat = function(unit) local u = env.__state.units[unit] return u and u.combat or false end
+    env.GetNumGroupMembers = function() return 3 end
+    local zones = { "The Deadmines", "The Deadmines", "Westfall" }
+    local names = { env.__state.name, "Tanky", "Faraway-OtherRealm" }
+    env.GetRaidRosterInfo = function(i) return names[i], 0, 1, 20, "Warrior", "WARRIOR", zones[i] end
+    enter(env)
+    H.eq(ns.Store.char.currentRun.partial, nil, "fighting outside the dungeon does not count")
+    -- Tanky, in here, was already fighting.
+    local env2, ns2 = boot()
+    env2.C_Map.GetBestMapForUnit = function() return nil end
+    env2.UnitName = env.UnitName
+    env2.__state.units.party1 = { class = "WARRIOR", combat = true }
+    env2.UnitAffectingCombat = function(unit) local u = env2.__state.units[unit] return u and u.combat or false end
+    env2.GetNumGroupMembers = function() return 3 end
+    env2.GetRaidRosterInfo = env.GetRaidRosterInfo
+    enter(env2)
+    H.eq(ns2.Store.char.currentRun.partial, "combat")
+end)
+
+H.test("updating the ledger mid-run does not start the clock again (Austin, 2026-11-12)", function()
+    local env, ns = boot()
+    enter(env)
+    local run = ns.Store.char.currentRun
+    local entered = run.entered
+    -- As a run begun by the earlier version: no first-fight start kept.
+    run.startTracked = nil
+    boss(env, 600, 1, "Rhahk'Zor")
+    Mock.advance(env, 300)
+    Mock.fire(env, "PLAYER_REGEN_DISABLED") -- the first fight after the update
+    H.eq(run.started, nil, "no new start")
+    H.eq(ns.RunTimer.Start(run), entered, "still counted from entering")
+    -- A run the earlier build of 2026-11-12 already gave a late start: repaired at login.
+    run.started = env.time()
+    H.eq(ns.Trackers.byId.dungeons.FixStarts(ns.Store.char), 1)
+    H.eq(run.started, nil)
+    H.eq(ns.RunTimer.Start(run), entered)
+    -- A start after a boss the run already killed is wrong even on a new run.
+    local r2 = { startTracked = true, entered = 100, started = 900, bosses = { { at = 500 } } }
+    ns.Store.char.dungeons[#ns.Store.char.dungeons + 1] = r2
+    ns.Trackers.byId.dungeons.FixStarts(ns.Store.char)
+    H.eq(r2.started, nil)
+end)

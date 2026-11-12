@@ -242,16 +242,36 @@ function Dungeons.EntryCheck(run)
     local okL, _, _, _, done = ns.Compat.Try("GetInstanceLockTimeRemaining")
     done = okL and T.Plain(done) or nil
     if type(done) == "number" and done > 0 then return Dungeons.MarkPartial(run, "bossDead") end
+    -- Is a group member in this dungeon? By map where the game gives one; Forever gives
+    -- none inside dungeons (verify 2026-11-12), so else by the group roster's zone name
+    -- (GetRaidRosterInfo: name, rank, subgroup, level, class, fileName, zone, ...).
     local okMe, mine = ns.Compat.Try("C_Map.GetBestMapForUnit", "player")
     mine = okMe and T.Plain(mine) or nil
-    if not mine then return end
+    local here
+    if not mine and run.name then
+        here = {}
+        local okN, n = ns.Compat.Try("GetNumGroupMembers")
+        for i = 1, math.min(okN and T.Plain(n) or 0, 40) do
+            local okR, name, _, _, _, _, _, zone = ns.Compat.Try("GetRaidRosterInfo", i)
+            name, zone = okR and T.Plain(name) or nil, okR and T.Plain(zone) or nil
+            if type(name) == "string" and zone == run.name then here[(name:match("^([^%-]+)"))] = true end
+        end
+    end
     for i = 1, 4 do
         local unit = "party" .. i
         local okE, exists = ns.Compat.Try("UnitExists", unit)
         if okE and T.Plain(exists) then
-            local okM, map = ns.Compat.Try("C_Map.GetBestMapForUnit", unit)
+            local inside
+            if mine then
+                local okM, map = ns.Compat.Try("C_Map.GetBestMapForUnit", unit)
+                inside = okM and T.Plain(map) == mine
+            elseif here then
+                local okU, name = ns.Compat.Try("UnitName", unit)
+                name = okU and T.Plain(name) or nil
+                inside = type(name) == "string" and here[name] == true
+            end
             local okC, fighting = ns.Compat.Try("UnitAffectingCombat", unit)
-            if okM and T.Plain(map) == mine and okC and T.Plain(fighting) == true then
+            if inside and okC and T.Plain(fighting) == true then
                 return Dungeons.MarkPartial(run, "combat")
             end
         end
@@ -499,10 +519,34 @@ function Dungeons.MergeSplits(char)
     return merged
 end
 
+-- Runs begun before the first-fight start (D-126) that a fight after an update gave a
+-- start anyway (a build of 2026-11-12): back to counting from entering. Also any start
+-- after a boss the run had already killed.
+function Dungeons.FixStarts(char)
+    local fixed = 0
+    local runs = {}
+    for _, r in ipairs(char.dungeons or {}) do runs[#runs + 1] = r end
+    if char.currentRun then runs[#runs + 1] = char.currentRun end
+    for _, r in ipairs(runs) do
+        if r.started then
+            local bad = not r.startTracked
+            for _, b in ipairs(r.bosses or {}) do
+                if b.at and b.at < r.started then bad = true end
+            end
+            if bad then
+                r.started, r.bossFirst = nil, nil
+                if r.partial == "boss" then r.partial = nil end
+                fixed = fixed + 1
+            end
+        end
+    end
+    return fixed
+end
+
 function Dungeons:OnLogin()
     -- Every character on this account, not only the one logging in: a character
     -- not played since the update would otherwise keep its old walk-in runs.
-    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c); Dungeons.MergeSplits(c) end
+    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c); Dungeons.MergeSplits(c); Dungeons.FixStarts(c) end
     check()
     Dungeons.Repair(Store.char)
 end
@@ -571,6 +615,9 @@ end
 Dungeons.MASS_PULL_KILLS = 6
 local function markStarted(run, at, how)
     if not run or run.started or run.outside then return end
+    -- A run already going when the ledger was updated keeps counting from entering
+    -- (Austin, 2026-11-12: updating mid-run started his clock again at the next fight).
+    if not run.startTracked then return end
     if how == "boss" then
         Dungeons.MarkPartial(run, "boss")
         if run.partial == "boss" then run.bossFirst = { at = at or Store.Now(), kills = 0 } end
