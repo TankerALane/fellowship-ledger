@@ -28,12 +28,13 @@ function DungeonsModel.Clock(seconds)
     return string.format("%d:%02d", m, s)
 end
 
--- Clear time (D-104): entering to the kill that completed the run. Friends send it
+-- Clear time (D-104): the first fight (D-126; entering, for older runs) to the kill that completed the run. Friends send it
 -- as run.clear (1.7.0+). nil when the run was not completed by its final boss.
 function DungeonsModel.ClearTime(run)
     if not run or not run.completed then return nil end
     if run.clear then return run.clear end
-    if run.completedAt and run.entered and run.completedAt >= run.entered then return run.completedAt - run.entered end
+    local start = ns.RunTimer.Start(run)
+    if run.completedAt and start and run.completedAt >= start then return run.completedAt - start end
     return nil
 end
 
@@ -133,12 +134,13 @@ function DungeonsModel.Group(party, L)
     return table.concat(parts, ", ")
 end
 
--- Bosses in kill order with minutes after entering; the one that completed the run
+-- Bosses in kill order with the time into the run (from its first fight, D-126); the one that completed the run
 -- is marked final.
 function DungeonsModel.Bosses(run)
     local list = {}
+    local start = ns.RunTimer.Start(run) or run.entered
     for i, b in ipairs(run.bosses or {}) do
-        list[i] = { n = i, name = b.name or "?", offset = b.at and run.entered and (b.at - run.entered) or nil, at = b.at,
+        list[i] = { n = i, name = b.name or "?", offset = b.at and start and math.max(0, b.at - start) or nil, at = b.at,
             fight = b.fight }
     end
     if run.completed and run.completedBy == "lastBoss" and #list > 0 then

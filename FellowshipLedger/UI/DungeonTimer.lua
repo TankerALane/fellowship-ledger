@@ -5,8 +5,9 @@
 -- for this dungeon (default) or your own fastest clear (Austin, 2026-11-11). Click
 -- the bottom line, or use Settings, to switch. On by default (Settings > Your
 -- notices). Movable (settings.dungeonTimerPos); the x hides it for this run, and
--- /fl timer brings it back. The time is counted like the clear time: from first
--- entering to the final boss, time outside included.
+-- /fl timer brings it back. The time is counted like the clear time: from the first
+-- fight inside (D-126; it waits at 0:00 until then) to the final boss, time outside
+-- included.
 
 local _, ns = ...
 local L = ns.L
@@ -166,7 +167,9 @@ function Timer.Refresh()
     frame.pace:SetText(v.pace and RT.Delta(v.pace) or "")
     if v.pace then W.SetTextRole(frame.pace, deltaRole(v.pace)) end
     local status = v.total and string.format(L.TIMER_BOSSES_OF, v.killed, v.total) or string.format(L.TIMER_BOSSES, v.killed)
-    if v.done then
+    if v.waiting then
+        status = L.TIMER_WAITING
+    elseif v.done then
         status = string.format(L.TIMER_CLEARED, RT.Clock(v.elapsed))
         if v.delta then status = status .. "  " .. string.format(L.TIMER_VS, RT.Delta(v.delta)) end
     elseif run.outside then

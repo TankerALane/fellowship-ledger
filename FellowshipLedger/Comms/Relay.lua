@@ -117,7 +117,8 @@ function Relay.AsOwn(c)
         for _, r in ipairs(c.runs) do
             local run = { entered = r.entered, name = r.name, duration = r.duration, completed = r.completed,
                 bossCount = r.bossCount, deaths = r.deaths, levelMax = r.levelMax, bosses = {}, party = {} }
-            if r.completed and r.clear and r.entered then run.completedAt = r.entered + r.clear end
+            if r.startOffset and r.entered then run.started = r.entered + r.startOffset end
+            if r.completed and r.clear and r.entered then run.completedAt = r.entered + (r.startOffset or 0) + r.clear end
             for i, s in ipairs(r.splits or {}) do
                 run.bosses[i] = { at = r.entered and s.at and (r.entered + s.at) or nil, fight = s.fight,
                     name = r.bossNames and r.bossNames[i] or nil }

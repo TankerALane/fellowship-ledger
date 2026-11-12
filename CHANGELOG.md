@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- Dungeon timer and clear times start at the first fight in the dungeon (you entering combat, a kill by your group or a boss pull), not when you walk in. Until then the timer waits at 0:00 with "Starts at the first fight". The Dungeons tab, bests, the Leaderboard and friends (on 1.11.1 or later) count clears the same way. Runs from before keep their old times.
+
 ### Fixed
 - Notable loot in a group: an item another player looted, or won the roll for, could be counted as yours when your loot window was open on the same body, so friends got a notice that you looted it. An item now counts only once it is in your bags.
 

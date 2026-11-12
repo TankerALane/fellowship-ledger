@@ -91,6 +91,10 @@ local function enter(env)
     st.ejBosses = { { name = "Rhahk'Zor", id = 1 }, { name = "Sneed", id = 5 }, { name = "Captain Cookie", id = 9 } }
     go(env, DEADMINES)
 end
+local function enterAndPull(env)
+    enter(env)
+    Mock.fire(env, "PLAYER_REGEN_DISABLED") -- the first fight: the clock starts (D-126)
+end
 local function boss(env, secs, id, name)
     Mock.advance(env, secs)
     Mock.fire(env, "ENCOUNTER_END", id, name, 1, 5, 1)
@@ -101,7 +105,7 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     local T = ns.DungeonTimer
     H.ok(not T.Frame() or not T.Frame():IsShown(), "nothing outside a dungeon")
     -- A first run of mine: 25 minutes.
-    enter(env)
+    enterAndPull(env)
     boss(env, 300, 1, "Rhahk'Zor"); boss(env, 600, 5, "Sneed"); boss(env, 600, 9, "Captain Cookie")
     go(env, WESTFALL, 30)
     Mock.advance(env, 1801)
@@ -114,7 +118,7 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
             splits = { { at = 200, fight = 30 }, { at = 700, fight = 40 }, { at = 1200, fight = 50 } },
             bossNames = { "Rhahk'Zor", "Sneed", "Captain Cookie" } } } } } }
     -- Second run: the timer shows, compared with #1.
-    enter(env)
+    enterAndPull(env)
     Mock.advance(env, 2)
     local f = T.Frame()
     H.ok(f:IsShown(), "shown on entering")
@@ -154,4 +158,48 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     -- Against #1 (the friend's 20:00, not this run, which is now on the Leaderboard).
     f.compare:GetScript("OnClick")()
     H.eq(f.pace:GetText(), "-2:21", "against #1 (17:39 vs 20:00), not against itself")
+end)
+
+H.test("dungeon timer waits at 0:00 until the first fight, and the clear counts from it (D-126)", function()
+    local env, ns = boot()
+    local T = ns.DungeonTimer
+    enter(env)
+    Mock.advance(env, 90) -- buffing and waiting for the group
+    local f = T.Frame()
+    H.ok(f:IsShown(), "shown on entering")
+    H.eq(f.clock:GetText(), "0:00", "not running before anyone fights")
+    H.eq(f.status:GetText(), "Starts at the first fight")
+    local run = ns.Store.char.currentRun
+    H.eq(run.started, nil)
+    -- The group kills something: the clock starts.
+    Mock.fire(env, "PARTY_KILL", "Player-1", "Creature-1")
+    H.eq(run.started, env.time())
+    Mock.advance(env, 65)
+    H.eq(f.clock:GetText(), "1:05")
+    -- Later fights do not move the start.
+    Mock.fire(env, "PLAYER_REGEN_DISABLED")
+    H.eq(run.started, env.time() - 65)
+    boss(env, 600, 1, "Rhahk'Zor"); boss(env, 600, 5, "Sneed"); boss(env, 600, 9, "Captain Cookie")
+    local clear = ns.DungeonsModel.ClearTime(run)
+    H.eq(clear, 65 + 1800, "the clear counts from the first fight, not from entering")
+    H.eq(ns.Bests.Clear(run), clear)
+    -- Friends get it too, and older readers keep reading the time from entering.
+    local C = ns.Codec
+    local body = C.EncodeData("Me-R", { class = "MAGE", level = 20, days = {}, dungeons = {}, currentRun = run }, { dungeons = true }, nil)
+    local u = C.DecodeData(body).runs[1]
+    H.eq(u.startOffset, 90)
+    H.eq(u.clear, clear, "a newer friend sees the same clear")
+    H.eq(u.splits[1].at, 90 + 65 + 600, "boss times still count from entering on the wire")
+    local e = ns.Leaderboard.Entries({}, { f = { characters = { ["Me-R"] = { runs = { u } } } } })[1]
+    H.eq(e.finishedAt, run.completedAt, "the friend's copy finishes at the same moment")
+    H.eq(e.clear, clear)
+end)
+
+H.test("a boss pulled first starts the clock at the pull", function()
+    local env, ns = boot()
+    enter(env)
+    Mock.advance(env, 30)
+    Mock.fire(env, "ENCOUNTER_START", 1, "Rhahk'Zor", 1, 5)
+    local run = ns.Store.char.currentRun
+    H.eq(run.started, env.time())
 end)

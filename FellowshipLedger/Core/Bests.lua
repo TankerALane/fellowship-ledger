@@ -33,10 +33,10 @@ function Bests.Ensure(store)
     return store
 end
 
--- The clear time of a run (seconds from entering to the final boss), or nil.
+-- The clear time of a run (seconds from its first fight, D-126, to the final boss), or nil.
 function Bests.Clear(run)
     if not (run and run.completed and run.completedAt and run.entered) then return nil end
-    local c = run.completedAt - run.entered
+    local c = run.completedAt - ns.RunTimer.Start(run)
     if c < Bests.MIN_CLEAR_SECONDS then return nil end
     return c
 end

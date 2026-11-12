@@ -12,6 +12,17 @@ ns.RunTimer = RunTimer
 
 RunTimer.MODES = { leader = true, mine = true }
 
+-- When a run's clock starts (D-126): its first fight (run.started), else, for runs from
+-- before that was kept, when it was entered. nil while nobody has fought yet.
+function RunTimer.Start(run)
+    if not run then return nil end
+    if run.started then return run.started end
+    if run.completed or not run.entered then return run.entered end
+    -- Runs recorded before 1.11.1 that are still open have no start: the entry time.
+    if run.startTracked then return nil end
+    return run.entered
+end
+
 -- The target run for a dungeon from Leaderboard entries (Leaderboard.Entries), joined
 -- across ledgers and at level like the Leaderboard tab. mode: "leader" (#1, anyone)
 -- or "mine" (your fastest). current: the open run, left out once it is completed (it
@@ -51,7 +62,10 @@ end
 -- same boss (negative = ahead), nil when the target has no time for it.
 function RunTimer.View(run, now, target)
     local out = { bosses = {}, killed = 0, total = run.bossCount }
-    local entered = run.entered or now
+    local entered = RunTimer.Start(run)
+    -- Nobody has fought yet: the clock waits at 0:00 (D-126).
+    out.waiting = entered == nil or nil
+    entered = entered or now
     out.done = run.completed and run.completedAt and true or false
     out.elapsed = math.max(0, (out.done and run.completedAt or now) - entered)
     local list = {}

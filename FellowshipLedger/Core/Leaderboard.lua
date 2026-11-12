@@ -48,7 +48,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
         for _, r in ipairs(c.dungeons or {}) do runs[#runs + 1] = r end
         if c.currentRun then runs[#runs + 1] = c.currentRun end
         for _, r in ipairs(runs) do
-            local clear = (r.completed and r.completedAt and r.entered) and (r.completedAt - r.entered) or nil
+            local clear = (r.completed and r.completedAt and r.entered) and (r.completedAt - ns.RunTimer.Start(r)) or nil
             if clear and clear >= Leaderboard.MIN_CLEAR and r.name then
                 local e = { dungeon = r.name, clear = clear, finishedAt = r.completedAt, names = {}, size = 1,
                     levelMax = r.levelMax, mine = true, bosses = {} }
@@ -72,7 +72,8 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
             if not (isBlocked and isBlocked(f, key)) then
                 for _, r in ipairs(c.runs or {}) do
                     if r.completed and r.clear and r.clear >= Leaderboard.MIN_CLEAR and r.entered and r.name then
-                        local e = { dungeon = r.name, clear = r.clear, finishedAt = r.entered + r.clear, names = {},
+                        -- r.clear counts from the first fight, startOffset seconds after entering (D-126).
+                        local e = { dungeon = r.name, clear = r.clear, finishedAt = r.entered + (r.startOffset or 0) + r.clear, names = {},
                             size = r.size or (1 + #(r.names or {})), levelMax = r.levelMax, friendId = fid, bosses = {} }
                         addName(e, c.display or c.name or key)
                         e.lead = e.names[1]

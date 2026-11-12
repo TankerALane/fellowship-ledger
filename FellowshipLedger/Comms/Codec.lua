@@ -257,7 +257,7 @@ function Codec.EncodeData(key, char, shared, since)
         if cur and cur.completed and cur.entered and (not from or cur.entered >= from) then
             runs[#runs + 1] = { entered = cur.entered, name = cur.name, completed = true, completedAt = cur.completedAt,
                 duration = math.max(0, (cur.lastSeen or cur.entered) - cur.entered), bosses = cur.bosses,
-                bossCount = cur.bossCount, deaths = cur.deaths, party = cur.party, levelMax = cur.levelMax }
+                bossCount = cur.bossCount, deaths = cur.deaths, party = cur.party, levelMax = cur.levelMax, started = cur.started }
         end
         table.sort(runs, function(a, b) return a.entered < b.entered end)
         for i = math.max(1, #runs - Codec.MAX_RUNS + 1), #runs do
@@ -282,10 +282,14 @@ function Codec.EncodeData(key, char, shared, since)
                 if not p.npc then size = size + 1 end
                 if p.friend and p.name then friends[#friends + 1] = Codec.Escape(p.name) end
             end
+            -- 1.11.1 (D-126) adds <startOffset>: seconds after entering of the first fight,
+            -- where the run's clock starts. <clear> keeps counting from entering, so older
+            -- receivers read it as before; newer ones take the offset off.
+            local offset = (r.started and r.entered and r.started >= r.entered) and string.format("%d", r.started - r.entered) or ""
             recs[#recs + 1] = table.concat({ "u", tostring(r.entered), Codec.Escape(r.name), tostring(r.duration or 0),
                 r.completed and "1" or "0", tostring(#(r.bosses or {})), tostring(r.bossCount or 0), tostring(r.deaths or 0),
                 string.format("%d", clear), table.concat(splits, ";"), table.concat(names, ";"), table.concat(friends, ";"),
-                type(r.levelMax) == "number" and string.format("%d", r.levelMax) or "", string.format("%d", size) }, ",")
+                type(r.levelMax) == "number" and string.format("%d", r.levelMax) or "", string.format("%d", size), offset }, ",")
         end
     end
     local from = since and Codec.SinceEpoch(since) or nil
@@ -409,6 +413,12 @@ function Codec.DecodeData(body)
             run.names = list(f[12])
             run.levelMax = tonumber(f[13])
             run.size = tonumber(f[14])
+            -- The first fight, seconds after entering (1.11.1+, D-126): the clear counts from it.
+            local offset = tonumber(f[15])
+            if offset and offset > 0 then
+                run.startOffset = offset
+                if run.clear and run.clear > offset then run.clear = run.clear - offset end
+            end
             out.runs = out.runs or {}
             out.runs[#out.runs + 1] = run
         elseif f[1] == "r" and tonumber(f[2]) then

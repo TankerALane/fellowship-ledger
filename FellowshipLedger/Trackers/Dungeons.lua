@@ -238,6 +238,7 @@ local function startRun(char, t, name, instanceID, difficultyID)
         lookup = how,
         lookups = 1,
         pending = true, -- counted as entered after 5 minutes or a boss kill
+        startTracked = true, -- run.started is set at the first fight (D-126)
     }
     noteMembers(char.currentRun)
     return char.currentRun
@@ -424,7 +425,7 @@ function Dungeons.MergeSplits(char)
                     if b[k] ~= nil then a[k] = b[k] end
                 end
             end
-            for _, k in ipairs({ "lastBossID", "lastBossName", "bossCount", "lookup" }) do
+            for _, k in ipairs({ "lastBossID", "lastBossName", "bossCount", "lookup", "started" }) do
                 if a[k] == nil then a[k] = b[k] end
             end
             if (a.difficultyID or 0) == 0 then a.difficultyID = b.difficultyID end
@@ -498,8 +499,21 @@ local function noteDifficulty(run, difficultyID)
     end
 end
 
+-- The run's clock starts at the first fight inside (D-126, Austin: "the dungeon timer
+-- shouldn't start until someone starts killing"): you entering combat, a kill by your
+-- group, or a boss pull, whichever comes first. The clear time counts from here too.
+local function markStarted(run, at)
+    if run and not run.started and not run.outside then run.started = at or Store.Now() end
+end
+Dungeons.MarkStarted = markStarted
+
+Dungeons.events.PLAYER_REGEN_DISABLED = function()
+    markStarted(Store.char and Store.char.currentRun)
+end
+
 Dungeons.events.ENCOUNTER_START = function(_, encounterID, _, difficultyID)
     local run = Store.char.currentRun
+    markStarted(run)
     noteDifficulty(run, difficultyID)
     ensureLastBoss(run)
     -- The pull, for the fight length (D-104). A wipe and a new pull start it again.
@@ -529,6 +543,7 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.
     local fight = pull and pull.at and (pull.id == nil or pull.id == encounterID) and t - pull.at or nil
     if fight and (fight < 0 or fight > 3600) then fight = nil end
+    markStarted(run, fight and (t - fight) or t)
     run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = t, fight = fight }
     if not run.partyFrozen then
         local party = partySnapshot() -- the group that killed this boss
@@ -610,7 +625,10 @@ local function seeCopy(guid, source)
     end
 end
 
-Dungeons.events.PARTY_KILL = function(_, _, target) seeCopy(target, "kill") end
+Dungeons.events.PARTY_KILL = function(_, _, target)
+    seeCopy(target, "kill")
+    markStarted(Store.char and Store.char.currentRun)
+end
 Dungeons.events.PLAYER_TARGET_CHANGED = function()
     if not (Store.char and Store.char.currentRun) then return end
     local ok, guid = ns.Compat.Try("UnitGUID", "target")
