@@ -549,6 +549,7 @@ function StatsModel.FriendDungeons(sum, runs, shared, L, dateFn, version, fromKe
                 local tip = {}
                 if clear then tip[#tip + 1] = string.format(L.DUNGEONS_CLEARED_IN, DM.Clock(clear)) end
                 tip[#tip + 1] = string.format(L.DUNGEONS_INSIDE, DM.Minutes(r.duration))
+                if r.partial then tip[#tip + 1] = DM.PartialText(r.partial, L) end
                 for n, s in ipairs(splits or {}) do
                     -- Splits are seconds after entering; shown from the first fight (D-126).
                     tip[#tip + 1] = string.format(L.DUNGEONS_FRIEND_SPLIT, n, DM.Clock(math.max(0, s.at - (r.startOffset or 0))),

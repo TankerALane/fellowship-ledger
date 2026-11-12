@@ -36,6 +36,7 @@ end
 -- The clear time of a run (seconds from its first fight, D-126, to the final boss), or nil.
 function Bests.Clear(run)
     if not (run and run.completed and run.completedAt and run.entered) then return nil end
+    if run.partial then return nil end -- not timed from the start (D-127)
     local c = run.completedAt - ns.RunTimer.Start(run)
     if c < Bests.MIN_CLEAR_SECONDS then return nil end
     return c

@@ -9,6 +9,7 @@ local _, ns = ...
 local T = ns.Trackers
 local Store, Days, Character = ns.Store, ns.Days, ns.Character
 
+local Dungeons = T.Define({ id = "dungeons" })
 local RESUME_SECONDS = 1800 -- re-entering the same instance within this continues the run
 local unitKey -- below
 
@@ -221,6 +222,60 @@ local function closeRun(char)
     Days.PruneList(char.dungeons, "entered", Store.Now(), Character.LIST_KEEP_SECONDS)
 end
 
+-- Not timed from the start (D-127, Austin: someone could clear to the boss and the
+-- boss would give a 10 s clear). When no group member who runs the ledger saw the
+-- start either, the run is marked (run.partial, a reason code), its clock counts from
+-- entering, and it shows with a * and does not count for bests or as the timer's #1.
+-- Reasons: "combat" a group member in this dungeon was already fighting when you came
+-- in; "bossDead" the game says a boss here is already dead (saved dungeons only);
+-- "boss" your first fight was a boss. A start shared by the group clears it.
+function Dungeons.MarkPartial(run, why)
+    if not run or run.partial or run.startShared then return end
+    run.partial = why
+    if not run.started then run.started = run.entered end
+end
+
+-- At entering: a boss already dead, or a group member here already in combat.
+function Dungeons.EntryCheck(run)
+    if not run or run.started then return end
+    -- GetInstanceLockTimeRemaining: lockTimeLeft, isPreviousInstance, encountersTotal, encountersComplete.
+    local okL, _, _, _, done = ns.Compat.Try("GetInstanceLockTimeRemaining")
+    done = okL and T.Plain(done) or nil
+    if type(done) == "number" and done > 0 then return Dungeons.MarkPartial(run, "bossDead") end
+    local okMe, mine = ns.Compat.Try("C_Map.GetBestMapForUnit", "player")
+    mine = okMe and T.Plain(mine) or nil
+    if not mine then return end
+    for i = 1, 4 do
+        local unit = "party" .. i
+        local okE, exists = ns.Compat.Try("UnitExists", unit)
+        if okE and T.Plain(exists) then
+            local okM, map = ns.Compat.Try("C_Map.GetBestMapForUnit", unit)
+            local okC, fighting = ns.Compat.Try("UnitAffectingCombat", unit)
+            if okM and T.Plain(map) == mine and okC and T.Plain(fighting) == true then
+                return Dungeons.MarkPartial(run, "combat")
+            end
+        end
+    end
+end
+
+-- A group member's ledger says this run began at `at` (D-127; Comms/Sync.lua). The
+-- earliest start heard wins; partial: their reason when they did not see it either.
+-- Returns true when the start moved.
+Dungeons.START_MAX_AGE = 7200
+function Dungeons.AdoptStart(name, at, partial, from)
+    local run = Store.char and Store.char.currentRun
+    local now = Store.Now()
+    if not (run and run.name == name and not run.outside and type(at) == "number") then return false end
+    if at > now + 5 or now - at > Dungeons.START_MAX_AGE then return false end
+    if run.started and at >= run.started - 2 then
+        -- About the same start, seen from the beginning by them: no mark.
+        if not partial and run.partial and math.abs(at - run.started) <= 5 then run.partial, run.startShared = nil, from end
+        return false
+    end
+    run.started, run.partial, run.startShared = at, partial, from
+    return true
+end
+
 local function startRun(char, t, name, instanceID, difficultyID)
     local lastBoss, bossCount, how, lastName = findLastBoss(name)
     char.currentRun = {
@@ -241,7 +296,13 @@ local function startRun(char, t, name, instanceID, difficultyID)
         startTracked = true, -- run.started is set at the first fight (D-126)
     }
     noteMembers(char.currentRun)
-    return char.currentRun
+    local run = char.currentRun
+    -- Did the run start before we came in (D-127)? Now, and once more when the group's
+    -- details have arrived. And ask group members who run the ledger when theirs began.
+    Dungeons.EntryCheck(run)
+    ns.Events.After(2, function() if Store.char and Store.char.currentRun == run then Dungeons.EntryCheck(run) end end)
+    if ns.Sync and ns.Sync.AskStart then ns.Sync.AskStart(run) end
+    return run
 end
 
 -- Leaving the dungeon only pauses the run (D-110): dying and running back, or going
@@ -325,7 +386,6 @@ local function complete(run, how)
     end
 end
 
-local Dungeons = T.Define({ id = "dungeons" })
 Dungeons.MIN_RUN_SECONDS = MIN_RUN_SECONDS
 
 -- Runs saved without a boss list (D-085): look the list up by the dungeon's name now,
@@ -500,10 +560,14 @@ local function noteDifficulty(run, difficultyID)
 end
 
 -- The run's clock starts at the first fight inside (D-126, Austin: "the dungeon timer
--- shouldn't start until someone starts killing"): you entering combat, a kill by your
--- group, or a boss pull, whichever comes first. The clear time counts from here too.
-local function markStarted(run, at)
-    if run and not run.started and not run.outside then run.started = at or Store.Now() end
+-- shouldn't start until someone starts killing"): you entering combat or a kill by your
+-- group. The clear time counts from here too. A boss as the first fight means the way
+-- to it was cleared without you (D-127): the clock counts from entering, marked *.
+local function markStarted(run, at, how)
+    if not run or run.started or run.outside then return end
+    if how == "boss" then return Dungeons.MarkPartial(run, "boss") end
+    run.started = at or Store.Now()
+    if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(run) end
 end
 Dungeons.MarkStarted = markStarted
 
@@ -513,7 +577,7 @@ end
 
 Dungeons.events.ENCOUNTER_START = function(_, encounterID, _, difficultyID)
     local run = Store.char.currentRun
-    markStarted(run)
+    markStarted(run, nil, "boss")
     noteDifficulty(run, difficultyID)
     ensureLastBoss(run)
     -- The pull, for the fight length (D-104). A wipe and a new pull start it again.
@@ -543,7 +607,7 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.
     local fight = pull and pull.at and (pull.id == nil or pull.id == encounterID) and t - pull.at or nil
     if fight and (fight < 0 or fight > 3600) then fight = nil end
-    markStarted(run, fight and (t - fight) or t)
+    markStarted(run, fight and (t - fight) or t, "boss")
     run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = t, fight = fight }
     if not run.partyFrozen then
         local party = partySnapshot() -- the group that killed this boss

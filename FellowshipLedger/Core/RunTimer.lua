@@ -35,7 +35,7 @@ function RunTimer.Target(entries, dungeon, mode, current)
     local best
     for _, e in ipairs(ns.Leaderboard.Merge(entries or {})) do
         local itself = doneAt and e.mine and math.abs(e.finishedAt - doneAt) <= ns.Leaderboard.MATCH_SECONDS
-        if e.dungeon == dungeon and not itself and ns.DungeonLevels.AtLevel(e.dungeon, e.levelMax)
+        if e.dungeon == dungeon and not itself and not e.partial and ns.DungeonLevels.AtLevel(e.dungeon, e.levelMax)
             and (mode ~= "mine" or e.mine) then
             if not best or e.clear < best.clear then best = e end
         end
@@ -65,6 +65,7 @@ function RunTimer.View(run, now, target)
     local entered = RunTimer.Start(run)
     -- Nobody has fought yet: the clock waits at 0:00 (D-126).
     out.waiting = entered == nil or nil
+    out.partial = run.partial -- not timed from the start (D-127)
     entered = entered or now
     out.done = run.completed and run.completedAt and true or false
     out.elapsed = math.max(0, (out.done and run.completedAt or now) - entered)

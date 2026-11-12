@@ -359,6 +359,18 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetLootSlotInfo` | api | loot slot name, quantity, currency, quality | `/dump type(GetLootSlotInfo)` -> "function" | PASS | PASS |
 | `GetLootSlotLink` | api | item link of a loot slot | `/dump type(GetLootSlotLink)` -> "function" | PASS | PASS |
 | `ev:LOOT_SLOT_CLEARED` | event | a loot slot was taken: the item counts as looted | `/dump C_EventUtils.IsEventValid("LOOT_SLOT_CLEARED")` -> true | PASS | PASS |
+
+### Dungeons
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `GetInstanceLockTimeRemaining` | api | bosses already dead when you enter a saved dungeon: the run is marked * (D-127) | `/dump type(GetInstanceLockTimeRemaining)` -> "function" | ? | ? |
+| `m:partialrun` | manual | a run joined after the group started fighting is marked * (not timed from the start): UnitAffectingCombat and C_Map.GetBestMapForUnit on a party member inside; group members with the ledger share one start (D-127) | with a friend on 1.11.1: they pull first, then you enter; your timer shows their start, no *. With nobody else on the ledger: enter while the group fights; the timer shows * | ? | ? |
+
+### Items
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
 | `C_Item.GetItemCount` | api | bag count: a cleared loot slot counts only if the item reached your bags (D-125) | `/dump type(C_Item.GetItemCount)` -> "function" | ? | ? |
 | `GetItemCount` | api | fallback for the bag count | `/dump type(GetItemCount)` -> "function" | ? | ? |
 | `ev:ITEM_PUSH` | event | item went into your bags | `/dump C_EventUtils.IsEventValid("ITEM_PUSH")` -> true | PASS | PASS |

@@ -194,7 +194,7 @@ local function receive(transport, prefix, text, channel, sender)
         Transport.selfMismatch = { sender = tostring(sender), key = tostring(ns.Store.key) }
     end
     local peer
-    if chunk.type == "N" then
+    if chunk.type == "N" or chunk.type == "S" then
         if channel ~= "PARTY" and channel ~= "INSTANCE_CHAT" and channel ~= "RAID" then return end
     elseif chunk.type == "T" and isSelf then
         peer = { id = "self", tag = ns.Store.key, transport = "whisper", target = ns.Store.key, character = ns.Store.key }

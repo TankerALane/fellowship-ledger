@@ -162,7 +162,7 @@ function Timer.Refresh()
     local target = Timer.Target(run, now)
     local v = RT.View(run, now, target)
     frame.title:SetText(run.name)
-    frame.clock:SetText(RT.Clock(v.elapsed))
+    frame.clock:SetText(RT.Clock(v.elapsed) .. (v.partial and "*" or ""))
     W.SetTextRole(frame.clock, v.done and "good" or "heading")
     frame.pace:SetText(v.pace and RT.Delta(v.pace) or "")
     if v.pace then W.SetTextRole(frame.pace, deltaRole(v.pace)) end
@@ -175,6 +175,7 @@ function Timer.Refresh()
     elseif run.outside then
         status = status .. "  " .. L.TIMER_OUTSIDE
     end
+    if v.partial and not v.waiting then status = status .. "  " .. L.TIMER_PARTIAL end
     frame.status:SetText(status)
     local shown = math.min(#v.bosses, Timer.MAX_ROWS)
     -- The latest kills when there are more than fit.

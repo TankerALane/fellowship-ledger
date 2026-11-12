@@ -195,11 +195,115 @@ H.test("dungeon timer waits at 0:00 until the first fight, and the clear counts 
     H.eq(e.clear, clear)
 end)
 
-H.test("a boss pulled first starts the clock at the pull", function()
+H.test("a boss as the first fight: timed from entering and marked * (D-127)", function()
     local env, ns = boot()
     enter(env)
+    local entered = env.time()
     Mock.advance(env, 30)
     Mock.fire(env, "ENCOUNTER_START", 1, "Rhahk'Zor", 1, 5)
     local run = ns.Store.char.currentRun
-    H.eq(run.started, env.time())
+    H.eq(run.started, entered, "counted from entering, not from the boss")
+    H.eq(run.partial, "boss")
+end)
+
+H.test("not timed from the start: the group fighting or a boss dead when you come in (D-127)", function()
+    local env, ns = boot()
+    env.__state.units.party1 = { class = "WARRIOR", combat = true }
+    env.UnitAffectingCombat = function(unit) local u = env.__state.units[unit] return u and u.combat or false end
+    enter(env)
+    local run = ns.Store.char.currentRun
+    H.eq(run.partial, "combat", "a group member here was already fighting")
+    H.eq(run.started, run.entered, "counted from entering")
+    Mock.advance(env, 5)
+    local f = ns.DungeonTimer.Frame()
+    H.ok(f.clock:GetText():find("*", 1, true), f.clock:GetText())
+    H.ok(f.status:GetText():find("not from the start", 1, true), f.status:GetText())
+    -- A saved dungeon with a boss already down.
+    local env2, ns2 = boot()
+    env2.GetInstanceLockTimeRemaining = function() return 3600, false, 3, 1 end
+    enter(env2)
+    H.eq(ns2.Store.char.currentRun.partial, "bossDead")
+    -- Nobody fighting, nothing dead: no mark, and the clock waits.
+    local env3, ns3 = boot()
+    env3.__state.units.party1 = { class = "WARRIOR" }
+    env3.UnitAffectingCombat = function() return false end
+    enter(env3)
+    H.eq(ns3.Store.char.currentRun.partial, nil)
+    H.eq(ns3.Store.char.currentRun.started, nil)
+end)
+
+H.test("one start for the group: the earliest a ledger in the group saw (D-127)", function()
+    local env, ns = boot()
+    env.IsInGroup = function() return true end
+    env.__state.units.party1 = { class = "WARRIOR", combat = true }
+    env.UnitAffectingCombat = function(unit) local u = env.__state.units[unit] return u and u.combat or false end
+    env.__state.sent = {}
+    enter(env)
+    local run = ns.Store.char.currentRun
+    H.eq(run.partial, "combat")
+    Mock.advance(env, 5)
+    -- On entering, it asked the group.
+    local asked
+    for _, m in ipairs(env.__state.sent) do
+        if (m.channel == "PARTY" or m.channel == "INSTANCE_CHAT") and m.text:find("|S|", 1, true) then asked = m.text end
+    end
+    H.ok(asked and asked:find(",1$"), tostring(asked))
+    -- A group member's ledger saw the start, 4 minutes ago: taken, the mark goes.
+    local C, S = ns.Codec, ns.Transport.handlers.S
+    S(nil, C.EncodeStart("The Deadmines", 240, nil, false), { sender = "Bob-Realm" })
+    H.eq(run.started, env.time() - 240)
+    H.eq(run.partial, nil, "seen from the start by Bob's ledger")
+    H.eq(run.startShared, "Bob")
+    -- A later start changes nothing; another dungeon is ignored; nothing from myself.
+    S(nil, C.EncodeStart("The Deadmines", 60, nil, false), { sender = "Cid-Realm" })
+    H.eq(run.started, env.time() - 240)
+    S(nil, C.EncodeStart("Wailing Caverns", 900, nil, false), { sender = "Cid-Realm" })
+    H.eq(run.started, env.time() - 240)
+    S(nil, C.EncodeStart("The Deadmines", 3000, nil, false), { sender = env.__state.name .. "-" .. env.__state.realm })
+    H.eq(run.started, env.time() - 240, "my own message is not a group member's")
+    -- An earlier start from a ledger that did not see it either: earlier, still marked.
+    S(nil, C.EncodeStart("The Deadmines", 600, "combat", false), { sender = "Dee-Realm" })
+    H.eq(run.started, env.time() - 600)
+    H.eq(run.partial, "combat")
+    -- Asked by someone who just came in: answered with "seconds ago".
+    env.__state.sent = {}
+    S(nil, C.EncodeStart("The Deadmines", nil, nil, true), { sender = "Eve-Realm" })
+    Mock.advance(env, 3)
+    local reply
+    for _, m in ipairs(env.__state.sent) do if m.text:find("|S|", 1, true) then reply = m.text end end
+    H.ok(reply and reply:find("The Deadmines,60[0-3],combat,0"), tostring(reply))
+end)
+
+H.test("my first fight goes to the group after combat, and marked runs stay out of bests and #1 (D-127)", function()
+    local env, ns = boot()
+    env.IsInGroup = function() return true end
+    enter(env)
+    Mock.advance(env, 20)
+    env.__state.sent = {}
+    env.__state.combat = true
+    Mock.fire(env, "PLAYER_REGEN_DISABLED")
+    Mock.advance(env, 30)
+    local function startSent()
+        for _, m in ipairs(env.__state.sent) do if m.text:find("|S|", 1, true) and not m.text:find(",1$") then return m.text end end
+    end
+    H.eq(startSent(), nil, "nothing during combat")
+    env.__state.combat = false
+    Mock.fire(env, "PLAYER_REGEN_ENABLED")
+    Mock.advance(env, 2)
+    H.ok(startSent() and startSent():find("The Deadmines,3%d,", 1), tostring(startSent()))
+    -- Marked runs: no best, after every timed run on the Leaderboard, never the timer's #1.
+    local marked = { name = "The Deadmines", entered = 0, started = 0, completed = true, completedAt = 600, partial = "boss", bosses = {} }
+    H.eq(ns.Bests.Clear(marked), nil)
+    H.eq(ns.DungeonsModel.TimeText(marked, 900), "10:00*")
+    local clean = { name = "The Deadmines", entered = 5000, started = 5000, completed = true, completedAt = 6500, bosses = {} }
+    local entries = ns.Leaderboard.Entries({ me = { dungeons = { marked, clean } } }, {})
+    local board = ns.Leaderboard.Build(entries, false)
+    H.eq(board[1].clears[1].partial, nil, "the timed run first, though slower")
+    H.eq(board[1].clears[2].partial, "boss")
+    local t = ns.RunTimer.Target(entries, "The Deadmines", "leader")
+    H.eq(t.clear, 1500, "the marked run is never the one to beat")
+    -- Friends see the mark.
+    local u = ns.Codec.DecodeData(ns.Codec.EncodeData("Me-R", { class = "MAGE", level = 20, days = {}, dungeons = { marked } },
+        { dungeons = true }, nil)).runs[1]
+    H.eq(u.partial, "boss")
 end)

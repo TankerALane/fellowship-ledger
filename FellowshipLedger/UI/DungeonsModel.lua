@@ -70,9 +70,15 @@ end
 -- The Time column (Austin, 2026-11-11): the clear time (entering to the final boss)
 -- once the final boss is dead, so it stops there; before that, and for a run not
 -- completed, the time inside.
+-- Why a run is not timed from the start (D-127): "* Not timed from the start: <reason>".
+function DungeonsModel.PartialText(code, L)
+    local why = L["PARTIAL_" .. tostring(code):upper()] or L.PARTIAL_UNKNOWN
+    return string.format(L.PARTIAL_TIP, why)
+end
+
 function DungeonsModel.TimeText(run, inside)
     local clear = DungeonsModel.ClearTime(run)
-    if clear then return DungeonsModel.Clock(clear) end
+    if clear then return DungeonsModel.Clock(clear) .. (run.partial and "*" or "") end
     return DungeonsModel.Minutes(inside)
 end
 
@@ -294,8 +300,12 @@ function DungeonsModel.Lines(o)
                       DungeonsModel.Group(run.party, L), result },
                     nil, nil, { nil, nil, nil, nil, nil, nil, nil, resultRole }),
                 onClick = o.toggle and function() o.toggle(runKey) end or nil,
-                tooltip = function() return run.name, { string.format(L.DUNGEONS_TIP_ENTERED, when(run.entered)),
-                    string.format(L.DUNGEONS_TIP_CLICK) } end }
+                tooltip = function()
+                    local tip = { string.format(L.DUNGEONS_TIP_ENTERED, when(run.entered)) }
+                    if run.partial then tip[#tip + 1] = DungeonsModel.PartialText(run.partial, L) end
+                    tip[#tip + 1] = string.format(L.DUNGEONS_TIP_CLICK)
+                    return run.name, tip
+                end }
             if open then
                 local list = DungeonsModel.Bosses(run)
                 local dur = durationOf(e, o.now)

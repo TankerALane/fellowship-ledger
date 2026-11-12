@@ -51,7 +51,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
             local clear = (r.completed and r.completedAt and r.entered) and (r.completedAt - ns.RunTimer.Start(r)) or nil
             if clear and clear >= Leaderboard.MIN_CLEAR and r.name then
                 local e = { dungeon = r.name, clear = clear, finishedAt = r.completedAt, names = {}, size = 1,
-                    levelMax = r.levelMax, mine = true, bosses = {} }
+                    levelMax = r.levelMax, mine = true, bosses = {}, partial = r.partial }
                 addName(e, nameOf and nameOf(key, c) or c.display or c.name or key)
                 e.lead = e.names[1]
                 for _, p in ipairs(r.party or {}) do
@@ -74,7 +74,8 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                     if r.completed and r.clear and r.clear >= Leaderboard.MIN_CLEAR and r.entered and r.name then
                         -- r.clear counts from the first fight, startOffset seconds after entering (D-126).
                         local e = { dungeon = r.name, clear = r.clear, finishedAt = r.entered + (r.startOffset or 0) + r.clear, names = {},
-                            size = r.size or (1 + #(r.names or {})), levelMax = r.levelMax, friendId = fid, bosses = {} }
+                            size = r.size or (1 + #(r.names or {})), levelMax = r.levelMax, friendId = fid, bosses = {},
+                            partial = r.partial }
                         addName(e, c.display or c.name or key)
                         e.lead = e.names[1]
                         for _, n in ipairs(r.names or {}) do addName(e, n) end
@@ -122,7 +123,13 @@ function Leaderboard.Merge(entries)
         if last then
             -- Your own report names the group after your character.
             if e.mine and not last.mine then last.lead = e.lead end
-            last.clear = math.max(last.clear, e.clear)
+            -- Not timed from the start (D-127) only if no ledger saw it from the start: a
+            -- clean report's time wins over a marked one.
+            if last.partial and not e.partial then
+                last.clear, last.partial = e.clear, nil
+            elseif e.partial == nil or last.partial ~= nil then
+                last.clear = math.max(last.clear, e.clear)
+            end
             for _, n in ipairs(e.names) do addName(last, n) end
             last.size = math.max(last.size, e.size, #last.names)
             if e.levelMax and (not last.levelMax or e.levelMax > last.levelMax) then last.levelMax = e.levelMax end
@@ -153,6 +160,8 @@ function Leaderboard.Build(entries, atLevelOnly)
     local board = {}
     for name, list in pairs(by) do
         table.sort(list, function(a, b)
+            -- Runs not timed from the start (D-127) come after every timed one.
+            if (a.partial and true or false) ~= (b.partial and true or false) then return not a.partial end
             if a.clear ~= b.clear then return a.clear < b.clear end
             return a.finishedAt < b.finishedAt
         end)

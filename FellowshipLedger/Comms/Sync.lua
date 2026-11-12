@@ -340,16 +340,81 @@ function Sync.IsOptedIn(name)
     return name ~= nil and Sync.optedIn[name] ~= nil
 end
 
+local function groupChannel()
+    local channel = "PARTY"
+    local ok, inInstanceGroup = pcall(IsInGroup, _G.LE_PARTY_CATEGORY_INSTANCE)
+    if ok and inInstanceGroup then channel = "INSTANCE_CHAT" end
+    return channel
+end
+
+local function inGroup()
+    local ok, g = pcall(IsInGroup)
+    return ok and g == true
+end
+
 -- Announce my name to the dungeon group, if I opted in.
 local lastName = 0
 function Sync.AnnounceName()
     if not ns.db.settings.shareNameInDungeons or not ns.Store.char or not ns.Store.char.currentRun then return end
     if now() - lastName < Sync.NAME_GAP then return end
     lastName = now()
-    local channel = "PARTY"
-    local ok, inInstanceGroup = pcall(IsInGroup, _G.LE_PARTY_CATEGORY_INSTANCE)
-    if ok and inInstanceGroup then channel = "INSTANCE_CHAT" end
-    Transport.Send({ transport = "group", target = channel }, "N", Codec.EncodeName(ns.Store.key))
+    Transport.Send({ transport = "group", target = groupChannel() }, "N", Codec.EncodeName(ns.Store.key))
+end
+
+-- One start for the whole group (D-127) ------------------------------------------------
+-- Group members who run the ledger tell each other when their run's clock started, and
+-- each keeps the earliest. Sent to the party or instance channel, so it is taken from
+-- any group member, friend or not: it can only start your clock earlier (a slower
+-- time), never give you a faster one. The time is "seconds ago", worked out when it
+-- is queued; the queue holds in combat, so a start found in combat waits for it to end.
+Sync.START_REPLY_GAP = 10
+local startWanted, lastStartReply = false, 0
+
+local function sendStart(run, ask)
+    if not inGroup() then return end
+    local ago = run.started and math.max(0, now() - run.started) or nil
+    Transport.Send({ transport = "group", target = groupChannel() }, "S", Codec.EncodeStart(run.name, ago, run.partial, ask))
+end
+
+local function inCombat()
+    local ok, c = pcall(InCombatLockdown)
+    return ok and c == true
+end
+
+-- My run's clock just started: tell the group (after combat).
+function Sync.ShareStart(run)
+    if inCombat() then startWanted = true return end
+    sendStart(run, false)
+end
+
+-- I just came in: ask the group when their run started.
+function Sync.AskStart(run)
+    sendStart(run, true)
+end
+
+function Sync.StartAfterCombat()
+    if not startWanted then return end
+    startWanted = false
+    local run = ns.Store.char and ns.Store.char.currentRun
+    if run and run.started then sendStart(run, false) end
+end
+
+Transport.handlers.S = function(_, body, info)
+    if ns.Friends.IsSelf(info.sender) then return end
+    local s = Codec.DecodeStart(body)
+    local run = ns.Store.char and ns.Store.char.currentRun
+    if not (s and run and run.name == s.dungeon) then return end
+    if s.ago then
+        local who = type(info.sender) == "string" and info.sender:match("^([^%-]+)") or "?"
+        local D = ns.Trackers.byId and ns.Trackers.byId.dungeons
+        if D and D.AdoptStart(s.dungeon, now() - s.ago, s.partial, who) then
+            Sync.startsAdopted = (Sync.startsAdopted or 0) + 1
+        end
+    end
+    if s.ask and run.started and now() - lastStartReply >= Sync.START_REPLY_GAP then
+        lastStartReply = now()
+        if inCombat() then startWanted = true else sendStart(run, false) end
+    end
 end
 
 -- Sync everyone ------------------------------------------------------------------
@@ -496,6 +561,7 @@ function Sync.Start()
     ns.Events.On("FRIENDLIST_UPDATE", "sync", soon)
     ns.Events.On("BN_FRIEND_INFO_CHANGED", "sync", soon) -- fired ~300 times an hour on retail: throttled
     ns.Events.On("GROUP_ROSTER_UPDATE", "sync", function() Sync.AnnounceName() end)
+    ns.Events.On("PLAYER_REGEN_ENABLED", "sync", function() Sync.StartAfterCombat() end)
     ns.Events.On("PLAYER_ENTERING_WORLD", "sync", function() ns.Events.After(5, Sync.AnnounceName) end)
     ns.Events.After(10, function() Sync.SyncAll(false) end)
     ns.Events.Every(Sync.INTERVAL, "sync", function() Sync.SyncAll(false) end)

@@ -53,8 +53,17 @@ function LeaderboardTab.Lines()
         for _, e in ipairs(d.clears) do
             local group = Leaderboard.Group(e, L)
             if e.mine then group = good .. group .. "|r" end
-            out[#out + 1] = { kind = "grid", tooltip = function() return L.LEADER_GROUP_TIP, Leaderboard.Members(e, L) end, segments = { seg(0, .05, tostring(e.rank), e.rank == 1 and "heading" or "text"),
-                seg(.06, .12, F.Duration(e.clear), e.rank == 1 and "good" or "text"), seg(.19, .53, group),
+            local tip = function()
+                local lines = Leaderboard.Members(e, L)
+                if e.partial then
+                    lines = { unpack(lines) }
+                    lines[#lines + 1] = ns.DungeonsModel.PartialText(e.partial, L)
+                end
+                return L.LEADER_GROUP_TIP, lines
+            end
+            local top = e.rank == 1 and not e.partial
+            out[#out + 1] = { kind = "grid", tooltip = tip, segments = { seg(0, .05, e.partial and "*" or tostring(e.rank), top and "heading" or "text"),
+                seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.19, .53, group),
                 seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
                 seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") } }
         end
@@ -80,6 +89,7 @@ end
 -- A run of mine just completed (Trackers/Dungeons.lua): a notice if it made a top 5.
 function LeaderboardTab.CheckRun(run)
     if ns.Data.IsFake() or ns.db.settings.leaderToasts == false or not (run and run.completedAt and run.name) then return nil end
+    if run.partial then return nil end -- not timed from the start (D-127)
     local board = Leaderboard.Build(entries(false), true)
     local rank, e = Leaderboard.RankOf(board, run.name, run.completedAt)
     if not rank then return nil end

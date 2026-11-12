@@ -17,7 +17,7 @@ Codec.MAX_RUNS = 20             -- dungeon runs sent per character per DATA (the
 Codec.MAX_DEATHS = 10           -- recent deaths sent per character per DATA (D-105)
 Codec.MAX_LOOT = 20             -- notable loot entries sent per character per DATA (D-105)
 Codec.LOOT_MIN_QUALITY = 3      -- only blue (rare) or better is shared (Austin, D-105)
-Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST", R = "RELAY" }
+Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST", R = "RELAY", S = "START" }
 
 -- Escaping: the separators and "%" become %XX.
 local SPECIAL = "[%%|,;~=\n\r%z]"
@@ -257,7 +257,7 @@ function Codec.EncodeData(key, char, shared, since)
         if cur and cur.completed and cur.entered and (not from or cur.entered >= from) then
             runs[#runs + 1] = { entered = cur.entered, name = cur.name, completed = true, completedAt = cur.completedAt,
                 duration = math.max(0, (cur.lastSeen or cur.entered) - cur.entered), bosses = cur.bosses,
-                bossCount = cur.bossCount, deaths = cur.deaths, party = cur.party, levelMax = cur.levelMax, started = cur.started }
+                bossCount = cur.bossCount, deaths = cur.deaths, party = cur.party, levelMax = cur.levelMax, started = cur.started, partial = cur.partial }
         end
         table.sort(runs, function(a, b) return a.entered < b.entered end)
         for i = math.max(1, #runs - Codec.MAX_RUNS + 1), #runs do
@@ -289,7 +289,7 @@ function Codec.EncodeData(key, char, shared, since)
             recs[#recs + 1] = table.concat({ "u", tostring(r.entered), Codec.Escape(r.name), tostring(r.duration or 0),
                 r.completed and "1" or "0", tostring(#(r.bosses or {})), tostring(r.bossCount or 0), tostring(r.deaths or 0),
                 string.format("%d", clear), table.concat(splits, ";"), table.concat(names, ";"), table.concat(friends, ";"),
-                type(r.levelMax) == "number" and string.format("%d", r.levelMax) or "", string.format("%d", size), offset }, ",")
+                type(r.levelMax) == "number" and string.format("%d", r.levelMax) or "", string.format("%d", size), offset, Codec.Escape(r.partial or "") }, ",")
         end
     end
     local from = since and Codec.SinceEpoch(since) or nil
@@ -413,6 +413,9 @@ function Codec.DecodeData(body)
             run.names = list(f[12])
             run.levelMax = tonumber(f[13])
             run.size = tonumber(f[14])
+            -- Not timed from the start (1.11.1+, D-127): the reason code.
+            local partial = Codec.Unescape(f[16] or "")
+            if partial ~= "" then run.partial = partial end
             -- The first fight, seconds after entering (1.11.1+, D-126): the clear counts from it.
             local offset = tonumber(f[15])
             if offset and offset > 0 then
@@ -440,6 +443,21 @@ function Codec.DecodeData(body)
     if not out.key or out.key == "" then return nil end
     out.professions = profs -- nil when the sender sent none (older version, nothing shared, or none before 1.4.0)
     return out
+end
+
+-- START (1.11.1, D-127), to the group: "s,<dungeon>,<secondsAgo>,<partial>,<ask 0|1>".
+-- secondsAgo: when my run's clock started, counted back from sending (so computer
+-- clocks that differ do not matter); empty when it has not. partial: my reason code
+-- when I did not see the start either. ask: please answer with yours.
+function Codec.EncodeStart(dungeon, ago, partial, ask)
+    return table.concat({ "s", Codec.Escape(dungeon or ""), ago and string.format("%d", ago) or "",
+        partial and Codec.Escape(partial) or "", ask and "1" or "0" }, ",")
+end
+function Codec.DecodeStart(body)
+    local f = split(body, ",")
+    if f[1] ~= "s" or not f[2] or f[2] == "" then return nil end
+    local partial = Codec.Unescape(f[4] or "")
+    return { dungeon = Codec.Unescape(f[2]), ago = tonumber(f[3]), partial = partial ~= "" and partial or nil, ask = f[5] == "1" }
 end
 
 function Codec.EncodeName(key) return "n," .. Codec.Escape(key) end

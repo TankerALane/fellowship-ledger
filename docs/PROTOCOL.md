@@ -21,7 +21,7 @@ Every addon message is one piece:
 1|R|D|3a17|2|9|...
 ```
 
-- `type`: `H` HELLO, `Q` REQUEST, `D` DATA, `N` NAME, `T` TEST, `R` RELAY (1.11.0).
+- `type`: `H` HELLO, `Q` REQUEST, `D` DATA, `N` NAME, `T` TEST, `R` RELAY (1.11.0), `S` START (1.11.1).
 - `msgId`: hex, unique per sender session.
 - `seq` and `total`: piece number and count. Pieces reassemble in any order, and duplicates are ignored. A half-received message is dropped after 120 s.
 - **Piece size:** 200 bytes by default, header included. Change it with `/fl comms size N` (60 to 255) until `/fl commtest` and two-client tests show the real limits.
@@ -93,6 +93,14 @@ The receiver replaces each day, level and session it receives with the sender's 
 ### RELAY (`R`, 1.11.0, D-124)
 
 A DATA body for another friend's character, sent in answer to the `v` records of a REQUEST when my copy is newer (its `lastSeen` is later). Hashes: 8 hex digits of djb2 over `FL:<Name-Realm>` (Comms/Relay.lua). Sent only for owners whose HELLO had `f,relay` and whose `b` list does not hold the asker's BattleTag or character; at most 10 per REQUEST, from the day before the asker's copy. The receiver keeps it only for a character it already holds from that friend directly, only when newer, and marks it as relayed until the friend's own DATA arrives. Older versions are never sent `R` and ignore `f`, `b` and `v`.
+
+### START (`S`, 1.11.1, D-127)
+
+```
+s,<dungeon>,<secondsAgo>,<partial>,<ask 0|1>
+```
+
+Sent to `PARTY` or `INSTANCE_CHAT` (only when in a group): on entering a dungeon (ask = 1), when my run's clock starts (after combat ends), and in answer to an ask (at most every 10 s). secondsAgo: when my run started, counted back from queueing (empty when it has not); partial: my reason code when I did not see the start either. Taken from any group member for my open run of the same dungeon: the earliest start wins, at most 2 hours back; my own messages are ignored. The `u` record gains field 16, the run's partial reason (empty = timed from the start).
 
 ### NAME (`N`)
 

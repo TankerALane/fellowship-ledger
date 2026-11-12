@@ -160,6 +160,13 @@ ns.Locale.Set({
     LEADER_TOAST_TITLE = "Leaderboard",
     LEADER_TOAST = "#%d on %s, cleared in %s",
     TIMER_WAITING = "Starts at the first fight",
+    -- Not timed from the start (D-127)
+    TIMER_PARTIAL = "* not from the start",
+    PARTIAL_TIP = "* Not timed from the start: %s. Counted from entering.",
+    PARTIAL_COMBAT = "your group was already fighting when you came in",
+    PARTIAL_BOSSDEAD = "a boss was already dead when you came in",
+    PARTIAL_BOSS = "the first fight was a boss",
+    PARTIAL_UNKNOWN = "the start was not seen",
     -- Relaying between mutual friends (D-124)
     RELAY_FRIENDS = "Pass friends' progress on between mutual friends",
     RELAY_FRIENDS_NOTE = "When you and a friend are not online together, a friend you both share with passes on their newer progress. You only get it for friends you already share with, and nobody you blocked gets yours. Off: your progress is not passed on, and you do not get others'.",
