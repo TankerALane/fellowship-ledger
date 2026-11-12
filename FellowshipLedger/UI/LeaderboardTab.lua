@@ -62,7 +62,7 @@ function LeaderboardTab.Lines()
                 return L.LEADER_GROUP_TIP, lines
             end
             local top = e.rank == 1 and not e.partial
-            out[#out + 1] = { kind = "grid", tooltip = tip, segments = { seg(0, .05, e.partial and "*" or tostring(e.rank), top and "heading" or "text"),
+            out[#out + 1] = { kind = "grid", tooltip = tip, segments = { seg(0, .05, e.partial and "" or tostring(e.rank), top and "heading" or "text"),
                 seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.19, .53, group),
                 seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
                 seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") } }
