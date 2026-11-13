@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.12.0 - 2026-11-12
 
 ### Added
 - Catching up between computers: the ledger is kept on each computer, so play on another one used to be missing. Friends (on 1.12.0 or later) now hand back what you share of your characters, and the ledger adds what this computer is missing: days, levels, dungeon runs, deaths, loot and sessions. Nothing here is replaced or deleted. A chat line says what was caught up. Settings > Sharing has the switch (on by default).
