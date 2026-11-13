@@ -4,6 +4,7 @@
 
 ### Fixed
 - The sync status beside "Sync now" on the Friends tab wraps instead of running over the "This week" button.
+- The dungeon timer closed with the x stays closed after a /reload (until the next run, or /fl timer).
 
 ## 1.12.0 - 2026-11-12
 

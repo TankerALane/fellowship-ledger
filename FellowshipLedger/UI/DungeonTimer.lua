@@ -4,8 +4,8 @@
 -- ahead or behind that is, and the run it is compared with: the Leaderboard's #1
 -- for this dungeon (default) or your own fastest clear (Austin, 2026-11-11). Click
 -- the bottom line, or use Settings, to switch. On by default (Settings > Your
--- notices). Movable (settings.dungeonTimerPos); the x hides it for this run, and
--- /fl timer brings it back. The time is counted like the clear time: from the first
+-- notices). Movable (settings.dungeonTimerPos); the x hides it for this run, even
+-- across /reload (char.timerClosedFor), and /fl timer brings it back. The time is counted like the clear time: from the first
 -- fight inside (D-126; it waits at 0:00 until then) to the final boss, time outside
 -- included.
 
@@ -25,7 +25,6 @@ Timer.TARGET_EVERY = 30 -- seconds before the compared run is looked up again
 
 local frame
 local rows = {}
-local closedFor -- entered time of the run whose timer was closed
 local cache = { key = nil, at = 0, target = nil }
 
 local function settings() return ns.db.settings end
@@ -140,7 +139,7 @@ end
 function Timer.Run()
     if settings().dungeonTimer == false or ns.Data.IsFake() then return nil end
     local run = ns.Store.char and ns.Store.char.currentRun
-    if not (run and run.name and run.entered) or closedFor == run.entered then return nil end
+    if not (run and run.name and run.entered) or ns.Store.char.timerClosedFor == run.entered then return nil end
     return run
 end
 
@@ -226,16 +225,18 @@ function Timer.ShowWhy(owner)
     return true
 end
 
--- The x: hidden for the rest of this run (a new run shows it again).
+-- The x: hidden for the rest of this run, kept in the saved data so /reload does not
+-- bring it back (a new run shows it again).
 function Timer.Close()
-    local run = ns.Store.char and ns.Store.char.currentRun
-    closedFor = run and run.entered or closedFor
+    local char = ns.Store.char
+    local run = char and char.currentRun
+    if run and run.entered then char.timerClosedFor = run.entered end
     if frame then frame:Hide() end
 end
 
 -- /fl timer: show it again for the open run.
 function Timer.Reopen()
-    closedFor = nil
+    if ns.Store.char then ns.Store.char.timerClosedFor = nil end
     if settings().dungeonTimer == false then
         ns.Log.Info(L.TIMER_OFF)
         return false

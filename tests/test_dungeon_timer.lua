@@ -160,6 +160,40 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     H.eq(f.pace:GetText(), "-2:21", "against #1 (17:39 vs 20:00), not against itself")
 end)
 
+H.test("dungeon timer closed with the x stays closed after /reload, until the next run", function()
+    local env, ns = boot()
+    enterAndPull(env)
+    Mock.advance(env, 2)
+    ns.DungeonTimer.Close()
+    local entered = ns.Store.char.currentRun.entered
+    -- /reload inside the dungeon.
+    Mock.fire(env, "PLAYER_LOGOUT")
+    local st = env.__state
+    local env2 = Mock.new({ interface = RETAIL.interface, tocFlavor = RETAIL.tocFlavor, now = st.now + 5,
+        state = { instance = DEADMINES, ejInstance = 63, ejBosses = st.ejBosses } })
+    env2.FellowshipLedgerDB = env.FellowshipLedgerDB
+    env2.FellowshipLedgerBackupDB = env.FellowshipLedgerBackupDB
+    local ns2 = Mock.loadToc(H, env2, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env2, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env2, "PLAYER_LOGIN")
+    Mock.fire(env2, "PLAYER_ENTERING_WORLD", false, true)
+    Mock.runTimers(env2)
+    Mock.advance(env2, 3)
+    H.eq(ns2.Store.char.currentRun and ns2.Store.char.currentRun.entered, entered, "the same run after the reload")
+    local f = ns2.DungeonTimer.Frame()
+    H.ok(not (f and f:IsShown()), "still closed after /reload")
+    Mock.slash(env2, "timer")
+    H.ok(ns2.DungeonTimer.Frame():IsShown(), "back with /fl timer")
+    ns2.DungeonTimer.Close()
+    -- Leave; the next run shows it again.
+    go(env2, WESTFALL, 30)
+    Mock.advance(env2, 1801)
+    ns2.Trackers.byId.dungeons:OnTick()
+    enterAndPull(env2)
+    Mock.advance(env2, 2)
+    H.ok(ns2.DungeonTimer.Frame():IsShown(), "a new run shows it again")
+end)
+
 H.test("dungeon timer waits at 0:00 until the first fight, and the clear counts from it (D-126)", function()
     local env, ns = boot()
     local T = ns.DungeonTimer
