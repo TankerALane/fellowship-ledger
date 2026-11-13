@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.12.1 - 2026-11-13
 
 ### Fixed
 - The sync status beside "Sync now" on the Friends tab wraps instead of running over the "This week" button.
