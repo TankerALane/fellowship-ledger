@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.11.2 - 2026-11-12
 
 ### Changed
 - A run not timed from the start shows just a * after its time, on the dungeon timer and in the ledger (the Leaderboard no longer puts one in the rank column too); hover for the reason.
