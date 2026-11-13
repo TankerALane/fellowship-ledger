@@ -416,8 +416,12 @@ local function build(panel)
     end)
     syncNow:SetPoint("TOPRIGHT", -4, -2)
     ui.status = W.Text(panel, "small", "muted")
+    -- Between "This week" and "Sync now": a long status wraps instead of running over
+    -- the button (Austin, 2026-11-12).
+    ui.status:SetPoint("LEFT", ui.weeklyButton, "RIGHT", 8, 0)
     ui.status:SetPoint("RIGHT", syncNow, "LEFT", -8, 0)
     ui.status:SetJustifyH("RIGHT")
+    ui.status:SetWordWrap(true)
     local columns = {}
     for _, col in ipairs(COLUMNS) do
         columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field,
