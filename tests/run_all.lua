@@ -29,6 +29,7 @@ local FILES = {
     "test_codec",
     "test_sync",
     "test_relay",
+    "test_catchup",
     "test_phase5",
     "test_details",
     "test_chains",

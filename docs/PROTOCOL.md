@@ -21,7 +21,7 @@ Every addon message is one piece:
 1|R|D|3a17|2|9|...
 ```
 
-- `type`: `H` HELLO, `Q` REQUEST, `D` DATA, `N` NAME, `T` TEST, `R` RELAY (1.11.0), `S` START (1.11.1).
+- `type`: `H` HELLO, `Q` REQUEST, `D` DATA, `N` NAME, `T` TEST, `R` RELAY (1.11.0), `S` START (1.11.1), `C` CATCHUP (1.12.0).
 - `msgId`: hex, unique per sender session.
 - `seq` and `total`: piece number and count. Pieces reassemble in any order, and duplicates are ignored. A half-received message is dropped after 120 s.
 - **Piece size:** 200 bytes by default, header included. Change it with `/fl comms size N` (60 to 255) until `/fl commtest` and two-client tests show the real limits.
@@ -34,7 +34,7 @@ Payloads are records separated by `~`, fields by `,`. Any `% | , ; ~ = newline` 
 h,<addonVersion>,<nameOptIn 0|1>,<wantReply 0|1>
 c,<Name-Realm>,<CLASS>,<level>,<shareMask>,<lastSeen>      (one per sharing character)
 x,<Name-Realm>                                             (1.0.1: one per character I removed)
-f,relay                                                    (1.11.0: my data may be relayed, and I relay)
+f,relay,catchup                                            (1.11.0: relay = my data may be relayed, and I relay; 1.12.0: catchup = I hand friends their own characters back)
 b,<hash>,<hash>,...                                        (1.11.0: hashes of what I blocked; never relay my data to them)
 ```
 
@@ -47,6 +47,8 @@ b,<hash>,<hash>,...                                        (1.11.0: hashes of wh
 ```
 q,<YYYY-MM-DD or empty>
 v,<hash>,<lastSeen>          (1.11.0, only to friends whose HELLO had f,relay: one per friend character I hold)
+m,<hash>,<lastSeen>          (1.12.0, once a session, only to friends whose HELLO had f,catchup: one per own character, lastSeen as at login)
+m                            (1.12.0: the same with no characters listed: everything)
 ```
 
 "Send me everything from this day on." The requester asks from the day before the latest day it already holds for that friend, so today's partial numbers refresh; the first request is empty, meaning everything kept. The sender caps it at 90 days.
@@ -93,6 +95,10 @@ The receiver replaces each day, level and session it receives with the sender's 
 ### RELAY (`R`, 1.11.0, D-124)
 
 A DATA body for another friend's character, sent in answer to the `v` records of a REQUEST when my copy is newer (its `lastSeen` is later). Hashes: 8 hex digits of djb2 over `FL:<Name-Realm>` (Comms/Relay.lua). Sent only for owners whose HELLO had `f,relay` and whose `b` list does not hold the asker's BattleTag or character; at most 10 per REQUEST, from the day before the asker's copy. The receiver keeps it only for a character it already holds from that friend directly, only when newer, and marks it as relayed until the friend's own DATA arrives. Older versions are never sent `R` and ignore `f`, `b` and `v`.
+
+### CATCHUP (`C`, 1.12.0, D-128)
+
+A DATA body for one of the asker's own characters, sent in answer to the `m` records of a REQUEST: each character I hold from the asker whose `lastSeen` is later than theirs, or that they did not list; at most 20, from the day before their `lastSeen` (everything for one they did not list). The receiver merges it into its own ledger without replacing anything (Comms/CatchUp.lua) and ignores characters it removed. Older versions never receive `C` and ignore `catchup` and `m`.
 
 ### START (`S`, 1.11.1, D-127)
 

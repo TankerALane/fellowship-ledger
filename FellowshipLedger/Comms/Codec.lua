@@ -17,7 +17,7 @@ Codec.MAX_RUNS = 20             -- dungeon runs sent per character per DATA (the
 Codec.MAX_DEATHS = 10           -- recent deaths sent per character per DATA (D-105)
 Codec.MAX_LOOT = 20             -- notable loot entries sent per character per DATA (D-105)
 Codec.LOOT_MIN_QUALITY = 3      -- only blue (rare) or better is shared (Austin, D-105)
-Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST", R = "RELAY", S = "START" }
+Codec.TYPES = { H = "HELLO", Q = "REQUEST", D = "DATA", N = "NAME", T = "TEST", R = "RELAY", S = "START", C = "CATCHUP" }
 
 -- Escaping: the separators and "%" become %XX.
 local SPECIAL = "[%%|,;~=\n\r%z]"
@@ -125,10 +125,13 @@ function Codec.EncodeHello(info)
     -- Relaying (1.11.0, D-124): "f,relay" when my data may be passed on between mutual
     -- friends (and I take part), and "b,<hash>,..." for what I blocked, so nobody
     -- relays my data to them. Older versions skip both.
-    if info.relay then
-        recs[#recs + 1] = "f,relay"
-        if info.noRelay and #info.noRelay > 0 then recs[#recs + 1] = "b," .. table.concat(info.noRelay, ",") end
-    end
+    -- Catching up between computers (1.12.0, D-128): "catchup" when I hand friends their
+    -- own characters back. Both flags share one "f" record.
+    local flags = {}
+    if info.relay then flags[#flags + 1] = "relay" end
+    if info.catchUp then flags[#flags + 1] = "catchup" end
+    if #flags > 0 then recs[#recs + 1] = "f," .. table.concat(flags, ",") end
+    if info.relay and info.noRelay and #info.noRelay > 0 then recs[#recs + 1] = "b," .. table.concat(info.noRelay, ",") end
     return table.concat(recs, "~")
 end
 
@@ -144,7 +147,10 @@ function Codec.DecodeHello(body)
         elseif f[1] == "x" and f[2] and f[2] ~= "" then
             out.removed[#out.removed + 1] = Codec.Unescape(f[2])
         elseif f[1] == "f" then
-            for i = 2, #f do if f[i] == "relay" then out.relay = true end end
+            for i = 2, #f do
+                if f[i] == "relay" then out.relay = true end
+                if f[i] == "catchup" then out.catchUp = true end
+            end
         elseif f[1] == "b" then
             out.noRelay = out.noRelay or {}
             for i = 2, #f do if f[i]:match("^%x+$") then out.noRelay[f[i]] = true end end
@@ -156,24 +162,39 @@ end
 -- since: "YYYY-MM-DD" or nil for everything kept. known (1.11.0, D-124): friends'
 -- characters I hold, { { hash, lastSeen } }, as "v,<hash>,<lastSeen>" records, so the
 -- friend can relay newer copies (Comms/Relay.lua). Older versions read only "q".
-function Codec.EncodeRequest(since, known)
+-- mine (1.12.0, D-128): my own characters, { { hash, lastSeen } }, as "m,<hash>,<lastSeen>"
+-- records, so the friend can hand back what I played on another computer
+-- (Comms/CatchUp.lua). A bare "m" asks for everything (no characters here yet).
+function Codec.EncodeRequest(since, known, mine)
     local recs = { "q," .. (since or "") }
     for _, k in ipairs(known or {}) do
         recs[#recs + 1] = string.format("v,%s,%d", k.hash, k.lastSeen)
+    end
+    if mine then
+        if #mine == 0 then recs[#recs + 1] = "m" end
+        for _, k in ipairs(mine) do
+            recs[#recs + 1] = string.format("m,%s,%d", k.hash, k.lastSeen)
+        end
     end
     return table.concat(recs, "~")
 end
 function Codec.DecodeRequest(body)
     local since = body:match("^q,(%d%d%d%d%-%d%d%-%d%d)")
-    local known
+    local known, mine
     for _, rec in ipairs(split(body, "~")) do
         local hash, seen = rec:match("^v,(%x+),(%d+)$")
         if hash then
             known = known or {}
             known[hash] = tonumber(seen)
         end
+        if rec == "m" then mine = mine or {} end
+        local mhash, mseen = rec:match("^m,(%x+),(%d+)$")
+        if mhash then
+            mine = mine or {}
+            mine[mhash] = tonumber(mseen)
+        end
     end
-    return { since = since, known = known }
+    return { since = since, known = known, mine = mine }
 end
 
 -- One character's shared data since `since` (nil = all). Returns nil if it shares nothing.

@@ -81,6 +81,10 @@ function Store.Login()
     -- A character the ledger has never seen (and with no backup to restore): the
     -- new-character prompt may offer to remove characters not played for a while.
     Store.isNewCharacter = db.characters[Store.key] == nil and Store.backupState == "nobackup"
+    -- Every character's last play before this session (D-128): what friends compare
+    -- their copies with when handing back play from another computer.
+    Store.seenAtLogin = {}
+    for key, c in pairs(db.characters) do Store.seenAtLogin[key] = c.lastSeen or 0 end
     if db.removed then Character.PruneRemoved(db.removed, t, Store.key) end
     local char = Character.Ensure(db.characters[Store.key] or {}, t)
     db.characters[Store.key] = char

@@ -81,6 +81,8 @@ function Merge.Hello(friend, hello, now)
     -- Relaying (D-124): may this friend's data be passed on, and to whom not.
     friend.relay = hello.relay or nil
     friend.noRelay = hello.noRelay
+    -- Catching up between computers (D-128): this friend hands my characters back.
+    friend.catchUp = hello.catchUp or nil
     -- Characters the friend removed from their own ledger.
     for _, key in ipairs(hello.removed or {}) do
         if friend.characters then friend.characters[key] = nil end
@@ -128,7 +130,10 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     -- Forever: the key is "First-Last" (D-064), so show "First Last".
     c.display = Merge.firstLastNames and c.realm and (c.name .. " " .. c.realm) or nil
     c.class, c.race, c.faction = data.class, data.race, data.faction
-    c.level, c.lastSeen, c.mask = data.level, data.lastSeen, data.mask
+    -- lastSeen never goes back: a late message (or another computer's older copy, D-128)
+    -- must not make the copy look older than one already held.
+    c.level, c.mask = data.level, data.mask
+    if type(data.lastSeen) == "number" and data.lastSeen > (c.lastSeen or 0) then c.lastSeen = data.lastSeen end
     c.days = c.days or {}
     for day, counts in pairs(data.days) do
         if day <= todayKey and day >= cutoffKey then c.days[day] = counts end

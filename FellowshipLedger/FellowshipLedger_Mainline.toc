@@ -57,6 +57,7 @@ Debug\FakeData.lua
 Comms\Codec.lua
 Comms\Merge.lua
 Comms\Relay.lua
+Comms\CatchUp.lua
 Comms\RateLimit.lua
 Compat\Compat.lua
 Debug\VerifyChecks.lua

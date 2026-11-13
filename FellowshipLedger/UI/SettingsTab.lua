@@ -204,6 +204,8 @@ local function build(panel)
     toggle(L.SHARE_NAME_DUNGEONS, "shareNameInDungeons")
     toggle(L.RELAY_FRIENDS, "relayFriends")
     note(L.RELAY_FRIENDS_NOTE)
+    toggle(L.CATCHUP_FRIENDS, "catchUpFromFriends")
+    note(L.CATCHUP_FRIENDS_NOTE)
     note(L.SHARING_NOT_LIVE)
 
     -- Appearance -------------------------------------------------------------

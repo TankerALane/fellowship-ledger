@@ -245,6 +245,7 @@ function commands.comms(rest)
     add(L.COMMS_LIVE, S.liveSent or 0, S.liveMessages or 0,
         S.startedAt and math.floor((time() - S.startedAt) / 60) or 0)
     add(S.RelayOn() and L.COMMS_RELAY or L.COMMS_RELAY_OFF, S.relaySent or 0, S.relayReceived or 0, S.relayDropped or 0)
+    add(S.CatchUpOn() and L.COMMS_CATCHUP or L.COMMS_CATCHUP_OFF, S.catchUpSent or 0, S.catchUpReceived or 0, S.catchUpDropped or 0)
     if ns.Compat.disabled.comms then add(L.COMMS_OFF_WHY, "comms", tostring(ns.Compat.disabled.comms)) end
     if ns.Compat.disabled.friends then add(L.COMMS_OFF_WHY, "friends", tostring(ns.Compat.disabled.friends)) end
     if T.lastError then add(L.COMMS_LAST_ERROR, T.lastError) end

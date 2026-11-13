@@ -25,6 +25,7 @@ Sync.LIVE_EVERY = 60     -- seconds between live updates of the character being 
 Sync.lastLive = {}       -- peer id -> what the last live update said (lastSeen left out)
 Sync.lastHello, Sync.lastRequest = {}, {}
 Sync.relayed = {}        -- "peer id|character key" -> lastSeen of the copy relayed to them (D-124)
+Sync.askedMine = {}      -- peer id -> true once this session's REQUEST asked for my characters back (D-128)
 Sync.optedIn = {}        -- party member names who sent a NAME note this session
 Sync.test = nil
 
@@ -34,6 +35,11 @@ local function now() return time() end
 function Sync.RelayOn()
     local s = ns.db.settings
     return s.relayFriends ~= false and not s.sharingPaused
+end
+
+-- Catching up between computers (D-128): on unless switched off.
+function Sync.CatchUpOn()
+    return ns.db.settings.catchUpFromFriends ~= false
 end
 
 local function destFor(peer)
@@ -71,20 +77,30 @@ function Sync.SendHello(peer, wantReply, force)
     table.sort(noRelay)
     local body = Codec.EncodeHello({ version = ns.VERSION, nameOptIn = ns.db.settings.shareNameInDungeons,
         wantReply = wantReply, characters = Sync.MyCharacters(), removed = removed,
-        relay = Sync.RelayOn(), noRelay = noRelay })
+        relay = Sync.RelayOn(), noRelay = noRelay, catchUp = Sync.CatchUpOn() })
     Transport.Send(destFor(peer), "H", body)
 end
 
 function Sync.RequestFrom(peer)
     local t = now()
-    if Sync.lastRequest[peer.id] and t - Sync.lastRequest[peer.id] < Sync.REQUEST_GAP then return end
-    Sync.lastRequest[peer.id] = t
     local f = ns.db.friends[peer.id]
+    -- Asking for my characters back is not held back by the gap: on a new computer the
+    -- first REQUEST can go before the friend's HELLO says they hand them back.
+    local wantMine = Sync.CatchUpOn() and f and f.catchUp and not Sync.askedMine[peer.id]
+    if not wantMine and Sync.lastRequest[peer.id] and t - Sync.lastRequest[peer.id] < Sync.REQUEST_GAP then return end
+    Sync.lastRequest[peer.id] = t
     local since = f and f.syncedThrough and ns.Days.Shift(f.syncedThrough, -1, time, date) or nil
     -- What I hold of other friends, so this friend can relay newer copies (only to a
     -- friend whose ledger relays: older versions would not use it).
     local known = (Sync.RelayOn() and f and f.relay) and ns.Relay.Known(ns.db.friends, ns.db.blocklist, peer.id) or nil
-    Transport.Send(destFor(peer), "Q", Codec.EncodeRequest(since, known))
+    -- My own characters, once a session per friend (D-128): they hand back what I played
+    -- on another computer.
+    local mine
+    if wantMine then
+        Sync.askedMine[peer.id] = true
+        mine = ns.CatchUp.Mine(ns.db.characters, ns.Store.seenAtLogin)
+    end
+    Transport.Send(destFor(peer), "Q", Codec.EncodeRequest(since, known, mine))
 end
 
 -- Relay (D-124): send peer my newer copies of friends' characters they listed.
@@ -104,6 +120,23 @@ function Sync.SendRelays(peer, theirs)
             n = n + Transport.Send(destFor(peer), "R", body)
             Sync.relaySent = (Sync.relaySent or 0) + 1
         end
+    end
+    return n
+end
+
+-- Catching up (D-128): hand peer back my newer copies of their own characters. No memo
+-- of what went: their computers are one peer to me, and each asks once a session.
+function Sync.SendCatchUp(peer, mine)
+    if not (mine and Sync.CatchUpOn()) or Friends.IsBlocked(peer) then return 0 end
+    local f = ns.db.friends[peer.id]
+    local n = 0
+    for _, pick in ipairs(ns.CatchUp.Pick(f, mine)) do
+        local shared = Codec.MaskToSet(pick.char.mask or "")
+        -- From the day before their own copy's last play; everything for a character they lack.
+        local since = pick.theirs and pick.theirs > 0 and date("%Y-%m-%d", pick.theirs - 86400) or nil
+        local body = Codec.EncodeData(pick.key, ns.Relay.AsOwn(pick.char), shared, since)
+        n = n + Transport.Send(destFor(peer), "C", body)
+        Sync.catchUpSent = (Sync.catchUpSent or 0) + 1
     end
     return n
 end
@@ -187,6 +220,7 @@ Transport.handlers.Q = function(peer, body)
     local req = Codec.DecodeRequest(body)
     Sync.SendData(peer, req.since)
     Sync.SendRelays(peer, req.known)
+    Sync.SendCatchUp(peer, req.mine)
 end
 
 -- A friend's chains as { key = { step, total, name } } (theirs plus the ones worked out
@@ -326,6 +360,72 @@ Transport.handlers.R = function(peer, body)
         if e.kind == "loot" then itemText(e.itemID) end
         Sync.Notify({ event = e, friendName = friend.name or id, friendId = id })
     end
+    if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
+end
+
+-- CATCHUP (D-128): a friend's copy of one of my own characters, with what I played on
+-- another computer. Merged into my ledger: only what is missing is added, nothing of
+-- mine is replaced or deleted. A character I removed stays removed.
+local function nameItems(char, tries)
+    local missing = false
+    for _, it in ipairs(char.items or {}) do
+        local id = type(it.link) == "string" and tonumber(it.link:match("^item:(%d+)$"))
+        if id then
+            local ok, name, link = ns.Compat.Try("C_Item.GetItemInfo", id)
+            if ok and type(name) == "string" and type(link) == "string" then
+                it.name, it.link = name, link
+            else
+                missing = true
+                ns.Compat.Try("C_Item.RequestLoadItemDataByID", id)
+            end
+        end
+    end
+    if missing and tries > 0 and C_Timer and C_Timer.After then
+        C_Timer.After(3, function() nameItems(char, tries - 1) end)
+    end
+end
+
+function Sync.CatchUpText(got)
+    local parts = {}
+    local function add(n, one, many) if n > 0 then parts[#parts + 1] = string.format(n == 1 and one or many, n) end end
+    add(got.days, L.CATCHUP_DAY, L.CATCHUP_DAYS)
+    add(got.levels, L.CATCHUP_LEVEL, L.CATCHUP_LEVELS)
+    add(got.runs, L.CATCHUP_RUN, L.CATCHUP_RUNS)
+    add(got.deaths, L.CATCHUP_DEATH, L.CATCHUP_DEATHS)
+    add(got.loot, L.CATCHUP_ITEM, L.CATCHUP_ITEMS)
+    add(got.sessions, L.CATCHUP_SESSION, L.CATCHUP_SESSIONS)
+    return table.concat(parts, ", ")
+end
+
+Transport.handlers.C = function(peer, body)
+    if not Sync.CatchUpOn() or Friends.IsBlocked(peer) then return end
+    local data = Codec.DecodeData(body)
+    if not data then return end
+    if ns.db.removed and ns.db.removed[data.key] then
+        Sync.catchUpDropped = (Sync.catchUpDropped or 0) + 1
+        return
+    end
+    local char = ns.db.characters[data.key]
+    local isNew = char == nil
+    if isNew then
+        local name, realm = data.key:match("^([^%-]+)%-(.+)$")
+        char = ns.Character.Ensure({}, now())
+        char.name, char.realm = name or data.key, realm
+        char.display = ns.Compat.flavor == "Forever" and realm and realm ~= "" and (char.name .. " " .. realm) or nil
+    end
+    local got = ns.CatchUp.Merge(char, data)
+    if not ns.CatchUp.Any(got) then
+        Sync.catchUpDropped = (Sync.catchUpDropped or 0) + 1
+        return
+    end
+    if isNew then ns.db.characters[data.key] = char end
+    -- Bests from the other computer are folded in quietly, as at login: no "new
+    -- personal best" notice for play that happened elsewhere.
+    if ns.Records and ns.db.bests then pcall(ns.Records.Fold, data.key, char) end
+    nameItems(char, 5)
+    Sync.catchUpReceived = (Sync.catchUpReceived or 0) + 1
+    local f = ns.db.friends[peer.id]
+    ns.Log.Info(L.CATCHUP_DONE, char.display or char.name or data.key, (f and f.name) or peer.name or peer.id, Sync.CatchUpText(got))
     if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then ns.MainWindow.Refresh() end
 end
 

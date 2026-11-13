@@ -54,7 +54,7 @@ Phase 2 adds:
 - **Runtime:** `Core/Data.lua` (real or fake data for the windows), `Trackers/QuestChains.lua`, `UI/Widgets.lua` (role-based styling), `UI/Table.lua`, `UI/Graph.lua`, the four tab files, `UI/Toast.lua`, `UI/MinimapButton.lua`, `UI/Welcome.lua` and `UI/OptionsPanel.lua`.
 
 Phase 3 adds `Comms/`:
-- **Pure:** `Codec.lua` (wire format, share filter, chunking and reassembly), `Merge.lua` (storing friends' data, milestones, the weekly summary), `Relay.lua` (relaying between mutual friends, D-124) and `RateLimit.lua`.
+- **Pure:** `Codec.lua` (wire format, share filter, chunking and reassembly), `Merge.lua` (storing friends' data, milestones, the weekly summary), `Relay.lua` (relaying between mutual friends, D-124), `CatchUp.lua` (catching up between computers, D-128) and `RateLimit.lua`.
 - **Runtime:** `Friends.lua` (discovery and peers), `Transport.lua` (queue, send results, receiving) and `Sync.lua` (the HELLO, REQUEST and DATA conversation, the NAME note and `/fl commtest`).
 
 1.8.0 adds (D-114 to D-117):

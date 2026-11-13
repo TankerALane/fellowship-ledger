@@ -120,6 +120,7 @@ H.PURE_FILES = {
     "Comms/Codec.lua",
     "Comms/Merge.lua",
     "Comms/Relay.lua",
+    "Comms/CatchUp.lua",
     "Comms/RateLimit.lua",
     "Debug/VerifyChecks.lua",
     "Debug/VerifyReport.lua",

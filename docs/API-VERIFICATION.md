@@ -368,6 +368,12 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetInstanceLockTimeRemaining` | api | bosses already dead when you enter a saved dungeon: the run is marked * (D-127) | `/dump type(GetInstanceLockTimeRemaining)` -> "function" | PASS | ? |
 | `m:partialrun` | manual | a run joined after the group started fighting is marked * (not timed from the start): UnitAffectingCombat and C_Map.GetBestMapForUnit on a party member inside; group members with the ledger share one start (D-127) | with a friend on 1.11.1: they pull first, then you enter; your timer shows their start, no *. With nobody else on the ledger: enter while the group fights; the timer shows * | ? | ? |
 
+### Friends
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:catchup` | manual | catching up between computers: friends hand back what you played on another computer (D-128) | play on computer B with a friend on 1.12 online, then log in on computer A with that friend online: chat says 'Caught up <character> from <friend>'s copy', the Me tab and Dungeons tab show B's play, /fl comms shows the catch-up line | ? | ? |
+
 ### Items
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
