@@ -450,3 +450,10 @@ Austin (2026-11-12): play on a second computer should reach the first ("so you d
 - **Limits.** Only what is shared comes back, and only what a friend still holds (90 days, the newest runs, deaths and loot the DATA format carries). Quest logs, reputation, flight paths and the like are read from the game on login anyway. At least one friend on 1.12.0 or later has to be online. A friend could alter what they hand back, the same trust as relaying (D-124).
 - **Several WoW accounts on one Battle.net account.** Friends key data by Battle.net account, so characters from another WoW account (another SavedVariables folder) would be added too. Not handled yet; to ask Austin.
 - **Setting.** Settings > Sharing > "Catch up from friends when you play on more than one computer" (catchUpFromFriends, on by default). Off: no `f,catchup` and no `m` records, nothing handed back to friends, and C messages are dropped. `/fl comms` counts characters handed back, caught up and not needed.
+
+## D-129 An unlearned profession is deleted
+Austin (2026-11-13): "if a character no longer shows a profession it can be deleted because unlearning is the only way for it to disappear." Before, the tracker only added and raised professions, so an unlearned one stayed on the Me tab, in what friends received, in goal suggestions and in /fl export; and one unlearned and learned again stayed at its old rank, with no skill-ups counted until it passed it.
+- Each scan deletes a saved profession the game no longer lists, with its rank history. Skill-ups already counted in the day totals stay.
+- Only from a complete read (every slot named with a rank), and an empty list only after the login scan, so a list the game has not loaded yet cannot delete anything. SKILL_LINES_CHANGED fires on unlearning and often after it, so an empty list is caught soon after login.
+- A rank lower than the saved one means unlearned and learned again: the profession starts over from the new rank.
+- Friends' copies follow on the next DATA, which replaces their list. A session goal for a deleted profession reads rank 0.

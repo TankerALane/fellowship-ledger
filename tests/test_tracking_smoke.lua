@@ -797,6 +797,56 @@ H.test("professions: login adopts ranks, later gains count with timing", functio
     H.eq(today(env).skillUps, 2)
 end)
 
+H.test("professions: an unlearned one is deleted, a new one added, a relearned one starts over", function()
+    local env = boot(RETAIL)
+    local st = env.__state
+    -- Mining 120 and Herbalism 90.
+    st.profs = { { "Mining", 120, 186 }, { "Herbalism", 90, 182 } }
+    st.profFail = false
+    local function install(e)
+        e.GetProfessions = function()
+            local s = e.__state
+            return s.profs[1] and 1 or nil, s.profs[2] and 2 or nil
+        end
+        e.GetProfessionInfo = function(i)
+            local s = e.__state
+            if s.profFail and i == 2 then return nil end -- not loaded yet
+            local p = s.profs[i]
+            return p[1], 0, p[2], 150, 0, 0, p[3]
+        end
+    end
+    install(env)
+    Mock.fire(env, "SKILL_LINES_CHANGED"); Mock.runTimers(env)
+    local profs = char(env).professions
+    H.ok(profs["186"] and profs["182"], "both seen")
+    -- A read that fails part-way deletes nothing.
+    st.profFail = true
+    Mock.fire(env, "SKILL_LINES_CHANGED"); Mock.runTimers(env)
+    H.ok(profs["186"] and profs["182"], "a failed read keeps both")
+    st.profFail = false
+    -- Unlearn Herbalism and learn Skinning at 1.
+    st.profs = { { "Mining", 120, 186 }, { "Skinning", 1, 393 } }
+    Mock.fire(env, "SKILL_LINES_CHANGED"); Mock.runTimers(env)
+    H.eq(profs["182"], nil, "Herbalism deleted")
+    H.eq(profs["393"].rank, 1, "Skinning added")
+    H.eq(profs["186"].rank, 120, "Mining kept")
+    -- Unlearn Mining and learn it again at once: back at 1, and gains count from there.
+    st.profs = { { "Mining", 1, 186 }, { "Skinning", 1, 393 } }
+    Mock.fire(env, "SKILL_LINES_CHANGED"); Mock.runTimers(env)
+    H.eq(profs["186"].rank, 1, "relearned Mining starts over")
+    H.eq(#profs["186"].history, 0)
+    st.profs[1][2] = 3
+    Mock.fire(env, "SKILL_LINES_CHANGED"); Mock.runTimers(env)
+    H.eq(profs["186"].rank, 3); H.eq(#profs["186"].history, 2, "the two new points count")
+    -- An empty list at login is not trusted (the game may not have loaded it yet) ...
+    st.profs = {}
+    Mock.fire(env, "PLAYER_LOGIN"); Mock.runTimers(env)
+    H.ok(char(env).professions["186"], "kept through an empty read at login")
+    -- ... but later it means both were unlearned.
+    Mock.fire(env, "SKILL_LINES_CHANGED"); Mock.runTimers(env)
+    H.eq(next(char(env).professions), nil, "both unlearned: none left")
+end)
+
 H.test("commands: window, export, self-test, debug log, restore", function()
     local env, ns = boot(RETAIL)
     Mock.fire(env, "QUEST_TURNED_IN", 54, 0, 0)

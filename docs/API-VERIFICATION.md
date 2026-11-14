@@ -368,6 +368,12 @@ These come from addons already installed in Austin's game folders. They are good
 | `GetInstanceLockTimeRemaining` | api | bosses already dead when you enter a saved dungeon: the run is marked * (D-127) | `/dump type(GetInstanceLockTimeRemaining)` -> "function" | PASS | ? |
 | `m:partialrun` | manual | a run joined after the group started fighting is marked * (not timed from the start): UnitAffectingCombat and C_Map.GetBestMapForUnit on a party member inside; group members with the ledger share one start (D-127) | with a friend on 1.11.1: they pull first, then you enter; your timer shows their start, no *. With nobody else on the ledger: enter while the group fights; the timer shows * | ? | ? |
 
+### Professions
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:prof.unlearn` | manual | an unlearned profession is deleted (D-129) | unlearn a profession (or learn a new one after): the Me tab Professions view drops it at once and shows the new one; learning it again starts at its new rank | ? | ? |
+
 ### Friends
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
