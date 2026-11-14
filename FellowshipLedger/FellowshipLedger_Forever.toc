@@ -2,7 +2,7 @@
 ## Title: Fellowship Ledger
 ## Notes: Keeps a ledger of your characters' progress and shares it with friends who also run it.
 ## Author: Decoupled Lane Studio
-## Version: 1.12.1
+## Version: 1.12.2
 ## IconTexture: Interface\AddOns\FellowshipLedger\media\icon
 ## SavedVariables: FellowshipLedgerDB
 ## SavedVariablesPerCharacter: FellowshipLedgerBackupDB

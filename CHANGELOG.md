@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.12.2 - 2026-11-13
 
 ### Fixed
 - An unlearned profession is removed from the ledger (and from what friends see) instead of staying at its last rank. Learning one again starts from its new rank, and its skill-ups count again.
