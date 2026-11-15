@@ -529,6 +529,36 @@ H.test("dungeon blips are cleaned on every character at login, not only the one 
     H.ok(alt.dungeonBlipsDropped)
 end)
 
+H.test("dungeon group: someone who joins after the final boss never takes a member's place", function()
+    -- Austin, 2026-11-15: a mage left after the run and Zeryssa (a mage who shares her
+    -- name) was invited; her name went onto the run in the other mage's place.
+    local env, ns = boot(RETAIL)
+    local st = env.__state
+    st.units.party1 = { class = "WARRIOR", role = "TANK", level = 27, name = "Cain" }
+    st.units.party2 = { class = "MAGE", role = "DAMAGER", level = 31, name = "Othermage" }
+    st.units.party3 = { class = "PRIEST", role = "HEALER", level = 28, name = "Healer" }
+    st.ejInstance = 63
+    st.ejBosses = { { name = "Rhahk'Zor", id = 1 }, { name = "Captain Cookie", id = 9 } }
+    st.instance = { "The Deadmines", "party", 1, "Normal", 5, 0, false, 36 }
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    local run = char(env).currentRun
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    Mock.advance(env, 600)
+    Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
+    H.ok(run.completed)
+    H.eq(run.party[2].name, nil, "the mage shares no name")
+    -- The mage leaves; Zeryssa (a mage who shares her name) joins.
+    ns.Sync.optedIn.Zeryssa = true
+    st.units.party2 = { class = "MAGE", role = "DAMAGER", level = 31, name = "Zeryssa" }
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    H.eq(run.party[2].name, nil, "Zeryssa was not in the run")
+    H.eq(run.members and run.members["Zeryssa"], nil, "nor among its members")
+    -- The healer, who was in the run, shares a name late: that still fills in.
+    ns.Sync.optedIn.Healer = true
+    Mock.fire(env, "GROUP_ROSTER_UPDATE")
+    H.eq(run.party[3].name, "Healer", "a late opt-in from someone in the run")
+end)
+
 H.test("dungeon group: joins count, leaving after a boss does not shrink it, frozen at the final boss", function()
     local env, ns = boot(RETAIL)
     local st = env.__state

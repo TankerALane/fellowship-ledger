@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Fixed
+- A dungeon run's group no longer picks up someone invited after the final boss: a player of the same class and role who joined afterwards could take the name of one who had left.
+
 ### Changed
 - The Me tab's tiles are shorter and narrower, with smaller figures, and PLAYING is small text without a box.
 - The main tabs are larger, with larger text, so they stand out from the other buttons.

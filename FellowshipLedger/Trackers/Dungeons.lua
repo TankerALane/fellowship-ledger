@@ -65,7 +65,9 @@ end
 -- Only to tell, when you come back in, whether the leader is from this run's group;
 -- cleared when the run closes, never shared.
 local function noteMembers(run)
-    if not run or run.outside then return end
+    -- Frozen at the final boss: someone who joins afterwards was not in the run
+    -- (Austin, 2026-11-15: a mage invited after the dungeon showed in its group).
+    if not run or run.outside or run.partyFrozen then return end
     run.members = run.members or {}
     local me = unitKey("player")
     if me then run.members[me] = true end
@@ -393,6 +395,17 @@ local function complete(run, how)
     local party = partySnapshot()
     if #party > 0 then run.party = party end
     run.partyFrozen = true
+    -- Who was in the group at the final boss, in memory only (never saved): a name
+    -- opt-in that arrives later may be filled in only for one of them.
+    Dungeons.frozenWith = { entered = run.entered, names = {} }
+    for i = 1, 4 do
+        local unit = "party" .. i
+        if UnitExists(unit) then
+            local ok, name = ns.Compat.Try("UnitName", unit)
+            name = ok and T.Plain(name) or nil
+            if type(name) == "string" then Dungeons.frozenWith.names[name] = true end
+        end
+    end
     -- The group's highest level at the final boss, for the Leaderboard's at-level
     -- filter (D-115). Unknown levels are left out; nil when none is known.
     local top = tonumber(Store.char and Store.char.level)
@@ -572,15 +585,20 @@ Dungeons.events.ZONE_CHANGED_NEW_AREA = function() check() end
 -- Group changes during a run. Joins always count (a late arrival was in the run);
 -- after the first boss, someone leaving no longer shrinks the group; once the
 -- run is completed the group is frozen, and only a name opt-in that arrives late
--- is filled in (matched by class and role).
+-- is filled in (matched by class and role), and only for a player who was in the
+-- group at the final boss (Dungeons.frozenWith; after a /reload, none is filled in).
+-- Before, a player of the same class and role who joined after the run took the
+-- place of the one who left (Austin, 2026-11-15).
 local function refreshParty()
     local run = Store.char and Store.char.currentRun
     if not run then return end
     noteMembers(run) -- a late arrival is part of this run's group
     local party = partySnapshot()
     if run.partyFrozen then
+        local was = Dungeons.frozenWith
+        local names = was and was.entered == run.entered and was.names or {}
         for _, p in ipairs(party) do
-            if p.name then
+            if p.name and names[p.name] then
                 for _, q in ipairs(run.party or {}) do
                     if not q.name and q.class == p.class and q.role == p.role then q.name = p.name break end
                 end
