@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- The Me tab's tiles are shorter, with smaller figures, and the PLAYING tag is a third smaller.
+
 ## 1.13.0 - 2026-11-15
 
 ### Changed

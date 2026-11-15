@@ -42,7 +42,7 @@ end
 
 -- The tiles over the table (1.13.0): the range's totals for all your characters.
 Me.TILES = { "levels", "quests", "dungeons", "moneyNet", "played", "deaths" }
-Me.TILE_H = 48
+Me.TILE_H = 34 -- 1.13.1: was 48 (Austin: too tall)
 Me.TILE_GAP = 6
 
 function Me.TileValues(rows)
@@ -76,10 +76,10 @@ local function buildTiles(panel)
         W.Background(t, "panel")
         W.Border(t, "rule", 1)
         t.label = W.Text(t, "small", "section")
-        t.label:SetPoint("TOPLEFT", 8, -6)
+        t.label:SetPoint("TOPLEFT", 8, -4)
         t.value = W.Text(t, "number", "text")
-        t.value:SetPoint("BOTTOMLEFT", 8, 6)
-        t.value:SetPoint("BOTTOMRIGHT", -6, 6)
+        t.value:SetPoint("BOTTOMLEFT", 8, 3)
+        t.value:SetPoint("BOTTOMRIGHT", -6, 3)
         t.value:SetWordWrap(false)
         t:EnableMouse(true)
         t:SetScript("OnEnter", function(self)

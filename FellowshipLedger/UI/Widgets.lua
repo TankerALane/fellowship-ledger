@@ -39,18 +39,23 @@ local function paint(region, role, alpha)
     region:SetColorTexture(c[1], c[2], c[3], alpha or c[4])
 end
 
--- "number" (1.13.0): the large figures of the Me tab's tiles, the large font made
--- NUMBER_SCALE times bigger (the game has no larger font object on every client).
-W.NUMBER_SCALE = 1.4
+-- Scaled font roles (1.13.0): a base role's font made bigger or smaller (the game has
+-- no larger or smaller font objects on every client).
+--   number: the figures of the Me tab's tiles (1.13.1: 1.4 -> 1.15, Austin found the tiles too tall)
+--   tag:    the boxed PLAYING tag (1.13.1: two thirds of the small font, Austin)
+W.NUMBER_SCALE = 1.15
+W.TAG_SCALE = 0.67
+local SCALED = { number = { "large", "NUMBER_SCALE" }, tag = { "small", "TAG_SCALE" } }
 
 local function style(fs, fontRole, colorRole)
-    local fo = fontObject(fontRole == "number" and "large" or fontRole)
+    local scaled = SCALED[fontRole]
+    local fo = fontObject(scaled and scaled[1] or fontRole)
     if fo then fs:SetFontObject(fo) end
-    if fontRole == "number" and fo then
+    if scaled and fo then
         pcall(function()
             local path, size, flags = fo:GetFont()
             if type(path) == "string" and type(size) == "number" then
-                fs:SetFont(path, math.floor(size * W.NUMBER_SCALE + 0.5), flags)
+                fs:SetFont(path, math.max(6, math.floor(size * W[scaled[2]] + 0.5)), flags)
             end
         end)
     end
@@ -207,18 +212,20 @@ end
 
 -- A small boxed tag (1.13.0), such as PLAYING after a character's name: upper-case
 -- text in the section color inside a thin border. tag:SetLabel(text) sizes it.
+-- 1.13.1: two thirds of its first size (height 14 -> 9, padding 8 -> 5, text TAG_SCALE).
+W.TAG_H = 9
 function W.Tag(parent)
     local t = CreateFrame("Frame", nil, parent)
-    t:SetSize(40, 14)
+    t:SetSize(27, W.TAG_H)
     W.Background(t, "accent", 0.12)
     W.Border(t, "section", 1)
-    t.text = W.Text(t, "small", "section")
+    t.text = W.Text(t, "tag", "section")
     t.text:SetPoint("CENTER", 0, 0)
     t.text:SetJustifyH("CENTER")
     function t:SetLabel(text)
         self.text:SetText(ns.Format.Upper(text or ""))
         local w = self.text:GetStringWidth()
-        self:SetWidth((type(w) == "number" and w > 0 and w or 7 * #(text or "")) + 8)
+        self:SetWidth((type(w) == "number" and w > 0 and w or 5 * #(text or "")) + 5)
     end
     t:Hide()
     return t
