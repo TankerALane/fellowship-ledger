@@ -51,9 +51,14 @@ local function dungeonLines(out, d, crown, good)
         if e.mine then group = good .. group .. "|r" end
         local tip = function()
             local lines = Leaderboard.Members(e, L)
-            if e.partial then
+            if e.partial or e.levelGuess or not e.levelMax then
                 lines = { unpack(lines) }
-                lines[#lines + 1] = ns.DungeonsModel.PartialText(e.partial, L)
+                if e.partial then lines[#lines + 1] = ns.DungeonsModel.PartialText(e.partial, L) end
+                if e.levelGuess and e.levelMax then
+                    lines[#lines + 1] = L.LEADER_LEVEL_GUESS_TIP
+                elseif not e.levelMax then
+                    lines[#lines + 1] = L.LEADER_LEVEL_UNKNOWN_TIP
+                end
             end
             return L.LEADER_GROUP_TIP, lines
         end
@@ -62,7 +67,8 @@ local function dungeonLines(out, d, crown, good)
         local segments = { seg(0, .05, rank, top and "heading" or "text"),
             seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.33, .39, group),
             seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
-            seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") }
+            seg(.86, .14, e.levelMax and string.format(e.levelGuess and L.LEADER_LEVEL_GUESS or L.LEADER_LEVEL, e.levelMax) or "-",
+                e.atLevel and "muted" or "bad") }
         if fastest and (e.clear or 0) > 0 then segments[#segments + 1] = { x = .19, w = .13, bar = fastest / e.clear } end
         out[#out + 1] = { kind = "grid", tooltip = tip, segments = segments }
     end

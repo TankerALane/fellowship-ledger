@@ -141,3 +141,24 @@ H.test("Leaderboard: highest-level dungeon first; a dungeon collapses to its #1,
     H.eq(#LT.Lines(), openCount)
     H.eq(LT.ui.allToggle.text:GetText(), "Collapse all")
 end)
+H.test("Leaderboard: a run with no recorded group level uses the character's level that day", function()
+    local ns3 = H.pureNamespace()
+    local LB = ns3.Leaderboard
+    local levels = { [15] = { at = 1000 }, [16] = { at = 2000 }, [34] = { at = 9000 } }
+    H.eq(LB.LevelAt(levels, 1500), 15); H.eq(LB.LevelAt(levels, 2000), 16); H.eq(LB.LevelAt(levels, 9500), 34)
+    H.eq(LB.LevelAt(levels, 500), nil, "before any known level-up"); H.eq(LB.LevelAt(nil, 500), nil)
+    local function run(entered, levelMax)
+        return { name = "Ragefire Chasm", entered = entered, completed = true, clear = 1200, levelMax = levelMax }
+    end
+    local friends = { ["bn:H#1"] = { name = "Hamlet", characters = { ["Alastair-Ratt"] = { name = "Alastair", levels = levels,
+        runs = { run(2500), run(9500), run(30000, 34) } } } } }
+    local board = LB.Build(LB.Entries({}, friends), true)
+    H.eq(#board, 1)
+    H.eq(#board[1].clears, 1, "only the run at level 16 is at level")
+    H.eq(board[1].clears[1].levelMax, 16); H.eq(board[1].clears[1].levelGuess, true)
+    local all = LB.Build(LB.Entries({}, friends), false)
+    H.eq(#all[1].clears, 3, "all runs keep the level-34 ones")
+    local recorded
+    for _, e in ipairs(all[1].clears) do if e.finishedAt == 30000 + 1200 then recorded = e end end
+    H.eq(recorded.levelGuess, nil, "a recorded level is not a guess")
+end)

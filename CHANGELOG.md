@@ -6,6 +6,7 @@
 - The Me tab's tiles are shorter and narrower, with smaller figures, and PLAYING is small text without a box.
 - The main tabs are larger, with larger text, so they stand out from the other buttons.
 - Leaderboard: the highest-level dungeon is on top. Click a dungeon's name to collapse it to one line with its fastest clear; **Collapse all** and **Open all** at the top right.
+- Leaderboard: runs from before group levels were saved (before 1.8.0) used to count as at level. They now use the character's own level that day, shown as `level 16?`, so an over-levelled run no longer counts as at level. Hover a run to see why.
 
 ## 1.13.0 - 2026-11-15
 

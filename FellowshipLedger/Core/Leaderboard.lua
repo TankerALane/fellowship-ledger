@@ -41,6 +41,30 @@ end
 -- the rest of `names` show on hover.
 -- chars: my characters (key -> character); friends: db.friends (or fake data);
 -- isBlocked(friend, key); nameOf(key, char) for my characters.
+-- A character's level at a moment, from its level-ups (levels[to].at = when it reached
+-- `to`): the highest level reached by then. Nil when no level-up that early is known.
+function Leaderboard.LevelAt(levels, at)
+    if type(at) ~= "number" then return nil end
+    local best
+    for to, rec in pairs(levels or {}) do
+        to = tonumber(to)
+        if to and type(rec) == "table" and type(rec.at) == "number" and rec.at <= at and (not best or to > best) then best = to end
+    end
+    return best
+end
+
+-- A run's top level when it was not recorded (runs before 1.8.0, D-115): the highest of
+-- the character's own level at the time and the levels its party list kept. Marked as a
+-- guess, since the rest of the group is unknown (Austin, 2026-11-15: a level-34 run of a
+-- 13-18 dungeon must not count as at level).
+local function guessLevel(c, r)
+    local top = Leaderboard.LevelAt(c.levels, r.entered)
+    for _, p in ipairs(r.party or {}) do
+        if not p.npc and type(p.level) == "number" and (not top or p.level > top) then top = p.level end
+    end
+    return top
+end
+
 function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
     local out = {}
     for key, c in pairs(chars or {}) do
@@ -52,6 +76,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
             if clear and clear >= Leaderboard.MIN_CLEAR and r.name then
                 local e = { dungeon = r.name, clear = clear, finishedAt = r.completedAt, names = {}, size = 1,
                     levelMax = r.levelMax, mine = true, bosses = {}, partial = r.partial }
+                if not e.levelMax then e.levelMax, e.levelGuess = guessLevel(c, r), true end
                 addName(e, nameOf and nameOf(key, c) or c.display or c.name or key)
                 e.lead = e.names[1]
                 for _, p in ipairs(r.party or {}) do
@@ -76,6 +101,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                         local e = { dungeon = r.name, clear = r.clear, finishedAt = r.entered + (r.startOffset or 0) + r.clear, names = {},
                             size = r.size or (1 + #(r.names or {})), levelMax = r.levelMax, friendId = fid, bosses = {},
                             partial = r.partial }
+                        if not e.levelMax then e.levelMax, e.levelGuess = guessLevel(c, r), true end
                         addName(e, c.display or c.name or key)
                         e.lead = e.names[1]
                         for _, n in ipairs(r.names or {}) do addName(e, n) end
@@ -133,6 +159,8 @@ function Leaderboard.Merge(entries)
             for _, n in ipairs(e.names) do addName(last, n) end
             last.size = math.max(last.size, e.size, #last.names)
             if e.levelMax and (not last.levelMax or e.levelMax > last.levelMax) then last.levelMax = e.levelMax end
+            -- Recorded by either copy: no longer a guess.
+            last.levelGuess = last.levelGuess and e.levelGuess or nil
             last.mine = last.mine or e.mine
             for _, b in ipairs(e.bosses) do last.bosses[#last.bosses + 1] = b end
         else
