@@ -44,7 +44,7 @@ end
 --   number: the figures of the Me tab's tiles (1.13.1: 1.4 -> 1.15, Austin found the tiles too tall)
 --   tag:    the boxed PLAYING tag (1.13.1: two thirds of the small font, Austin)
 W.NUMBER_SCALE = 1.15
-W.TAG_SCALE = 0.67
+W.TAG_SCALE = 0.8 -- 1.13.1: 0.67 was a little too small once the box was gone (Austin)
 local SCALED = { number = { "large", "NUMBER_SCALE" }, tag = { "small", "TAG_SCALE" } }
 
 local function style(fs, fontRole, colorRole)
