@@ -192,9 +192,12 @@ function Leaderboard.Build(entries, atLevelOnly)
         end)
         board[#board + 1] = { dungeon = name, range = Ranges.For(name), clears = clears, bosses = bosses }
     end
+    -- Highest level first (Austin, 2026-11-15); dungeons without a known range last.
     table.sort(board, function(a, b)
-        local x, y = a.range and a.range[1] or 999, b.range and b.range[1] or 999
-        if x ~= y then return x < y end
+        local x, y = a.range and a.range[1] or -1, b.range and b.range[1] or -1
+        if x ~= y then return x > y end
+        local x2, y2 = a.range and a.range[2] or -1, b.range and b.range[2] or -1
+        if x2 ~= y2 then return x2 > y2 end
         return a.dungeon < b.dungeon
     end)
     return board

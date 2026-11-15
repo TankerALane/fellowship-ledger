@@ -100,3 +100,44 @@ H.test("Friends tab: This week compares you and friends side by side (fake data)
     H.ok(crowns >= 1, "at least one crown")
     H.eq(ns2.MainWindow.status:GetText(), "", "fake data: the banner speaks, not the header")
 end)
+H.test("Leaderboard: highest-level dungeon first; a dungeon collapses to its #1, Collapse all and Open all", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.runTimers(env)
+    local now = env.time()
+    local function run(name, at, clear)
+        return { name = name, entered = at, completed = true, completedAt = at + clear, clear = clear,
+            bossNames = { "A" }, splits = { { at = clear, fight = 10 } }, group = { levelMax = 20 } }
+    end
+    ns2.db.friends["bn:F#1"] = { kind = "bnet", name = "F", characters = { ["Zip-R"] = { name = "Zip", level = 30,
+        runs = { run("Ragefire Chasm", now - 9000, 900), run("Blackfathom Deeps", now - 7000, 1800), run("The Deadmines", now - 5000, 1500) } } } }
+    ns2.MainWindow.Open("leaderboard")
+    local LT = ns2.LeaderboardTab
+    LT.state.all = true
+    local function heads()
+        local t = {}
+        for _, l in ipairs(LT.Lines()) do if l.dungeon then t[#t + 1] = l end end
+        return t
+    end
+    local h = heads()
+    H.eq(h[1].dungeon, "Blackfathom Deeps"); H.eq(h[2].dungeon, "The Deadmines"); H.eq(h[3].dungeon, "Ragefire Chasm")
+    local openCount = #LT.Lines()
+    -- Click a title: it closes to one line with its #1.
+    h[2].onClick()
+    H.ok(LT.state.collapsed["The Deadmines"])
+    local closed = heads()[2]
+    H.ok(closed.segments[1].text:find("^%+ The Deadmines"), closed.segments[1].text)
+    H.ok(closed.segments[2].text:find("25m 00s", 1, true), closed.segments[2].text)
+    H.ok(#LT.Lines() < openCount, "fewer lines")
+    heads()[2].onClick()
+    H.eq(LT.state.collapsed["The Deadmines"], nil, "open again")
+    -- Collapse all, then Open all.
+    LT.ui.allToggle:GetScript("OnClick")()
+    H.eq(#LT.Lines(), 3, "only the three titles")
+    H.eq(LT.ui.allToggle.text:GetText(), "Open all")
+    LT.ui.allToggle:GetScript("OnClick")()
+    H.eq(#LT.Lines(), openCount)
+    H.eq(LT.ui.allToggle.text:GetText(), "Collapse all")
+end)

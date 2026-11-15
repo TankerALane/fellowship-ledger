@@ -12,7 +12,8 @@ local Leaderboard = ns.Leaderboard
 local LeaderboardTab = {}
 ns.LeaderboardTab = LeaderboardTab
 
-local state = { all = false }
+-- collapsed[dungeon]: its clears and bosses hidden (click its title; until reload).
+local state = { all = false, collapsed = {} }
 local ui = {}
 LeaderboardTab.state, LeaderboardTab.ui = state, ui -- for tests
 
@@ -34,11 +35,52 @@ function LeaderboardTab.Board()
     return Leaderboard.Build(entries(ns.Data.IsFake()), not state.all)
 end
 
--- The table lines (grid lines, as on the Dungeons tab).
+-- One open dungeon: the column labels, its clears (bar, crown on #1) and its bosses.
+local function dungeonLines(out, d, crown, good)
+    local F = ns.Format
+    out[#out + 1] = { kind = "grid", segments = { seg(0, .05, "#", "muted", "small"), seg(.06, .12, L.LEADER_COL_TIME, "muted", "small"),
+        seg(.33, .39, L.LEADER_COL_GROUP, "muted", "small"), seg(.73, .12, L.LEADER_COL_DATE, "muted", "small"),
+        seg(.86, .14, L.LEADER_COL_LEVELS, "muted", "small") }, rules = { { 0, 1 } } }
+    -- The bar (1.13.0): the fastest clear fills it, slower ones fill less (fastest / this).
+    local fastest
+    for _, e in ipairs(d.clears) do
+        if (e.clear or 0) > 0 and (not fastest or e.clear < fastest) then fastest = e.clear end
+    end
+    for _, e in ipairs(d.clears) do
+        local group = Leaderboard.Group(e, L)
+        if e.mine then group = good .. group .. "|r" end
+        local tip = function()
+            local lines = Leaderboard.Members(e, L)
+            if e.partial then
+                lines = { unpack(lines) }
+                lines[#lines + 1] = ns.DungeonsModel.PartialText(e.partial, L)
+            end
+            return L.LEADER_GROUP_TIP, lines
+        end
+        local top = e.rank == 1 and not e.partial
+        local rank = e.partial and "" or ((top and (crown .. " ") or "") .. tostring(e.rank))
+        local segments = { seg(0, .05, rank, top and "heading" or "text"),
+            seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.33, .39, group),
+            seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
+            seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") }
+        if fastest and (e.clear or 0) > 0 then segments[#segments + 1] = { x = .19, w = .13, bar = fastest / e.clear } end
+        out[#out + 1] = { kind = "grid", tooltip = tip, segments = segments }
+    end
+    if #d.bosses > 0 then
+        out[#out + 1] = { kind = "grid", segments = { seg(.06, .94, L.LEADER_BOSSES, "muted", "small") } }
+        for _, b in ipairs(d.bosses) do
+            out[#out + 1] = { kind = "grid", tooltip = function() return b.name, Leaderboard.Members(b.entry, L) end, segments = { seg(.06, .30, b.name), seg(.37, .12, F.Duration(b.fight), "text", nil, "RIGHT"),
+                seg(.52, .34, Leaderboard.Group(b.entry, L), "muted"), seg(.86, .14, date("%m-%d", b.entry.finishedAt), "muted") } }
+        end
+    end
+    out[#out + 1] = { kind = "grid", segments = {} }
+end
+
+-- The table lines (grid lines, as on the Dungeons tab). Highest-level dungeon first;
+-- click a dungeon's title to collapse or open it (Austin, 2026-11-15).
 function LeaderboardTab.Lines()
     local board = LeaderboardTab.Board()
     local out = {}
-    local F = ns.Format
     local good = ns.Palette.Code(W.Color("good"))
     if #board == 0 then
         out[#out + 1] = { kind = "grid", segments = { seg(0, 1, state.all and L.LEADER_EMPTY_ALL or L.LEADER_EMPTY, "muted") } }
@@ -46,51 +88,45 @@ function LeaderboardTab.Lines()
     end
     local crown = ns.DetailModel.IconCode("crown", W.Color("section"))
     for _, d in ipairs(board) do
-        local title = d.dungeon .. (d.range and string.format(" (%d-%d)", d.range[1], d.range[2]) or "")
-        out[#out + 1] = { kind = "grid", shade = true, segments = { seg(0, 1, title, "heading", "large") } }
-        out[#out + 1] = { kind = "grid", segments = { seg(0, .05, "#", "muted", "small"), seg(.06, .12, L.LEADER_COL_TIME, "muted", "small"),
-            seg(.33, .39, L.LEADER_COL_GROUP, "muted", "small"), seg(.73, .12, L.LEADER_COL_DATE, "muted", "small"),
-            seg(.86, .14, L.LEADER_COL_LEVELS, "muted", "small") }, rules = { { 0, 1 } } }
-        -- The bar (1.13.0): the fastest clear fills it, slower ones fill less (fastest / this).
-        local fastest
-        for _, e in ipairs(d.clears) do
-            if (e.clear or 0) > 0 and (not fastest or e.clear < fastest) then fastest = e.clear end
+        local name = d.dungeon
+        local closed = state.collapsed[name]
+        local title = (closed and "+ " or "- ") .. name .. (d.range and string.format(" (%d-%d)", d.range[1], d.range[2]) or "")
+        local head = { kind = "grid", shade = true, dungeon = name, segments = { seg(0, .62, title, "heading", "large") },
+            onClick = function()
+                state.collapsed[name] = not state.collapsed[name] or nil
+                LeaderboardTab.Refresh()
+            end }
+        -- Closed: the #1 clear on the title line, so dungeons can still be compared.
+        local first = d.clears[1]
+        if closed and first then
+            head.segments[#head.segments + 1] = seg(.62, .38, string.format(L.LEADER_COLLAPSED_BEST,
+                ns.Format.Duration(first.clear) .. (first.partial and "*" or ""), Leaderboard.Group(first, L)), "muted", nil, "RIGHT")
         end
-        for _, e in ipairs(d.clears) do
-            local group = Leaderboard.Group(e, L)
-            if e.mine then group = good .. group .. "|r" end
-            local tip = function()
-                local lines = Leaderboard.Members(e, L)
-                if e.partial then
-                    lines = { unpack(lines) }
-                    lines[#lines + 1] = ns.DungeonsModel.PartialText(e.partial, L)
-                end
-                return L.LEADER_GROUP_TIP, lines
-            end
-            local top = e.rank == 1 and not e.partial
-            local rank = e.partial and "" or ((top and (crown .. " ") or "") .. tostring(e.rank))
-            local segments = { seg(0, .05, rank, top and "heading" or "text"),
-                seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.33, .39, group),
-                seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
-                seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") }
-            if fastest and (e.clear or 0) > 0 then segments[#segments + 1] = { x = .19, w = .13, bar = fastest / e.clear } end
-            out[#out + 1] = { kind = "grid", tooltip = tip, segments = segments }
-        end
-        if #d.bosses > 0 then
-            out[#out + 1] = { kind = "grid", segments = { seg(.06, .94, L.LEADER_BOSSES, "muted", "small") } }
-            for _, b in ipairs(d.bosses) do
-                out[#out + 1] = { kind = "grid", tooltip = function() return b.name, Leaderboard.Members(b.entry, L) end, segments = { seg(.06, .30, b.name), seg(.37, .12, F.Duration(b.fight), "text", nil, "RIGHT"),
-                    seg(.52, .34, Leaderboard.Group(b.entry, L), "muted"), seg(.86, .14, date("%m-%d", b.entry.finishedAt), "muted") } }
-            end
-        end
-        out[#out + 1] = { kind = "grid", segments = {} }
+        out[#out + 1] = head
+        if not closed then dungeonLines(out, d, crown, good) end
     end
     return out
+end
+
+-- Collapse every dungeon, or open them all when every one is already collapsed.
+function LeaderboardTab.ToggleAll()
+    local board = LeaderboardTab.Board()
+    local allClosed = #board > 0
+    for _, d in ipairs(board) do if not state.collapsed[d.dungeon] then allClosed = false end end
+    state.collapsed = {}
+    if not allClosed then
+        for _, d in ipairs(board) do state.collapsed[d.dungeon] = true end
+    end
+    LeaderboardTab.Refresh()
 end
 
 function LeaderboardTab.Refresh()
     if not ui.table then return end
     ui.which:Select(state.all and "all" or "level")
+    local board = LeaderboardTab.Board()
+    local allClosed = #board > 0
+    for _, d in ipairs(board) do if not state.collapsed[d.dungeon] then allClosed = false end end
+    ui.allToggle.text:SetText(allClosed and L.LEADER_OPEN_ALL or L.LEADER_COLLAPSE_ALL)
     ui.table:SetLines(LeaderboardTab.Lines())
 end
 
@@ -115,8 +151,10 @@ local function build(panel)
     ui.which:SetPoint("TOPLEFT", 4, -2)
     ui.levelButton, ui.allButton = ui.which.buttons.level, ui.which.buttons.all
     ui.intro = W.Text(panel, "small", "muted")
+    ui.allToggle = W.Button(panel, L.LEADER_COLLAPSE_ALL, 100, 20, function() LeaderboardTab.ToggleAll() end)
+    ui.allToggle:SetPoint("TOPRIGHT", -4, -2)
     ui.intro:SetPoint("LEFT", ui.which, "RIGHT", 12, 0)
-    ui.intro:SetPoint("RIGHT", panel, "RIGHT", -4, 0)
+    ui.intro:SetPoint("RIGHT", ui.allToggle, "LEFT", -8, 0)
     ui.intro:SetJustifyH("LEFT")
     ui.intro:SetText(string.format(L.LEADER_INTRO, ns.DungeonLevels.OVER))
     ui.table = ns.Table.New(panel, { { label = "", width = 100 } }, { top = 30 })

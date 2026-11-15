@@ -190,4 +190,7 @@ ns.Locale.Set({
     HEADER_STATUS_ONE = "%d of %d friend online, synced %s",
     HEADER_NO_FRIENDS = "No ledger friends yet",
     TAG_PLAYING = "Playing",
+    LEADER_COLLAPSE_ALL = "Collapse all",
+    LEADER_OPEN_ALL = "Open all",
+    LEADER_COLLAPSED_BEST = "#1  %s  %s",
 })
