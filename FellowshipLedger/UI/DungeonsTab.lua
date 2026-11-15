@@ -14,7 +14,6 @@ local state = { range = "all", char = nil, expanded = {} }
 local ui = {}
 DungeonsTab.state, DungeonsTab.ui = state, ui -- for tests
 
-local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
 local function charLabel(key)
     local c = key and ns.Data.Characters()[key]
@@ -89,19 +88,14 @@ function DungeonsTab.Refresh()
 end
 
 local function build(panel)
-    ui.rangeButtons = {}
-    local x = 4
-    for _, range in ipairs(ns.Days.RANGES) do
-        local b = W.Button(panel, L[RANGE_LABEL[range]], 80, 20, function()
-            state.range = range
-            DungeonsTab.Refresh()
-        end)
-        b:SetPoint("TOPLEFT", x, -2)
-        x = x + 86
-        ui.rangeButtons[range] = b
-    end
+    ui.ranges = ns.MeTab.RangeGroup(panel, function(range)
+        state.range = range
+        DungeonsTab.Refresh()
+    end)
+    ui.ranges:SetPoint("TOPLEFT", 4, -2)
+    ui.rangeButtons = ui.ranges.buttons
     ui.charButton = W.Button(panel, L.DUNGEONS_ALL_CHARS, 220, 20, function(self) DungeonsTab.OpenCharMenu(self) end)
-    ui.charButton:SetPoint("TOPLEFT", x + 12, -2)
+    ui.charButton:SetPoint("LEFT", ui.ranges, "RIGHT", 12, 0)
     ui.summary = W.Text(panel, "small", "muted")
     ui.summary:SetPoint("TOPRIGHT", -4, -6)
     ui.summary:SetJustifyH("RIGHT")

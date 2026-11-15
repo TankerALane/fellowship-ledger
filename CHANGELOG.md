@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.13.0 - 2026-11-15
+
+### Changed
+- A tidier window. The top shows how many friends are online and when you last synced, beside **Sync** and **Settings** (Settings is no longer a tab, and Sync replaces the Friends tab's "Sync now").
+- Today / 7 days / 30 days / All are one joined set of buttons.
+- The Me tab opens with tiles for the range you pick: levels, quests, dungeons, gold, played and deaths for all your characters (hover the gold for the full amount).
+- Section titles (Recent levels, Runs, This week and others) are small capitals, and the character you are playing has a PLAYING tag.
+- **This week** and **Last week** put you and your friends side by side with bars, and a crown on the best. The Leaderboard shows a bar for each clear and a crown on the fastest.
+
 ## 1.12.2 - 2026-11-13
 
 ### Fixed

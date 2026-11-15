@@ -248,7 +248,7 @@ function DungeonsModel.Lines(o)
     local when = function(t) return t and o.dateFn("%m-%d %H:%M", t) or "" end
 
     -- By dungeon
-    lines[#lines + 1] = { kind = "group", text = L.DUNGEONS_BY }
+    lines[#lines + 1] = { kind = "group", section = true, text = L.DUNGEONS_BY }
     local by = DungeonsModel.ByDungeon(runs, o.now)
     if #by == 0 then
         lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_RUNS }
@@ -273,7 +273,7 @@ function DungeonsModel.Lines(o)
     lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
 
     -- Runs
-    lines[#lines + 1] = { kind = "group", text = L.DUNGEONS_RUNS }
+    lines[#lines + 1] = { kind = "group", section = true, text = L.DUNGEONS_RUNS }
     if #runs == 0 then
         lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_RUNS }
     else
@@ -339,7 +339,7 @@ function DungeonsModel.Lines(o)
     end
     lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
     -- Friends
-    lines[#lines + 1] = { kind = "group", text = L.DUNGEONS_FRIENDS }
+    lines[#lines + 1] = { kind = "group", section = true, text = L.DUNGEONS_FRIENDS }
     local fr = DungeonsModel.FriendRows(o.friends, o.isBlocked, o.fromKey, o.todayKey)
     if #fr == 0 then
         lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_FRIENDS }

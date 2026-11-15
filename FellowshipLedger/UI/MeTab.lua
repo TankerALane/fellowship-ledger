@@ -18,20 +18,93 @@ Me.state, Me.ui = state, ui -- for tests
 
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
+-- Today / 7 days / 30 days / All as one joined group (1.13.0), shared by the Me,
+-- Friends and Dungeons tabs. Returns the group; group.buttons[range] are the buttons.
+function Me.RangeGroup(parent, onPick)
+    local items = {}
+    for _, range in ipairs(ns.Days.RANGES) do
+        items[#items + 1] = { id = range, label = L[RANGE_LABEL[range]], width = 72 }
+    end
+    return W.Segmented(parent, items, onPick)
+end
+
 local function cellsFor(row)
     local cells = {}
     for c, col in ipairs(MeModel.COLUMNS) do
         local text = MeModel.FormatCell(col, row)
         if c == 1 and row.key then
             text = (state.expanded[row.key] and "- " or "+ ") .. W.ClassName(text, row.class)
-            -- The character I am playing (real data only; fake characters are never played).
-            if row.key == ns.Store.key and not ns.Data.IsFake() then
-                text = text .. " " .. ns.Palette.Code(W.Color("good")) .. L.FRIEND_PLAYING .. "|r"
-            end
         end
         cells[c] = text
     end
     return cells
+end
+
+-- The tiles over the table (1.13.0): the range's totals for all your characters.
+Me.TILES = { "levels", "quests", "dungeons", "moneyNet", "played", "deaths" }
+Me.TILE_H = 48
+Me.TILE_GAP = 6
+
+function Me.TileValues(rows)
+    local total = MeModel.Totals(rows)
+    local out = {}
+    for _, field in ipairs(Me.TILES) do
+        local col
+        for _, c in ipairs(MeModel.COLUMNS) do if c.field == field then col = c end end
+        local text = MeModel.FormatCell(col, total)
+        local full = text
+        local role = "text"
+        if field == "moneyNet" then
+            -- Short in the tile ("+257.9g"), in full on hover.
+            text = ns.Format.MoneyShort(total.moneyNet or 0, true)
+            if (total.moneyNet or 0) < 0 then role = "bad" end
+        end
+        out[#out + 1] = { label = L[col.label], text = text, full = full, role = role }
+    end
+    return out
+end
+
+local function buildTiles(panel)
+    ui.tiles = CreateFrame("Frame", nil, panel)
+    ui.tiles:SetPoint("TOPLEFT", 4, -28)
+    ui.tiles:SetPoint("TOPRIGHT", -4, -28)
+    ui.tiles:SetHeight(Me.TILE_H)
+    ui.tileFrames = {}
+    for i = 1, #Me.TILES do
+        local t = CreateFrame("Frame", nil, ui.tiles)
+        t:SetHeight(Me.TILE_H)
+        W.Background(t, "panel")
+        W.Border(t, "rule", 1)
+        t.label = W.Text(t, "small", "section")
+        t.label:SetPoint("TOPLEFT", 8, -6)
+        t.value = W.Text(t, "number", "text")
+        t.value:SetPoint("BOTTOMLEFT", 8, 6)
+        t.value:SetPoint("BOTTOMRIGHT", -6, 6)
+        t.value:SetWordWrap(false)
+        t:EnableMouse(true)
+        t:SetScript("OnEnter", function(self)
+            if self.info then W.Tooltip(self, self.info.label, { self.info.full }) end
+        end)
+        t:SetScript("OnLeave", function() W.HideTooltip() end)
+        ui.tileFrames[i] = t
+    end
+end
+
+local function layoutTiles(values)
+    local width = ui.tiles:GetWidth()
+    if type(width) ~= "number" or width < 100 then width = 800 end
+    local n = #ui.tileFrames
+    local w = (width - Me.TILE_GAP * (n - 1)) / n
+    for i, t in ipairs(ui.tileFrames) do
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", (i - 1) * (w + Me.TILE_GAP), 0)
+        t:SetWidth(w)
+        local v = values[i]
+        t.info = v
+        t.label:SetText(ns.Format.Upper(v and v.label or ""))
+        t.value:SetText(v and v.text or "")
+        W.SetTextStyle(t.value, "number", v and v.role or "text")
+    end
 end
 
 -- The opened character: a row of view tabs (D-081), then the view. Overview is the
@@ -152,7 +225,9 @@ local function characterLines()
     end
     for _, row in ipairs(rows) do
         local key = row.key
-        lines[#lines + 1] = { kind = "row", cells = cellsFor(row), onClick = function()
+        -- The character I am playing (real data only; fake characters are never played).
+        local playing = key == ns.Store.key and not ns.Data.IsFake()
+        lines[#lines + 1] = { kind = "row", cells = cellsFor(row), tag = playing and L.TAG_PLAYING or nil, onClick = function()
             state.expanded[key] = not state.expanded[key] or nil
             Me.Refresh()
         end }
@@ -160,7 +235,7 @@ local function characterLines()
             for _, line in ipairs(Me.DetailLines(key, chars[key], row.name)) do lines[#lines + 1] = line end
         end
     end
-    return lines, #rows
+    return lines, #rows, rows
 end
 
 -- Quest chains (D-078): your chains, each opening to its quests, then chains
@@ -299,35 +374,35 @@ end
 
 function Me.Refresh()
     if not ui.table then return end
-    for range, b in pairs(ui.rangeButtons) do
-        b:SetSelected(range == state.range)
-        b:SetShown(state.mode == "characters")
-    end
-    ui.modeButton.text:SetText(state.mode == "characters" and L.SHOW_CHAINS or L.SHOW_CHARACTERS)
-    local lines, count
+    local characters = state.mode == "characters"
+    ui.ranges:Select(state.range)
+    ui.ranges:SetShown(characters)
+    ui.modeButton.text:SetText(characters and L.SHOW_CHAINS or L.SHOW_CHARACTERS)
+    local lines, count, rows
     if state.mode == "chains" then
         lines = chainLines()
         count = #lines
     else
-        lines, count = characterLines()
+        lines, count, rows = characterLines()
     end
-    ui.table:SetHeadersShown(state.mode == "characters")
+    -- Tiles over the characters (not over Quest chains, nor with no characters yet).
+    local tiles = characters and count > 0
+    ui.tiles:SetShown(tiles)
+    if tiles then layoutTiles(Me.TileValues(rows)) end
+    ui.table:SetTop(tiles and (30 + Me.TILE_H + 8) or 30)
+    ui.table:SetHeadersShown(characters)
     ui.table:SetLines(lines)
     ui.empty:SetShown(count == 0)
 end
 
 local function build(panel)
-    ui.rangeButtons = {}
-    local x = 4
-    for _, range in ipairs(ns.Days.RANGES) do
-        local b = W.Button(panel, L[RANGE_LABEL[range]], 80, 20, function()
-            state.range = range
-            Me.Refresh()
-        end)
-        b:SetPoint("TOPLEFT", x, -2)
-        x = x + 86
-        ui.rangeButtons[range] = b
-    end
+    ui.ranges = Me.RangeGroup(panel, function(range)
+        state.range = range
+        Me.Refresh()
+    end)
+    ui.ranges:SetPoint("TOPLEFT", 4, -2)
+    ui.rangeButtons = ui.ranges.buttons
+    buildTiles(panel)
     ui.modeButton = W.Button(panel, L.SHOW_CHAINS, 130, 20, function()
         state.mode = state.mode == "characters" and "chains" or "characters"
         Me.Refresh()

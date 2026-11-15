@@ -285,7 +285,7 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     Me.state.expanded["Alt-TestRealm"] = true
     Me.Refresh()
     local shown = gridTexts(ns)
-    H.ok(shown:find("Recent levels", 1, true) and shown:find("[Show all (21)]", 1, true), shown)
+    H.ok(shown:find("RECENT LEVELS", 1, true) and shown:find("[Show all (21)]", 1, true), shown) -- section title (1.13.0)
     local grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
     H.eq(grid, 21, "the tab row plus the card")

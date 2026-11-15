@@ -40,25 +40,55 @@ function FriendsTab.Block(tag)
     ns.MainWindow.Refresh()
 end
 
+-- "This week" (1.13.0): you and each friend side by side, a bar and number per stat
+-- and a crown on the best (FriendsModel.CompareLines).
+local function compareLines(rows)
+    local crown = ns.DetailModel.IconCode("crown", W.Color("section"))
+    return FriendsModel.CompareLines(rows, L, { crown = crown, duration = ns.Format.Duration, inset = 18 })
+end
+
 local function weeklyLines()
     local out = {}
     -- Last week, reset to reset, you included (D-109): what the weekly recap showed.
     if not ns.Data.IsFake() and ns.Sync and ns.Sync.LastReset then
         local last = ns.Sync.LastReset()
         local fromKey, toKey = ns.Weekly.Range(last, date)
-        out[#out + 1] = { kind = "group", text = string.format(L.WEEKLY_LAST_TITLE, date("%m-%d", last - ns.Weekly.WEEK), date("%m-%d", last)) }
+        out[#out + 1] = { kind = "group", section = true,
+            text = string.format(L.WEEKLY_LAST_TITLE, date("%m-%d", last - ns.Weekly.WEEK), date("%m-%d", last)) }
         local rows = ns.Weekly.Rows(ns.db.characters, ns.db.friends, ns.db.blocklist, fromKey, toKey, L)
-        for _, t in ipairs(rows) do out[#out + 1] = { kind = "detail", indent = true, text = ns.Weekly.Line(t, L) } end
-        if #rows == 0 then out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_LAST_EMPTY } end
+        if #rows == 0 then
+            out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_LAST_EMPTY }
+        else
+            for _, l in ipairs(compareLines(rows)) do out[#out + 1] = l end
+        end
+        out[#out + 1] = { kind = "grid", segments = {} }
     end
-    out[#out + 1] = { kind = "group", text = L.WEEKLY_TITLE }
-    local list = ns.Merge.Weekly(ns.Data.Friends(), ns.db.blocklist, ns.Store.Today(), time, date)
-    for _, t in ipairs(list) do
-        out[#out + 1] = { kind = "detail", indent = true, text = string.format(L.WEEKLY_LINE, t.name, t.levels, t.quests,
-            t.dungeons, ns.Format.Duration(t.active)) }
+    out[#out + 1] = { kind = "group", section = true, text = L.WEEKLY_TITLE }
+    local today = ns.Store.Today()
+    local rows = ns.Weekly.Rows(ns.Data.Characters(), ns.Data.Friends(), ns.db.blocklist,
+        ns.Days.RangeStart("week", today, time, date), today, L)
+    local friendsListed = 0
+    for _, r in ipairs(rows) do if not r.isMe then friendsListed = friendsListed + 1 end end
+    if friendsListed == 0 then
+        out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_EMPTY }
+    else
+        for _, l in ipairs(compareLines(rows)) do out[#out + 1] = l end
     end
-    if #list == 0 then out[#out + 1] = { kind = "detail", indent = true, text = L.WEEKLY_EMPTY } end
+    out[#out + 1] = { kind = "grid", segments = {} }
     return out
+end
+
+-- Sync with online friends now (the header's Sync button, 1.13.0).
+function FriendsTab.SyncNow()
+    if ns.Sync and ns.tracking and not ns.Data.IsFake() then
+        local n = ns.Sync.SyncAll(true)
+        ns.Log.Info(n > 0 and L.SYNC_WAITING_REPLY or L.SYNC_NONE_ONLINE, n)
+        -- Show the queue draining and any replies that arrive.
+        for _, delay in ipairs({ 1, 4, 10 }) do
+            ns.Events.After(delay, function() ns.MainWindow.Refresh() end)
+        end
+    end
+    ns.MainWindow.Refresh()
 end
 
 -- Whisper / Invite (D-108). Each call is guarded; a missing one falls to the next.
@@ -217,7 +247,6 @@ local function lines()
                     cells[c] = live and (ns.Palette.Code(W.Color("good")) .. L.FRIEND_NOW .. "|r") or text
                 elseif col.field == "name" then
                     cells[c] = (state.expanded[openId] and "- " or "+ ") .. W.ClassName(r.name, r.class)
-                        .. (r.playing and (" " .. ns.Palette.Code(W.Color("good")) .. L.FRIEND_PLAYING .. "|r") or "")
                 else
                     cells[c] = MeModel.FormatCell({ field = col.field, kind = KIND[col.field] }, r)
                 end
@@ -226,6 +255,7 @@ local function lines()
             local char = friend and friend.characters and friend.characters[r.key]
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
             out[#out + 1] = { kind = "row", id = openId, cells = cells, indent = r.indent,
+                tag = r.playing and L.TAG_PLAYING or nil,
                 tooltip = function()
                     local me = ns.Store.char
                     r.common = #FriendsModel.CommonQuests(me and me.logQuests, char and char.logQuests)
@@ -274,14 +304,14 @@ function FriendsTab.InviteLines(now, hasLedgerFriends)
             end)
         end
         out[#out + 1] = { kind = "grid", segments = {} }
-        out[#out + 1] = { kind = "group", text = L.INVITE_GROUP_WAIT }
+        out[#out + 1] = { kind = "group", section = true, text = L.INVITE_GROUP_WAIT }
         out[#out + 1] = { kind = "detail", indent = true, text = L.INVITE_CHECKING }
         return out
     end
     local list = ns.Invites.Candidates(ns.Friends.peers, ns.db.friends, ns.Friends.IsBlocked)
     if #list == 0 and not hasLedgerFriends then return out end
     if hasLedgerFriends then out[#out + 1] = { kind = "grid", segments = {} } end
-    out[#out + 1] = { kind = "group", text = string.format(L.INVITE_GROUP, #list) }
+    out[#out + 1] = { kind = "group", section = true, text = string.format(L.INVITE_GROUP, #list) }
     if #list == 0 then
         out[#out + 1] = { kind = "detail", indent = true, text = L.INVITE_NOBODY }
     end
@@ -303,7 +333,7 @@ function FriendsTab.FakeInviteLines(now)
     local list = ns.db.fake and ns.db.fake.invites or {}
     if #list == 0 then return out end
     out[#out + 1] = { kind = "grid", segments = {} }
-    out[#out + 1] = { kind = "group", text = string.format(L.INVITE_GROUP, #list) }
+    out[#out + 1] = { kind = "group", section = true, text = string.format(L.INVITE_GROUP, #list) }
     for _, c in ipairs(list) do
         local status = c.invitedAgo and ns.Invites.Status(now - c.invitedAgo, now) or nil
         local peer = { id = c.id, kind = c.kind, name = c.name, character = c.character, fake = true }
@@ -385,41 +415,22 @@ function FriendsTab.Refresh()
 end
 
 local function build(panel)
-    ui.rangeButtons = {}
-    local x = 4
-    for _, range in ipairs(ns.Days.RANGES) do
-        local b = W.Button(panel, L[RANGE_LABEL[range]], 80, 20, function()
-            state.range = range
-            FriendsTab.Refresh()
-        end)
-        b:SetPoint("TOPLEFT", x, -2)
-        x = x + 86
-        ui.rangeButtons[range] = b
-    end
+    ui.ranges = ns.MeTab.RangeGroup(panel, function(range)
+        state.range = range
+        FriendsTab.Refresh()
+    end)
+    ui.ranges:SetPoint("TOPLEFT", 4, -2)
+    ui.rangeButtons = ui.ranges.buttons
     ui.weeklyButton = W.Button(panel, L.WEEKLY_BUTTON, 100, 20, function()
         state.weekly = not state.weekly
         FriendsTab.Refresh()
     end)
-    ui.weeklyButton:SetPoint("TOPLEFT", x + 12, -2)
-    local syncNow = W.Button(panel, L.SYNC_NOW, 100, 20, function()
-        if ns.Sync and ns.tracking and not ns.Data.IsFake() then
-            local n = ns.Sync.SyncAll(true)
-            ns.Log.Info(n > 0 and L.SYNC_WAITING_REPLY or L.SYNC_NONE_ONLINE, n)
-            -- Show the queue draining and any replies that arrive.
-            for _, delay in ipairs({ 1, 4, 10 }) do
-                ns.Events.After(delay, function()
-                    if ns.MainWindow.frame and ns.MainWindow.frame:IsShown() then FriendsTab.Refresh() end
-                end)
-            end
-        end
-        FriendsTab.Refresh()
-    end)
-    syncNow:SetPoint("TOPRIGHT", -4, -2)
+    ui.weeklyButton:SetPoint("LEFT", ui.ranges, "RIGHT", 12, 0)
     ui.status = W.Text(panel, "small", "muted")
-    -- Between "This week" and "Sync now": a long status wraps instead of running over
-    -- the button (Austin, 2026-11-12).
+    -- Right of "This week" (Sync is in the window's header since 1.13.0): a long status
+    -- wraps instead of running over the button (Austin, 2026-11-12).
     ui.status:SetPoint("LEFT", ui.weeklyButton, "RIGHT", 8, 0)
-    ui.status:SetPoint("RIGHT", syncNow, "LEFT", -8, 0)
+    ui.status:SetPoint("RIGHT", panel, "TOPRIGHT", -4, -12)
     ui.status:SetJustifyH("RIGHT")
     ui.status:SetWordWrap(true)
     local columns = {}

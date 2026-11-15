@@ -183,4 +183,11 @@ ns.Locale.Set({
     COMMS_CATCHUP_OFF = "Catching up between computers: off; %d characters handed back, %d caught up, %d not needed",
     COMMS_RELAY = "Relaying between friends: on; %d characters passed on, %d received, %d not needed",
     COMMS_RELAY_OFF = "Relaying between friends: off; %d characters passed on, %d received, %d not needed",
+
+    -- The window's look (1.13.0): header, tags.
+    HEADER_SYNC = "Sync",
+    HEADER_STATUS = "%d of %d friends online, synced %s",
+    HEADER_STATUS_ONE = "%d of %d friend online, synced %s",
+    HEADER_NO_FRIENDS = "No ledger friends yet",
+    TAG_PLAYING = "Playing",
 })

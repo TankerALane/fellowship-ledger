@@ -20,7 +20,8 @@ Palette.BRAND = {
 }
 
 Palette.ROLES = { "bg", "panel", "border", "text", "muted", "heading", "accent", "buttonBg", "buttonBorder",
-    "buttonText", "rule", "rowAlt", "good", "bad" }
+    "buttonText", "rule", "rowAlt", "good", "bad", "section" }
+-- section (1.13.0): the small upper-case titles over panels and tiles, and tags.
 
 Palette.SKINS = {
     -- "Ledger" (the default): parchment, ink and gold, as in 1.0.0.
@@ -28,7 +29,7 @@ Palette.SKINS = {
         bg = rgb("F1E4C3", 0.98), panel = rgb("F6EBD0", 1), border = rgb("C99A2E"), text = rgb("3B2A1A"),
         muted = rgb("7A560F"), heading = rgb("3B2A1A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
         buttonBorder = rgb("7A560F"), buttonText = rgb("3B2A1A"), rule = rgb("C99A2E"), rowAlt = rgb("C99A2E", 0.08),
-        good = rgb("1F5F3A"), bad = rgb("8A2A12"),
+        good = rgb("1F5F3A"), bad = rgb("8A2A12"), section = rgb("7A560F"),
     },
     -- "Leather" (1.0.1, D-074): dark leather with parchment-colored text and gold,
     -- so class colors show at (nearly) full strength.
@@ -36,14 +37,14 @@ Palette.SKINS = {
         bg = rgb("2B1E12", 0.97), panel = rgb("3A2918", 1), border = rgb("C99A2E"), text = rgb("F1E4C3"),
         muted = rgb("E0B34A"), heading = rgb("E0B34A"), accent = rgb("C99A2E"), buttonBg = rgb("C99A2E", 0.25),
         buttonBorder = rgb("C99A2E"), buttonText = rgb("F1E4C3"), rule = rgb("C99A2E"), rowAlt = rgb("E0B34A", 0.06),
-        good = rgb("7FD08F"), bad = rgb("FF8A70"),
+        good = rgb("7FD08F"), bad = rgb("FF8A70"), section = rgb("E0B34A"),
     },
     plain = {
         bg = { 0.05, 0.05, 0.06, 0.92 }, panel = { 0.1, 0.1, 0.12, 0.9 }, border = { 0.45, 0.45, 0.5, 1 },
         text = { 0.95, 0.95, 0.95, 1 }, muted = { 0.7, 0.7, 0.72, 1 }, heading = { 1, 0.82, 0, 1 },
         accent = { 1, 0.82, 0, 1 }, buttonBg = { 0.25, 0.25, 0.28, 0.9 }, buttonBorder = { 0.5, 0.5, 0.55, 1 },
         buttonText = { 1, 0.82, 0, 1 }, rule = { 0.45, 0.45, 0.5, 1 }, rowAlt = { 1, 1, 1, 0.04 },
-        good = { 0.4, 0.85, 0.5, 1 }, bad = { 1, 0.45, 0.4, 1 },
+        good = { 0.4, 0.85, 0.5, 1 }, bad = { 1, 0.45, 0.4, 1 }, section = { 1, 0.82, 0, 1 },
     },
 }
 

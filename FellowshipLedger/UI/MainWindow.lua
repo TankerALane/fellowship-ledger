@@ -1,7 +1,8 @@
 -- UI/MainWindow.lua
--- The one tabbed window: Me, Friends, Graphs, Dungeons, Leaderboard, Settings. Movable, resizable, closes
--- with Escape, scales; position and size are saved. Shows a banner while fake
--- data is on.
+-- The one tabbed window: Me, Friends, Graphs, Dungeons, Leaderboard, and Settings
+-- from a header button (1.13.0), beside the friends online and the last sync.
+-- Movable, resizable, closes with Escape, scales; position and size are saved. Shows
+-- a banner while fake data is on.
 
 local _, ns = ...
 local L = ns.L
@@ -93,16 +94,36 @@ local function build()
     Main.fakeBanner:SetPoint("LEFT", title, "RIGHT", 16, 0)
     Main.fakeBanner:SetText(L.FAKE_BANNER)
 
+    -- The header (1.13.0): friends online and the last sync, then Sync, Settings and
+    -- close on the right. Settings is a header button, not a tab.
     local close = W.Button(f, "X", 22, 22, function() f:Hide() end)
     close:SetPoint("TOPRIGHT", -8, -8)
+    Main.settingsButton = W.Button(f, L.TAB_SETTINGS, 74, 20, function()
+        if Main.current == "settings" then Main.Select(Main.lastTab or "me") else Main.Select("settings") end
+    end)
+    Main.settingsButton:SetPoint("RIGHT", close, "LEFT", -6, 0)
+    Main.syncButton = W.Button(f, L.HEADER_SYNC, 56, 20, function()
+        ns.FriendsTab.SyncNow()
+        Main.UpdateHeader()
+    end)
+    Main.syncButton:SetPoint("RIGHT", Main.settingsButton, "LEFT", -6, 0)
+    Main.status = W.Text(f, "small", "muted")
+    Main.status:SetPoint("RIGHT", Main.syncButton, "LEFT", -10, 0)
+    Main.status:SetPoint("LEFT", title, "RIGHT", 16, 0)
+    Main.status:SetJustifyH("RIGHT")
+    Main.status:SetWordWrap(false)
 
     local x = 16
     for _, id in ipairs(Main.TABS) do
         local tab = Main.tabs[id] or {}
         Main.tabs[id] = tab
-        tab.button = W.Button(f, L["TAB_" .. id:upper()], 100, 24, function() Main.Select(id) end)
-        tab.button:SetPoint("TOPLEFT", x, -40)
-        x = x + 106
+        if id == "settings" then
+            tab.button = Main.settingsButton
+        else
+            tab.button = W.Button(f, L["TAB_" .. id:upper()], 100, 24, function() Main.Select(id) end)
+            tab.button:SetPoint("TOPLEFT", x, -40)
+            x = x + 106
+        end
         tab.panel = CreateFrame("Frame", nil, f)
         tab.panel:SetPoint("TOPLEFT", 12, -72)
         tab.panel:SetPoint("BOTTOMRIGHT", -12, 20)
@@ -119,6 +140,10 @@ local function build()
 
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, FRAME_NAME) end
     f:SetScript("OnShow", function() Main.Refresh() end)
+    -- Keep the header's "online" and "synced" current while the window is open.
+    ns.Events.Every(5, "header", function()
+        if Main.frame and Main.frame:IsShown() then Main.UpdateHeader() end
+    end)
     f:SetScript("OnSizeChanged", function()
         if Main.sizing then Main.resizePending = true else refreshCurrent() end
     end)
@@ -144,14 +169,30 @@ function Main.Ensure()
     return true
 end
 
--- Redraw the visible tab and the fake-data banner.
+-- The header line: friends online and the last sync (fake data says so instead).
+function Main.HeaderText()
+    if ns.Screenshots and ns.Screenshots.active then return "" end
+    if ns.Data.IsFake() then return "" end -- the banner beside the title says so
+    return ns.FriendsModel.HeaderStatus(ns.db.friends, ns.db.blocklist, ns.Sync and ns.Sync.lastSyncAt, time(), L)
+end
+
+function Main.UpdateHeader()
+    if not Main.status then return end
+    local ok, text = pcall(Main.HeaderText)
+    Main.status:SetText(ok and text or "")
+end
+
+-- Redraw the visible tab, the header and the fake-data banner.
 function Main.Refresh()
     if not Main.frame then return end
     Main.fakeBanner:SetShown(ns.Data.IsFake() and not (ns.Screenshots and ns.Screenshots.active))
+    Main.UpdateHeader()
     refreshCurrent()
 end
 
 function Main.Select(id)
+    -- Settings' button goes back to the tab you were on.
+    if id ~= "settings" then Main.lastTab = id end
     Main.current = id
     if not Main.frame then return end
     for tabId, tab in pairs(Main.tabs) do

@@ -627,9 +627,49 @@ H.test("Me tab marks the character being played", function()
     ns.MainWindow.Open("me")
     local found = false
     for _, line in ipairs(ns.MeTab.ui.table.lines) do
-        if line.kind == "row" and tostring(line.cells[1]):find("(playing)", 1, true) then found = true end
+        if line.kind == "row" and line.tag == "Playing" then found = true end
     end
-    H.ok(found, "(playing) on my character")
+    H.ok(found, "a Playing tag on my character (1.13.0)")
+    local shownTag = false
+    for _, w in pairs(ns.MeTab.ui.table.widgets) do
+        if w:IsShown() and w.tag:IsShown() and w.tag.text:GetText() == "PLAYING" then shownTag = true end
+    end
+    H.ok(shownTag, "drawn as a boxed PLAYING tag")
+end)
+
+H.test("1.13.0 look: header status and buttons, joined ranges, tiles, section titles", function()
+    local env, ns = boot()
+    ns.MainWindow.Open("me")
+    local Main = ns.MainWindow
+    H.eq(Main.status:GetText(), "No ledger friends yet")
+    ns.db.friends["bn:A#1"] = { kind = "bnet", name = "A", online = true, characters = {} }
+    ns.db.friends["bn:B#2"] = { kind = "bnet", name = "B", characters = {} }
+    ns.Sync.lastSyncAt = env.time() - 120
+    Main.UpdateHeader()
+    H.eq(Main.status:GetText(), "1 of 2 friends online, synced 2m ago")
+    -- Settings is a header button: it opens Settings and goes back to the tab you were on.
+    Main.Select("dungeons")
+    Main.settingsButton:GetScript("OnClick")()
+    H.eq(Main.current, "settings")
+    H.ok(Main.settingsButton.selected, "drawn chosen")
+    Main.settingsButton:GetScript("OnClick")()
+    H.eq(Main.current, "dungeons", "back to Dungeons")
+    -- Joined range buttons: one chosen at a time.
+    Main.Select("me")
+    local Me = ns.MeTab
+    Me.ui.rangeButtons.week:GetScript("OnClick")()
+    H.eq(Me.state.range, "week")
+    H.ok(Me.ui.rangeButtons.week.selected and not Me.ui.rangeButtons.today.selected)
+    -- Tiles over the table, and the table moved down under them.
+    H.ok(Me.ui.tiles:IsShown(), "tiles shown")
+    H.eq(Me.ui.tileFrames[1].label:GetText(), "LEVELS")
+    H.eq(Me.ui.table.opts.top, 30 + Me.TILE_H + 8)
+    Me.state.mode = "chains"; Me.Refresh()
+    H.ok(not Me.ui.tiles:IsShown(), "no tiles over Quest chains")
+    H.eq(Me.ui.table.opts.top, 30)
+    Me.state.mode = "characters"; Me.Refresh()
+    -- Sync in the header runs without error.
+    Main.syncButton:GetScript("OnClick")()
 end)
 
 H.test("Dungeons tab: fake runs render, open to their bosses, character drop-down", function()

@@ -161,6 +161,63 @@ function FriendsModel.Ago(now, at)
     return math.floor(d / 86400) .. "d ago"
 end
 
+-- The window's header line (1.13.0): "2 of 3 friends online, synced 1m ago".
+-- friends: db.friends (or fake ones); blocked friends are not counted.
+function FriendsModel.HeaderStatus(friends, blocklist, lastSyncAt, now, L)
+    local total, online = 0, 0
+    for _, f in pairs(friends or {}) do
+        if not FriendsModel.IsBlocked(blocklist, f) then
+            total = total + 1
+            if f.online then online = online + 1 end
+        end
+    end
+    if total == 0 then return L.HEADER_NO_FRIENDS end
+    local ago = lastSyncAt and FriendsModel.Ago(now, lastSyncAt) or L.NEVER
+    return string.format(total == 1 and L.HEADER_STATUS_ONE or L.HEADER_STATUS, online, total, ago)
+end
+
+-- Side by side (1.13.0): one grid line per person with a thin bar and the number for
+-- each stat, and a crown on the best of each (when more than one person is listed
+-- and the best is above 0). rows: { name, isMe, levels, quests, dungeons, active }.
+-- opts: { crown = icon code, duration = fn(seconds) -> text, inset = px }.
+FriendsModel.COMPARE = {
+    { field = "levels", label = "COL_LEVELS" }, { field = "quests", label = "COL_QUESTS" },
+    { field = "dungeons", label = "COL_DUNGEONS" }, { field = "active", label = "COL_ACTIVE", duration = true },
+}
+function FriendsModel.CompareLines(rows, L, opts)
+    opts = opts or {}
+    local function seg(x, w, text, role, font, align)
+        return { x = x, w = w, text = text or "", role = role or "text", font = font or "body", align = align }
+    end
+    local stats = FriendsModel.COMPARE
+    local max = {}
+    for _, s in ipairs(stats) do
+        max[s.field] = 0
+        for _, r in ipairs(rows) do max[s.field] = math.max(max[s.field], tonumber(r[s.field]) or 0) end
+    end
+    local function base(i) return .22 + (i - 1) * .195 end
+    local head = { kind = "grid", inset = opts.inset, segments = {}, rules = { { 0, 1 } } }
+    for i, s in ipairs(stats) do
+        head.segments[#head.segments + 1] = seg(base(i), .19, L[s.label], "muted", "small", "RIGHT")
+    end
+    local out = { head }
+    for _, r in ipairs(rows) do
+        local line = { kind = "grid", inset = opts.inset, segments = { seg(0, .21, r.name, r.isMe and "good" or "text") } }
+        for i, s in ipairs(stats) do
+            local v = tonumber(r[s.field]) or 0
+            local best = #rows > 1 and v > 0 and v == max[s.field]
+            if v > 0 and max[s.field] > 0 then
+                line.segments[#line.segments + 1] = { x = base(i), w = .10, bar = v / max[s.field] }
+            end
+            local text = s.duration and (opts.duration and opts.duration(v) or tostring(v)) or tostring(v)
+            if best and opts.crown then text = opts.crown .. " " .. text end
+            line.segments[#line.segments + 1] = seg(base(i) + .10, .09, text, best and "heading" or "text", nil, "RIGHT")
+        end
+        out[#out + 1] = line
+    end
+    return out
+end
+
 -- The ledger line in the game's tooltip on a friend's character (D-099):
 -- "Ledger: Hamlet's character, 12 quests and 2 dungeons this week".
 -- f: the friend record; key: the character key; sum: Days.Sum for this week.

@@ -44,12 +44,18 @@ function LeaderboardTab.Lines()
         out[#out + 1] = { kind = "grid", segments = { seg(0, 1, state.all and L.LEADER_EMPTY_ALL or L.LEADER_EMPTY, "muted") } }
         return out
     end
+    local crown = ns.DetailModel.IconCode("crown", W.Color("section"))
     for _, d in ipairs(board) do
         local title = d.dungeon .. (d.range and string.format(" (%d-%d)", d.range[1], d.range[2]) or "")
         out[#out + 1] = { kind = "grid", shade = true, segments = { seg(0, 1, title, "heading", "large") } }
         out[#out + 1] = { kind = "grid", segments = { seg(0, .05, "#", "muted", "small"), seg(.06, .12, L.LEADER_COL_TIME, "muted", "small"),
-            seg(.19, .53, L.LEADER_COL_GROUP, "muted", "small"), seg(.73, .12, L.LEADER_COL_DATE, "muted", "small"),
+            seg(.33, .39, L.LEADER_COL_GROUP, "muted", "small"), seg(.73, .12, L.LEADER_COL_DATE, "muted", "small"),
             seg(.86, .14, L.LEADER_COL_LEVELS, "muted", "small") }, rules = { { 0, 1 } } }
+        -- The bar (1.13.0): the fastest clear fills it, slower ones fill less (fastest / this).
+        local fastest
+        for _, e in ipairs(d.clears) do
+            if (e.clear or 0) > 0 and (not fastest or e.clear < fastest) then fastest = e.clear end
+        end
         for _, e in ipairs(d.clears) do
             local group = Leaderboard.Group(e, L)
             if e.mine then group = good .. group .. "|r" end
@@ -62,10 +68,13 @@ function LeaderboardTab.Lines()
                 return L.LEADER_GROUP_TIP, lines
             end
             local top = e.rank == 1 and not e.partial
-            out[#out + 1] = { kind = "grid", tooltip = tip, segments = { seg(0, .05, e.partial and "" or tostring(e.rank), top and "heading" or "text"),
-                seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.19, .53, group),
+            local rank = e.partial and "" or ((top and (crown .. " ") or "") .. tostring(e.rank))
+            local segments = { seg(0, .05, rank, top and "heading" or "text"),
+                seg(.06, .12, F.Duration(e.clear) .. (e.partial and "*" or ""), top and "good" or "text"), seg(.33, .39, group),
                 seg(.73, .12, date("%m-%d", e.finishedAt), "muted"),
-                seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") } }
+                seg(.86, .14, e.levelMax and string.format(L.LEADER_LEVEL, e.levelMax) or "-", e.atLevel and "muted" or "bad") }
+            if fastest and (e.clear or 0) > 0 then segments[#segments + 1] = { x = .19, w = .13, bar = fastest / e.clear } end
+            out[#out + 1] = { kind = "grid", tooltip = tip, segments = segments }
         end
         if #d.bosses > 0 then
             out[#out + 1] = { kind = "grid", segments = { seg(.06, .94, L.LEADER_BOSSES, "muted", "small") } }
@@ -81,8 +90,7 @@ end
 
 function LeaderboardTab.Refresh()
     if not ui.table then return end
-    ui.levelButton:SetSelected(not state.all)
-    ui.allButton:SetSelected(state.all)
+    ui.which:Select(state.all and "all" or "level")
     ui.table:SetLines(LeaderboardTab.Lines())
 end
 
@@ -99,18 +107,15 @@ function LeaderboardTab.CheckRun(run)
 end
 
 local function build(panel)
-    ui.levelButton = W.Button(panel, L.LEADER_AT_LEVEL, 140, 20, function()
-        state.all = false
+    ui.which = W.Segmented(panel, { { id = "level", label = L.LEADER_AT_LEVEL, width = 130 },
+        { id = "all", label = L.LEADER_ALL_RUNS, width = 90 } }, function(id)
+        state.all = id == "all"
         LeaderboardTab.Refresh()
     end)
-    ui.levelButton:SetPoint("TOPLEFT", 4, -2)
-    ui.allButton = W.Button(panel, L.LEADER_ALL_RUNS, 100, 20, function()
-        state.all = true
-        LeaderboardTab.Refresh()
-    end)
-    ui.allButton:SetPoint("LEFT", ui.levelButton, "RIGHT", 6, 0)
+    ui.which:SetPoint("TOPLEFT", 4, -2)
+    ui.levelButton, ui.allButton = ui.which.buttons.level, ui.which.buttons.all
     ui.intro = W.Text(panel, "small", "muted")
-    ui.intro:SetPoint("LEFT", ui.allButton, "RIGHT", 12, 0)
+    ui.intro:SetPoint("LEFT", ui.which, "RIGHT", 12, 0)
     ui.intro:SetPoint("RIGHT", panel, "RIGHT", -4, 0)
     ui.intro:SetJustifyH("LEFT")
     ui.intro:SetText(string.format(L.LEADER_INTRO, ns.DungeonLevels.OVER))

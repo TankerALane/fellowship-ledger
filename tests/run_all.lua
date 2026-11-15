@@ -30,6 +30,7 @@ local FILES = {
     "test_sync",
     "test_relay",
     "test_catchup",
+    "test_look",
     "test_phase5",
     "test_details",
     "test_chains",

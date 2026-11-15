@@ -39,9 +39,21 @@ local function paint(region, role, alpha)
     region:SetColorTexture(c[1], c[2], c[3], alpha or c[4])
 end
 
+-- "number" (1.13.0): the large figures of the Me tab's tiles, the large font made
+-- NUMBER_SCALE times bigger (the game has no larger font object on every client).
+W.NUMBER_SCALE = 1.4
+
 local function style(fs, fontRole, colorRole)
-    local fo = fontObject(fontRole)
+    local fo = fontObject(fontRole == "number" and "large" or fontRole)
     if fo then fs:SetFontObject(fo) end
+    if fontRole == "number" and fo then
+        pcall(function()
+            local path, size, flags = fo:GetFont()
+            if type(path) == "string" and type(size) == "number" then
+                fs:SetFont(path, math.floor(size * W.NUMBER_SCALE + 0.5), flags)
+            end
+        end)
+    end
     local c = W.Color(colorRole)
     fs:SetTextColor(c[1], c[2], c[3], c[4])
     -- The game's fonts carry a black drop shadow, which reads as a halo on parchment.
@@ -141,6 +153,75 @@ function W.Button(parent, label, width, height, onClick)
         paint(self.bg, on and "accent" or "buttonBg", on and 0.55 or nil)
     end
     return b
+end
+
+-- Joined buttons (1.13.0): one border around the group, thin dividers between, the
+-- chosen one filled. items: { { id = ..., label = ..., width = px }, ... }.
+-- Returns the group frame; group.buttons[id] are the buttons (each has SetSelected
+-- and an OnClick script), group:Select(id) marks one chosen.
+function W.Segmented(parent, items, onSelect, height)
+    height = height or 20
+    local g = CreateFrame("Frame", nil, parent)
+    g.buttons = {}
+    -- Border and dividers go on a frame above the buttons (a parent's own textures
+    -- draw under its children).
+    local edges = CreateFrame("Frame", nil, g)
+    edges:SetAllPoints()
+    local x = 0
+    for i, item in ipairs(items) do
+        local b = CreateFrame("Button", nil, g)
+        local w = item.width or 72
+        b:SetSize(w, height)
+        b:SetPoint("TOPLEFT", x, 0)
+        b.selected = false
+        b.bg = W.Background(b, "buttonBg")
+        b.text = W.Text(b, "small", "buttonText")
+        b.text:SetPoint("CENTER")
+        b.text:SetJustifyH("CENTER")
+        b.text:SetText(item.label)
+        b:SetScript("OnClick", function() if onSelect then onSelect(item.id) end end)
+        b:SetScript("OnEnter", function(self) if not self.selected then paint(self.bg, "buttonBg", 0.6) end end)
+        b:SetScript("OnLeave", function(self) if not self.selected then paint(self.bg, "buttonBg") end end)
+        function b:SetSelected(on)
+            self.selected = on
+            paint(self.bg, on and "accent" or "buttonBg", on and 0.55 or nil)
+        end
+        if i > 1 then
+            local div = edges:CreateTexture(nil, "BORDER")
+            W.Fill(div, "buttonBorder", 0.6)
+            div:SetPoint("TOPLEFT", x, 0)
+            div:SetSize(1, height)
+        end
+        g.buttons[item.id] = b
+        x = x + w
+    end
+    g:SetSize(x, height)
+    W.Border(edges, "buttonBorder", 1)
+    local level = g:GetFrameLevel()
+    if type(level) == "number" then edges:SetFrameLevel(level + 5) end
+    function g:Select(id)
+        for bid, b in pairs(self.buttons) do b:SetSelected(bid == id) end
+    end
+    return g
+end
+
+-- A small boxed tag (1.13.0), such as PLAYING after a character's name: upper-case
+-- text in the section color inside a thin border. tag:SetLabel(text) sizes it.
+function W.Tag(parent)
+    local t = CreateFrame("Frame", nil, parent)
+    t:SetSize(40, 14)
+    W.Background(t, "accent", 0.12)
+    W.Border(t, "section", 1)
+    t.text = W.Text(t, "small", "section")
+    t.text:SetPoint("CENTER", 0, 0)
+    t.text:SetJustifyH("CENTER")
+    function t:SetLabel(text)
+        self.text:SetText(ns.Format.Upper(text or ""))
+        local w = self.text:GetStringWidth()
+        self:SetWidth((type(w) == "number" and w > 0 and w or 7 * #(text or "")) + 8)
+    end
+    t:Hide()
+    return t
 end
 
 -- A toggle drawn as "[x] Label" / "[ ] Label" (text, not color, shows the state).

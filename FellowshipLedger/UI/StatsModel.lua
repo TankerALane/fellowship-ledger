@@ -40,7 +40,7 @@ local function levelTable(out, byLevel, currentLevel, L, showAll, onToggle)
     local rows = ns.XPSources.Levels(byLevel, currentLevel)
     if #rows == 0 then return end
     out[#out + 1] = { segs = {} }
-    local heading = { segs = { seg(0, .30, L.STATS_XP_BY_LEVEL, "heading") } }
+    local heading = { segs = { seg(0, .30, L.STATS_XP_BY_LEVEL, "section") } }
     if #rows > StatsModel.LEVEL_LIMIT then
         heading.segs[#heading.segs + 1] = { x = .70, w = .30, text = "", button = { label = showAll and L.DETAIL_SHOW_LESS
             or string.format(L.DETAIL_SHOW_ALL, #rows), onClick = onToggle } }
@@ -386,7 +386,7 @@ end
 function StatsModel.FriendOverview(data, sum, shared, L, rangeLabel, onToggle, valueCode)
     local out = { { segs = { seg(0, 1, ns.DetailModel.SummaryText(data.summary, L, valueCode), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
     local left = {}
-    local heading = { segs = { seg(0, .22, L.DETAIL_LEVELS, "heading") }, rules = { { 0, .36 } } }
+    local heading = { segs = { seg(0, .22, L.DETAIL_LEVELS, "section") }, rules = { { 0, .36 } } }
     local limit = ns.DetailModel.LIMITS.levels
     if data.levels.total > limit then
         local label = (#data.levels.rows > limit) and L.DETAIL_SHOW_LESS or string.format(L.DETAIL_SHOW_ALL, data.levels.total)
@@ -404,7 +404,7 @@ function StatsModel.FriendOverview(data, sum, shared, L, rangeLabel, onToggle, v
             left[#left + 1] = { segs = { seg(0, .12, r.level), seg(.13, .10, r.active), seg(.24, .10, r.played) } }
         end
     end
-    local right = { { segs = { seg(.42, .58, string.format(L.STATS_TOTALS, rangeLabel), "heading") }, rules = { { .42, .58 } } } }
+    local right = { { segs = { seg(.42, .58, string.format(L.STATS_TOTALS, rangeLabel), "section") }, rules = { { .42, .58 } } } }
     for _, def in ipairs(StatsModel.FRIEND_TOTALS) do
         local on = def[4] == "time" or shared[def[4]]
         right[#right + 1] = { segs = { seg(.42, .30, L[def[2]], "muted"),
@@ -432,7 +432,7 @@ function StatsModel.FriendDeathsLoot(data, shared, L, skin, onToggle, version)
     local out = { { segs = {} } }
     local function part(title, kind, sec, sharedOn, empty)
         if not sharedOn or old then
-            out[#out + 1] = { segs = { seg(0, .6, title, "heading") }, rules = { { 0, 1 } } }
+            out[#out + 1] = { segs = { seg(0, .6, title, "section") }, rules = { { 0, 1 } } }
             out[#out + 1] = { segs = { seg(0, 1, not sharedOn and L.STATS_NOT_SHARED or L.STATS_FRIEND_NEEDS_170, "muted") } }
         else
             for _, half in ipairs(DM.Section(title, sec, cols[kind], 0, 1, kind, L, skin, onToggle, empty)) do out[#out + 1] = half end
@@ -453,7 +453,7 @@ function StatsModel.FriendQuests(sum, chains, shared, L, common, onLink)
     local out = { { segs = { seg(0, 1, string.format(L.STATS_FRIEND_QUESTS_SUM, Format.Number(sum.quests or 0),
         Format.Number(sum.questsAccepted or 0), Format.Number(sum.xp or 0)), "muted") }, rules = { { 0, 1 } } }, { segs = {} } }
     if common and #common > 0 then
-        out[#out + 1] = { segs = { seg(0, 1, string.format(L.STATS_FRIEND_COMMON, #common), "heading") }, rules = { { 0, 1 } } }
+        out[#out + 1] = { segs = { seg(0, 1, string.format(L.STATS_FRIEND_COMMON, #common), "section") }, rules = { { 0, 1 } } }
         for _, q in ipairs(common) do
             out[#out + 1] = { segs = { seg(0, .56, q.name or string.format(L.STATS_QUEST_NUM, q.id), "good"),
                 seg(.56, .10, q.level and tostring(q.level) or "", "muted", nil, "CENTER"), seg(.68, .32, q.zone or "", "muted") },
@@ -465,7 +465,7 @@ function StatsModel.FriendQuests(sum, chains, shared, L, common, onLink)
     local list = {}
     for key, c in pairs(chains or {}) do list[#list + 1] = { key = key, c = c } end
     table.sort(list, function(a, b) return tostring(a.c.name) < tostring(b.c.name) end)
-    out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_CHAINS, "heading") }, rules = { { 0, 1 } } }
+    out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_CHAINS, "section") }, rules = { { 0, 1 } } }
     if #list == 0 then
         out[#out + 1] = { segs = { seg(0, 1, L.STATS_FRIEND_NO_CHAINS, "muted") } }
     else
@@ -587,7 +587,7 @@ function StatsModel.Bests(rows, L, holderName)
         local nextRow = rows[i + 1]
         if r.section then
             -- A section with no rows under it is left out.
-            if nextRow and not nextRow.section then out[#out + 1] = { segs = { seg(0, 1, r.section, "heading") } } end
+            if nextRow and not nextRow.section then out[#out + 1] = { segs = { seg(0, 1, r.section, "section") } } end
         else
             local holder = r.holder and ((holderName and holderName(r.holder)) or r.holder) or ""
             out[#out + 1] = { segs = { seg(0, .34, r.label), seg(.35, .15, r.mine, r.mineIsAll and "good" or "text", nil, "RIGHT"),

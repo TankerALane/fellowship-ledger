@@ -3,6 +3,7 @@ tints them):
     FellowshipLedger/media/sort-arrow.tga   16x16 triangle pointing down (flipped for "up")
     FellowshipLedger/media/level-arrow.tga  16x16 arrow pointing right ("9 -> 10")
     FellowshipLedger/media/check.tga        16x16 check mark (a quest you have done)
+    FellowshipLedger/media/crown.tga        16x16 crown (the best in a comparison, 1.13.0)
 Our own art, made here so nothing from the game is shipped. Run from the repo root:
     python tools/make_sort_arrow.py
 """
@@ -43,6 +44,19 @@ def check_mark(x, y):
     return _near_segment(x, y, 3, 8.5, 6.5, 12, 1.4) or _near_segment(x, y, 6.5, 12, 13, 4, 1.4)
 
 
+def crown(x, y):
+    # A band from y 11 to 13.5 under three points: a zigzag top through (2.5, 4),
+    # (5.25, 8.5), (8, 3), (10.75, 8.5), (13.5, 4).
+    if x < 2.5 or x > 13.5 or y > 13.5:
+        return False
+    pts = [(2.5, 4), (5.25, 8.5), (8, 3), (10.75, 8.5), (13.5, 4)]
+    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+        if ax <= x <= bx:
+            top = ay + (by - ay) * (x - ax) / (bx - ax)
+            return y >= top
+    return False
+
+
 def write(path, inside):
     pixels = bytearray()
     for row in range(SIZE):  # top row first (descriptor bit 5 set below)
@@ -64,6 +78,7 @@ def main():
     write("FellowshipLedger/media/sort-arrow.tga", sort_arrow)
     write("FellowshipLedger/media/level-arrow.tga", level_arrow)
     write("FellowshipLedger/media/check.tga", check_mark)
+    write("FellowshipLedger/media/crown.tga", crown)
 
 
 if __name__ == "__main__":

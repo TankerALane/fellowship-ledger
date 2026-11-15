@@ -9,7 +9,10 @@
 --     tooltip = fn() -> title, lines (shown on hover), shade = true (grid lines: shaded background),
 --     item = { id, link } (hover shows the game's item tooltip instead, D-102),
 --     onRightClick = fn(owner) (right click, D-108),
---     align = "right" (group/detail text next to its action button) }
+--     align = "right" (group/detail text next to its action button),
+--     section = true (a group line drawn as a section title: small, upper case, 1.13.0),
+--     tag = "Playing" (a boxed tag after the first cell's text, 1.13.0) }
+-- A grid segment with role = "section" is drawn the same way as a section title.
 -- or a "grid" line (UI/DetailModel.lua): text placed at fractions of the width,
 -- with optional small buttons, rules and a shaded box spanning several lines.
 
@@ -54,15 +57,29 @@ function Table.New(parent, columns, opts)
         end
         self.headers[c] = h
     end
-    local rule = W.Rule(parent, "rule")
-    rule:SetPoint("TOPLEFT", 4, -(self.opts.top or 0) - ROW_H)
-    rule:SetPoint("TOPRIGHT", -4, -(self.opts.top or 0) - ROW_H)
+    self.rule = W.Rule(parent, "rule")
+    self:PlaceRule()
     parent:EnableMouseWheel(true)
     parent:SetScript("OnMouseWheel", function(_, delta)
         self.offset = math.max(0, self.offset - delta * 3)
         self:Render()
     end)
     return self
+end
+
+function Obj:PlaceRule()
+    self.rule:ClearAllPoints()
+    self.rule:SetPoint("TOPLEFT", 4, -(self.opts.top or 0) - ROW_H)
+    self.rule:SetPoint("TOPRIGHT", -4, -(self.opts.top or 0) - ROW_H)
+end
+
+-- Move the table's top edge (the Me tab's tiles come and go, 1.13.0).
+function Obj:SetTop(top)
+    if self.opts.top == top then return end
+    self.opts.top = top
+    self.fittedFor = nil -- headers are placed again by Fit
+    self:PlaceRule()
+    self:Render()
 end
 
 -- Work out column widths for the current panel width (only when it changed).
@@ -132,6 +149,7 @@ function Obj:Line(i)
         W.Fill(t, "rule", 0.6)
         w.boxEdges[name] = t
     end
+    w.tag = W.Tag(w)
     w.action = W.Button(w, "", ACTION_W, ROW_H - 2)
     w.action:SetPoint("RIGHT", 0, 0)
     -- Right click: line.onRightClick(owner), e.g. a friend's Whisper / Invite menu (D-108).
@@ -262,12 +280,13 @@ function Obj:RenderGrid(w, line)
                 fs:SetWordWrap(false)
                 w.segs[nText] = fs
             end
-            W.SetTextStyle(fs, sg.font or "body", sg.role or "text")
+            local section = sg.role == "section"
+            W.SetTextStyle(fs, section and "small" or (sg.font or "body"), sg.role or "text")
             fs:ClearAllPoints()
             fs:SetPoint("LEFT", x, 0)
             fs:SetWidth(math.max(1, width - 2))
             fs:SetJustifyH(sg.align or "LEFT")
-            fs:SetText(sg.text or "")
+            fs:SetText(section and ns.Format.Upper(sg.text or "") or (sg.text or ""))
             fs:Show()
             if sg.item then
                 -- Only this segment shows the item's tooltip (D-103): in the card layout
@@ -331,6 +350,20 @@ function Obj:RenderGrid(w, line)
     end
 end
 
+-- The boxed tag just after the first cell's text, kept inside that column.
+function Obj:PlaceTag(w, label)
+    local tag, cell = w.tag, w.cells[1]
+    tag:SetLabel(label)
+    local textW = cell:GetStringWidth()
+    if type(textW) ~= "number" then textW = 0 end
+    local tagW = tag:GetWidth()
+    if type(tagW) ~= "number" then tagW = 40 end
+    local x = math.max(0, math.min(textW + 6, (self.widths[1] or 0) - tagW))
+    tag:ClearAllPoints()
+    tag:SetPoint("LEFT", w, "LEFT", x, 0)
+    tag:Show()
+end
+
 function Obj:Render()
     self:Fit()
     local field, desc = nil, nil
@@ -368,6 +401,7 @@ function Obj:Render()
             w:Show()
             -- Grid lines are shaded only when they ask (line.shade: e.g. the quest you are on).
             w.alt:SetShown(line.shade == true or (line.kind ~= "grid" and (line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0)))
+            w.tag:Hide()
             if line.kind == "grid" then
                 for c = 1, #self.columns do w.cells[c]:Hide() end
                 w.full:Hide()
@@ -383,12 +417,19 @@ function Obj:Render()
                     W.SetTextRole(w.cells[c], line.kind == "total" and "heading" or (line.muted and "muted" or "text"))
                     w.cells[c]:SetShown(shown)
                 end
+                if line.tag and self.widths[1] then self:PlaceTag(w, line.tag) end
             else
                 hideGrid(w)
                 for c = 1, #self.columns do w.cells[c]:Hide() end
-                w.full:SetText((line.indent and "    " or "") .. (line.text or ""))
+                local text = (line.indent and "    " or "") .. (line.text or "")
+                if line.section then
+                    W.SetTextStyle(w.full, "small", "section")
+                    text = ns.Format.Upper(text)
+                else
+                    W.SetTextStyle(w.full, "body", line.kind == "group" and "heading" or "muted")
+                end
+                w.full:SetText(text)
                 w.full:SetJustifyH(line.align == "right" and "RIGHT" or "LEFT")
-                W.SetTextRole(w.full, line.kind == "group" and "heading" or "muted")
                 w.full:Show()
             end
             if line.action then

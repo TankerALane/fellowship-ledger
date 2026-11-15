@@ -118,6 +118,36 @@ function Format.MoneyShort(copper, signed)
     return sign .. text
 end
 
+-- Upper case for section titles, leaving the game's escape codes alone: colors
+-- (|cAARRGGBB ... |r), textures (|T...|t) and links (|H...|h, whose shown text is
+-- upper-cased). "Recent levels" -> "RECENT LEVELS".
+function Format.Upper(text)
+    if type(text) ~= "string" then return text end
+    local out, i, n = {}, 1, #text
+    while i <= n do
+        local ch = text:sub(i, i)
+        if ch == "|" and i < n then
+            local code = text:sub(i + 1, i + 1)
+            if code == "c" then
+                out[#out + 1] = text:sub(i, i + 9); i = i + 10
+            elseif code == "T" then
+                local stop = text:find("|t", i + 2, true)
+                out[#out + 1] = text:sub(i, stop and stop + 1 or n); i = (stop and stop + 2) or n + 1
+            elseif code == "H" then
+                local stop = text:find("|h", i + 2, true)
+                out[#out + 1] = text:sub(i, stop and stop + 1 or n); i = (stop and stop + 2) or n + 1
+            else
+                out[#out + 1] = text:sub(i, i + 1); i = i + 2 -- |r, |h, |t, ||
+            end
+        else
+            local stop = text:find("|", i, true) or n + 1
+            out[#out + 1] = text:sub(i, stop - 1):upper()
+            i = stop
+        end
+    end
+    return table.concat(out)
+end
+
 -- XP per hour from xp gained over active seconds; nil when there is too little time.
 function Format.PerHour(amount, seconds)
     if not seconds or seconds < 60 then return nil end

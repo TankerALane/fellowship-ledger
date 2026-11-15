@@ -157,7 +157,7 @@ end
 local function section(title, sec, cols, x0, x1, kind, L, skin, onToggle, emptyText)
     local Palette = ns.Palette
     local out = {}
-    local heading = { segs = { seg({ x0, (x1 - x0) * 0.6 }, title, "heading", "body") } }
+    local heading = { segs = { seg({ x0, (x1 - x0) * 0.6 }, title, "section", "body") } }
     local limit = DetailModel.LIMITS[kind]
     if sec.total > limit then
         local label = (#sec.rows > limit) and L.DETAIL_SHOW_LESS or string.format(L.DETAIL_SHOW_ALL, sec.total)

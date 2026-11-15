@@ -374,6 +374,12 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:prof.unlearn` | manual | an unlearned profession is deleted (D-129) | unlearn a profession (or learn a new one after): the Me tab Professions view drops it at once and shows the new one; learning it again starts at its new rank | ? | ? |
 
+### Window
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:look` | manual | the 1.13.0 look fits and reads well in all three looks (D-130) | `/fl: the header shows friends online and the last sync with Sync, Settings and X; the range buttons are one joined group; the Me tab tiles show the range's totals; section titles are small capitals; PLAYING is a boxed tag; Leaderboard and This week show bars and a crown. Check Ledger, Leather and Plain, and a small window` | ? | ? |
+
 ### Friends
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
@@ -421,7 +427,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `m:sync` | manual | a friend who runs the ledger on the same client appears on the Friends tab after Sync now, with their data; nothing crosses Forever/retail | both run /fl sync; check Friends tab and /fl comms on both sides | pending | ? |
+| `m:sync` | manual | a friend who runs the ledger on the same client appears on the Friends tab after Sync (top of the window), with their data; nothing crosses Forever/retail | both run /fl sync; check Friends tab and /fl comms on both sides | pending | ? |
 
 ### Character friends
 
