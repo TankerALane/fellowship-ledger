@@ -2,10 +2,14 @@
 
 ## Unreleased
 
+### Added
+- Settings > Appearance > **Background**: a slider for the window background, from see-through to fully solid (100%).
+
 ### Fixed
 - A dungeon run's group no longer picks up someone invited after the final boss: a player of the same class and role who joined afterwards could take the name of one who had left.
 
 ### Changed
+- **Plain** is the default look: it fits better with the game. If you were on Ledger (the old default), you move to Plain once, and chat says how to switch back (Settings > Look). Leather stays Leather.
 - The Me tab's tiles are shorter and narrower, with smaller figures, and PLAYING is small text without a box.
 - The main tabs are larger, with larger text, so they stand out from the other buttons.
 - Leaderboard: the highest-level dungeon is on top. Click a dungeon's name to collapse it to one line with its fastest clear; **Collapse all** and **Open all** at the top right.

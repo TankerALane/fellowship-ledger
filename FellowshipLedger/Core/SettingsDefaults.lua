@@ -7,7 +7,7 @@ local SettingsDefaults = {}
 ns.SettingsDefaults = SettingsDefaults
 
 SettingsDefaults.VALUES = {
-    skin = "ledger",          -- "ledger" (parchment and gold), "leather" (dark leather and gold) or "plain"
+    skin = "plain",           -- "plain" (the default since 1.13.1, D-131), "ledger" (parchment and gold) or "leather" (dark leather and gold)
     scale = 1.0,              -- window scale, 0.7 to 1.5
     fontSize = "normal",      -- "small" | "normal" | "large"
     classColors = true,       -- names in class colors (made readable on every skin)
@@ -50,6 +50,10 @@ SettingsDefaults.VALUES = {
 SettingsDefaults.SCALE_MIN = 0.7
 SettingsDefaults.SCALE_MAX = 1.5
 SettingsDefaults.SCALE_STEP = 0.1
+-- Background opacity (1.13.1, D-131): settings.opacity, nil = the look's own.
+SettingsDefaults.OPACITY_MIN = 0.3
+SettingsDefaults.OPACITY_MAX = 1.0
+SettingsDefaults.OPACITY_STEP = 0.05
 
 function SettingsDefaults.Ensure(settings)
     for k, v in pairs(SettingsDefaults.VALUES) do
@@ -57,10 +61,27 @@ function SettingsDefaults.Ensure(settings)
     end
     -- 1.0.1 development builds briefly had a "parchment" skin; it is "ledger" again.
     if settings.skin == "parchment" then settings.skin = "ledger" end
+    -- 1.13.1 (D-131): Plain is the default. Once, everyone still on Ledger (the old
+    -- default) moves to Plain and is told how to switch back; Leather stays.
+    if not settings.plainDefault then
+        if settings.skin == "ledger" then
+            settings.skin = "plain"
+            settings.lookMovedNotice = true
+        end
+        settings.plainDefault = true
+    end
+    if settings.opacity ~= nil then settings.opacity = SettingsDefaults.ClampOpacity(settings.opacity) end
     settings.minimap = settings.minimap or {}
     if settings.minimap.angle == nil then settings.minimap.angle = 225 end
     if settings.minimap.hide == nil then settings.minimap.hide = false end
     return settings
+end
+
+function SettingsDefaults.ClampOpacity(v)
+    v = math.floor((tonumber(v) or 1) * 20 + 0.5) / 20
+    if v < SettingsDefaults.OPACITY_MIN then v = SettingsDefaults.OPACITY_MIN end
+    if v > SettingsDefaults.OPACITY_MAX then v = SettingsDefaults.OPACITY_MAX end
+    return v
 end
 
 function SettingsDefaults.ClampScale(v)

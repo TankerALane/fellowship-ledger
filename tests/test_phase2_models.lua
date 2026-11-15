@@ -422,9 +422,22 @@ H.test("class colors are readable on every skin; priest is grey on ledger, white
     H.eq(P.Code(P.ClassColor("PRIEST", "leather")), "|cffffffff", "dark leather: priest stays white")
     H.ok(P.IsLight("ledger") and not P.IsLight("leather") and not P.IsLight("plain"))
     local S = H.pureNamespace().SettingsDefaults
-    H.eq(S.Ensure({}).skin, "ledger", "the light look is the default")
-    H.eq(S.Ensure({ skin = "parchment" }).skin, "ledger", "dev-build parchment becomes ledger")
+    -- Plain is the default since 1.13.1 (D-131).
+    local fresh = S.Ensure({})
+    H.eq(fresh.skin, "plain", "Plain is the default")
+    H.eq(fresh.lookMovedNotice, nil, "a new install is not told it moved")
+    -- Once, a Ledger user (the old default) moves to Plain and is told; Leather stays.
+    local old = S.Ensure({ skin = "ledger" })
+    H.eq(old.skin, "plain"); H.eq(old.lookMovedNotice, true); H.eq(old.plainDefault, true)
+    old.skin = "ledger"
+    H.eq(S.Ensure(old).skin, "ledger", "choosing Ledger again sticks")
+    H.eq(S.Ensure({ skin = "parchment", plainDefault = true }).skin, "ledger", "dev-build parchment becomes ledger")
     H.eq(S.Ensure({ skin = "leather" }).skin, "leather")
+    H.eq(S.Ensure({ skin = "leather" }).lookMovedNotice, nil)
+    -- Opacity: kept within 30% to 100%, in 5% steps; nil means the look's own.
+    H.eq(S.Ensure({}).opacity, nil)
+    H.eq(S.Ensure({ opacity = 1.4 }).opacity, 1); H.eq(S.Ensure({ opacity = 0.1 }).opacity, 0.3)
+    H.eq(S.ClampOpacity(0.92), 0.9); H.eq(S.ClampOpacity(0.93), 0.95)
     H.eq(P.Code(P.ClassColor("MAGE", "plain")), "|cff3fc7eb", "already readable: unchanged")
     H.eq(P.ClassColor("NOTACLASS", "ledger"), nil)
     H.eq(P.ClassColor(nil, "ledger"), nil)

@@ -21,7 +21,7 @@ local FONTS = {
 }
 
 local function skin()
-    return ns.db and ns.db.settings and ns.db.settings.skin or "ledger"
+    return ns.db and ns.db.settings and ns.db.settings.skin or "plain"
 end
 
 function W.Color(role)
@@ -34,8 +34,16 @@ local function fontObject(role)
     return _G[name]
 end
 
+-- The window background's opacity: the setting (1.13.1, D-131), else the look's own.
+function W.Opacity()
+    local o = ns.db and ns.db.settings and ns.db.settings.opacity
+    if type(o) == "number" then return o end
+    return W.Color("bg")[4]
+end
+
 local function paint(region, role, alpha)
     local c = W.Color(role)
+    if role == "bg" and alpha == nil then alpha = W.Opacity() end
     region:SetColorTexture(c[1], c[2], c[3], alpha or c[4])
 end
 
@@ -208,6 +216,44 @@ function W.Segmented(parent, items, onSelect, height)
         for bid, b in pairs(self.buttons) do b:SetSelected(bid == id) end
     end
     return g
+end
+
+-- A horizontal slider (1.13.1): a thin track and a thumb in the accent color (no game
+-- art). onChange(value) runs only when the player moves it, not on s:SetValueQuiet(v).
+function W.Slider(parent, width, minV, maxV, step, onChange)
+    local s = CreateFrame("Slider", nil, parent)
+    s:SetOrientation("HORIZONTAL")
+    s:SetSize(width, 16)
+    s:SetMinMaxValues(minV, maxV)
+    s:SetValueStep(step)
+    if s.SetObeyStepOnDrag then s:SetObeyStepOnDrag(true) end
+    s:EnableMouse(true)
+    local track = s:CreateTexture(nil, "BACKGROUND")
+    W.Fill(track, "buttonBorder", 0.8)
+    track:SetPoint("LEFT", 0, 0)
+    track:SetPoint("RIGHT", 0, 0)
+    track:SetHeight(4)
+    local thumb = s:CreateTexture(nil, "OVERLAY")
+    W.Fill(thumb, "accent")
+    thumb:SetSize(10, 16)
+    s:SetThumbTexture(thumb)
+    s:SetScript("OnValueChanged", function(self, value)
+        if self.quiet then return end
+        if onChange then onChange(value) end
+    end)
+    function s:SetValueQuiet(v)
+        self.quiet = true
+        self:SetValue(v)
+        self.quiet = false
+    end
+    return s
+end
+
+-- Repaint only the window backgrounds (the opacity slider moves often).
+function W.ApplyOpacity()
+    for _, f in ipairs(fills) do
+        if f[2] == "bg" then paint(f[1], f[2], f[3]) end
+    end
 end
 
 -- A small boxed tag (1.13.0), such as PLAYING after a character's name: upper-case

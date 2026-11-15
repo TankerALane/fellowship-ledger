@@ -47,7 +47,7 @@ The window opens with your friends online and when you last synced at the top, b
 
 **Session goals**: pick a few goals when you log in (levels, quests, a dungeon, a profession rank) and follow them in a small tracker.
 
-**Settings**: a Track and a Share switch for every tracker on every character, three looks (Ledger, Leather, Plain), text size, scale, colorblind-safe colors, notices, and a block list.
+**Settings**: a Track and a Share switch for every tracker on every character, three looks (Plain, Ledger, Leather), background opacity up to fully solid, text size, scale, colorblind-safe colors, notices, and a block list.
 
 ## What it tracks
 

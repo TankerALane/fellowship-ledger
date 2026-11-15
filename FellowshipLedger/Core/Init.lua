@@ -65,6 +65,11 @@ function handlers.PLAYER_LOGIN()
         Log.Warn(L.FLAVOR_MISMATCH, tostring(Compat.flavor), tostring(Compat.tocFlavor))
     end
     Log.Info(L.LOADED, ns.VERSION, tostring(Compat.flavor))
+    -- Once, after the move to the Plain look (D-131).
+    if ns.db.settings.lookMovedNotice then
+        ns.db.settings.lookMovedNotice = nil
+        Log.Info(L.LOOK_MOVED_PLAIN)
+    end
 
     -- The code was built on retail verify results; nag on Forever until a Forever report exists.
     if Compat.flavor == ns.FlavorLogic.FOREVER and not (ns.db.verify and ns.db.verify.flavor == ns.FlavorLogic.FOREVER) then

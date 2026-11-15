@@ -12,6 +12,7 @@ local SettingsTab = {}
 ns.SettingsTab = SettingsTab
 
 local ui = { toggles = {}, trackerRows = {}, blockRows = {} }
+SettingsTab.ui = ui -- for tests
 local state = { charIndex = 1 }
 local BLOCK_ROWS = 8
 local QUESTIE_URL = "https://www.curseforge.com/wow/addons/questie"
@@ -86,6 +87,8 @@ function SettingsTab.Refresh()
     for size, b in pairs(ui.fontButtons) do b:SetSelected(S().fontSize == size) end
     for layout, b in pairs(ui.detailButtons) do b:SetSelected((S().detailsLayout or "card") == layout) end
     ui.scaleLabel:SetText(string.format(L.SETTINGS_SCALE_VALUE, S().scale or 1))
+    ui.opacity:SetValueQuiet(W.Opacity())
+    ui.opacityValue:SetText(string.format(L.SETTINGS_OPACITY_VALUE, math.floor(W.Opacity() * 100 + 0.5)))
     -- Block list
     local tags = {}
     for tag in pairs(shooting() and {} or ns.db.blocklist) do tags[#tags + 1] = tag end -- no real names in screenshots
@@ -226,6 +229,20 @@ local function build(panel)
         sx = sx + 116
         ui.skinButtons[skin] = b
     end
+    y = y - 26
+    -- Background opacity (1.13.1, D-131): up to fully solid.
+    local opacityLabel = W.Text(content, "body", "text")
+    opacityLabel:SetPoint("TOPLEFT", 8, y - 2)
+    opacityLabel:SetText(L.SETTINGS_OPACITY)
+    local D = ns.SettingsDefaults
+    ui.opacity = W.Slider(content, 220, D.OPACITY_MIN, D.OPACITY_MAX, D.OPACITY_STEP, function(v)
+        S().opacity = D.ClampOpacity(v)
+        W.ApplyOpacity()
+        ui.opacityValue:SetText(string.format(L.SETTINGS_OPACITY_VALUE, math.floor(S().opacity * 100 + 0.5)))
+    end)
+    ui.opacity:SetPoint("TOPLEFT", 140, y - 2)
+    ui.opacityValue = W.Text(content, "body", "text")
+    ui.opacityValue:SetPoint("LEFT", ui.opacity, "RIGHT", 10, 0)
     y = y - 26
     local scaleLabel = W.Text(content, "body", "text")
     scaleLabel:SetPoint("TOPLEFT", 8, y - 2)

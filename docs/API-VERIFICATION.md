@@ -379,6 +379,7 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `m:look` | manual | the 1.13.0 look fits and reads well in all three looks (D-130) | `/fl: the header shows friends online and the last sync with Sync, Settings and X; the range buttons are one joined group; the Me tab tiles show the range's totals; section titles are small capitals; PLAYING is a boxed tag; Leaderboard and This week show bars and a crown. Check Ledger, Leather and Plain, and a small window` | ? | ? |
+| `m:opacity` | manual | the Background slider in Settings (D-131): our own slider frame (CreateFrame Slider, SetThumbTexture with a texture) | `/fl, Settings, Appearance: drag Background from 30% to 100%; the window gets see-through and fully solid, the value reads 30% to 100% solid, and it stays after /reload` | ? | ? |
 
 ### Friends
 

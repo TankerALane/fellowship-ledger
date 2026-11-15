@@ -162,3 +162,22 @@ H.test("Leaderboard: a run with no recorded group level uses the character's lev
     for _, e in ipairs(all[1].clears) do if e.finishedAt == 30000 + 1200 then recorded = e end end
     H.eq(recorded.levelGuess, nil, "a recorded level is not a guess")
 end)
+H.test("Plain look: a Ledger user moves once and is told; the opacity slider sets the background", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    env.FellowshipLedgerDB = { settings = { skin = "ledger", welcomeEveryLogin = false, askStale = false } }
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    H.eq(ns2.db.settings.skin, "plain")
+    H.ok(Mock.chatContains(env, "now uses the Plain look"), table.concat(env.__state.chat, "\n"))
+    H.eq(ns2.db.settings.lookMovedNotice, nil, "told once")
+    ns2.MainWindow.Open("settings")
+    local ui = ns2.SettingsTab.ui
+    H.eq(ui.opacityValue:GetText(), "92% solid", "Plain's own opacity")
+    ui.opacity:GetScript("OnValueChanged")(ui.opacity, 1.0)
+    H.eq(ns2.db.settings.opacity, 1)
+    H.eq(ui.opacityValue:GetText(), "100% solid")
+    H.eq(ns2.Widgets.Opacity(), 1)
+end)
