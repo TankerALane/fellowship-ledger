@@ -42,7 +42,8 @@ end
 
 -- The tiles over the table (1.13.0): the range's totals for all your characters.
 Me.TILES = { "levels", "quests", "dungeons", "moneyNet", "played", "deaths" }
-Me.TILE_H = 34 -- 1.13.1: was 48 (Austin: too tall)
+Me.TILE_H = 40 -- 1.13.1: was 48 (too tall), then 34 (the figure ran into the title)
+Me.TILE_WIDTH = 0.75 -- 1.13.1: each tile three quarters of an even share of the row (Austin)
 Me.TILE_GAP = 6
 
 function Me.TileValues(rows)
@@ -76,10 +77,10 @@ local function buildTiles(panel)
         W.Background(t, "panel")
         W.Border(t, "rule", 1)
         t.label = W.Text(t, "small", "section")
-        t.label:SetPoint("TOPLEFT", 8, -4)
+        t.label:SetPoint("TOPLEFT", 8, -5)
         t.value = W.Text(t, "number", "text")
-        t.value:SetPoint("BOTTOMLEFT", 8, 3)
-        t.value:SetPoint("BOTTOMRIGHT", -6, 3)
+        t.value:SetPoint("BOTTOMLEFT", 8, 4)
+        t.value:SetPoint("BOTTOMRIGHT", -6, 4)
         t.value:SetWordWrap(false)
         t:EnableMouse(true)
         t:SetScript("OnEnter", function(self)
@@ -94,7 +95,7 @@ local function layoutTiles(values)
     local width = ui.tiles:GetWidth()
     if type(width) ~= "number" or width < 100 then width = 800 end
     local n = #ui.tileFrames
-    local w = (width - Me.TILE_GAP * (n - 1)) / n
+    local w = (width - Me.TILE_GAP * (n - 1)) / n * Me.TILE_WIDTH
     for i, t in ipairs(ui.tileFrames) do
         t:ClearAllPoints()
         t:SetPoint("TOPLEFT", (i - 1) * (w + Me.TILE_GAP), 0)

@@ -212,13 +212,12 @@ end
 
 -- A small boxed tag (1.13.0), such as PLAYING after a character's name: upper-case
 -- text in the section color inside a thin border. tag:SetLabel(text) sizes it.
--- 1.13.1: two thirds of its first size (height 14 -> 9, padding 8 -> 5, text TAG_SCALE).
+-- 1.13.1: two thirds of its first size (height 14 -> 9, padding 8 -> 5, text TAG_SCALE),
+-- and no box, just the text (Austin, 2026-11-15).
 W.TAG_H = 9
 function W.Tag(parent)
     local t = CreateFrame("Frame", nil, parent)
     t:SetSize(27, W.TAG_H)
-    W.Background(t, "accent", 0.12)
-    W.Border(t, "section", 1)
     t.text = W.Text(t, "tag", "section")
     t.text:SetPoint("CENTER", 0, 0)
     t.text:SetJustifyH("CENTER")

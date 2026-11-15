@@ -3,7 +3,8 @@
 ## Unreleased
 
 ### Changed
-- The Me tab's tiles are shorter, with smaller figures, and the PLAYING tag is a third smaller.
+- The Me tab's tiles are shorter and narrower, with smaller figures, and PLAYING is small text without a box.
+- The main tabs are larger, with larger text, so they stand out from the other buttons.
 - Leaderboard: the highest-level dungeon is on top. Click a dungeon's name to collapse it to one line with its fastest clear; **Collapse all** and **Open all** at the top right.
 
 ## 1.13.0 - 2026-11-15

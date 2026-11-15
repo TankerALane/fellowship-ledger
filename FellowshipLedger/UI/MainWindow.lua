@@ -15,6 +15,7 @@ Main.TABS = { "me", "friends", "graphs", "dungeons", "leaderboard", "settings" }
 Main.tabs = {}
 Main.current = nil
 Main.RESIZE_REDRAW = 0.1 -- seconds between redraws while resizing (10 per second)
+Main.TAB_W, Main.TAB_H = 124, 30 -- the main tabs (1.13.1: were 100 x 24)
 
 local FRAME_NAME = "FellowshipLedgerMainWindow"
 
@@ -120,12 +121,14 @@ local function build()
         if id == "settings" then
             tab.button = Main.settingsButton
         else
-            tab.button = W.Button(f, L["TAB_" .. id:upper()], 100, 24, function() Main.Select(id) end)
-            tab.button:SetPoint("TOPLEFT", x, -40)
-            x = x + 106
+            -- Larger than the other buttons so the main tabs stand out (1.13.1, Austin).
+            tab.button = W.Button(f, L["TAB_" .. id:upper()], Main.TAB_W, Main.TAB_H, function() Main.Select(id) end)
+            W.SetTextStyle(tab.button.text, "large", "buttonText")
+            tab.button:SetPoint("TOPLEFT", x, -38)
+            x = x + Main.TAB_W + 6
         end
         tab.panel = CreateFrame("Frame", nil, f)
-        tab.panel:SetPoint("TOPLEFT", 12, -72)
+        tab.panel:SetPoint("TOPLEFT", 12, -76)
         tab.panel:SetPoint("BOTTOMRIGHT", -12, 20)
         tab.panel:Hide()
         if tab.Build then
