@@ -12,10 +12,22 @@ local Leaderboard = ns.Leaderboard
 local LeaderboardTab = {}
 ns.LeaderboardTab = LeaderboardTab
 
--- collapsed[dungeon]: its clears and bosses hidden (click its title; until reload).
+-- collapsed[dungeon]: its clears and bosses hidden (click its title). Saved in
+-- settings.leaderCollapsed so it stays after a /reload (Austin, 2026-11-15).
 local state = { all = false, collapsed = {} }
 local ui = {}
 LeaderboardTab.state, LeaderboardTab.ui = state, ui -- for tests
+
+local function collapsed(fresh)
+    local s = ns.db and ns.db.settings
+    if s then
+        if fresh or type(s.leaderCollapsed) ~= "table" then s.leaderCollapsed = {} end
+        state.collapsed = s.leaderCollapsed
+    elseif fresh then
+        state.collapsed = {}
+    end
+    return state.collapsed
+end
 
 local function seg(x, w, text, role, font, align)
     return { x = x, w = w, text = text or "", role = role or "text", font = font or "body", align = align }
@@ -95,11 +107,12 @@ function LeaderboardTab.Lines()
     local crown = ns.DetailModel.IconCode("crown", W.Color("section"))
     for _, d in ipairs(board) do
         local name = d.dungeon
-        local closed = state.collapsed[name]
+        local closed = collapsed()[name]
         local title = (closed and "+ " or "- ") .. name .. (d.range and string.format(" (%d-%d)", d.range[1], d.range[2]) or "")
         local head = { kind = "grid", shade = true, dungeon = name, segments = { seg(0, .62, title, "heading", "large") },
             onClick = function()
-                state.collapsed[name] = not state.collapsed[name] or nil
+                local c = collapsed()
+                c[name] = not c[name] or nil
                 LeaderboardTab.Refresh()
             end }
         -- Closed: the #1 clear on the title line, so dungeons can still be compared.
@@ -118,10 +131,10 @@ end
 function LeaderboardTab.ToggleAll()
     local board = LeaderboardTab.Board()
     local allClosed = #board > 0
-    for _, d in ipairs(board) do if not state.collapsed[d.dungeon] then allClosed = false end end
-    state.collapsed = {}
+    for _, d in ipairs(board) do if not collapsed()[d.dungeon] then allClosed = false end end
+    local c = collapsed(true)
     if not allClosed then
-        for _, d in ipairs(board) do state.collapsed[d.dungeon] = true end
+        for _, d in ipairs(board) do c[d.dungeon] = true end
     end
     LeaderboardTab.Refresh()
 end
@@ -131,7 +144,7 @@ function LeaderboardTab.Refresh()
     ui.which:Select(state.all and "all" or "level")
     local board = LeaderboardTab.Board()
     local allClosed = #board > 0
-    for _, d in ipairs(board) do if not state.collapsed[d.dungeon] then allClosed = false end end
+    for _, d in ipairs(board) do if not collapsed()[d.dungeon] then allClosed = false end end
     ui.allToggle.text:SetText(allClosed and L.LEADER_OPEN_ALL or L.LEADER_COLLAPSE_ALL)
     ui.table:SetLines(LeaderboardTab.Lines())
 end

@@ -53,6 +53,22 @@ local function partySnapshot()
     return party
 end
 
+-- Your own role in the group (Austin, 2026-11-15: "With" showed no healer on a run
+-- he healed). nil when solo, unassigned ("NONE") or unknown.
+local function myRole()
+    local ok, role = ns.Compat.Call("dungeons", "UnitGroupRolesAssigned", "player")
+    role = ok and T.Plain(role) or nil
+    if role == "TANK" or role == "HEALER" or role == "DAMAGER" then return role end
+    return nil
+end
+
+-- The group as it is now, with your own role beside it.
+local function setParty(run, party)
+    if #party == 0 then return end
+    run.party = party
+    run.role = myRole() or run.role
+end
+
 -- "Name-Realm" (or "Name") of a unit, nil when unknown or secret.
 function unitKey(unit)
     local ok, name, realm = ns.Compat.Try("UnitName", unit)
@@ -309,6 +325,7 @@ local function startRun(char, t, name, instanceID, difficultyID)
         deaths = 0,
         bosses = {},
         party = partySnapshot(),
+        role = myRole(),
         lastBossID = lastBoss or nil,
         lastBossName = lastName,
         bossCount = bossCount,
@@ -392,8 +409,7 @@ local function complete(run, how)
     run.completedAt = Store.Now()
     -- The group at the final boss is the run's group: groups often break up before
     -- anyone leaves the dungeon (Austin, 2026-11-06). Frozen from here on.
-    local party = partySnapshot()
-    if #party > 0 then run.party = party end
+    setParty(run, partySnapshot())
     run.partyFrozen = true
     -- Who was in the group at the final boss, in memory only (never saved): a name
     -- opt-in that arrives later may be filled in only for one of them.
@@ -512,7 +528,7 @@ function Dungeons.MergeSplits(char)
             a.deaths = (a.deaths or 0) + (b.deaths or 0)
             a.left = b.left or ((b.entered or 0) + (b.duration or 0))
             a.duration = a.left - a.entered
-            if not a.partyFrozen and #(b.party or {}) > 0 then a.party = b.party end
+            if not a.partyFrozen and #(b.party or {}) > 0 then a.party, a.role = b.party, b.role or a.role end
             if not a.completed then
                 for _, k in ipairs({ "completed", "completedBy", "completedAt", "partyFrozen" }) do
                     if b[k] ~= nil then a[k] = b[k] end
@@ -607,7 +623,7 @@ local function refreshParty()
         return
     end
     if #(run.bosses or {}) > 0 and #party < #(run.party or {}) then return end
-    if #party > 0 then run.party = party end
+    setParty(run, party)
 end
 Dungeons.events.GROUP_ROSTER_UPDATE = refreshParty
 ns.DungeonsRefreshParty = refreshParty -- called when a party member's name opt-in arrives
@@ -703,8 +719,7 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     markStarted(run, fight and (t - fight) or t, "boss")
     run.bosses[#run.bosses + 1] = { id = encounterID, name = T.Plain(encounterName), at = t, fight = fight }
     if not run.partyFrozen then
-        local party = partySnapshot() -- the group that killed this boss
-        if #party > 0 then run.party = party end
+        setParty(run, partySnapshot()) -- the group that killed this boss
     end
     countIfReady(run, Store.Now())
     Store.Count("bossKills")

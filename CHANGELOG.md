@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Dungeons, **With** column: your own role now counts, so a run you healed shows its healer. Runs from before this update work it out when the rest of a five-player group was one role short (the tooltip says so).
+- Leaderboard: dungeons you fold stay folded after a /reload.
+
 ## 1.13.1 - 2026-11-15
 
 ### Added

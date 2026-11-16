@@ -124,9 +124,30 @@ function DungeonsModel.ByDungeon(runs, now)
     return list
 end
 
--- "1 tank, 1 healer, 2 damage"; "solo" with nobody else.
-function DungeonsModel.Group(party, L)
+-- Your own role in a run: the saved one (1.13.2+), else, in a full group of five whose
+-- other four are one short of 1 tank, 1 healer and 3 damage, the missing one
+-- (guessed = true). nil when it cannot be told.
+function DungeonsModel.MyRole(run)
+    if not run then return nil end
+    if run.role then return run.role, false end
+    local party = run.party or {}
+    if #party ~= 4 then return nil end
+    local n = { TANK = 0, HEALER = 0, DAMAGER = 0 }
+    for _, p in ipairs(party) do
+        if not n[p.role or ""] then return nil end
+        n[p.role] = n[p.role] + 1
+    end
+    if n.TANK == 0 and n.HEALER == 1 and n.DAMAGER == 3 then return "TANK", true end
+    if n.TANK == 1 and n.HEALER == 0 and n.DAMAGER == 3 then return "HEALER", true end
+    if n.TANK == 1 and n.HEALER == 1 and n.DAMAGER == 2 then return "DAMAGER", true end
+    return nil
+end
+
+-- "1 tank, 1 healer, 2 damage"; "solo" with nobody else. With `me` (your role), you
+-- are counted too (Austin, 2026-11-15).
+function DungeonsModel.Group(party, L, me)
     local n = { TANK = 0, HEALER = 0, DAMAGER = 0, other = 0 }
+    if n[me or ""] and #(party or {}) > 0 then n[me] = n[me] + 1 end
     for _, p in ipairs(party or {}) do
         local r = p.role
         if n[r] then n[r] = n[r] + 1 else n.other = n.other + 1 end
@@ -297,12 +318,17 @@ function DungeonsModel.Lines(o)
                 segments = row(DungeonsModel.RUN_COLS,
                     { (open and "- " or "+ ") .. when(run.entered), run.name or "?", nameOf(c.display or c.name or e.charKey, c.class),
                       DungeonsModel.TimeText(run, durationOf(e, o.now)), bossText, tostring(run.deaths or 0),
-                      DungeonsModel.Group(run.party, L), result },
+                      DungeonsModel.Group(run.party, L, (DungeonsModel.MyRole(run))), result },
                     nil, nil, { nil, nil, nil, nil, nil, nil, nil, resultRole }),
                 onClick = o.toggle and function() o.toggle(runKey) end or nil,
                 tooltip = function()
                     local tip = { string.format(L.DUNGEONS_TIP_ENTERED, when(run.entered)) }
                     if run.partial then tip[#tip + 1] = DungeonsModel.PartialText(run.partial, L) end
+                    local me, guessed = DungeonsModel.MyRole(run)
+                    local roleName = me and L["DUNGEONS_ROLE_" .. me]
+                    if roleName then
+                        tip[#tip + 1] = string.format(guessed and L.DUNGEONS_TIP_ROLE_GUESS or L.DUNGEONS_TIP_ROLE, roleName)
+                    end
                     tip[#tip + 1] = string.format(L.DUNGEONS_TIP_CLICK)
                     return run.name, tip
                 end }

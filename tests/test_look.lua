@@ -140,6 +140,27 @@ H.test("Leaderboard: highest-level dungeon first; a dungeon collapses to its #1,
     LT.ui.allToggle:GetScript("OnClick")()
     H.eq(#LT.Lines(), openCount)
     H.eq(LT.ui.allToggle.text:GetText(), "Collapse all")
+    -- Folded dungeons are saved, so they stay folded after a /reload.
+    heads()[1].onClick()
+    H.eq(ns2.db.settings.leaderCollapsed["Blackfathom Deeps"], true, "saved in settings")
+    LT.state.collapsed = {} -- what a reload leaves in memory
+    H.ok(heads()[1].segments[1].text:find("^%+ Blackfathom"), "still folded after a reload")
+    heads()[1].onClick()
+end)
+H.test("Dungeons: your own role counts in With; an old run works it out from the group", function()
+    local ns3 = H.pureNamespace()
+    local DM = ns3.DungeonsModel
+    local L = { DUNGEONS_TANKS = "%d tank", DUNGEONS_HEALERS = "%d healer", DUNGEONS_DAMAGE = "%d damage",
+        DUNGEONS_OTHERS = "%d other", DUNGEONS_SOLO = "solo" }
+    local four = { { role = "DAMAGER" }, { role = "TANK" }, { role = "DAMAGER" }, { role = "DAMAGER" } }
+    H.eq(DM.Group(four, L), "1 tank, 3 damage")
+    local me, guessed = DM.MyRole({ party = four })
+    H.eq(me, "HEALER"); H.eq(guessed, true)
+    H.eq(DM.Group(four, L, me), "1 tank, 1 healer, 3 damage")
+    H.eq(DM.MyRole({ party = four, role = "DAMAGER" }), "DAMAGER", "the saved role wins")
+    H.eq(DM.MyRole({ party = { { role = "TANK" }, { role = "DAMAGER" } } }), nil, "not a full group")
+    H.eq(DM.MyRole({ party = { { role = "TANK" }, { role = "TANK" }, { role = "DAMAGER" }, { role = "DAMAGER" } } }), nil, "no clear gap")
+    H.eq(DM.Group({}, L, "HEALER"), "solo", "solo stays solo")
 end)
 H.test("Leaderboard: a run with no recorded group level uses the character's level that day", function()
     local ns3 = H.pureNamespace()

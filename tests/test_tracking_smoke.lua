@@ -537,6 +537,8 @@ H.test("dungeon group: someone who joins after the final boss never takes a memb
     st.units.party1 = { class = "WARRIOR", role = "TANK", level = 27, name = "Cain" }
     st.units.party2 = { class = "MAGE", role = "DAMAGER", level = 31, name = "Othermage" }
     st.units.party3 = { class = "PRIEST", role = "HEALER", level = 28, name = "Healer" }
+    st.units.player = st.units.player or {}
+    st.units.player.role = "DAMAGER" -- your own role is saved with the run (Austin, 2026-11-15)
     st.ejInstance = 63
     st.ejBosses = { { name = "Rhahk'Zor", id = 1 }, { name = "Captain Cookie", id = 9 } }
     st.instance = { "The Deadmines", "party", 1, "Normal", 5, 0, false, 36 }
@@ -547,6 +549,7 @@ H.test("dungeon group: someone who joins after the final boss never takes a memb
     Mock.fire(env, "ENCOUNTER_END", 9, "Captain Cookie", 1, 5, 1)
     H.ok(run.completed)
     H.eq(run.party[2].name, nil, "the mage shares no name")
+    H.eq(run.role, "DAMAGER", "your role is saved")
     -- The mage leaves; Zeryssa (a mage who shares her name) joins.
     ns.Sync.optedIn.Zeryssa = true
     st.units.party2 = { class = "MAGE", role = "DAMAGER", level = 31, name = "Zeryssa" }
