@@ -23,6 +23,42 @@ MeModel.COLUMNS = {
     { field = "skillUps", label = "COL_SKILLUPS", kind = "number", width = 54 },
 }
 
+-- The Me list's columns (1.14.0, D-135): the name (with its level in a ring and a grey
+-- line under it), then six figures. Faction, played, kills and skill-ups are on the
+-- character's page. COLUMNS stays the full set (tiles, totals, formatting).
+MeModel.LIST_FIELDS = { "name", "levels", "quests", "dungeons", "moneyNet", "active", "deaths" }
+MeModel.LIST_WIDTHS = { name = 220, moneyNet = 110 }
+function MeModel.ListColumns()
+    local out = {}
+    for _, field in ipairs(MeModel.LIST_FIELDS) do
+        for _, col in ipairs(MeModel.COLUMNS) do
+            if col.field == field then
+                out[#out + 1] = { field = col.field, label = col.label, kind = col.kind,
+                    width = MeModel.LIST_WIDTHS[field] or math.max(col.width, 64) }
+            end
+        end
+    end
+    return out
+end
+
+-- "Priest  -  Alliance  -  played 3h ago" under a character's name. L: CLASS_<TOKEN>,
+-- FACTION_*; ago(at) -> "3h ago" or nil. Without a known class or faction those parts
+-- are left out.
+function MeModel.SubText(row, L, ago, playing)
+    local parts = {}
+    local class = row.class and rawget(L, "CLASS_" .. tostring(row.class))
+    if class then parts[#parts + 1] = class end
+    if row.faction then
+        local f = ({ Horde = "FACTION_HORDE", Alliance = "FACTION_ALLIANCE", Neutral = "FACTION_NEUTRAL" })[row.faction]
+        parts[#parts + 1] = f and L[f] or tostring(row.faction)
+    end
+    if not playing and ago then
+        local when = ago(row.lastSeen)
+        if when then parts[#parts + 1] = string.format(L.ME_PLAYED_AGO, when) end
+    end
+    return table.concat(parts, "  -  ")
+end
+
 -- characters: db.characters; range: "today" | "week" | "month" | "all"
 function MeModel.Build(characters, range, todayKey, timeFn, dateFn)
     local Days = ns.Days
@@ -35,6 +71,7 @@ function MeModel.Build(characters, range, todayKey, timeFn, dateFn)
             name = c.display or c.name or key,
             class = c.class,
             faction = c.faction,
+            lastSeen = c.lastSeen,
             level = c.level or 0,
             levels = sum.levels or 0,
             quests = sum.quests or 0,

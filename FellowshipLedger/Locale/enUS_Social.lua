@@ -295,6 +295,28 @@ ns.Locale.Set({
     SET_F_JOINED = "Joined your ledger",
     SET_F_JOINED_HINT = "A friend started sharing with you",
 
+    -- Me list and character pages (1.14.0, D-135)
+    ME_BACK = "< Back",
+    ME_PLAYED_AGO = "played %s",
+    ME_TILE_AVERAGE = "Average level",
+    ME_TILE_FASTEST = "Fastest level",
+    ME_TILE_SLOWEST = "Slowest level",
+    ME_TILE_NONE = "No level timed yet.",
+    ME_TILE_LEVEL_TIP = "%s -> %s: %s active",
+    CLASS_WARRIOR = "Warrior",
+    CLASS_PALADIN = "Paladin",
+    CLASS_HUNTER = "Hunter",
+    CLASS_ROGUE = "Rogue",
+    CLASS_PRIEST = "Priest",
+    CLASS_DEATHKNIGHT = "Death Knight",
+    CLASS_SHAMAN = "Shaman",
+    CLASS_MAGE = "Mage",
+    CLASS_WARLOCK = "Warlock",
+    CLASS_MONK = "Monk",
+    CLASS_DRUID = "Druid",
+    CLASS_DEMONHUNTER = "Demon Hunter",
+    CLASS_EVOKER = "Evoker",
+
     -- Quest chains as a list and a detail pane (1.14.0, D-134)
     CHAIN_TAB_MINE = "In your log  %d",
     CHAIN_TAB_FRIENDS = "Friends are on  %d",

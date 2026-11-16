@@ -11,7 +11,10 @@
 --     onRightClick = fn(owner) (right click, D-108),
 --     align = "right" (group/detail text next to its action button),
 --     section = true (a group line drawn as a section title: small, upper case, 1.13.0),
---     tag = "Playing" (a boxed tag after the first cell's text, 1.13.0) }
+--     tag = "Playing" (a boxed tag after the first cell's text, 1.13.0),
+--     badge = "31" (a small ring with the level before the first cell, 1.14.0),
+--     sub = "Priest - Alliance" (a grey second line under the first cell, 1.14.0; give the
+--     line height = Table.TALL_H) }
 -- A grid segment with role = "section" is drawn the same way as a section title.
 -- or a "grid" line (UI/DetailModel.lua): text placed at fractions of the width,
 -- with optional small buttons, rules and a shaded box spanning several lines.
@@ -28,6 +31,10 @@ local ACTION_W = 80
 local ARROW = "Interface\\AddOns\\FellowshipLedger\\media\\sort-arrow"
 local ARROW_SIZE = 10
 local SEG_BTN_W = 96
+local BADGE = 24 -- the level ring (1.14.0)
+local RING = "Interface\\AddOns\\FellowshipLedger\\media\\ring"
+Table.TALL_H = 34 -- a line with a second line under its name
+Table.ROW_H = ROW_H
 local Obj = {}
 Obj.__index = Obj
 
@@ -150,6 +157,19 @@ function Obj:Line(i)
         w.boxEdges[name] = t
     end
     w.tag = W.Tag(w)
+    -- The level ring and the second line (1.14.0).
+    w.badge = CreateFrame("Frame", nil, w)
+    w.badge:SetSize(BADGE, BADGE)
+    w.badge.ring = w.badge:CreateTexture(nil, "ARTWORK")
+    w.badge.ring:SetTexture(RING)
+    w.badge.ring:SetAllPoints()
+    w.badge.text = W.Text(w.badge, "small", "text")
+    w.badge.text:SetPoint("CENTER", 0, 0)
+    w.badge.text:SetJustifyH("CENTER")
+    w.badge:Hide()
+    w.sub = W.Text(w, "small", "muted")
+    w.sub:SetWordWrap(false)
+    w.sub:Hide()
     w.action = W.Button(w, "", ACTION_W, ROW_H - 2)
     w.action:SetPoint("RIGHT", 0, 0)
     -- Right click: line.onRightClick(owner), e.g. a friend's Whisper / Invite menu (D-108).
@@ -364,18 +384,51 @@ function Obj:RenderGrid(w, line)
     end
 end
 
--- The boxed tag just after the first cell's text, kept inside that column.
-function Obj:PlaceTag(w, label)
+-- The boxed tag just after the first cell's text, kept inside that column. x0, dy:
+-- where the first cell's text starts and how far it is raised (a line with a badge
+-- and a second line, 1.14.0).
+function Obj:PlaceTag(w, label, x0, dy)
     local tag, cell = w.tag, w.cells[1]
     tag:SetLabel(label)
     local textW = cell:GetStringWidth()
     if type(textW) ~= "number" then textW = 0 end
     local tagW = tag:GetWidth()
     if type(tagW) ~= "number" then tagW = 40 end
-    local x = math.max(0, math.min(textW + 6, (self.widths[1] or 0) - tagW))
+    x0 = x0 or 0
+    local x = math.max(x0, math.min(x0 + textW + 6, (self.widths[1] or 0) - tagW))
     tag:ClearAllPoints()
-    tag:SetPoint("LEFT", w, "LEFT", x, 0)
+    tag:SetPoint("LEFT", w, "LEFT", x, dy or 0)
     tag:Show()
+end
+
+-- The first cell with a level ring before it and a grey line under it (1.14.0), or
+-- back in its usual place. Returns where its text starts and how far it is raised.
+function Obj:PlaceFirst(w, line)
+    local width = self.widths and self.widths[1]
+    local cell = w.cells[1]
+    local x0 = line.badge and (BADGE + 8) or 0
+    local dy = (line.sub and line.sub ~= "") and 7 or 0
+    w.badge:SetShown(line.badge ~= nil)
+    if line.badge then
+        w.badge:ClearAllPoints()
+        w.badge:SetPoint("LEFT", w, "LEFT", 0, 0)
+        w.badge.text:SetText(tostring(line.badge))
+        local c = W.Color(line.badgeRole or "muted")
+        w.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
+        W.SetTextRole(w.badge.text, line.badgeRole == "accent" and "heading" or "text")
+    end
+    w.sub:SetShown(dy ~= 0)
+    if not width then return x0, dy end
+    cell:ClearAllPoints()
+    cell:SetPoint("LEFT", x0, dy)
+    cell:SetWidth(math.max(1, width - x0))
+    if dy ~= 0 then
+        w.sub:ClearAllPoints()
+        w.sub:SetPoint("LEFT", x0, -8)
+        w.sub:SetWidth(math.max(1, width - x0))
+        w.sub:SetText(line.sub)
+    end
+    return x0, dy
 end
 
 function Obj:Render()
@@ -416,6 +469,8 @@ function Obj:Render()
             -- Grid lines are shaded only when they ask (line.shade: e.g. the quest you are on).
             w.alt:SetShown(line.shade == true or (line.kind ~= "grid" and (line.kind == "total" or line.kind == "group" or (i + self.offset) % 2 == 0)))
             w.tag:Hide()
+            w.badge:Hide()
+            w.sub:Hide()
             if line.kind == "grid" then
                 for c = 1, #self.columns do w.cells[c]:Hide() end
                 w.full:Hide()
@@ -431,7 +486,8 @@ function Obj:Render()
                     W.SetTextRole(w.cells[c], line.kind == "total" and "heading" or (line.muted and "muted" or "text"))
                     w.cells[c]:SetShown(shown)
                 end
-                if line.tag and self.widths[1] then self:PlaceTag(w, line.tag) end
+                local x0, dy = self:PlaceFirst(w, line)
+                if line.tag and self.widths[1] then self:PlaceTag(w, line.tag, x0, dy) end
             else
                 hideGrid(w)
                 for c = 1, #self.columns do w.cells[c]:Hide() end

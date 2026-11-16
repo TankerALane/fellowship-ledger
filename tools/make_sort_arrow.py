@@ -6,6 +6,7 @@ tints them):
     FellowshipLedger/media/crown.tga        16x16 crown (the best in a comparison, 1.13.0)
     FellowshipLedger/media/switch-track.tga 32x16 rounded bar (an on/off switch, 1.14.0)
     FellowshipLedger/media/switch-knob.tga  16x16 dot (the switch's knob, 1.14.0)
+    FellowshipLedger/media/ring.tga         32x32 thin circle (a character's level, 1.14.0)
 Our own art, made here so nothing from the game is shipped. Run from the repo root:
     python tools/make_sort_arrow.py
 """
@@ -72,6 +73,11 @@ def switch_knob(x, y):
     return (x - 8) ** 2 + (y - 8) ** 2 <= 7.5 * 7.5
 
 
+def ring(x, y):
+    d = ((x - 16) ** 2 + (y - 16) ** 2) ** 0.5
+    return 13.6 <= d <= 15.4
+
+
 def write(path, inside, width=SIZE, height=SIZE):
     pixels = bytearray()
     for row in range(height):  # top row first (descriptor bit 5 set below)
@@ -95,6 +101,7 @@ def main():
     write("FellowshipLedger/media/check.tga", check_mark)
     write("FellowshipLedger/media/switch-track.tga", switch_track, 32, 16)
     write("FellowshipLedger/media/switch-knob.tga", switch_knob)
+    write("FellowshipLedger/media/ring.tga", ring, 32, 32)
     write("FellowshipLedger/media/crown.tga", crown)
 
 

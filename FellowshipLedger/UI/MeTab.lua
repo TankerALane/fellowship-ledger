@@ -1,7 +1,9 @@
 -- UI/MeTab.lua
--- Me tab: ranges, a totals line, a sortable table with one row per character
--- (click a row for its levels, deaths and loot: UI/DetailModel.lua), and a "Quest chains" view of the quests
--- in your log.
+-- Me tab: ranges, tiles, a sortable table with one row per character (its level in a
+-- ring, a grey line under its name), and a "Quest chains" view of the quests in your log.
+-- 1.14.0 (D-135): clicking a character opens its own page (back link, name, its views
+-- as joined tabs, tiles, then the view) instead of opening inside the list.
+-- state.expanded holds the one character whose page is open.
 
 local _, ns = ...
 local L = ns.L
@@ -31,14 +33,37 @@ end
 
 local function cellsFor(row)
     local cells = {}
-    for c, col in ipairs(MeModel.COLUMNS) do
+    for c, col in ipairs(MeModel.ListColumns()) do
         local text = MeModel.FormatCell(col, row)
-        if c == 1 and row.key then
-            text = (state.expanded[row.key] and "- " or "+ ") .. W.ClassName(text, row.class)
-        end
+        if c == 1 and row.key then text = W.ClassName(text, row.class) end
         cells[c] = text
     end
     return cells
+end
+
+local function ago(at)
+    if type(at) ~= "number" then return nil end
+    return ns.FriendsModel.Ago(time(), at)
+end
+Me.Ago = ago
+
+-- The page that is open (1.14.0): the one key in state.expanded that is still a character.
+function Me.PageKey(chars)
+    for key in pairs(state.expanded) do
+        if chars[key] then return key end
+    end
+    return nil
+end
+
+function Me.OpenPage(key)
+    for k in pairs(state.expanded) do state.expanded[k] = nil end
+    state.expanded[key] = true
+    Me.Refresh()
+end
+
+function Me.ClosePage()
+    for k in pairs(state.expanded) do state.expanded[k] = nil end
+    Me.Refresh()
 end
 
 -- The tiles over the table (1.13.0): the range's totals for all your characters.
@@ -112,13 +137,14 @@ end
 -- The opened character: a row of view tabs (D-081), then the view. Overview is the
 -- summary card or list (Settings, D-075); "Show all" is remembered per character
 -- and list until the window is reloaded.
-function Me.OverviewLines(key, char, name)
+function Me.OverviewLines(key, char, name, noSummary)
     local all = state.showAll[key] or {}
     local skin = ns.db.settings.skin
     local data = ns.DetailModel.Data(char, L, date, all, ns.DetailModel.ArrowCode(ns.Palette.Color(skin, "text")))
     local removable = not ns.Data.IsFake() and key ~= ns.Store.key
     return ns.DetailModel.Lines(data, ns.db.settings.detailsLayout, L, {
         skin = skin,
+        noSummary = noSummary,
         valueCode = ns.Palette.Code(ns.Palette.Color(skin, "text")),
         onToggle = function(kind)
             state.showAll[key] = state.showAll[key] or {}
@@ -149,7 +175,15 @@ local function toggleIn(tbl, key, sub)
     Me.Refresh()
 end
 
-function Me.DetailLines(key, char, name)
+-- Without the tab line (a character's page has its own tabs, 1.14.0): the box joins up.
+local function dropTabs(lines)
+    table.remove(lines, 1)
+    local first = lines[1]
+    if first and first.box == "mid" then first.box = "top" elseif first and first.box == "bottom" then first.box = "single" end
+    return lines
+end
+
+function Me.DetailLines(key, char, name, noTabs)
     local S = ns.StatsModel
     local view = state.detailView[key] or "overview"
     local layout = ns.db.settings.detailsLayout
@@ -158,7 +192,10 @@ function Me.DetailLines(key, char, name)
         state.completedCache = nil
         Me.Refresh()
     end)
-    if view == "overview" then return S.WithTabs(tabs, Me.OverviewLines(key, char, name), layout) end
+    if view == "overview" then
+        if noTabs then return Me.OverviewLines(key, char, name, true) end
+        return S.WithTabs(tabs, Me.OverviewLines(key, char, name), layout)
+    end
 
     local today = ns.Store.Today()
     local fromKey = ns.Days.RangeStart(state.range, today, time, date)
@@ -197,7 +234,55 @@ function Me.DetailLines(key, char, name)
                 function(zone) toggleIn(state.openZone, key, zone) end, c.hidden)
         end
     end
-    return S.Wrap(tabs, parts, layout)
+    local lines = S.Wrap(tabs, parts, layout)
+    return noTabs and dropTabs(lines) or lines
+end
+
+-- A character page's tiles: its levels (average, fastest, slowest) and the range's gold,
+-- played time and deaths.
+function Me.PageTileValues(row, summary)
+    local F = ns.Format
+    local s = summary or {}
+    local function lv(x)
+        if not x then return "-", L.ME_TILE_NONE end
+        return F.Duration(x.active), string.format(L.ME_TILE_LEVEL_TIP, x.from or "?", x.to or "?", F.Duration(x.active))
+    end
+    local fast, fastTip = lv(s.fastest)
+    local slow, slowTip = lv(s.slowest)
+    local money = row.moneyNet or 0
+    return {
+        { label = L.ME_TILE_AVERAGE, text = s.average and F.Duration(s.average) or "-", full = s.average and F.Duration(s.average) or L.ME_TILE_NONE },
+        { label = L.ME_TILE_FASTEST, text = fast, full = fastTip },
+        { label = L.ME_TILE_SLOWEST, text = slow, full = slowTip },
+        { label = L.COL_GOLD, text = F.MoneyShort(money, true), full = F.Money(money, true), role = money < 0 and "bad" or "text" },
+        { label = L.COL_PLAYED, text = F.Duration(row.played or 0), full = F.Duration(row.played or 0) },
+        { label = L.COL_DEATHS, text = tostring(row.deaths or 0), full = tostring(row.deaths or 0) },
+    }
+end
+
+-- The open page's head, lines and tiles.
+function Me.PageLines(key, chars)
+    local char = chars[key]
+    local rows = MeModel.Build({ [key] = char }, state.range, ns.Store.Today(), time, date)
+    local row = rows[1]
+    local playing = key == ns.Store.key and not ns.Data.IsFake()
+    local head = ui.page
+    head.badge.text:SetText(tostring(row.level or "?"))
+    local c = W.Color(playing and "accent" or "muted")
+    head.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
+    head.name:SetText(W.ClassName(row.name, row.class))
+    head.sub:SetText(MeModel.SubText(row, L, ago, playing))
+    if playing then
+        head.tag:SetLabel(L.TAG_PLAYING)
+        head.tag:ClearAllPoints()
+        head.tag:SetPoint("LEFT", head.name, "RIGHT", 8, 0)
+        head.tag:Show()
+    else
+        head.tag:Hide()
+    end
+    ui.views:Select(state.detailView[key] or "overview")
+    local data = ns.DetailModel.Data(char, L, date, {}, nil)
+    return Me.DetailLines(key, char, row.name, true), Me.PageTileValues(row, data.summary)
 end
 
 local function characterLines()
@@ -220,8 +305,7 @@ local function characterLines()
         total.name = L.TOTAL_ALL
         lines[#lines + 1] = { kind = "total", cells = (function()
             local cells = {}
-            for c, col in ipairs(MeModel.COLUMNS) do cells[c] = MeModel.FormatCell(col, total) end
-            cells[2] = ""
+            for c, col in ipairs(MeModel.ListColumns()) do cells[c] = MeModel.FormatCell(col, total) end
             return cells
         end)() }
     end
@@ -229,13 +313,9 @@ local function characterLines()
         local key = row.key
         -- The character I am playing (real data only; fake characters are never played).
         local playing = key == ns.Store.key and not ns.Data.IsFake()
-        lines[#lines + 1] = { kind = "row", cells = cellsFor(row), tag = playing and L.TAG_PLAYING or nil, onClick = function()
-            state.expanded[key] = not state.expanded[key] or nil
-            Me.Refresh()
-        end }
-        if state.expanded[key] then
-            for _, line in ipairs(Me.DetailLines(key, chars[key], row.name)) do lines[#lines + 1] = line end
-        end
+        lines[#lines + 1] = { kind = "row", cells = cellsFor(row), tag = playing and L.TAG_PLAYING or nil,
+            badge = row.level, badgeRole = playing and "accent" or "muted", sub = MeModel.SubText(row, L, ago, playing),
+            height = ns.Table.TALL_H, key = key, onClick = function() Me.OpenPage(key) end }
     end
     return lines, #rows, rows
 end
@@ -423,6 +503,7 @@ end
 function Me.OpenView(key, view)
     if not key then return end
     state.mode = "characters"
+    for k in pairs(state.expanded) do state.expanded[k] = nil end
     state.expanded[key] = true
     state.detailView[key] = view
     ns.MainWindow.Open("me")
@@ -431,26 +512,79 @@ end
 function Me.Refresh()
     if not ui.table then return end
     local characters = state.mode == "characters"
+    local pageKey = characters and Me.PageKey(ns.Data.Characters()) or nil
     ui.ranges:Select(state.range)
     ui.ranges:SetShown(characters)
+    ui.modeButton:SetShown(not pageKey)
     ui.modeButton.text:SetText(characters and L.SHOW_CHAINS or L.SHOW_CHARACTERS)
     ui.chains:SetShown(not characters)
     ui.chainTabs:SetShown(not characters)
-    local lines, count, rows
+    ui.page:SetShown(pageKey ~= nil)
+    ui.views:SetShown(pageKey ~= nil)
+    local lines, count, rows, tileValues
     if state.mode == "chains" then
         refreshChains()
         lines, count = {}, 1 -- the table stays empty under the list and pane
+    elseif pageKey then
+        lines, tileValues = Me.PageLines(pageKey, ns.Data.Characters())
+        count = 1
     else
         lines, count, rows = characterLines()
+        if count > 0 then tileValues = Me.TileValues(rows) end
     end
-    -- Tiles over the characters (not over Quest chains, nor with no characters yet).
-    local tiles = characters and count > 0
+    -- Tiles over the characters or the page (not over Quest chains, nor with no characters yet).
+    local tiles = tileValues ~= nil
+    local headH = pageKey and Me.PAGE_HEAD_H or 0
+    ui.tiles:ClearAllPoints()
+    ui.tiles:SetPoint("TOPLEFT", 4, -28 - headH)
+    ui.tiles:SetPoint("TOPRIGHT", -4, -28 - headH)
     ui.tiles:SetShown(tiles)
-    if tiles then layoutTiles(Me.TileValues(rows)) end
-    ui.table:SetTop(tiles and (30 + Me.TILE_H + 8) or 30)
-    ui.table:SetHeadersShown(characters)
+    if tiles then layoutTiles(tileValues) end
+    ui.table:SetTop(30 + headH + (tiles and (Me.TILE_H + 8) or 0) - (pageKey and ns.Table.ROW_H or 0))
+    ui.table:SetHeadersShown(characters and not pageKey)
     ui.table:SetLines(lines)
     ui.empty:SetShown(count == 0)
+end
+
+-- A character's page head (1.14.0): "< Me", the level ring, the name with PLAYING,
+-- the grey line, and the views as joined tabs under it.
+Me.PAGE_HEAD_H = 72
+local function buildPage(panel)
+    local head = CreateFrame("Frame", nil, panel)
+    head:SetPoint("TOPLEFT", 4, -28)
+    head:SetPoint("TOPRIGHT", -4, -28)
+    head:SetHeight(40)
+    head:Hide()
+    ui.page = head
+    head.back = W.Button(head, L.ME_BACK, 60, 20, function() Me.ClosePage() end)
+    head.back:SetPoint("LEFT", 0, 0)
+    head.badge = CreateFrame("Frame", nil, head)
+    head.badge:SetSize(32, 32)
+    head.badge:SetPoint("LEFT", head.back, "RIGHT", 12, 0)
+    head.badge.ring = head.badge:CreateTexture(nil, "ARTWORK")
+    head.badge.ring:SetTexture("Interface\\AddOns\\FellowshipLedger\\media\\ring")
+    head.badge.ring:SetAllPoints()
+    head.badge.text = W.Text(head.badge, "body", "heading")
+    head.badge.text:SetPoint("CENTER", 0, 0)
+    head.name = W.Text(head, "large", "text")
+    head.name:SetPoint("TOPLEFT", head.badge, "TOPRIGHT", 10, 0)
+    head.sub = W.Text(head, "small", "muted")
+    head.sub:SetPoint("TOPLEFT", head.name, "BOTTOMLEFT", 0, -3)
+    head.tag = W.Tag(head)
+    local items = {}
+    for _, id in ipairs(ns.StatsModel.TABS) do
+        local label = L[ns.StatsModel.TAB_LABEL[id]]
+        items[#items + 1] = { id = id, label = label, width = math.max(56, 8 * #label + 18) }
+    end
+    ui.views = W.Segmented(panel, items, function(id)
+        local key = Me.PageKey(ns.Data.Characters())
+        if not key then return end
+        state.detailView[key] = id
+        state.completedCache = nil
+        Me.Refresh()
+    end, 22)
+    ui.views:SetPoint("TOPLEFT", 4, -28 - 46)
+    ui.views:Hide()
 end
 
 local function build(panel)
@@ -466,9 +600,10 @@ local function build(panel)
         Me.Refresh()
     end)
     ui.modeButton:SetPoint("TOPRIGHT", -4, -2)
+    buildPage(panel)
 
     local columns = {}
-    for _, col in ipairs(MeModel.COLUMNS) do
+    for _, col in ipairs(MeModel.ListColumns()) do
         columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field,
             tip = rawget(L, (col.label:gsub("^COL_", "COL_TIP_"))) }
     end

@@ -230,9 +230,12 @@ function DetailModel.Lines(data, layout, L, opts)
     else
         -- A half line of space before the summary, and a blank line before the headings
         -- like the one before Notable loot.
+        -- On a character's page the summary is in tiles above (1.14.0, opts.noSummary).
         add({ segs = {} }, { height = DetailModel.HALF_LINE })
-        add({ segs = { seg({ 0, 1 }, DetailModel.SummaryText(data.summary, L, opts.valueCode), "muted") }, rules = { { 0, 1 } } })
-        add({ segs = {} })
+        if not opts.noSummary then
+            add({ segs = { seg({ 0, 1 }, DetailModel.SummaryText(data.summary, L, opts.valueCode), "muted") }, rules = { { 0, 1 } } })
+            add({ segs = {} })
+        end
         local right = {}
         for _, h in ipairs(de) do right[#right + 1] = h end
         right[#right + 1] = { segs = {} }

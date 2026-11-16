@@ -288,7 +288,12 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.ok(shown:find("RECENT LEVELS", 1, true) and shown:find("[Show all (21)]", 1, true), shown) -- section title (1.13.0)
     local grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 21, "the tab row plus the card")
+    -- 1.14.0: the character's own page: its tabs and tiles above, so the card has no tab
+    -- row or summary line (21 before).
+    H.eq(grid, 18, "the card")
+    H.ok(Me.ui.page:IsShown() and Me.ui.views:IsShown(), "the page head and its tabs")
+    H.eq(Me.ui.tileFrames[1].label:GetText(), "AVERAGE LEVEL")
+    H.ok(not Me.ui.modeButton:IsShown(), "no Quest chains button on a page")
     -- Show all on levels, then Show less.
     local function levelsButton()
         for _, line in ipairs(Me.ui.table.lines) do
@@ -299,7 +304,7 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, true)
     grid = 0
     for _, line in ipairs(Me.ui.table.lines) do if line.kind == "grid" then grid = grid + 1 end end
-    H.eq(grid, 1 + 3 + 2 + 21 + 1 + 1, "all 21 levels listed")
+    H.eq(grid, 1 + 3 + 2 + 21 + 1 + 1 - 3, "all 21 levels listed")
     H.eq(levelsButton().label, "Show less")
     levelsButton().onClick()
     H.eq(Me.state.showAll["Alt-TestRealm"].levels, nil, "back to the last 10")
@@ -309,6 +314,18 @@ H.test("Me tab: open a character as a card or a list, Show all and Show less, sw
     ns.MainWindow.Open("me")
     Me.Refresh()
     for _, line in ipairs(Me.ui.table.lines) do H.eq(line.box, nil, "no card box in the list layout") end
+    -- The page's tabs switch the view; Back returns to the list.
+    Me.ui.views.buttons.gold:GetScript("OnClick")()
+    H.eq(Me.state.detailView["Alt-TestRealm"], "gold")
+    H.ok(Me.ui.views.buttons.gold.selected)
+    Me.ui.page.back:GetScript("OnClick")()
+    H.ok(not Me.ui.page:IsShown(), "back to the list")
+    local row
+    for _, line in ipairs(Me.ui.table.lines) do if line.key == "Alt-TestRealm" then row = line end end
+    H.eq(row.badge, 22, "the level in its ring")
+    H.ok(row.sub, "a second line under the name")
+    row.onClick()
+    H.ok(Me.ui.page:IsShown(), "a click opens the page again")
     local chat = table.concat(env.__state.chat, "\n")
     H.ok(not chat:find("failed") and not chat:find("problem"), chat)
 end)

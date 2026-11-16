@@ -387,6 +387,12 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:chainpane` | manual | Quest chains as a list and a pane (D-134): two tables side by side, progress bars with a track | `/fl, Me, Quest chains: chains listed on the left with a bar and step; clicking one shows it on the right with Next and all its quests; Friends are on switches the list; nothing overlaps in all three looks` | ? | ? |
 
+### Me
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:charpage` | manual | two-line character rows and a character page (D-135): media/ring.tga tinted, Table lines with a badge and a second line | after a game restart: /fl, Me: each character shows its level in a ring and a grey line under its name; clicking one opens its page with Back, its tabs and tiles; every tab works; Back returns to the list; nothing overlaps at the smallest window size | ? | ? |
+
 ### Dungeons
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
