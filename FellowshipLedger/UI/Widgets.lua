@@ -302,6 +302,131 @@ function W.Toggle(parent, label, get, set, width)
     return t
 end
 
+-- An on/off switch (1.14.0): a rounded bar with a knob, our own art (media/switch-*.tga,
+-- white, tinted here). The knob's side shows the state, not only the color: right and
+-- filled with the "good" color when on, left and grey when off. get() returns the value,
+-- set(v) stores it; s:Refresh() redraws, s:SetDisabled(off) dims it and ignores clicks.
+local MEDIA = "Interface\\AddOns\\FellowshipLedger\\media\\"
+W.SWITCH_W, W.SWITCH_H = 30, 15
+function W.Switch(parent, get, set)
+    local s = CreateFrame("Button", nil, parent)
+    s:SetSize(W.SWITCH_W, W.SWITCH_H)
+    s.disabled = false
+    s.track = s:CreateTexture(nil, "ARTWORK")
+    s.track:SetTexture(MEDIA .. "switch-track")
+    s.track:SetAllPoints()
+    s.knob = s:CreateTexture(nil, "OVERLAY")
+    s.knob:SetTexture(MEDIA .. "switch-knob")
+    s.knob:SetSize(W.SWITCH_H - 4, W.SWITCH_H - 4)
+    local function tint(tex, role, alpha)
+        local c = W.Color(role)
+        tex:SetVertexColor(c[1], c[2], c[3], alpha or 1)
+    end
+    function s:Refresh()
+        local on = get() and true or false
+        self.on = on
+        local dim = self.disabled and 0.35 or 1
+        tint(self.track, on and "good" or "buttonBorder", (on and 0.75 or 0.6) * dim)
+        tint(self.knob, on and "text" or "muted", dim)
+        self.knob:ClearAllPoints()
+        if on then self.knob:SetPoint("RIGHT", -2, 0) else self.knob:SetPoint("LEFT", 2, 0) end
+    end
+    function s:SetDisabled(off)
+        self.disabled = off
+        self:Refresh()
+    end
+    s:SetScript("OnClick", function(self)
+        if self.disabled then return end
+        set(not get())
+        self:Refresh()
+    end)
+    s:Refresh()
+    return s
+end
+
+-- A settings row (1.14.0): the label (and a short grey hint under it) on the left, a
+-- switch on the right; a click anywhere on the row flips it. Same Refresh and
+-- SetDisabled as W.Toggle. row.switch is the switch.
+function W.SwitchRow(parent, label, hint, get, set, width)
+    local r = CreateFrame("Button", nil, parent)
+    local tall = hint ~= nil and hint ~= ""
+    r:SetSize(width or 260, tall and 32 or 22)
+    r.disabled = false
+    r.text = W.Text(r, "body", "text")
+    r.text:SetText(label)
+    r.switch = W.Switch(r, get, set)
+    r.switch:SetPoint("RIGHT", -10, 0)
+    if tall then
+        r.text:SetPoint("TOPLEFT", 10, -4)
+        r.hint = W.Text(r, "small", "muted")
+        r.hint:SetPoint("TOPLEFT", r.text, "BOTTOMLEFT", 0, -2)
+        r.hint:SetPoint("RIGHT", r.switch, "LEFT", -8, 0)
+        r.hint:SetText(hint)
+    else
+        r.text:SetPoint("LEFT", 10, 0)
+    end
+    r.text:SetPoint("RIGHT", r.switch, "LEFT", -8, 0)
+    r.switch:SetScript("OnClick", function() r:GetScript("OnClick")(r) end)
+    function r:Refresh()
+        self.switch.disabled = self.disabled
+        self.switch:Refresh()
+        W.SetTextRole(self.text, self.disabled and "muted" or "text")
+    end
+    function r:SetDisabled(off)
+        self.disabled = off
+        self:Refresh()
+    end
+    r:SetScript("OnClick", function(self)
+        if self.disabled then return end
+        set(not get())
+        self:Refresh()
+    end)
+    r:Refresh()
+    return r
+end
+
+-- A titled card (1.14.0): a panel with a thin border and a small upper-case title in
+-- the section color, a rule under it, and an optional note on the right of the title
+-- (card.count). card:Add(frame, height, shade) stacks a row under the last one;
+-- card:Finish() fits the height. card.y is the next row's offset from the top.
+function W.Card(parent, title, width)
+    local c = CreateFrame("Frame", nil, parent)
+    c:SetSize(width or 260, 40)
+    W.Background(c, "panel")
+    W.Border(c, "rule", 1)
+    c.title = W.Text(c, "small", "section")
+    c.title:SetPoint("TOPLEFT", 10, -8)
+    c.title:SetText(ns.Format.Upper(title or ""))
+    c.count = W.Text(c, "small", "muted")
+    c.count:SetPoint("TOPRIGHT", -10, -8)
+    c.count:SetJustifyH("RIGHT")
+    local rule = W.Rule(c, "rule")
+    rule:SetPoint("TOPLEFT", 1, -24)
+    rule:SetPoint("TOPRIGHT", -1, -24)
+    c.y = -26
+    c.rows = {}
+    function c:Add(frame, height, shade)
+        frame:ClearAllPoints()
+        frame:SetPoint("TOPLEFT", self, "TOPLEFT", 1, self.y)
+        frame:SetPoint("TOPRIGHT", self, "TOPRIGHT", -1, self.y)
+        if height then frame:SetHeight(height) end
+        if shade then
+            local bg = frame:CreateTexture(nil, "BACKGROUND")
+            bg:SetAllPoints()
+            W.Fill(bg, "rowAlt")
+        end
+        self.rows[#self.rows + 1] = frame
+        local h = height or frame:GetHeight()
+        self.y = self.y - (type(h) == "number" and h or 22)
+        return frame
+    end
+    function c:Finish(pad)
+        self:SetHeight(-self.y + (pad or 6))
+        return self
+    end
+    return c
+end
+
 -- A name in its class color, if class colors are on (Settings) and the class is known.
 function W.ClassName(text, classToken)
     if not text or text == "" or not (ns.db and ns.db.settings and ns.db.settings.classColors) then return text end

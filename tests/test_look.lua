@@ -202,3 +202,47 @@ H.test("Plain look: a Ledger user moves once and is told; the opacity slider set
     H.eq(ui.opacityValue:GetText(), "100% solid")
     H.eq(ns2.Widgets.Opacity(), 1)
 end)
+H.test("Settings in sub-tabs: one page at a time, switch rows, notice counts, tracker switches", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.runTimers(env)
+    ns2.MainWindow.Open("settings")
+    local ST, ui = ns2.SettingsTab, ns2.SettingsTab.ui
+    H.eq(ST.state.page, "general")
+    H.ok(ui.pages.general:IsShown()); H.ok(not ui.pages.notices:IsShown())
+    -- The sub-tab buttons switch pages.
+    ui.tabs.buttons.notices:GetScript("OnClick")()
+    H.eq(ST.state.page, "notices")
+    H.ok(ui.pages.notices:IsShown()); H.ok(not ui.pages.general:IsShown())
+    -- A click on a switch row flips its setting and the card's count follows.
+    local row
+    for _, r in ipairs(ui.toggles) do if type(r.text) == "table" and r.text:GetText() == "Also in chat" then row = r end end
+    H.ok(row, "the chat row")
+    local before = ns2.db.settings.toastChat == true
+    local countBefore = ui.counts[1].card.count:GetText()
+    row:GetScript("OnClick")(row)
+    H.eq(ns2.db.settings.toastChat == true, not before)
+    H.ok(ui.counts[1].card.count:GetText() ~= countBefore, "count changed")
+    H.ok(ui.counts[1].card.count:GetText():find("^%d+ of 7 on$"), ui.counts[1].card.count:GetText())
+    -- Clicking the switch itself does the same as the row.
+    row.switch:GetScript("OnClick")(row.switch)
+    H.eq(ns2.db.settings.toastChat == true, before)
+    -- Tracking: the Track switch turns a tracker off for this character; Share dims.
+    ST.Show("tracking")
+    local levels = ui.trackerRows[1]
+    H.eq(levels.id, "levels")
+    local c = ns2.db.characters[ns2.Store.key]
+    levels.track:GetScript("OnClick")(levels.track)
+    H.eq(c.flags.levels.track, false)
+    H.ok(levels.share.disabled, "share dimmed without tracking")
+    H.eq(levels.what:GetText(), "time per level, XP by source")
+    levels.track:GetScript("OnClick")(levels.track)
+    H.eq(c.flags.levels.track, true)
+    -- Look: the look buttons are joined, Plain first.
+    ST.Show("look")
+    ui.skin.buttons.leather:GetScript("OnClick")()
+    H.eq(ns2.db.settings.skin, "leather")
+    H.ok(ui.skin.buttons.leather.selected)
+end)

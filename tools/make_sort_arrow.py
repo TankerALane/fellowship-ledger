@@ -4,6 +4,8 @@ tints them):
     FellowshipLedger/media/level-arrow.tga  16x16 arrow pointing right ("9 -> 10")
     FellowshipLedger/media/check.tga        16x16 check mark (a quest you have done)
     FellowshipLedger/media/crown.tga        16x16 crown (the best in a comparison, 1.13.0)
+    FellowshipLedger/media/switch-track.tga 32x16 rounded bar (an on/off switch, 1.14.0)
+    FellowshipLedger/media/switch-knob.tga  16x16 dot (the switch's knob, 1.14.0)
 Our own art, made here so nothing from the game is shipped. Run from the repo root:
     python tools/make_sort_arrow.py
 """
@@ -57,10 +59,23 @@ def crown(x, y):
     return False
 
 
-def write(path, inside):
+def switch_track(x, y):
+    # 32x16: a bar with round ends, radius 7.5 around y 8.
+    r = 7.5
+    if 8 <= x <= 24:
+        return abs(y - 8) <= r
+    cx = 8 if x < 8 else 24
+    return (x - cx) ** 2 + (y - 8) ** 2 <= r * r
+
+
+def switch_knob(x, y):
+    return (x - 8) ** 2 + (y - 8) ** 2 <= 7.5 * 7.5
+
+
+def write(path, inside, width=SIZE, height=SIZE):
     pixels = bytearray()
-    for row in range(SIZE):  # top row first (descriptor bit 5 set below)
-        for col in range(SIZE):
+    for row in range(height):  # top row first (descriptor bit 5 set below)
+        for col in range(width):
             hits = 0
             for sy in range(SAMPLES):
                 for sx in range(SAMPLES):
@@ -68,7 +83,7 @@ def write(path, inside):
                         hits += 1
             alpha = round(255 * hits / (SAMPLES * SAMPLES))
             pixels += bytes((255, 255, 255, alpha))  # BGRA
-    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, SIZE, SIZE, 32, 0x28)
+    header = struct.pack("<BBBHHBHHHHBB", 0, 0, 2, 0, 0, 0, 0, 0, width, height, 32, 0x28)
     out = pathlib.Path(path)
     out.write_bytes(header + bytes(pixels))
     print("wrote", out, len(header) + len(pixels), "bytes")
@@ -78,6 +93,8 @@ def main():
     write("FellowshipLedger/media/sort-arrow.tga", sort_arrow)
     write("FellowshipLedger/media/level-arrow.tga", level_arrow)
     write("FellowshipLedger/media/check.tga", check_mark)
+    write("FellowshipLedger/media/switch-track.tga", switch_track, 32, 16)
+    write("FellowshipLedger/media/switch-knob.tga", switch_knob)
     write("FellowshipLedger/media/crown.tga", crown)
 
 

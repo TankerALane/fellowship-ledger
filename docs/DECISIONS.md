@@ -477,3 +477,10 @@ Austin (2026-11-15): "Plain flows and fits better into the game." Make it the de
 Austin (2026-11-15) asked for his own role in "With" (a run he healed showed no healer) and for the Leaderboard folding to last.
 - **Role.** New runs save run.role (UnitGroupRolesAssigned("player"); TANK, HEALER or DAMAGER, else nil), updated wherever the party is (start, each boss, roster changes, the final boss). Older runs: only in a group of five whose other four are exactly one short of 1 tank, 1 healer and 3 damage is the missing role taken as yours, and the run's tooltip says it was worked out. Not shared with friends (their copies keep only friends' names).
 - **Folds.** settings.leaderCollapsed { [dungeon] = true }, account-wide, so the same dungeons stay folded on every character and after a /reload.
+
+## D-133 Settings in sub-tabs and cards; switches (1.14.0)
+Austin (2026-11-15): Settings and Quest chains "just feel like large pages of words". Mock-up approved the same day (https://claude.ai/artifact/Rwn19Zp42G3RdRmZc1gMTi).
+- **Pages.** General (Window; Goals and dungeon timer; Recommended addons), Look (look, background, scale, text size, details, class colors, colorblind), Tracking & sharing (a Trackers table with Track and Share switches and what each records; Sharing with friends; How it works), Notices (How notices show, Your notices, Friend notices, each with "n of m on"), Block list, About. Not remembered across reloads; opens on General.
+- **Rows.** A short label with a grey hint under it and a switch on the right (W.SwitchRow); the old long sentences and notes (relay, catch-up) are the hover tooltips. W.Card draws the titled panels.
+- **Switches.** Our own art, media/switch-track.tga and switch-knob.tga (tools/make_sort_arrow.py), white and tinted: on = knob right and the good color, off = knob left and grey, so the state is not shown by color alone. New files need a full game restart.
+- The welcome panel and "tidy old characters" sit under How notices show; the dungeon timer and goals moved to General.

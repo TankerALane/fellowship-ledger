@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- **Settings** is split into small tabs (General, Look, Tracking & sharing, Notices, Block list, About), each a few titled cards of switches with a short line under each. The longer explanations show when you hover.
 - Dungeons, **With** column: your own role now counts, so a run you healed shows its healer. Runs from before this update work it out when the rest of a five-player group was one role short (the tooltip says so).
 - Leaderboard: dungeons you fold stay folded after a /reload.
 

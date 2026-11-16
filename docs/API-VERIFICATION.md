@@ -379,6 +379,7 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `m:look` | manual | the 1.13.0 look fits and reads well in all three looks (D-130) | `/fl: the header shows friends online and the last sync with Sync, Settings and X; the range buttons are one joined group; the Me tab tiles show the range's totals; section titles are small capitals; PLAYING is a boxed tag; Leaderboard and This week show bars and a crown. Check Ledger, Leather and Plain, and a small window` | ? | ? |
+| `m:settingspages` | manual | Settings in sub-tabs and cards with our own switch art (D-133): media/switch-track.tga, switch-knob.tga tinted with SetVertexColor | after a full game restart: /fl, Settings: each of the six tabs shows its cards without overlap in all three looks; switches show the knob right and green when on; clicking a row or its switch flips it | ? | ? |
 
 ### Dungeons
 
