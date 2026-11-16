@@ -297,6 +297,7 @@ ns.Locale.Set({
 
     -- Me list and character pages (1.14.0, D-135)
     ME_BACK = "< Back",
+    FRIEND_PAGE_OF = "%s's character",
     ME_PLAYED_AGO = "played %s",
     ME_TILE_AVERAGE = "Average level",
     ME_TILE_FASTEST = "Fastest level",

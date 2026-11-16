@@ -497,3 +497,9 @@ Austin (2026-11-15) approved the Me and Friends mock-ups (same canvas, second ro
 - **List:** MeModel.ListColumns(): Character (level ring, class colour, PLAYING, a grey line: class, faction, "played 3h ago"), Levels, Quests, Dungeons, Gold, Active, Deaths. Faction, Played, Kills and Skill-ups left the list; the page has them. Sorting by level stays the default. Table lines gained badge, badgeRole and sub (height Table.TALL_H); media/ring.tga is our own art.
 - **Page:** state.expanded holds the one open character (Me.OpenPage / ClosePage). The head: "< Back", the level ring, the name, PLAYING, the grey line; the views as joined tabs (StatsModel.TABS); six tiles (average, fastest, slowest level; the range's gold, played, deaths; hover for detail); then the view without its old tab row (and Overview without its summary line, now the tiles). The range buttons stay at the top and are shared with the list.
 - **Card or list** (Settings > Look > Character details) still picks levels beside deaths and loot, or one under the other.
+
+## D-136 Friends: two-line rows, This week beside the list, a page per character (1.14.0)
+With D-135 (Austin's "go with your choices", 2026-11-15).
+- **List:** Character (level ring, class and faction under it, PLAYING), Levels, Quests, Dungeons, Active, Last played, and Block. Faction, Gold, Played, Deaths, Kills and Skill-ups moved to the page.
+- **This week:** a 290 px panel on the right (FriendsModel.CompareStacked: per stat a title, then a line per person with a bar and the crown), last week above it after a reset. Shown by default; the This week button hides it. Hidden on a page.
+- **Page:** the Me tab's head (MeTab.PageHead / FillHead) with "Hamlet's character" in the grey line, and StatsModel.FRIEND_TABS as joined tabs. One page at a time (state.expanded); a clicked notice opens its page.

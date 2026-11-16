@@ -25,7 +25,7 @@ Works on **WoW Forever** and **retail**, and keeps their data completely separat
 
 The window opens with your friends online and when you last synced at the top, beside **Sync** and **Settings**.
 
-**Me**: totals for the range you pick at the top, then all your characters in one sortable table. Click one to open it:
+**Me**: totals for the range you pick at the top, then all your characters in one sortable list. Click one to open its own page:
 - **Overview**: average, fastest and slowest level, recent levels, deaths (with your level and the killer's) and notable loot. Show it as a card or a list.
 - **XP**: where your XP came from (quests, kills, exploration) this session and for recent levels.
 - **Quests**: turn-ins with XP, gold and zone.
@@ -37,7 +37,7 @@ The window opens with your friends online and when you last synced at the top, b
 
 **Quest chains**: every chain in your quest log in a list, each with its step and a progress bar. Pick one to see what to do next, all its quests, their levels, which ones you've done, and who starts each one and where, with map coordinates. It also lists chains your friends are on that you haven't started, and which friends are on the same chain as you.
 
-**Friends**: friends who run the ledger, grouped under their Battle.net name. Open any of their characters just like your own, with whatever they choose to share. **This week** puts you and your friends side by side, with a crown on the best. Right-click a friend to whisper or invite them.
+**Friends**: friends who run the ledger, grouped under their Battle.net name. Open any of their characters just like your own, with whatever they choose to share. **This week**, in a panel beside them, puts you and your friends side by side, with a crown on the best. Right-click a friend to whisper or invite them.
 
 **Graphs**: levels per session, time per level, quests per day, gold per session and XP per hour. **Compare** puts any two characters side by side, yours or a friend's.
 

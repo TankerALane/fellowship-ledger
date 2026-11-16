@@ -552,7 +552,7 @@ H.test("/fl shots: the 1.8.0 pictures have something to show, and fake friends a
     H.eq(whispers, 0, "no whisper to a made-up friend")
     ns.Data.DisableFake()
     H.ok(not ns.SessionGoals.Frame():IsShown() and not ns.InviteDialog.Frame():IsShown(), "windows closed afterwards")
-    H.eq(ns.FriendsTab.state.weekly, false, "weekly panel put back")
+    H.eq(ns.FriendsTab.state.weekly, true, "weekly panel put back as it was (shown, 1.14.0)")
 end)
 
 H.test("/fl shots: no Screenshot function, one message and nothing changed", function()

@@ -266,20 +266,7 @@ function Me.PageLines(key, chars)
     local rows = MeModel.Build({ [key] = char }, state.range, ns.Store.Today(), time, date)
     local row = rows[1]
     local playing = key == ns.Store.key and not ns.Data.IsFake()
-    local head = ui.page
-    head.badge.text:SetText(tostring(row.level or "?"))
-    local c = W.Color(playing and "accent" or "muted")
-    head.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
-    head.name:SetText(W.ClassName(row.name, row.class))
-    head.sub:SetText(MeModel.SubText(row, L, ago, playing))
-    if playing then
-        head.tag:SetLabel(L.TAG_PLAYING)
-        head.tag:ClearAllPoints()
-        head.tag:SetPoint("LEFT", head.name, "RIGHT", 8, 0)
-        head.tag:Show()
-    else
-        head.tag:Hide()
-    end
+    Me.FillHead(ui.page, row, playing, MeModel.SubText(row, L, ago, playing))
     ui.views:Select(state.detailView[key] or "overview")
     local data = ns.DetailModel.Data(char, L, date, {}, nil)
     return Me.DetailLines(key, char, row.name, true), Me.PageTileValues(row, data.summary)
@@ -549,14 +536,16 @@ end
 -- A character's page head (1.14.0): "< Me", the level ring, the name with PLAYING,
 -- the grey line, and the views as joined tabs under it.
 Me.PAGE_HEAD_H = 72
-local function buildPage(panel)
+
+-- The head of a character page, shared with the Friends tab: "< Back", the level ring,
+-- the name, PLAYING and a grey line. Placed under the range buttons.
+function Me.PageHead(panel, onBack)
     local head = CreateFrame("Frame", nil, panel)
     head:SetPoint("TOPLEFT", 4, -28)
     head:SetPoint("TOPRIGHT", -4, -28)
     head:SetHeight(40)
     head:Hide()
-    ui.page = head
-    head.back = W.Button(head, L.ME_BACK, 60, 20, function() Me.ClosePage() end)
+    head.back = W.Button(head, L.ME_BACK, 60, 20, onBack)
     head.back:SetPoint("LEFT", 0, 0)
     head.badge = CreateFrame("Frame", nil, head)
     head.badge:SetSize(32, 32)
@@ -571,20 +560,48 @@ local function buildPage(panel)
     head.sub = W.Text(head, "small", "muted")
     head.sub:SetPoint("TOPLEFT", head.name, "BOTTOMLEFT", 0, -3)
     head.tag = W.Tag(head)
+    return head
+end
+
+-- The views of a page as joined tabs, under its head.
+function Me.PageViews(panel, tabs, onPick)
     local items = {}
-    for _, id in ipairs(ns.StatsModel.TABS) do
+    for _, id in ipairs(tabs) do
         local label = L[ns.StatsModel.TAB_LABEL[id]]
         items[#items + 1] = { id = id, label = label, width = math.max(56, 8 * #label + 18) }
     end
-    ui.views = W.Segmented(panel, items, function(id)
+    local g = W.Segmented(panel, items, onPick, 22)
+    g:SetPoint("TOPLEFT", 4, -28 - 46)
+    g:Hide()
+    return g
+end
+
+-- row: { name, class, level }; playing: show PLAYING; sub: the grey line.
+function Me.FillHead(head, row, playing, sub)
+    head.badge.text:SetText(tostring(row.level or "?"))
+    local c = W.Color(playing and "accent" or "muted")
+    head.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
+    head.name:SetText(W.ClassName(row.name, row.class))
+    head.sub:SetText(sub or "")
+    if playing then
+        head.tag:SetLabel(L.TAG_PLAYING)
+        head.tag:ClearAllPoints()
+        head.tag:SetPoint("LEFT", head.name, "RIGHT", 8, 0)
+        head.tag:Show()
+    else
+        head.tag:Hide()
+    end
+end
+
+local function buildPage(panel)
+    ui.page = Me.PageHead(panel, function() Me.ClosePage() end)
+    ui.views = Me.PageViews(panel, ns.StatsModel.TABS, function(id)
         local key = Me.PageKey(ns.Data.Characters())
         if not key then return end
         state.detailView[key] = id
         state.completedCache = nil
         Me.Refresh()
-    end, 22)
-    ui.views:SetPoint("TOPLEFT", 4, -28 - 46)
-    ui.views:Hide()
+    end)
 end
 
 local function build(panel)

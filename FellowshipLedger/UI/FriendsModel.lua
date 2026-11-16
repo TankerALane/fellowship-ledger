@@ -218,6 +218,34 @@ function FriendsModel.CompareLines(rows, L, opts)
     return out
 end
 
+-- The same comparison stacked for a narrow panel (1.14.0, D-136): per stat a small
+-- title, then one line per person (name, a bar, the figure), the best with the crown.
+function FriendsModel.CompareStacked(rows, L, opts)
+    opts = opts or {}
+    local function seg(x, w, text, role, font, align)
+        return { x = x, w = w, text = text or "", role = role or "text", font = font or "body", align = align }
+    end
+    local out = {}
+    for _, s in ipairs(FriendsModel.COMPARE) do
+        local max = 0
+        for _, r in ipairs(rows) do max = math.max(max, tonumber(r[s.field]) or 0) end
+        out[#out + 1] = { kind = "grid", segments = { seg(.02, .96, L[s.label], "section") }, stat = s.field }
+        for _, r in ipairs(rows) do
+            local v = tonumber(r[s.field]) or 0
+            local best = #rows > 1 and v > 0 and v == max
+            local text = s.duration and (opts.duration and opts.duration(v) or tostring(v)) or tostring(v)
+            local name = r.name or "?"
+            if best and opts.crown then name = opts.crown .. " " .. name end
+            out[#out + 1] = { kind = "grid", segments = {
+                seg(.02, .38, name, r.isMe and "good" or (best and "heading" or "text"), "small"),
+                { x = .42, w = .34, bar = max > 0 and v / max or 0, track = true, barRole = best and "accent" or "muted", barH = 5 },
+                seg(.76, .22, text, best and "heading" or "text", "small", "RIGHT") } }
+        end
+        out[#out + 1] = { kind = "grid", height = 6, segments = {} }
+    end
+    return out
+end
+
 -- The ledger line in the game's tooltip on a friend's character (D-099):
 -- "Ledger: Hamlet's character, 12 quests and 2 dungeons this week".
 -- f: the friend record; key: the character key; sum: Days.Sum for this week.

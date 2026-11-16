@@ -85,19 +85,23 @@ H.test("Friends tab: This week compares you and friends side by side (fake data)
     Mock.slash(env, "fake")
     ns2.MainWindow.Open("friends")
     local FT = ns2.FriendsTab
-    FT.ui.weeklyButton:GetScript("OnClick")()
-    local lines = ns2.FriendsTab.ui.table.lines
+    -- 1.14.0: This week is a panel beside the list, shown by default; per stat a title,
+    -- then a line per person with a bar.
+    H.ok(FT.ui.week:IsShown(), "the panel is shown")
+    local lines = FT.ui.weekTable.lines
     local section, people, crowns = false, 0, 0
     for _, l in ipairs(lines) do
         if l.kind == "group" and l.section and l.text:find("This week", 1, true) then section = true end
-        if l.kind == "grid" and l.segments[1] and l.segments[1].role ~= "muted" and #l.segments > 4 then
+        if l.kind == "grid" and #l.segments == 3 and l.segments[2].bar then
             people = people + 1
-            for _, s in ipairs(l.segments) do if s.text and s.text:find("crown", 1, true) then crowns = crowns + 1 end end
+            if l.segments[1].text:find("crown", 1, true) then crowns = crowns + 1 end
         end
     end
     H.ok(section, "This week as a section title")
     H.ok(people >= 2, "people compared: " .. people)
     H.ok(crowns >= 1, "at least one crown")
+    FT.ui.weeklyButton:GetScript("OnClick")()
+    H.ok(not FT.ui.week:IsShown(), "the button hides it")
     H.eq(ns2.MainWindow.status:GetText(), "", "fake data: the banner speaks, not the header")
 end)
 H.test("Leaderboard: highest-level dungeon first; a dungeon collapses to its #1, Collapse all and Open all", function()
@@ -245,4 +249,30 @@ H.test("Settings in sub-tabs: one page at a time, switch rows, notice counts, tr
     ui.skin.buttons.leather:GetScript("OnClick")()
     H.eq(ns2.db.settings.skin, "leather")
     H.ok(ui.skin.buttons.leather.selected)
+end)
+
+H.test("Friends: two-line rows; a friend's character opens as its own page with Back", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.runTimers(env)
+    Mock.slash(env, "fake")
+    ns2.MainWindow.Open("friends")
+    local FT = ns2.FriendsTab
+    local row
+    for _, l in ipairs(FT.ui.table.lines) do if l.kind == "row" and l.badge then row = l break end end
+    H.ok(row, "a character row with its level ring")
+    H.ok(row.sub and row.sub ~= "", "a grey line under the name")
+    row.onClick()
+    H.ok(FT.ui.page:IsShown() and FT.ui.views:IsShown(), "the page head and its tabs")
+    H.ok(not FT.ui.week:IsShown(), "no This week panel on a page")
+    H.ok(FT.ui.page.sub:GetText():find("'s character", 1, true), FT.ui.page.sub:GetText())
+    for _, l in ipairs(FT.ui.table.lines) do
+        for _, s in ipairs(l.segments or {}) do H.ok(not (s.button and s.button.fill), "no old tab row on the page") end
+    end
+    FT.ui.views.buttons.gold:GetScript("OnClick")()
+    H.eq(FT.state.detailView[FT.PageId()], "gold")
+    FT.ui.page.back:GetScript("OnClick")()
+    H.ok(not FT.ui.page:IsShown() and FT.ui.week:IsShown(), "back to the list and This week")
 end)

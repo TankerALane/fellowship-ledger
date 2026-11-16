@@ -1,4 +1,6 @@
 -- UI/FriendsTab.lua
+-- 1.14.0 (D-136): characters in two lines (level ring, class and faction), This week in
+-- a panel on the right, and a friend's character opens as its own page like on Me.
 -- Friends tab: Battle.net friends under their name with their characters beneath,
 -- character-only friends on their own, the same ranges as the Me tab, a "last
 -- updated" column and Block buttons. Real friend data arrives with sharing in
@@ -12,24 +14,20 @@ local MeModel, FriendsModel = ns.MeModel, ns.FriendsModel
 local FriendsTab = {}
 ns.FriendsTab = FriendsTab
 
-local state = { range = "week", weekly = false, sort = nil, desc = false, expanded = {}, detailView = {}, showAll = {} }
+local state = { range = "week", weekly = true, sort = nil, desc = false, expanded = {}, detailView = {}, showAll = {} }
+FriendsTab.WEEK_W = 290 -- the This week panel (1.14.0)
 local ui = {}
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
 
+-- 1.14.0: the name (level ring, class and faction under it) and five figures; the rest
+-- is on the character's page.
 local COLUMNS = {
-    { field = "name", label = "COL_CHARACTER", width = 170 },
-    { field = "level", label = "COL_LEVEL", width = 40 },
-    { field = "faction", label = "COL_FACTION", width = 62 },
-    { field = "levels", label = "COL_LEVELS", width = 52 },
-    { field = "quests", label = "COL_QUESTS", width = 54 },
+    { field = "name", label = "COL_CHARACTER", width = 200 },
+    { field = "levels", label = "COL_LEVELS", width = 56 },
+    { field = "quests", label = "COL_QUESTS", width = 58 },
     { field = "dungeons", label = "COL_DUNGEONS", width = 70 },
-    { field = "moneyNet", label = "COL_GOLD", width = 104 },
     { field = "active", label = "COL_ACTIVE", width = 70 },
-    { field = "played", label = "COL_PLAYED", width = 70 },
-    { field = "deaths", label = "COL_DEATHS", width = 50 },
-    { field = "kills", label = "COL_KILLS", width = 50 },
-    { field = "skillUps", label = "COL_SKILLUPS", width = 54 },
-    { field = "lastPlayed", label = "COL_LAST_PLAYED", width = 90 },
+    { field = "lastPlayed", label = "COL_LAST_PLAYED", width = 86 },
 }
 
 local KIND = { level = "number", faction = "faction", levels = "number", quests = "number", dungeons = "pair", moneyNet = "money",
@@ -44,7 +42,7 @@ end
 -- and a crown on the best (FriendsModel.CompareLines).
 local function compareLines(rows)
     local crown = ns.DetailModel.IconCode("crown", W.Color("section"))
-    return FriendsModel.CompareLines(rows, L, { crown = crown, duration = ns.Format.Duration, inset = 18 })
+    return FriendsModel.CompareStacked(rows, L, { crown = crown, duration = ns.Format.Duration })
 end
 
 local function weeklyLines()
@@ -216,17 +214,37 @@ function FriendsTab.DetailLines(id, char)
         local friend = ns.Data.Friends()[id:match("^(.-)|") or ""]
         parts = S.FriendProfessions(sum, char.professions, shared, L, date, friend and friend.version)
     end
-    return S.Wrap(tabs, parts, layout)
+    local out = S.Wrap(tabs, parts, layout)
+    -- The page has its own tabs (1.14.0): drop the tab row and join the box up.
+    table.remove(out, 1)
+    local first = out[1]
+    if first and first.box == "mid" then first.box = "top" elseif first and first.box == "bottom" then first.box = "single" end
+    return out
 end
+
+-- The open page (1.14.0): the one id in state.expanded whose character is still shared.
+function FriendsTab.PageId()
+    local all = ns.Data.Friends()
+    for id in pairs(state.expanded) do
+        local fid, key = id:match("^(.-)|(.*)$")
+        local f = fid and all[fid]
+        if f and f.characters and f.characters[key] then return id, f, key, f.characters[key] end
+    end
+    return nil
+end
+
+local function openPage(id)
+    for k in pairs(state.expanded) do state.expanded[k] = nil end
+    if id then state.expanded[id] = true end
+    FriendsTab.Refresh()
+end
+FriendsTab.OpenPage = openPage
 
 local function lines()
     local now = time()
     local rows, hidden = FriendsModel.Build(ns.Data.Friends(), ns.db.blocklist, state.range, ns.Store.Today(), time, date,
         state.sort, state.desc)
     local out = {}
-    if state.weekly then
-        for _, l in ipairs(weeklyLines()) do out[#out + 1] = l end
-    end
     for _, r in ipairs(rows) do
         if r.header then
             local f = r.friend
@@ -246,7 +264,7 @@ local function lines()
                     local text, live = FriendsModel.LastPlayed(now, r)
                     cells[c] = live and (ns.Palette.Code(W.Color("good")) .. L.FRIEND_NOW .. "|r") or text
                 elseif col.field == "name" then
-                    cells[c] = (state.expanded[openId] and "- " or "+ ") .. W.ClassName(r.name, r.class)
+                    cells[c] = W.ClassName(r.name, r.class)
                 else
                     cells[c] = MeModel.FormatCell({ field = col.field, kind = KIND[col.field] }, r)
                 end
@@ -254,24 +272,19 @@ local function lines()
             local friend = ns.Data.Friends()[r.friendId]
             local char = friend and friend.characters and friend.characters[r.key]
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
-            out[#out + 1] = { kind = "row", id = openId, cells = cells, indent = r.indent,
-                tag = r.playing and L.TAG_PLAYING or nil,
+            out[#out + 1] = { kind = "row", id = openId, cells = cells,
+                tag = r.playing and L.TAG_PLAYING or nil, height = ns.Table.TALL_H,
+                badge = r.level, badgeRole = r.playing and "accent" or "muted", sub = MeModel.SubText(r, L, nil, true),
                 tooltip = function()
                     local me = ns.Store.char
                     r.common = #FriendsModel.CommonQuests(me and me.logQuests, char and char.logQuests)
                     return FriendsModel.Tooltip(r, char, friend, time(), L, factionText)
                 end,
-                onClick = function()
-                    state.expanded[openId] = not state.expanded[openId] or nil
-                    FriendsTab.Refresh()
-                end,
+                onClick = function() openPage(openId) end,
                 onRightClick = function(owner)
                     FriendsTab.OpenMenu(owner, r.friendId, r.name, r.playing, r.name)
                 end,
                 action = (not r.indent) and { label = L.BLOCK, onClick = function() FriendsTab.Block(friend.tag or r.key) end } or nil }
-            if state.expanded[openId] and char then
-                for _, l in ipairs(FriendsTab.DetailLines(openId, char)) do out[#out + 1] = l end
-            end
         end
     end
     if hidden > 0 then out[#out + 1] = { kind = "detail", text = string.format(L.BLOCKED_HIDDEN, hidden) } end
@@ -350,6 +363,7 @@ end
 function FriendsTab.Open(friendId, key, view)
     if friendId and key then
         local id = tostring(friendId) .. "|" .. tostring(key)
+        for k in pairs(state.expanded) do state.expanded[k] = nil end
         state.expanded[id] = true
         if view then state.detailView[id] = view end
         state.focus = id
@@ -387,6 +401,35 @@ function FriendsTab.Refresh()
             ui.status:SetText(string.format(L.SYNC_STATUS, online, last, waiting))
         end
     end
+    -- A friend's character page (1.14.0), or the list with This week beside it.
+    local pageId, friend, key, char = FriendsTab.PageId()
+    ui.page:SetShown(pageId ~= nil)
+    ui.views:SetShown(pageId ~= nil)
+    ui.weeklyButton:SetShown(not pageId)
+    ui.status:SetShown(not pageId)
+    local week = state.weekly and not pageId
+    ui.week:SetShown(week)
+    ui.listFrame:ClearAllPoints()
+    ui.listFrame:SetPoint("TOPLEFT", 0, 0)
+    ui.listFrame:SetPoint("BOTTOMRIGHT", week and -(FriendsTab.WEEK_W + 10) or 0, 0)
+    if week then ui.weekTable:SetLines(weeklyLines()) end
+    if pageId then
+        local row = { name = char.display or char.name or key, class = char.class, level = char.level, faction = char.faction }
+        local playing = FriendsModel.IsPlaying(friend, key)
+        local sub = string.format(L.FRIEND_PAGE_OF, friend.name or "?")
+        local more = MeModel.SubText(row, L, nil, true)
+        if more ~= "" then sub = sub .. "  -  " .. more end
+        ns.MeTab.FillHead(ui.page, row, playing, sub)
+        ui.views:Select(state.detailView[pageId] or "overview")
+        ui.table:SetTop(30 + ns.MeTab.PAGE_HEAD_H - ns.Table.ROW_H)
+        ui.table:SetHeadersShown(false)
+        ui.table:SetLines(FriendsTab.DetailLines(pageId, char))
+        ui.empty:Hide()
+        state.focus = nil
+        return
+    end
+    ui.table:SetTop(30)
+    ui.table:SetHeadersShown(true)
     local list, count = lines()
     -- No ledger friends but an invite list: the explanation goes on top of the list as
     -- a line, since the empty text would cover it.
@@ -438,7 +481,27 @@ local function build(panel)
         columns[#columns + 1] = { label = L[col.label], width = col.width, field = col.field,
             tip = rawget(L, (col.label:gsub("^COL_", "COL_TIP_"))) }
     end
-    ui.table = ns.Table.New(panel, columns, {
+    -- The list, and This week in a panel on its right (1.14.0).
+    ui.listFrame = CreateFrame("Frame", nil, panel)
+    ui.listFrame:SetPoint("TOPLEFT", 0, 0)
+    ui.listFrame:SetPoint("BOTTOMRIGHT", 0, 0)
+    ui.week = CreateFrame("Frame", nil, panel)
+    ui.week:SetPoint("TOPRIGHT", 0, -30)
+    ui.week:SetPoint("BOTTOMRIGHT", 0, 0)
+    ui.week:SetWidth(FriendsTab.WEEK_W)
+    W.Background(ui.week, "panel")
+    W.Border(ui.week, "rule", 1)
+    ui.weekTable = ns.Table.New(ui.week, {}, { top = -16 })
+    ui.weekTable.rule:Hide()
+    -- A friend's character page: the same head and tabs as on Me.
+    ui.page = ns.MeTab.PageHead(panel, function() openPage(nil) end)
+    ui.views = ns.MeTab.PageViews(panel, ns.StatsModel.FRIEND_TABS, function(v)
+        local id = FriendsTab.PageId()
+        if not id then return end
+        state.detailView[id] = v
+        FriendsTab.Refresh()
+    end)
+    ui.table = ns.Table.New(ui.listFrame, columns, {
         top = 30,
         actions = true,
         -- Click a header to sort (again to reverse). Text columns start A-Z, numbers high to low.
