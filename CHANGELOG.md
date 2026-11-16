@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- **Dungeon timer**: a large clock with the + or - in a coloured box, a bar with a tick for each boss (yours and the compared run's), the next boss with the compared run's time for it, and a switch between **#1** and **My best**. Once cleared it shows the run's place on the Leaderboard, how it compares with your best, and buttons to open the run or the Leaderboard.
 - **Session goals** window redrawn: each goal is a row with a tick box, a bar of your usual session against the goal, and - and + beside its number. The bottom counts the goals picked and says about how long they take at your usual pace.
 - **Goals tracker**: the done count in a ring, a button to fold it to one line, a tick on each bar showing where your usual pace would have you by now ("Ahead of your usual pace" or what is left under it), how long each finished goal took, and **Pick more goals** once all are done.
 - **Friends**: characters in the same two-line rows, **This week** in a panel beside the list (the This week button hides it), and a friend's character opens as its own page like yours.

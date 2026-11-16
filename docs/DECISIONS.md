@@ -509,3 +509,11 @@ Austin (2026-11-16) approved the pop-up mock-ups (canvas page "Goals, dungeons &
 - **Window:** a head with the level in a ring, "Today's goals" and a grey line (name, level, rested bubbles, how many recent sessions the suggestions come from). One row per goal: a tick box, a short badge for its kind, the label, a bar of your usual session (grey) with the target as a gold tick, the hint, and - value + on the right. A click anywhere else on the row ticks it. The foot counts the goals picked and says "About 2h at your usual pace" (Goals.Estimate: the slowest ticked goal at your usual rate, rounded to 10 minutes). Start is the filled button.
 - **Model:** suggestions carry `usual`, `best` and `rate` (per active second: levels from the level pace, quests and skill-ups from the recent sessions' totals over their active time). A started goal keeps `rate`; Tick keeps `took` (active seconds to reach it).
 - **Tracker:** the done count in a ring; a fold button keeps it to one line (settings.goalsTrackerFolded); a white tick on each bar where your usual pace would have you now (Goals.Expected) and under it "Ahead of your usual pace" or what is left (Goals.PaceNote); reached goals show how long they took; when all are done a green frame and "Pick more goals". The ring shows the count, not a filled arc: the game has no simple arc drawing without more art.
+
+## D-138 Dungeon timer redrawn (1.14.0)
+From the same approval as D-137.
+- The time in a large font (Widgets font role `clock`, 1.9 x large) with the +/- in a filled green or red box beside it.
+- A bar under it: the time so far, a green tick for each of your kills and a short grey tick for each kill of the compared run, its clear at the far end. The mock-up's arrow ("where #1 was now") was dropped: the grey ticks say the same.
+- Each kill has a green dot; the next boss (the compared run's next kill not made here) is listed in grey with the compared run's time for it.
+- The compared run is a two-way switch, "#1 Zip 20:00" / "My best 25:00", both labels always shown; the old line to click is gone. Both targets are looked up together (every 30 seconds).
+- Cleared: a gold frame, the run's place on the Leaderboard at level (the crown and "New #1 on your Leaderboard" for first), "Your best here was 25:00 (-7:21)" and deaths, and buttons to open the run on the Dungeons tab or the Leaderboard.

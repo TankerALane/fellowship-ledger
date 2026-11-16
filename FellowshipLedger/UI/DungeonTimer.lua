@@ -8,6 +8,11 @@
 -- across /reload (char.timerClosedFor), and /fl timer brings it back. The time is counted like the clear time: from the first
 -- fight inside (D-126; it waits at 0:00 until then) to the final boss, time outside
 -- included.
+-- 1.14.0 (D-138): a big clock with the +/- in a filled box, a bar with a tick for each
+-- kill (yours green, the compared run's grey), a dot per kill and the next boss with
+-- the compared run's time for it, a two-way switch (#1 / my best) instead of a line
+-- to click, and once cleared a gold frame with the run's place on the Leaderboard,
+-- how it compares with your best, and buttons to open the run or the Leaderboard.
 
 local _, ns = ...
 local L = ns.L
@@ -20,7 +25,7 @@ ns.DungeonTimer = Timer
 Timer.WIDTH = 270
 Timer.ROW_H = 16
 Timer.MAX_ROWS = 14
-Timer.TOP = 46
+Timer.TOP = 96
 Timer.TARGET_EVERY = 30 -- seconds before the compared run is looked up again
 
 local frame
@@ -46,14 +51,27 @@ end
 
 local function mode() return settings().dungeonTimerMine and "mine" or "leader" end
 
+local MEDIA = "Interface\\AddOns\\FellowshipLedger\\media\\"
+Timer.BAR_TOP = 74 -- the bar under the clock (1.14.0)
+Timer.RESULT_H = 66 -- the lines and buttons under a cleared run
+
+local function tint(tex, role, alpha)
+    local c = W.Color(role)
+    tex:SetVertexColor(c[1], c[2], c[3], alpha or 1)
+end
+
 local function row(i)
     if rows[i] then return rows[i] end
     local r = CreateFrame("Frame", nil, frame)
     r:SetSize(Timer.WIDTH - 20, Timer.ROW_H)
     r:SetPoint("TOPLEFT", 10, -Timer.TOP - (i - 1) * Timer.ROW_H)
+    -- A filled dot for a kill, a ring for the next boss (1.14.0).
+    r.dot = r:CreateTexture(nil, "ARTWORK")
+    r.dot:SetSize(8, 8)
+    r.dot:SetPoint("LEFT", 0, 0)
     r.name = W.Text(r, "small", "text")
-    r.name:SetPoint("LEFT", 0, 0)
-    r.name:SetWidth(Timer.WIDTH - 130)
+    r.name:SetPoint("LEFT", 14, 0)
+    r.name:SetWidth(Timer.WIDTH - 144)
     r.name:SetJustifyH("LEFT")
     r.name:SetWordWrap(false)
     r.into = W.Text(r, "small", "text")
@@ -64,6 +82,17 @@ local function row(i)
     r.delta:SetJustifyH("RIGHT")
     rows[i] = r
     return r
+end
+
+-- A tick on the bar: i-th of a kind ("mine" or "theirs").
+local function tick(kind, i)
+    frame.ticks[kind] = frame.ticks[kind] or {}
+    local t = frame.ticks[kind][i]
+    if not t then
+        t = frame.bar:CreateTexture(nil, "OVERLAY")
+        frame.ticks[kind][i] = t
+    end
+    return t
 end
 
 local function build()
@@ -81,15 +110,33 @@ local function build()
     end)
     W.Background(f, "bg", 0.85)
     W.Border(f, "border", 1)
+    -- A gold frame once the run is cleared.
+    f.doneFrame = CreateFrame("Frame", nil, f)
+    f.doneFrame:SetAllPoints()
+    W.Border(f.doneFrame, "accent", 1)
+    f.doneFrame:Hide()
     f.title = W.Text(f, "body", "heading")
     f.title:SetPoint("TOPLEFT", 10, -8)
-    f.title:SetPoint("RIGHT", f, "RIGHT", -140, 0)
+    f.title:SetPoint("RIGHT", f, "RIGHT", -30, 0)
     f.title:SetJustifyH("LEFT")
     f.title:SetWordWrap(false)
-    f.clock = W.Text(f, "large", "heading")
-    f.clock:SetPoint("TOPRIGHT", -30, -6)
-    f.clock:SetJustifyH("RIGHT")
-    -- The run's +/- against the compared run, beside the time (RunTimer.View pace).
+    f.status = W.Text(f, "small", "muted")
+    f.status:SetPoint("TOPLEFT", 10, -24)
+    f.status:SetPoint("RIGHT", f, "RIGHT", -10, 0)
+    f.status:SetJustifyH("LEFT")
+    f.status:SetWordWrap(false)
+    -- The big clock, and the +/- in a filled box beside it (RunTimer.View pace).
+    f.clock = W.Text(f, "clock", "heading")
+    f.clock:SetPoint("TOPLEFT", 10, -40)
+    f.clock:SetJustifyH("LEFT")
+    f.paceBox = CreateFrame("Frame", nil, f)
+    f.paceBox:SetSize(52, 18)
+    f.paceBox:SetPoint("LEFT", f.clock, "RIGHT", 10, 0)
+    f.paceBox.bg = f.paceBox:CreateTexture(nil, "BACKGROUND")
+    f.paceBox.bg:SetAllPoints()
+    f.pace = W.Text(f.paceBox, "body", "bg")
+    f.pace:SetPoint("CENTER", 0, 0)
+    f.pace:SetJustifyH("CENTER")
     -- Over the clock: hovering a run marked * (not timed from the start, D-127) says
     -- why. Dragging here still moves the window.
     f.clockHover = CreateFrame("Frame", nil, f)
@@ -103,33 +150,62 @@ local function build()
     end)
     f.clockHover:SetScript("OnEnter", function(self) Timer.ShowWhy(self) end)
     f.clockHover:SetScript("OnLeave", function() W.HideTooltip() end)
-    f.pace = W.Text(f, "body", "muted")
-    f.pace:SetPoint("RIGHT", f.clock, "LEFT", -6, 0)
-    f.pace:SetJustifyH("RIGHT")
-    f.status = W.Text(f, "small", "muted")
-    f.status:SetPoint("TOPLEFT", 10, -26)
-    f.status:SetPoint("RIGHT", f, "RIGHT", -10, 0)
-    f.status:SetJustifyH("LEFT")
+    -- The bar: the time so far, a green tick for each of your kills, a grey one for each
+    -- kill of the compared run, and its clear at the far end.
+    f.bar = CreateFrame("Frame", nil, f)
+    f.bar:SetPoint("TOPLEFT", 10, -Timer.BAR_TOP)
+    f.bar:SetSize(Timer.WIDTH - 20, 14)
+    f.bar.track = f.bar:CreateTexture(nil, "BACKGROUND")
+    f.bar.track:SetPoint("LEFT", 0, 0)
+    f.bar.track:SetSize(Timer.WIDTH - 20, 4)
+    W.Fill(f.bar.track, "rule", 0.35)
+    f.bar.fill = f.bar:CreateTexture(nil, "ARTWORK")
+    f.bar.fill:SetPoint("LEFT", 0, 0)
+    f.bar.fill:SetHeight(4)
+    W.Fill(f.bar.fill, "accent", 0.9)
+    f.ticks = {}
     f.close = W.Button(f, "x", 18, 18, function() Timer.Close() end)
     f.close:SetPoint("TOPRIGHT", -5, -5)
-    -- The bottom line names the run compared with; a click switches #1 / your best.
-    f.compare = W.Button(f, "", Timer.WIDTH - 20, 18, function()
-        settings().dungeonTimerMine = not settings().dungeonTimerMine or nil
-        cache.key = nil
-        Timer.Refresh()
-        if ns.SettingsTab and ns.SettingsTab.Refresh then pcall(ns.SettingsTab.Refresh) end
+    -- Under a cleared run: its place on the Leaderboard, against your best, two buttons.
+    f.result = CreateFrame("Frame", nil, f)
+    f.result:SetSize(Timer.WIDTH - 20, Timer.RESULT_H)
+    f.result.crown = f.result:CreateTexture(nil, "ARTWORK")
+    f.result.crown:SetTexture(MEDIA .. "crown")
+    f.result.crown:SetSize(12, 12)
+    f.result.crown:SetPoint("TOPLEFT", 0, -4)
+    f.result.rank = W.Text(f.result, "small", "heading")
+    f.result.rank:SetPoint("TOPLEFT", 16, -4)
+    f.result.best = W.Text(f.result, "small", "muted")
+    f.result.best:SetPoint("TOPLEFT", 0, -20)
+    f.result.best:SetWidth(Timer.WIDTH - 20)
+    f.result.best:SetWordWrap(false)
+    f.result.open = W.Button(f.result, L.TIMER_OPEN_RUN, 100, 20, function()
+        if ns.DungeonsTab and ns.DungeonsTab.OpenRun then ns.DungeonsTab.OpenRun(f.result.runKey) else ns.MainWindow.Open("dungeons") end
     end)
-    f.compare:SetPoint("BOTTOMLEFT", 10, 6)
-    -- Keep the text inside the button (cut short rather than spill out), and say on
-    -- hover what a click does.
-    f.compare.text:ClearAllPoints()
-    f.compare.text:SetPoint("LEFT", 6, 0)
-    f.compare.text:SetPoint("RIGHT", -6, 0)
-    f.compare.text:SetWordWrap(false)
-    f.compare:HookScript("OnEnter", function(self)
-        W.Tooltip(self, L.TIMER_SWITCH_TITLE, { settings().dungeonTimerMine and L.TIMER_SWITCH_TO_LEADER or L.TIMER_SWITCH_TO_MINE })
-    end)
-    f.compare:HookScript("OnLeave", function() W.HideTooltip() end)
+    f.result.open:SetPoint("TOPLEFT", 0, -40)
+    f.result.board = W.Button(f.result, L.TAB_LEADERBOARD, 100, 20, function() ns.MainWindow.Open("leaderboard") end)
+    f.result.board:SetPoint("LEFT", f.result.open, "RIGHT", 6, 0)
+    f.result:Hide()
+    -- The run compared with: a two-way switch, #1 or your best (1.14.0).
+    local half = math.floor((Timer.WIDTH - 20) / 2)
+    f.switch = W.Segmented(f, { { id = "leader", label = "", width = half }, { id = "mine", label = "", width = Timer.WIDTH - 20 - half } },
+        function(id)
+            settings().dungeonTimerMine = id == "mine" or nil
+            cache.key = nil
+            Timer.Refresh()
+            if ns.SettingsTab and ns.SettingsTab.Refresh then pcall(ns.SettingsTab.Refresh) end
+        end, 18)
+    f.switch:SetPoint("BOTTOMLEFT", 10, 8)
+    for id, b in pairs(f.switch.buttons) do
+        b.text:ClearAllPoints()
+        b.text:SetPoint("LEFT", 4, 0)
+        b.text:SetPoint("RIGHT", -4, 0)
+        b.text:SetWordWrap(false)
+        b:HookScript("OnEnter", function(self)
+            W.Tooltip(self, L.TIMER_SWITCH_TITLE, { id == "mine" and L.TIMER_SWITCH_TO_MINE or L.TIMER_SWITCH_TO_LEADER })
+        end)
+        b:HookScript("OnLeave", function() W.HideTooltip() end)
+    end
     place(f)
     f:Hide()
     return f
@@ -144,17 +220,76 @@ function Timer.Run()
 end
 
 -- The run compared with, looked up again every TARGET_EVERY seconds or when the run
--- or the mode changes.
-function Timer.Target(run, now)
-    local key = tostring(run.entered) .. "|" .. mode() .. "|" .. tostring(run.completed and true or false)
+-- or the mode changes. which: "leader" | "mine" (default: the chosen mode). Both are
+-- kept, for the switch's two labels.
+function Timer.Target(run, now, which)
+    which = which or mode()
+    local key = tostring(run.entered) .. "|" .. tostring(run.completed and true or false)
     if cache.key ~= key or now - cache.at >= Timer.TARGET_EVERY then
-        local ok, t = pcall(RT.Target, ns.LeaderboardTab.Entries(), run.name, mode(), run)
-        cache.key, cache.at, cache.target = key, now, ok and t or nil
+        cache.key, cache.at, cache.targets, cache.rank = key, now, {}, nil
+        local okE, entries = pcall(ns.LeaderboardTab.Entries)
+        for m in pairs(RT.MODES) do
+            local ok, t = pcall(RT.Target, okE and entries or {}, run.name, m, run)
+            cache.targets[m] = ok and t or false
+        end
+        -- A cleared run's place on the Leaderboard (at level, like the tab's default).
+        if run.completed and run.completedAt and okE then
+            local okB, board = pcall(ns.Leaderboard.Build, entries, true)
+            if okB then cache.rank = ns.Leaderboard.RankOf(board, run.name, run.completedAt) end
+        end
     end
-    return cache.target
+    return cache.targets[which] or nil
 end
 
 local function deltaRole(d) return d < 0 and "good" or d > 0 and "bad" or "muted" end
+
+-- The boss the compared run killed next, that this run has not: { name, at } or nil.
+function Timer.NextBoss(view, target)
+    if not (target and target.splits) or view.done then return nil end
+    local killed = {}
+    for _, b in ipairs(view.bosses) do killed[b.name] = true end
+    local best
+    for name, at in pairs(target.splits) do
+        if not killed[name] and (not best or at < best.at) then best = { name = name, at = at } end
+    end
+    return best
+end
+
+-- The switch's two labels: "#1 Zip 20:00" / "My best 25:00" (or "none yet").
+function Timer.SwitchLabels(leader, mine)
+    local a = leader and string.format(L.TIMER_SEG_LEADER, leader.lead or "?", RT.Clock(leader.clear)) or L.TIMER_SEG_LEADER_NONE
+    local b = mine and string.format(L.TIMER_SEG_MINE, RT.Clock(mine.clear)) or L.TIMER_SEG_MINE_NONE
+    return a, b
+end
+
+local function drawBar(v, target)
+    local width = Timer.WIDTH - 20
+    local scale = math.max(v.elapsed or 0, target and target.clear or 0)
+    for _, list in pairs(frame.ticks) do for _, t in ipairs(list) do t:Hide() end end
+    frame.bar:SetShown(not v.waiting and scale > 0)
+    if v.waiting or scale <= 0 then return end
+    frame.bar.fill:SetWidth(math.max(1, width * math.min(1, v.elapsed / scale)))
+    W.Fill(frame.bar.fill, v.done and "good" or "accent", 0.9)
+    local function place(t, at, h, role, alpha, dy)
+        t:ClearAllPoints()
+        t:SetSize(2, h)
+        t:SetPoint("LEFT", frame.bar, "LEFT", math.max(0, math.min(width - 2, math.floor(width * at / scale) - 1)), dy or 0)
+        W.Fill(t, role, alpha)
+        t:Show()
+    end
+    local n = 0
+    if target then
+        for _, at in ipairs(target.refs or {}) do
+            n = n + 1
+            place(tick("theirs", n), at, 6, "muted", 0.8, -5)
+        end
+        n = n + 1
+        place(tick("theirs", n), target.clear, 14, "muted", 0.8)
+    end
+    for i, b in ipairs(v.bosses) do
+        if not b.extra then place(tick("mine", i), b.into, 14, "good", 1) end
+    end
+end
 
 function Timer.Refresh()
     local run = Timer.Run()
@@ -175,9 +310,10 @@ function Timer.Refresh()
     local v = RT.View(run, now, target)
     frame.title:SetText(run.name)
     frame.clock:SetText(RT.Clock(v.elapsed) .. (v.partial and "*" or ""))
-    W.SetTextRole(frame.clock, v.done and "good" or "heading")
+    W.SetTextRole(frame.clock, v.done and "good" or (v.waiting and "muted" or "text"))
     frame.pace:SetText(v.pace and RT.Delta(v.pace) or "")
-    if v.pace then W.SetTextRole(frame.pace, deltaRole(v.pace)) end
+    frame.paceBox:SetShown(v.pace ~= nil)
+    if v.pace then W.Fill(frame.paceBox.bg, deltaRole(v.pace), 0.9) end
     local status = v.total and string.format(L.TIMER_BOSSES_OF, v.killed, v.total) or string.format(L.TIMER_BOSSES, v.killed)
     if v.waiting then
         status = L.TIMER_WAITING
@@ -188,12 +324,18 @@ function Timer.Refresh()
         status = status .. "  " .. L.TIMER_OUTSIDE
     end
     frame.status:SetText(status)
-    local shown = math.min(#v.bosses, Timer.MAX_ROWS)
-    -- The latest kills when there are more than fit.
+    frame.doneFrame:SetShown(v.done)
+    drawBar(v, target)
+    -- The kills (the latest when there are more than fit), then the next boss.
+    local nextBoss = Timer.NextBoss(v, target)
+    local room = Timer.MAX_ROWS - (nextBoss and 1 or 0)
+    local shown = math.min(#v.bosses, room)
     local first = #v.bosses - shown
     for i = 1, shown do
         local b = v.bosses[first + i]
         local r = row(i)
+        r.dot:SetTexture(MEDIA .. "switch-knob")
+        tint(r.dot, b.extra and "muted" or "good")
         r.name:SetText(b.extra and string.format(L.TIMER_EXTRA, b.name) or b.name) -- all dead: no done mark
         W.SetTextRole(r.name, b.extra and "muted" or "text")
         W.SetTextRole(r.into, b.extra and "muted" or "text")
@@ -202,17 +344,46 @@ function Timer.Refresh()
         if b.delta then W.SetTextRole(r.delta, deltaRole(b.delta)) end
         r:Show()
     end
-    for i = shown + 1, #rows do rows[i]:Hide() end
-    local label
-    if not target then
-        label = mode() == "mine" and L.TIMER_NO_MINE or L.TIMER_NO_LEADER
-    elseif mode() == "mine" then
-        label = string.format(L.TIMER_VS_MINE, RT.Clock(target.clear))
-    else
-        label = string.format(L.TIMER_VS_LEADER, target.lead or "?", RT.Clock(target.clear))
+    if nextBoss then
+        shown = shown + 1
+        local r = row(shown)
+        r.dot:SetTexture(MEDIA .. "ring")
+        tint(r.dot, "muted")
+        r.name:SetText(nextBoss.name)
+        W.SetTextRole(r.name, "muted")
+        r.into:SetText(RT.Clock(nextBoss.at))
+        W.SetTextRole(r.into, "muted")
+        r.delta:SetText(L.TIMER_NEXT)
+        W.SetTextRole(r.delta, "muted")
+        r:Show()
     end
-    frame.compare.text:SetText(label)
-    frame:SetHeight(Timer.TOP + shown * Timer.ROW_H + 32)
+    for i = shown + 1, #rows do rows[i]:Hide() end
+    -- A cleared run: its place and how it compares with your best.
+    local y = Timer.TOP + shown * Timer.ROW_H
+    frame.result:SetShown(v.done)
+    if v.done then
+        frame.result:ClearAllPoints()
+        frame.result:SetPoint("TOPLEFT", 10, -(y + 2))
+        local rank = cache.rank
+        frame.result.crown:SetShown(rank == 1)
+        tint(frame.result.crown, "accent")
+        frame.result.rank:ClearAllPoints()
+        frame.result.rank:SetPoint("TOPLEFT", rank == 1 and 16 or 0, -4)
+        frame.result.rank:SetText(rank == 1 and L.TIMER_NEW_TOP or (rank and string.format(L.TIMER_RANK, rank) or L.TIMER_NO_RANK))
+        local mine = Timer.Target(run, now, "mine")
+        local deaths = tonumber(run.deaths) or 0
+        local text = mine and string.format(L.TIMER_BEST_WAS, RT.Clock(mine.clear), RT.Delta(v.elapsed - mine.clear)) or L.TIMER_FIRST_CLEAR
+        if deaths > 0 then text = text .. "  -  " .. string.format(deaths == 1 and L.TIMER_DEATH or L.TIMER_DEATHS, deaths) end
+        frame.result.best:SetText(text)
+        frame.result.runKey = run.entered
+        y = y + Timer.RESULT_H
+    end
+    local leader, mine = Timer.Target(run, now, "leader"), Timer.Target(run, now, "mine")
+    local a, b = Timer.SwitchLabels(leader, mine)
+    frame.switch.buttons.leader.text:SetText(a)
+    frame.switch.buttons.mine.text:SetText(b)
+    frame.switch:Select(mode())
+    frame:SetHeight(y + 34)
     frame:Show()
     return true
 end

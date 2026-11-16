@@ -53,7 +53,8 @@ end
 --   tag:    the boxed PLAYING tag (1.13.1: two thirds of the small font, Austin)
 W.NUMBER_SCALE = 1.15
 W.TAG_SCALE = 0.8 -- 1.13.1: 0.67 was a little too small once the box was gone (Austin)
-local SCALED = { number = { "large", "NUMBER_SCALE" }, tag = { "small", "TAG_SCALE" } }
+W.CLOCK_SCALE = 1.9 -- clock: the dungeon timer's time (1.14.0)
+local SCALED = { number = { "large", "NUMBER_SCALE" }, tag = { "small", "TAG_SCALE" }, clock = { "large", "CLOCK_SCALE" } }
 
 local function style(fs, fontRole, colorRole)
     local scaled = SCALED[fontRole]

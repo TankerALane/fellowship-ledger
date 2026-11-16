@@ -125,14 +125,19 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     H.eq(f.title:GetText(), "The Deadmines")
     boss(env, 250, 1, "Rhahk'Zor")
     T.Refresh()
-    H.ok(f.compare.text:GetText():find("vs #1 Zip, 20:00", 1, true), f.compare.text:GetText())
+    H.eq(f.switch.buttons.leader.text:GetText(), "#1 Zip 20:00")
+    H.eq(f.switch.buttons.mine.text:GetText(), "My best 25:00", "both labels show")
     H.eq(f.pace:GetText(), "+0:52", "the +/- beside the time")
     H.eq(ns.RunTimer.View(ns.Store.char.currentRun, env.time(), T.Target(ns.Store.char.currentRun, env.time())).bosses[1].delta, 52,
         "Rhahk'Zor 52 seconds behind #1")
+    -- The next boss: the compared run's next kill, with its time.
+    local nextRow = f.status and ns.DungeonTimer.NextBoss(ns.RunTimer.View(ns.Store.char.currentRun, env.time(),
+        T.Target(ns.Store.char.currentRun, env.time())), T.Target(ns.Store.char.currentRun, env.time()))
+    H.eq(nextRow.name, "Sneed"); H.eq(nextRow.at, 700)
+    H.ok(f.bar:IsShown(), "the bar under the clock")
     -- Switch to your own best: the first run (Rhahk'Zor at 5:00).
-    f.compare:GetScript("OnClick")()
+    f.switch.buttons.mine:GetScript("OnClick")()
     H.eq(ns.db.settings.dungeonTimerMine, true)
-    H.ok(f.compare.text:GetText():find("vs your best: 25:00", 1, true), f.compare.text:GetText())
     local v = ns.RunTimer.View(ns.Store.char.currentRun, env.time(), T.Target(ns.Store.char.currentRun, env.time()))
     H.eq(v.bosses[1].delta, -48, "48 seconds ahead of your best")
     -- Closed: stays closed for this run, back with /fl timer.
@@ -154,9 +159,12 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     H.ok(f.status:GetText():find("Cleared in", 1, true), f.status:GetText())
     -- 2 + 250 + 5 + 2 + 400 + 400 seconds = 17:39, against your best 25:00.
     H.eq(f.pace:GetText(), "-7:21", "the whole clear against your best (17:39 vs 25:00)")
-    H.ok(f.compare.text:GetText():find("vs your best: 25:00", 1, true), "still the earlier run, not this one")
+    H.eq(f.switch.buttons.mine.text:GetText(), "My best 25:00", "still the earlier run, not this one")
+    H.ok(f.result:IsShown() and f.doneFrame:IsShown(), "cleared: the gold frame and the result")
+    H.ok(f.result.best:GetText():find("Your best here was 25:00 (-7:21)", 1, true), f.result.best:GetText())
+    H.ok(f.result.rank:GetText():find("Leaderboard", 1, true) or f.result.rank:GetText() == ns.L.TIMER_NO_RANK, f.result.rank:GetText())
     -- Against #1 (the friend's 20:00, not this run, which is now on the Leaderboard).
-    f.compare:GetScript("OnClick")()
+    f.switch.buttons.leader:GetScript("OnClick")()
     H.eq(f.pace:GetText(), "-2:21", "against #1 (17:39 vs 20:00), not against itself")
 end)
 
