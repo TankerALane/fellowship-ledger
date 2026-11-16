@@ -1,15 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.14.0 - 2026-11-16
 
 ### Changed
-- **Friends**: click a Battle.net friend's name line to fold their characters away to that one line (click again to open). **Collapse all** folds every friend (then **Open all**). Folds stay after a /reload; everyone is open to start with.
 - **Dungeons** is split into **By dungeon**, **Runs** and **Friends**. By dungeon lists each dungeon with your best time and your place on the Leaderboard; picking one shows its figures, the fastest clears, your best run boss by boss against #1, and your latest runs there. Runs lists every run with a green stripe when cleared; picking one shows the run start to finish, each boss fight, and who was in the group. Friends shows your friends' totals as before.
 - **Notices** look different by kind: a coloured stripe and an icon (gold for you, blue for friends, green for goals, orange for dungeons), a small label over the title, a last line saying what a click opens, and a thin line along the bottom that runs down until the notice goes. A friend reaching the level cap, or a new #1 of yours on the Leaderboard, gets a larger notice in the middle that stays until you close it. A level-up also says how it compares with the level before.
 - **Dungeon timer**: a large clock with the + or - in a coloured box, a bar with a tick for each boss (yours and the compared run's), the next boss with the compared run's time for it, and a switch between **#1** and **My best**. Once cleared it shows the run's place on the Leaderboard, how it compares with your best, and buttons to open the run or the Leaderboard.
 - **Session goals** window redrawn: each goal is a row with a tick box, a bar of your usual session against the goal, and - and + beside its number. The bottom counts the goals picked and says about how long they take at your usual pace.
 - **Goals tracker**: the done count in a ring, a button to fold it to one line, a tick on each bar showing where your usual pace would have you by now ("Ahead of your usual pace" or what is left under it), how long each finished goal took, and **Pick more goals** once all are done.
-- **Friends**: characters in the same two-line rows, **This week** in a panel beside the list (the This week button hides it), and a friend's character opens as its own page like yours.
+- **Friends**: characters in the same two-line rows, **This week** in a panel beside the list (the This week button hides it), and a friend's character opens as its own page like yours. Click a Battle.net friend's name line to fold their characters away to that one line (click again to open); **Collapse all** folds every friend (then **Open all**). Folds stay after a /reload; everyone is open to start with.
 - **Me**: each character is two lines (its level in a ring, then class, faction and when it was last played) with six figures: Levels, Quests, Dungeons, Gold, Active, Deaths. Clicking one opens **its own page**: a Back button, its views as tabs, tiles (average, fastest and slowest level, gold, played, deaths), then the view. Faction, played time, kills and skill-ups are on the page.
 - **Quest chains** is a list and a pane: the chains on the left, each with its step and a progress bar (In your log, Friends are on); the chosen one on the right with what to do next and all its quests.
 - **Settings** is split into small tabs (General, Look, Tracking & sharing, Notices, Block list, About), each a few titled cards of switches with a short line under each. The longer explanations show when you hover.

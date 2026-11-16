@@ -18,14 +18,14 @@ Works on **WoW Forever** and **retail**, and keeps their data completely separat
 - **A full history for every character.** Not just where everyone is today: the ledger keeps each character's whole story, level by level, with active time (idle stretches removed) next to logged-in time, so you can see how long each level really took.
 - **Nothing to set up.** There is no group to create and no one to invite into it. Your Battle.net and character friends who run the addon simply appear, and each of you chooses, per character, what to share.
 - **Your history follows you.** The ledger is saved on each computer, so play on a second computer used to be missing from the first. Friends now hand your shared history back, and the ledger fills in what this computer missed without replacing anything. Updates also pass between friends you have in common, so you stay current even when you are rarely online together.
-- **Built for dungeons.** A dungeon timer shows how you are doing against your best clear or the fastest one among your friends, boss by boss, and a Leaderboard keeps the fastest clears for every dungeon.
+- **Built for dungeons.** A dungeon timer shows a big clock with how far ahead or behind you are, against your best clear or the fastest one among your friends, boss by boss, with the next boss and its time. When you clear, it tells you where the run lands on the Leaderboard, which keeps the fastest clears for every dungeon.
 - **Quiet and private.** It never reads chat or the combat log, makes no internet connections, and is open source (MIT).
 
 ## What you can see
 
 The window opens with your friends online and when you last synced at the top, beside **Sync** and **Settings**.
 
-**Me**: totals for the range you pick at the top, then all your characters in one sortable list. Click one to open its own page:
+**Me**: totals for the range you pick at the top, then all your characters in one sortable list, each with its level, class and when you last played it. Click one to open its own page, with tiles for its fastest and slowest levels, gold, played time and deaths, and its views as tabs:
 - **Overview**: average, fastest and slowest level, recent levels, deaths (with your level and the killer's) and notable loot. Show it as a card or a list.
 - **XP**: where your XP came from (quests, kills, exploration) this session and for recent levels.
 - **Quests**: turn-ins with XP, gold and zone.
@@ -37,17 +37,22 @@ The window opens with your friends online and when you last synced at the top, b
 
 **Quest chains**: every chain in your quest log in a list, each with its step and a progress bar. Pick one to see what to do next, all its quests, their levels, which ones you've done, and who starts each one and where, with map coordinates. It also lists chains your friends are on that you haven't started, and which friends are on the same chain as you.
 
-**Friends**: friends who run the ledger, grouped under their Battle.net name. Open any of their characters just like your own, with whatever they choose to share. **This week**, in a panel beside them, puts you and your friends side by side, with a crown on the best. Right-click a friend to whisper or invite them.
+**Friends**: friends who run the ledger, grouped under their Battle.net name. Fold a friend down to one line, or **Collapse all** to find someone quickly. Open any of their characters just like your own, with whatever they choose to share. **This week**, in a panel beside them, puts you and your friends side by side, with a crown on the best. Right-click a friend to whisper or invite them.
 
 **Graphs**: levels per session, time per level, quests per day, gold per session and XP per hour. **Compare** puts any two characters side by side, yours or a friend's.
 
-**Dungeons**: every run with its time, bosses, deaths and group, opening to when each boss died; your best and average time per dungeon; and your friends' dungeon totals.
+**Dungeons**, in three views:
+- **By dungeon**: each dungeon with your best time and your place on the Leaderboard. Pick one for its runs, best, average and deaths, the fastest clears, your best run boss by boss against #1, and your recent runs there.
+- **Runs**: every run, cleared ones marked in green. Pick one to see it start to finish, each boss fight, and who was in the group with their roles.
+- **Friends**: your friends' dungeon totals.
 
 **Leaderboard**: the five fastest clears of each dungeon by you and your friends, and the fastest kill of each boss.
 
-**Session goals**: pick a few goals when you log in (levels, quests, a dungeon, a profession rank) and follow them in a small tracker.
+**Session goals**: pick a few goals when you log in (levels, quests, XP per hour, a dungeon, a profession rank). Each one shows against your usual session, and the window says about how long they will take. A small tracker follows them, shows whether you are ahead of your usual pace, and folds to one line.
 
-**Settings**: a Track and a Share switch for every tracker on every character, three looks (Plain, Ledger, Leather), background opacity up to fully solid, text size, scale, colorblind-safe colors, notices, and a block list.
+**Notices**: level-ups (and how they compare with the level before), friends' milestones, finished goals and new records pop up in their own colour, and a click opens the page behind them. The big moments, like a friend reaching the level cap or a new #1 on the Leaderboard, get a larger notice.
+
+**Settings**, in small tabs: a Track and a Share switch for every tracker on every character, three looks (Plain, Ledger, Leather), background opacity up to fully solid, text size, scale, colorblind-safe colors, notices, and a block list.
 
 ## What it tracks
 
