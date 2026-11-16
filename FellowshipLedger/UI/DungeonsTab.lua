@@ -73,19 +73,21 @@ function DungeonsTab.Runs()
     return DM.Runs(ns.Data.Characters(), state.char, ns.Days.RangeStart(state.range, today, time, date), date, time())
 end
 
--- The Leaderboard's boards (at level), by dungeon, and every entry (for #1's splits).
-local function boards()
+-- Every run as a Leaderboard entry, built fresh each time (joining runs changes them).
+local function entries()
     local fake = ns.Data.IsFake()
     local chars = fake and ns.Data.Characters() or ns.db.characters
     local friends = fake and ns.Data.Friends() or ns.db.friends
-    local ok, entries = pcall(ns.Leaderboard.Entries, chars, friends, isBlocked, function(_, c) return c.display or c.name end)
-    if not ok then return {}, {} end
-    local copy = {}
-    for i, e in ipairs(entries) do copy[i] = e end
-    local okB, board = pcall(ns.Leaderboard.Build, copy, true)
+    local ok, list = pcall(ns.Leaderboard.Entries, chars, friends, isBlocked, function(_, c) return c.display or c.name end)
+    return ok and list or {}
+end
+
+-- The Leaderboard's boards (at level), by dungeon.
+local function boards()
+    local okB, board = pcall(ns.Leaderboard.Build, entries(), true)
     local by = {}
     for _, d in ipairs(okB and board or {}) do by[d.dungeon] = d end
-    return by, entries
+    return by
 end
 
 -- Open one of my runs on Runs (the dungeon timer's "Open the run", a recent run).
@@ -150,12 +152,12 @@ function DungeonsTab.Refresh()
     for _, d in ipairs(by) do if d.name == state.dungeon then chosen = d end end
     chosen = chosen or by[1]
     state.dungeon = chosen and chosen.name or nil
-    local boardOf, entries = boards()
+    local boardOf = boards()
     ui.list:SetLines(DM.DungeonListLines(by, boardOf, state.dungeon, L,
         { onSelect = function(name) state.dungeon = name; DungeonsTab.Refresh() end }))
     local leader
     if chosen then
-        local ok, t = pcall(ns.RunTimer.Target, entries, chosen.name, "leader", nil)
+        local ok, t = pcall(ns.RunTimer.Target, entries(), chosen.name, "leader", nil)
         leader = ok and t or nil
     end
     ui.detail:SetLines(DM.DungeonDetailLines(chosen, { L = L, board = chosen and boardOf[chosen.name], leader = leader,

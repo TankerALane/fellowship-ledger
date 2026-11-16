@@ -60,6 +60,13 @@ local function tint(tex, role, alpha)
     tex:SetVertexColor(c[1], c[2], c[3], alpha or 1)
 end
 
+-- A colour set on each redraw (W.Fill remembers every texture it paints for skin
+-- changes, so it is only for textures painted once).
+local function paint(tex, role, alpha)
+    local c = W.Color(role)
+    tex:SetColorTexture(c[1], c[2], c[3], alpha or 1)
+end
+
 local function row(i)
     if rows[i] then return rows[i] end
     local r = CreateFrame("Frame", nil, frame)
@@ -227,14 +234,18 @@ function Timer.Target(run, now, which)
     local key = tostring(run.entered) .. "|" .. tostring(run.completed and true or false)
     if cache.key ~= key or now - cache.at >= Timer.TARGET_EVERY then
         cache.key, cache.at, cache.targets, cache.rank = key, now, {}, nil
-        local okE, entries = pcall(ns.LeaderboardTab.Entries)
+        -- Fresh entries for each: joining runs changes them.
+        local function entries()
+            local ok, list = pcall(ns.LeaderboardTab.Entries)
+            return ok and list or {}
+        end
         for m in pairs(RT.MODES) do
-            local ok, t = pcall(RT.Target, okE and entries or {}, run.name, m, run)
+            local ok, t = pcall(RT.Target, entries(), run.name, m, run)
             cache.targets[m] = ok and t or false
         end
         -- A cleared run's place on the Leaderboard (at level, like the tab's default).
-        if run.completed and run.completedAt and okE then
-            local okB, board = pcall(ns.Leaderboard.Build, entries, true)
+        if run.completed and run.completedAt then
+            local okB, board = pcall(ns.Leaderboard.Build, entries(), true)
             if okB then cache.rank = ns.Leaderboard.RankOf(board, run.name, run.completedAt) end
         end
     end
@@ -269,12 +280,12 @@ local function drawBar(v, target)
     frame.bar:SetShown(not v.waiting and scale > 0)
     if v.waiting or scale <= 0 then return end
     frame.bar.fill:SetWidth(math.max(1, width * math.min(1, v.elapsed / scale)))
-    W.Fill(frame.bar.fill, v.done and "good" or "accent", 0.9)
+    paint(frame.bar.fill, v.done and "good" or "accent", 0.9)
     local function place(t, at, h, role, alpha, dy)
         t:ClearAllPoints()
         t:SetSize(2, h)
         t:SetPoint("LEFT", frame.bar, "LEFT", math.max(0, math.min(width - 2, math.floor(width * at / scale) - 1)), dy or 0)
-        W.Fill(t, role, alpha)
+        paint(t, role, alpha)
         t:Show()
     end
     local n = 0
@@ -313,7 +324,7 @@ function Timer.Refresh()
     W.SetTextRole(frame.clock, v.done and "good" or (v.waiting and "muted" or "text"))
     frame.pace:SetText(v.pace and RT.Delta(v.pace) or "")
     frame.paceBox:SetShown(v.pace ~= nil)
-    if v.pace then W.Fill(frame.paceBox.bg, deltaRole(v.pace), 0.9) end
+    if v.pace then paint(frame.paceBox.bg, deltaRole(v.pace), 0.9) end
     local status = v.total and string.format(L.TIMER_BOSSES_OF, v.killed, v.total) or string.format(L.TIMER_BOSSES, v.killed)
     if v.waiting then
         status = L.TIMER_WAITING
