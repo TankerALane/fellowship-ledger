@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.13.1 - 2026-11-15
 
 ### Added
 - Settings > Appearance > **Background**: a slider for the window background, from see-through to fully solid (100%).
