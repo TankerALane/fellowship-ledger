@@ -387,7 +387,10 @@ function DungeonsModel.DungeonDetailLines(d, o)
         local leader = o.leader
         local same = leader and leader.mine and leader.clear == DungeonsModel.ClearTime(best.run)
         for _, b in ipairs(DungeonsModel.Bosses(best.run)) do
-            local ref = (leader and not same and b.offset) and leader.splits and leader.splits[b.name]
+            -- 1.14.1: by kill number (routes differ); an extra after the final boss by name.
+            local doneAt = best.run.completedAt
+            local extra = doneAt and b.at and b.at > doneAt + 1 or false
+            local ref = (leader and not same and b.offset) and ns.RunTimer.RefFor(leader, b.n, b.name, b.final, extra)
             local delta = ref and (b.offset - ref) or nil
             out[#out + 1] = { kind = "grid", segments = {
                 seg(0, .06, tostring(b.n), "muted", nil, "RIGHT"),

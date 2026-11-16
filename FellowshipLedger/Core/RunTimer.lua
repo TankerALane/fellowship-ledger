@@ -45,16 +45,43 @@ function RunTimer.Target(entries, dungeon, mode, current)
     -- splits: every boss, extras too (an extra boss such as Cookie, killed after the
     -- final one, is still compared with the same kill, Austin 2026-11-11). refs: the
     -- run's own kills (up to its final boss) in order, for the running +/-.
-    local splits, refs = {}, {}
+    -- order: those kills with their names, first to final (1.14.1: bosses are compared
+    -- by the order they died in, since routes differ, Austin 2026-11-16).
+    local splits, refs, order = {}, {}, {}
     for _, b in ipairs(best.bosses or {}) do
         if b.name and b.at then
             local into = b.at - start
             if not splits[b.name] or into < splits[b.name] then splits[b.name] = into end
-            if b.at <= best.finishedAt + 1 then refs[#refs + 1] = into end
+            if b.at <= best.finishedAt + 1 then order[#order + 1] = { name = b.name, into = into } end
         end
     end
-    table.sort(refs)
-    return { clear = best.clear, splits = splits, refs = refs, lead = best.lead, mine = best.mine }
+    table.sort(order, function(a, b) return a.into < b.into end)
+    for i, o in ipairs(order) do refs[i] = o.into end
+    return { clear = best.clear, splits = splits, refs = refs, order = order, lead = best.lead, mine = best.mine }
+end
+
+-- How many of the target's kills come before its final boss (its last kill, at the clear).
+function RunTimer.BeforeFinal(target)
+    local refs = target and target.refs or {}
+    local n = #refs
+    if n > 0 and target.clear and math.abs(refs[n] - target.clear) <= 1 then n = n - 1 end
+    return n
+end
+
+-- The target's time to compare your i-th kill with (1.14.1, Austin 2026-11-16: "based
+-- on the boss number killed in. The route tanks take can change ... the last boss is
+-- still the last boss"): the final boss against its final boss (the clear), any other
+-- kill against its kill of the same number, never against its final one. An extra
+-- after the final boss (Cookie) is still matched by name. nil: nothing to compare.
+function RunTimer.RefFor(target, i, name, isFinal, isExtra)
+    if not target then return nil end
+    if isExtra then return target.splits and target.splits[name] end
+    if isFinal then return target.clear end
+    if target.refs then
+        if i <= RunTimer.BeforeFinal(target) then return target.refs[i] end
+        return nil
+    end
+    return target.splits and target.splits[name] -- a target without its kill order
 end
 
 -- What the timer shows for an open run at `now`: { elapsed, done, killed, total,
@@ -73,14 +100,19 @@ function RunTimer.View(run, now, target)
     for _, b in ipairs(run.bosses or {}) do list[#list + 1] = b end
     table.sort(list, function(a, b) return (a.at or 0) < (b.at or 0) end)
     local killed = 0
+    -- The final boss: the last kill by the time the run was completed.
+    local finalAt
+    if out.done then
+        for _, b in ipairs(list) do if (b.at or 0) <= run.completedAt + 1 then finalAt = b end end
+    end
     for _, b in ipairs(list) do
         local into = math.max(0, (b.at or entered) - entered)
         -- A kill after the final boss is an extra (Cookie in The Deadmines, Austin
         -- 2026-11-11): listed and compared with the same kill, but not counted.
         local extra = out.done and (b.at or 0) > run.completedAt + 1 or nil
-        local ref = target and target.splits[b.name]
-        out.bosses[#out.bosses + 1] = { name = b.name or "?", into = into, delta = ref and (into - ref) or nil, extra = extra }
         if not extra then killed = killed + 1 end
+        local ref = RunTimer.RefFor(target, killed, b.name, b == finalAt, extra)
+        out.bosses[#out.bosses + 1] = { name = b.name or "?", into = into, delta = ref and (into - ref) or nil, extra = extra }
     end
     out.killed = killed
     if out.done and target then out.delta = out.elapsed - target.clear end

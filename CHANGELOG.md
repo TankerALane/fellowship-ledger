@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- **Dungeon timer**: bosses are compared by the order they died in, not by name, so a different route still lines up: your 4th kill against the compared run's 4th kill, and the final boss always against its final boss. The same on a dungeon's page in the Dungeons tab.
+
 ### Fixed
 - The session goals window (and the invite window) is solid, so the ledger behind it no longer shows through, whatever the background opacity.
 - Text that was cut off: a run's boss count in Runs, "2nd fastest" in By dungeon, and the This week panel's titles.

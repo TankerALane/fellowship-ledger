@@ -254,16 +254,28 @@ end
 
 local function deltaRole(d) return d < 0 and "good" or d > 0 and "bad" or "muted" end
 
--- The boss the compared run killed next, that this run has not: { name, at } or nil.
+-- The next kill to beat: { name, at } or nil. 1.14.1: by kill number (routes differ):
+-- at is the compared run's time for this run's next kill (its final boss once only
+-- that is left); the name is its next boss this run has not killed yet.
 function Timer.NextBoss(view, target)
-    if not (target and target.splits) or view.done then return nil end
+    if not target or view.done then return nil end
+    local order = target.order
+    if not order then
+        order = {}
+        for name, at in pairs(target.splits or {}) do order[#order + 1] = { name = name, into = at } end
+        table.sort(order, function(a, b) return a.into < b.into end)
+    end
+    if #order == 0 then return nil end
     local killed = {}
     for _, b in ipairs(view.bosses) do killed[b.name] = true end
-    local best
-    for name, at in pairs(target.splits) do
-        if not killed[name] and (not best or at < best.at) then best = { name = name, at = at } end
+    local name
+    for _, o in ipairs(order) do
+        if not killed[o.name] then name = o.name break end
     end
-    return best
+    if not name then return nil end
+    local n = view.killed + 1
+    local at = RT.RefFor(target, n, name, n > RT.BeforeFinal(target), false) or target.clear
+    return { name = name, at = at }
 end
 
 -- The switch's two labels: "#1 Zip 20:00" / "My best 25:00" (or "none yet").

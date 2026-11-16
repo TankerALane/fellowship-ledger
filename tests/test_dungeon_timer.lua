@@ -54,7 +54,7 @@ H.test("run timer: boss times into the run, ahead or behind the target, final ti
     v = RT.View(run, 9999, target)
     H.eq(v.elapsed, 1400, "stops at the final boss"); H.eq(v.done, true); H.eq(v.delta, -100)
     H.eq(v.pace, -100, "the whole clear once done")
-    H.eq(v.bosses[3].delta, nil, "no target time for that boss")
+    H.eq(v.bosses[3].delta, -100, "the final boss against #1's final boss (its clear), whatever its name (1.14.1)")
     -- An extra boss after the final one: listed, muted, no +/-, not counted.
     run.bosses[4] = { name = "Cookie", at = 2500 }
     target.splits.Cookie = 1600
@@ -65,6 +65,34 @@ H.test("run timer: boss times into the run, ahead or behind the target, final ti
     run.bosses[4] = nil
     v = RT.View(run, 9999, nil)
     H.eq(v.bosses[1].delta, nil); H.eq(v.delta, nil)
+end)
+
+H.test("run timer: bosses are compared by the order they died in; the final boss with the final boss (1.14.1)", function()
+    local ns = H.pureNamespace()
+    local RT = ns.RunTimer
+    -- #1 went A (100), B (300), C (500), then the final boss F at 800.
+    local target = { clear = 800, splits = { A = 100, B = 300, C = 500, F = 800 },
+        refs = { 100, 300, 500, 800 }, order = { { name = "A", into = 100 }, { name = "B", into = 300 },
+            { name = "C", into = 500 }, { name = "F", into = 800 } } }
+    H.eq(RT.BeforeFinal(target), 3)
+    -- This group took another route: C first, then A.
+    local run = { entered = 0, bosses = { { name = "C", at = 120 }, { name = "A", at = 280 } } }
+    local v = RT.View(run, 300, target)
+    H.eq(v.bosses[1].delta, 20, "first kill against #1's first kill (120 vs 100), not its C at 500")
+    H.eq(v.bosses[2].delta, -20, "second against second (280 vs 300)")
+    -- Skipping B and killing the final boss: compared with #1's clear, not its 3rd kill.
+    run.bosses[3] = { name = "F", at = 760 }
+    run.completed, run.completedAt = true, 760
+    v = RT.View(run, 9999, target)
+    H.eq(v.bosses[3].delta, -40, "the final boss against #1's final boss (760 vs 800)")
+    -- More kills than #1 had before its final: no comparison, never against its final boss.
+    H.eq(RT.RefFor(target, 4, "D", false, false), nil)
+    H.eq(RT.RefFor(target, 3, "D", false, false), 500)
+    -- The target as RunTimer.Target builds it from a Leaderboard entry.
+    local entries = { { dungeon = "The Deadmines", clear = 800, finishedAt = 1800, levelMax = 20, lead = "Zip", names = { "Zip" }, size = 1,
+        bosses = { { name = "B", at = 1300 }, { name = "A", at = 1100 }, { name = "F", at = 1800 } } } }
+    local t = RT.Target(entries, "The Deadmines", "leader")
+    H.eq(t.order[1].name, "A"); H.eq(t.order[3].name, "F"); H.eq(t.refs[2], 300); H.eq(RT.BeforeFinal(t), 2)
 end)
 
 -- Mock client helpers (as in test_tracking_smoke) ----------------------------------
@@ -134,6 +162,12 @@ H.test("dungeon timer in the game: shows in a run, compares with #1 or your best
     local nextRow = f.status and ns.DungeonTimer.NextBoss(ns.RunTimer.View(ns.Store.char.currentRun, env.time(),
         T.Target(ns.Store.char.currentRun, env.time())), T.Target(ns.Store.char.currentRun, env.time()))
     H.eq(nextRow.name, "Sneed"); H.eq(nextRow.at, 700)
+    -- Another route (1.14.1): #1's second boss killed first; next is #1's first boss by
+    -- name, timed against #1's second kill.
+    local tgt = T.Target(ns.Store.char.currentRun, env.time())
+    local other = ns.DungeonTimer.NextBoss({ bosses = { { name = tgt.order[2].name } }, killed = 1 }, tgt)
+    H.eq(other.name, tgt.order[1].name, "the boss this run still needs")
+    H.eq(other.at, ns.RunTimer.BeforeFinal(tgt) >= 2 and tgt.refs[2] or tgt.clear, "timed by kill number")
     H.ok(f.bar:IsShown(), "the bar under the clock")
     -- Switch to your own best: the first run (Rhahk'Zor at 5:00).
     f.switch.buttons.mine:GetScript("OnClick")()

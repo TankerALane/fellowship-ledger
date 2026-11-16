@@ -548,3 +548,9 @@ Austin, 2026-11-16, after looking over the new /fl shots pictures.
 - Shorter text where it was cut off: a run's boss count in Runs has more room; By dungeon says "2nd fastest" / "Fastest" instead of "... on the Leaderboard"; "This week (last 7 days)" and "Last week (11-04 to 11-11)" fit the This week panel.
 - A dungeon's pane says when your best clear is not among the fastest clears because the group was over level (the Leaderboard's at-level rule, D-115), instead of leaving a faster run of yours unexplained.
 
+## D-143 Boss times compared by kill order (1.14.1)
+Austin, 2026-11-16: "The time for the bosses on the timer should be based on the boss number killed in. The route tanks take can change slightly the last boss is still the last boss though." (City of Dalaran: Mana Elemental 4th and Unstable Sentinel 5th this run, Mana Devourer 4th in the first.)
+- RunTimer.RefFor: your i-th kill is compared with the compared run's i-th kill; your final boss with its final boss (its clear); a kill beyond its kills before the final boss has no comparison (never its final one). An extra boss after the final one (Cookie) is still matched by name (D-122).
+- RunTimer.Target also keeps the kills in order with names (order) and BeforeFinal counts the kills before the final boss.
+- Used by the timer's rows and +/-, the next boss line (the compared run's next boss you have not killed, timed by kill number), and a dungeon's "your best run, boss by boss" on the Dungeons tab. The Leaderboard's fastest boss kills are fight lengths, still by name.
+
