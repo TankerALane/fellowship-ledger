@@ -484,3 +484,10 @@ Austin (2026-11-15): Settings and Quest chains "just feel like large pages of wo
 - **Rows.** A short label with a grey hint under it and a switch on the right (W.SwitchRow); the old long sentences and notes (relay, catch-up) are the hover tooltips. W.Card draws the titled panels.
 - **Switches.** Our own art, media/switch-track.tga and switch-knob.tga (tools/make_sort_arrow.py), white and tinted: on = knob right and the good color, off = knob left and grey, so the state is not shown by color alone. New files need a full game restart.
 - The welcome panel and "tidy old characters" sit under How notices show; the dungeon timer and goals moved to General.
+
+## D-134 Quest chains as a list and a detail pane (1.14.0)
+Austin (2026-11-15), with D-133: the mock-up's Quests screen. Still the Me tab's Quest chains view (a top Quests tab waits for the sub-tabs, H).
+- **Left:** In your log (n) / Friends are on (n), joined buttons. One entry per chain (two lines: name with "with Hamlet" or the friend's name; zone, a progress bar and "step 2 of 3"); quests with no chain information are listed greyed. The choice is kept per list until reload (state.chainSel, an EntryId), else the first chain.
+- **Right:** the chain's name and "Step 2 of 3", a progress bar, a Next box (your chain: finish the quest you are on and where to turn it in, then who starts the next one; a friend's: pick up next), then every quest (no "Show all" in the pane), and who else is on it. Only the chosen chain's details are worked out.
+- Progress: your step is the one you are on, so done = step - 1; a friend's step counts as reached.
+- /fl shots gains four pictures (Settings Tracking, Notices, Look; the chain pane).

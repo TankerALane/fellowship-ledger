@@ -470,7 +470,7 @@ H.test("/fl shots: every planned picture with fake data, then settings put back"
     ns.MeTab.state.range = "today"
     ns.db.blocklist["Someone#1234"] = true
     Mock.slash(env, "shots")
-    for _ = 1, 3 do Mock.runTimers(env) end
+    for _ = 1, 5 do Mock.runTimers(env) end
     noErrors(env)
     H.eq(taken, #ns.Screenshots.PLAN, "one picture per step: " .. table.concat(env.__state.chat, " | "))
     H.eq(#ns.db.dev.shots.steps, taken, "a record per picture")
@@ -513,7 +513,7 @@ H.test("/fl shots: the 1.8.0 pictures have something to show, and fake friends a
     env.BNSendWhisper = function() whispers = whispers + 1 end
     env.SendChatMessage = function() whispers = whispers + 1 end
     Mock.slash(env, "shots")
-    for _ = 1, 3 do Mock.runTimers(env) end
+    for _ = 1, 5 do Mock.runTimers(env) end
     noErrors(env)
     H.eq(#seen, #ns.Screenshots.PLAN, "every step took its picture")
     local checked = {}
@@ -697,5 +697,52 @@ H.test("Dungeons tab: fake runs render, open to their bosses, character drop-dow
         D.state.range = range
         D.Refresh()
     end
+    noErrors(env)
+end)
+
+H.test("Quest chains as a list and a pane: the chosen chain, its next step and every quest", function()
+    local env, ns = boot()
+    local st = env.__state
+    st.noQuestLines = true
+    st.questieLoaded = true
+    st.level = 12
+    st.areas = { [40] = "Westfall" }
+    st.questieNPCs = { [234] = { name = "Gryan Stoutmantle", spawns = { [40] = { { 56, 47 } } } } }
+    st.questie = {
+        [53] = { next = 54, name = "Start Here", level = 10, req = 8, startedBy = { { 234 } } },
+        [54] = { pre = 53, next = 60, name = "Middle", level = 12, req = 10, finishedBy = { { 234 } } },
+        [60] = { pre = 54, name = "The End", level = 15, req = 13, startedBy = { { 234 } } },
+    }
+    st.completed = { [53] = true }
+    ns.MainWindow.Open("me")
+    local Me = ns.MeTab
+    Me.state.mode = "chains"
+    Me.Refresh()
+    H.ok(Me.ui.chains:IsShown() and Me.ui.chainTabs:IsShown(), "list and pane shown")
+    H.ok(not Me.ui.ranges:IsShown(), "no range buttons over the chains")
+    H.eq(Me.ui.chainTabs.buttons.mine.text:GetText(), "In your log  1")
+    -- The list: the chain is chosen by default, with its step and a progress bar.
+    local list = Me.ui.chainList.lines
+    H.eq(list[1].chainId, "m|q:53|54")
+    H.ok(list[1].shade, "the chosen chain is shaded")
+    local stepSeg
+    for _, sg in ipairs(list[2].segments) do if sg.text == "step 2 of 3" then stepSeg = sg end end
+    H.ok(stepSeg, "step 2 of 3 in the list")
+    -- The pane: name, Step 2 of 3, Next (turn in Middle to Gryan), then every quest.
+    local texts = {}
+    for _, line in ipairs(Me.ui.chainDetail.lines) do
+        for _, sg in ipairs(line.segments or {}) do if sg.text and sg.text ~= "" then texts[#texts + 1] = sg.text end end
+    end
+    local all = table.concat(texts, " | ")
+    H.ok(all:find("Step 2 of 3", 1, true), all)
+    H.ok(all:find("Finish \"Middle\" and turn it in: Gryan Stoutmantle, Westfall", 1, true), all)
+    H.ok(all:find("Then \"The End\" from Gryan Stoutmantle", 1, true), all)
+    H.ok(all:find("Start Here", 1, true) and all:find("The End", 1, true), "every quest listed")
+    -- Friends are on: an empty list says so.
+    Me.ui.chainTabs.buttons.friends:GetScript("OnClick")()
+    H.eq(Me.state.chainList, "friends")
+    H.ok(Me.ui.chainList.lines[#Me.ui.chainList.lines].text, "a note when no friend chain")
+    Me.state.mode = "characters"; Me.Refresh()
+    H.ok(not Me.ui.chains:IsShown(), "hidden again on the characters")
     noErrors(env)
 end)

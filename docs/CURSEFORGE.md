@@ -35,7 +35,7 @@ The window opens with your friends online and when you last synced at the top, b
 - **All completed**: every quest the character has finished, grouped by zone.
 - **Bests**: your personal records.
 
-**Quest chains**: where you are in every chain in your quest log. Click a chain to see all its quests, their levels, which ones you've done, and who starts each one and where, with map coordinates. It also lists chains your friends are on that you haven't started, and which friends are on the same chain as you.
+**Quest chains**: every chain in your quest log in a list, each with its step and a progress bar. Pick one to see what to do next, all its quests, their levels, which ones you've done, and who starts each one and where, with map coordinates. It also lists chains your friends are on that you haven't started, and which friends are on the same chain as you.
 
 **Friends**: friends who run the ledger, grouped under their Battle.net name. Open any of their characters just like your own, with whatever they choose to share. **This week** puts you and your friends side by side, with a crown on the best. Right-click a friend to whisper or invite them.
 

@@ -261,17 +261,31 @@ function Obj:RenderGrid(w, line)
             b:Show()
         elseif sg.bar then
             -- A bar: sg.bar is the filled fraction (0 to 1) of the segment's width.
-            nBar = nBar + 1
-            local tex = w.bars[nBar]
-            if not tex then
-                tex = w:CreateTexture(nil, "ARTWORK")
-                W.Fill(tex, "accent", 0.8)
-                w.bars[nBar] = tex
+            -- 1.14.0: sg.track draws the empty part too (a progress bar), sg.barRole
+            -- colors the fill (default the accent), sg.barH its height (default 8).
+            local barH = sg.barH or 8
+            local function barTex(role, alpha)
+                nBar = nBar + 1
+                local tex = w.bars[nBar]
+                if not tex then
+                    tex = w:CreateTexture(nil, "ARTWORK")
+                    w.bars[nBar] = tex
+                end
+                local c = W.Color(role)
+                tex:SetColorTexture(c[1], c[2], c[3], alpha)
+                tex:SetDrawLayer("ARTWORK", role == "rule" and 0 or 1) -- the fill over the track
+                tex:ClearAllPoints()
+                tex:SetPoint("LEFT", x, 0)
+                tex:Show()
+                return tex
             end
-            tex:ClearAllPoints()
-            tex:SetPoint("LEFT", x, 0)
-            tex:SetSize(math.max(1, (width - 4) * math.max(0, math.min(1, sg.bar))), 8)
-            tex:Show()
+            if sg.track then
+                barTex("rule", 0.45):SetSize(math.max(1, width - 4), barH)
+            end
+            local fill = math.max(0, math.min(1, sg.bar))
+            local tex = barTex(sg.barRole or "accent", 0.85)
+            tex:SetSize(math.max(1, (width - 4) * fill), barH)
+            tex:SetShown(fill > 0)
         else
             nText = nText + 1
             local fs = w.segs[nText]

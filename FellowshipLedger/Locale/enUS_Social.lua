@@ -294,4 +294,18 @@ ns.Locale.Set({
     SET_F_LOOT_HINT = "Rare and epic items",
     SET_F_JOINED = "Joined your ledger",
     SET_F_JOINED_HINT = "A friend started sharing with you",
+
+    -- Quest chains as a list and a detail pane (1.14.0, D-134)
+    CHAIN_TAB_MINE = "In your log  %d",
+    CHAIN_TAB_FRIENDS = "Friends are on  %d",
+    CHAIN_STEP_SHORT = "step %d of %d",
+    CHAIN_STEP_OF_BIG = "Step %d of %d",
+    CHAIN_LIST_FRIEND = "%s",
+    CHAIN_DETAIL_FRIEND = "%s is on it (%s)",
+    CHAIN_PICK_ONE = "Pick a chain on the left.",
+    CHAIN_NEXT = "Next",
+    CHAIN_NEXT_TURN_IN = "Finish \"%s\" and turn it in: %s",
+    CHAIN_NEXT_THEN = "Then \"%s\" from %s",
+    CHAIN_NEXT_LAST = "That is the last quest of this chain.",
+    CHAIN_ALSO_ON = "Also on it",
 })

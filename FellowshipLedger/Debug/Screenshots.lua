@@ -36,6 +36,11 @@ Shots.PLAN = {
     { tab = "friends", skin = "ledger", window = "invite", invites = true },
     -- 1.9.0
     { tab = "me", skin = "leather", layout = "card", open = "me", view = "xp" },
+    -- 1.14.0: Settings in sub-tabs, Quest chains as a list and a pane (D-133, D-134)
+    { tab = "settings", skin = "plain", settingsPage = "tracking" },
+    { tab = "settings", skin = "plain", settingsPage = "notices" },
+    { tab = "settings", skin = "ledger", settingsPage = "look" },
+    { tab = "me", skin = "leather", mode = "chains" },
 }
 
 local function sortedKeys(t)
@@ -68,7 +73,13 @@ local function openCharacter(step)
     if step.mode == "chains" then
         local key = pickChain()
         if key then me.chainOpen[key] = true end
+        -- 1.14.0: choose it in the list, so the pane shows it.
+        me.chainList = "mine"
+        for _, c in ipairs(ns.MeTab.ChainView().mine) do
+            if c.key == key and c.known then me.chainSel.mine = ns.ChainModel.EntryId(c) break end
+        end
     end
+    if step.tab == "settings" then ns.SettingsTab.state.page = step.settingsPage or "general" end
     if step.open == "me" then
         -- The highest-level character: the fullest card.
         local best, bestLevel
@@ -228,7 +239,8 @@ function Shots.Run()
             end
             local shots = ns.db.dev.shots.steps
             shots[#shots + 1] = { tab = step.tab, skin = step.skin, layout = step.layout, mode = step.mode, view = step.view,
-                weekly = step.weekly or nil, invites = step.invites or nil, window = step.window, at = time(), rect = rect }
+                weekly = step.weekly or nil, invites = step.invites or nil, window = step.window,
+                settingsPage = step.settingsPage, at = time(), rect = rect }
             -- Leave time for the picture to be written before the window changes.
             ns.Events.After(Shots.DELAY, nextStep)
         end))

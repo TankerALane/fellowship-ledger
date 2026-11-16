@@ -162,37 +162,18 @@ function ChainModel.QuestMore(q, more, L, opts)
     return out
 end
 
--- The box under an opened chain. c: the chain view entry; returns a list of lines.
-local function body(c, L, opts)
+-- The quest rows of a chain (column titles, one row per quest around your step, Show
+-- all, also requires), through add(segments, extra). Shared by the opened chain's box
+-- and the detail pane (1.14.0).
+local function questRows(c, L, opts, add, d, all)
     local C = ChainModel.COLS
-    local d = c.details
-    local lines = {}
-    local function add(segs, extra)
-        local line = { kind = "grid", inset = ChainModel.INSET, segments = segs }
-        for k, v in pairs(extra or {}) do line[k] = v end
-        lines[#lines + 1] = line
-        return line
-    end
-    if not d or #(d.quests or {}) == 0 then
-        add({ seg({ 0, 1 }, L.CHAIN_NO_DETAILS, "muted") })
-    else
-        local qs = d.quests
-        if c.friendChain then
-            local q = c.next and qs[c.next]
-            if q then
-                local text = string.format(L.CHAIN_PICK_UP, q.name or "?", ChainModel.PlaceText(q.start, L))
-                local need = levelText(q.req)
-                if need ~= "" then text = text .. string.format(L.CHAIN_PICK_UP_LEVEL, need) end
-                add({ seg({ 0, 1 }, text, (type(q.req) == "number" and opts.playerLevel and q.req > opts.playerLevel) and "bad" or "text") })
-            else
-                add({ seg({ 0, 1 }, L.CHAIN_ALL_DONE, "muted") })
-            end
-        end
+    local qs = d.quests
+    do
         add({ seg(C.mark, ""), seg(C.num, "#", "muted", "small"), seg(C.quest, L.CHAIN_COL_QUEST, "muted", "small"),
             seg(C.lvl, L.CHAIN_COL_LVL, "muted", "small", "CENTER"), seg(C.req, L.CHAIN_COL_REQ, "muted", "small", "CENTER"),
             seg(C.starts, L.CHAIN_COL_STARTS, "muted", "small") }, { rules = { { 0, 1 } } })
         local focus = d.current or c.next
-        local from, to = ChainModel.Window(#qs, focus, c.showAll)
+        local from, to = ChainModel.Window(#qs, focus, c.showAll or all)
         for i = from, to do
             local q = qs[i]
             local mark = q.status == "done" and (opts.checkCode or "+") or q.status == "log" and (opts.logCode or ">") or ""
@@ -218,7 +199,7 @@ local function body(c, L, opts)
                 end
             end
         end
-        if from > 1 or to < #qs or c.showAll then
+        if not all and (from > 1 or to < #qs or c.showAll) then
             local label = c.showAll and L.DETAIL_SHOW_LESS or string.format(L.DETAIL_SHOW_ALL, #qs)
             add({ { x = 0, w = 1, text = "", button = { label = label, onClick = function() opts.onShowAll(c.key) end } } })
         end
@@ -229,6 +210,37 @@ local function body(c, L, opts)
             end
             add({ seg({ 0, 1 }, string.format(L.CHAIN_ALSO, table.concat(parts, ", ")), "muted") })
         end
+    end
+end
+
+-- "Pick up next" for a friend's chain: text and its role (bad when you are too low).
+local function pickUpText(c, L, opts, d)
+    local q = c.next and d.quests[c.next]
+    if not q then return L.CHAIN_ALL_DONE, "muted" end
+    local text = string.format(L.CHAIN_PICK_UP, q.name or "?", ChainModel.PlaceText(q.start, L))
+    local need = levelText(q.req)
+    if need ~= "" then text = text .. string.format(L.CHAIN_PICK_UP_LEVEL, need) end
+    return text, (type(q.req) == "number" and opts.playerLevel and q.req > opts.playerLevel) and "bad" or "text"
+end
+
+-- The box under an opened chain. c: the chain view entry; returns a list of lines.
+local function body(c, L, opts)
+    local d = c.details
+    local lines = {}
+    local function add(segs, extra)
+        local line = { kind = "grid", inset = ChainModel.INSET, segments = segs }
+        for k, v in pairs(extra or {}) do line[k] = v end
+        lines[#lines + 1] = line
+        return line
+    end
+    if not d or #(d.quests or {}) == 0 then
+        add({ seg({ 0, 1 }, L.CHAIN_NO_DETAILS, "muted") })
+    else
+        if c.friendChain then
+            local text, role = pickUpText(c, L, opts, d)
+            add({ seg({ 0, 1 }, text, role) })
+        end
+        questRows(c, L, opts, add, d)
     end
     if #(c.friendsOn or {}) > 0 then
         local parts = {}
@@ -311,5 +323,117 @@ function ChainModel.Lines(view, L, opts)
     if #(view.friends or {}) == 0 then lines[#lines + 1] = { kind = "detail", indent = true, text = L.CHAIN_FRIENDS_NONE } end
     lines[#lines + 1] = { kind = "grid", segments = {} }
     lines[#lines + 1] = { kind = "detail", text = L.CHAIN_LEGEND }
+    return lines
+end
+
+-- List and detail (1.14.0, D-134) ------------------------------------------------------
+-- Austin (2026-11-15): the chains read as "large pages of words". The Quest chains
+-- view is now a list of chains on the left (name, zone, step and a progress bar) and
+-- the chosen chain on the right (progress, what to do next, its quests).
+
+-- A stable id for a list entry: a chain can be in the list twice (two of its quests
+-- in your log) and a friend's chain once per friend.
+function ChainModel.EntryId(c)
+    if c.friend then return "f|" .. tostring(c.key) .. "|" .. tostring(c.friend) .. "|" .. tostring(c.character) end
+    if c.known then return "m|" .. tostring(c.key) .. "|" .. tostring(c.anchor) end
+    return "u|" .. tostring(c.title)
+end
+
+-- Done steps as a fraction: your own step is the one you are on (not done yet); a
+-- friend's step counts as reached.
+local function progress(c)
+    local step, total = c.step or 0, c.total or 0
+    if total <= 0 then return 0 end
+    return math.max(0, math.min(1, (step - (c.friend and 0 or 1)) / total))
+end
+ChainModel.Progress = progress
+
+-- The left list. entries: view.mine or view.friends; selected: an EntryId.
+-- opts: { onSelect(id), goodCode }. Two lines per chain; the chosen one shaded.
+function ChainModel.ListLines(entries, selected, L, opts)
+    local lines = {}
+    for _, c in ipairs(entries or {}) do
+        local id = ChainModel.EntryId(c)
+        if c.known == false then
+            lines[#lines + 1] = { kind = "grid", segments = { seg({ .02, .96 }, c.title or "?", "muted") } }
+            lines[#lines + 1] = { kind = "grid", height = 16, segments = { seg({ .02, .96 }, L.CHAIN_NO_INFO, "muted", "small") } }
+        else
+            local chosen = id == selected
+            local click = function() if opts.onSelect then opts.onSelect(id) end end
+            local with = c.friend and string.format(L.CHAIN_LIST_FRIEND, c.friend) or ChainModel.WithText(c.withFriends, L, opts.goodCode)
+            local segs = { seg({ .02, with and .60 or .96 }, c.title or c.name or L.CHAIN_UNNAMED, chosen and "heading" or "text") }
+            if with then segs[2] = seg({ .62, .36 }, with, c.friend and "muted" or "text", "small", "RIGHT") end
+            lines[#lines + 1] = { kind = "grid", shade = chosen or nil, onClick = click, tooltip = withTooltip(c.withFriends, L),
+                chainId = id, segments = segs }
+            lines[#lines + 1] = { kind = "grid", shade = chosen or nil, onClick = click, height = 16, chainId = id,
+                segments = { seg({ .02, .48 }, c.zone or "", "muted", "small"),
+                    { x = .52, w = .24, bar = progress(c), track = true, barRole = chosen and "accent" or "muted", barH = 4 },
+                    seg({ .76, .22 }, string.format(L.CHAIN_STEP_SHORT, c.step or 0, c.total or 0), "text", "small", "RIGHT") } }
+        end
+        lines[#lines + 1] = { kind = "grid", height = 6, segments = {} }
+    end
+    return lines
+end
+
+-- What to do next on your own chain: turn in the quest you are on, then where the
+-- next one starts. Returns two texts (nil when the chain's current quest is unknown).
+local function nextSteps(L, d)
+    local qs = d.quests
+    local cur = d.current and qs[d.current]
+    if not cur then return nil end
+    local first = string.format(L.CHAIN_NEXT_TURN_IN, cur.name or "?", ChainModel.PlaceText(cur.finish, L))
+    local after = qs[d.current + 1]
+    local second = after and string.format(L.CHAIN_NEXT_THEN, after.name or "?", ChainModel.PlaceText(after.start, L))
+        or L.CHAIN_NEXT_LAST
+    return first, second
+end
+
+-- The right pane for one chain entry (with its details); opts as for Lines.
+function ChainModel.DetailLines(c, L, opts)
+    opts.onShowAll = opts.onShowAll or function() end
+    opts.onQuest = opts.onQuest or function() end
+    local lines = {}
+    local function add(segs, extra)
+        local line = { kind = "grid", segments = segs }
+        for k, v in pairs(extra or {}) do line[k] = v end
+        lines[#lines + 1] = line
+        return line
+    end
+    if not c then
+        add({ seg({ 0, 1 }, L.CHAIN_PICK_ONE, "muted") })
+        return lines
+    end
+    add({ seg({ 0, .70 }, c.name or L.CHAIN_UNNAMED, "heading", "large"),
+        seg({ .70, .30 }, string.format(L.CHAIN_STEP_OF_BIG, c.step or 0, c.total or 0), "text", nil, "RIGHT") }, { height = 24 })
+    local sub = c.zone or ""
+    if c.friend then sub = string.format(L.CHAIN_DETAIL_FRIEND, c.friend, c.character or "?") .. (sub ~= "" and ("  -  " .. sub) or "") end
+    add({ seg({ 0, 1 }, sub, "muted", "small") }, { height = 16 })
+    add({ { x = 0, w = 1, bar = progress(c), track = true, barH = 6 } }, { height = 12 })
+    add({}, { height = 6 })
+    local d = c.details
+    if not d or #(d.quests or {}) == 0 then
+        add({ seg({ 0, 1 }, L.CHAIN_NO_DETAILS, "muted") })
+    else
+        -- NEXT: a small box with what to do now.
+        local first, second, role
+        if c.friend then first, role = pickUpText(c, L, opts, d) else first, second = nextSteps(L, d) end
+        if first then
+            local box = {}
+            box[#box + 1] = add({ seg({ 0, 1 }, L.CHAIN_NEXT, "section") }, { inset = 8 })
+            box[#box + 1] = add({ seg({ 0, 1 }, first, role or "text") }, { inset = 8 })
+            if second then box[#box + 1] = add({ seg({ 0, 1 }, second, "muted", "small") }, { inset = 8, height = 18 }) end
+            box[1].box = "top"
+            for i = 2, #box - 1 do box[i].box = "mid" end
+            box[#box].box = "bottom"
+            add({}, { height = 8 })
+        end
+        questRows(c, L, opts, add, d, true) -- the pane has room for every quest
+    end
+    if #(c.friendsOn or {}) > 0 then
+        local parts = {}
+        for _, f in ipairs(c.friendsOn) do parts[#parts + 1] = string.format(L.CHAIN_FRIEND_STEP, f.friend, f.character, f.step or 0) end
+        add({}, { height = 6 })
+        add({ seg({ 0, .18 }, L.CHAIN_ALSO_ON, "section"), seg({ .18, .82 }, table.concat(parts, ", "), "text") })
+    end
     return lines
 end

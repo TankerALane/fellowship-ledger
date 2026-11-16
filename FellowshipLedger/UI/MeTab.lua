@@ -12,7 +12,8 @@ local Me = {}
 ns.MeTab = Me
 
 local state = { range = "today", sort = "level", desc = true, expanded = {}, showAll = {}, mode = "characters",
-    chainOpen = {}, chainAll = {}, chainQuest = {}, detailView = {}, openProf = {}, openZone = {} }
+    chainOpen = {}, chainAll = {}, chainQuest = {}, detailView = {}, openProf = {}, openZone = {},
+    chainList = "mine", chainSel = {} } -- 1.14.0: which list, and the chosen chain in each (D-134)
 local ui = {}
 Me.state, Me.ui = state, ui -- for tests
 
@@ -248,7 +249,7 @@ function Me.ChainView()
     local blocked = function(f) return ns.FriendsModel.IsBlocked(ns.db.blocklist, f) end
     local logSet = {}
     for _, e in ipairs(entries) do logSet[e.questID] = true end
-    local view = { mine = {}, friends = {}, emptyLog = #entries == 0, questieMissing = source == "missing" }
+    local view = { mine = {}, friends = {}, emptyLog = #entries == 0, questieMissing = source == "missing", logSet = logSet }
 
     -- One line per quest in the log, named after the quest (Austin looked for "The
     -- Family Crypt" under its chain's first quest, "Speak with Sevren"); the chain's
@@ -297,10 +298,10 @@ function Me.ChainView()
     return view
 end
 
-local function chainLines()
+local function chainOpts()
     local skin = ns.db.settings.skin
     local Palette = ns.Palette
-    return ns.ChainModel.Lines(Me.ChainView(), L, {
+    return {
         playerLevel = ns.Store.char and ns.Store.char.level,
         checkCode = ns.DetailModel.IconCode("check", Palette.Color(skin, "good")),
         logCode = ns.DetailModel.IconCode("level-arrow", Palette.Color(skin, "muted")),
@@ -329,7 +330,61 @@ local function chainLines()
             Me.Refresh()
         end,
         more = function(q) return Me.QuestMore(q) end,
+    }
+end
+
+-- The chosen chain of a list (1.14.0, D-134): the saved choice while it is still there,
+-- else the first chain with information. Its details are worked out here.
+function Me.SelectedChain(view, list)
+    local entries = view[list] or {}
+    local CM = ns.ChainModel
+    local pick, first
+    for _, c in ipairs(entries) do
+        if c.known ~= false then
+            first = first or c
+            if CM.EntryId(c) == state.chainSel[list] then pick = c end
+        end
+    end
+    pick = pick or first
+    if pick and not pick.details then
+        local friends = ns.Data.Friends()
+        if list == "friends" then
+            pick.details = ns.QuestChains.Details(pick.key, nil, view.logSet)
+            pick.next = pick.details and pick.details.next
+        else
+            local blocked = function(f) return ns.FriendsModel.IsBlocked(ns.db.blocklist, f) end
+            pick.details = ns.QuestChains.Details(pick.key, pick.anchor, view.logSet)
+            pick.friendsOn = ns.QuestChainLogic.FriendsOn(friends, blocked, pick.key, ns.QuestChains.FriendChains)
+        end
+    end
+    return pick
+end
+
+-- The chains as a list and a detail pane.
+local function refreshChains()
+    local CM = ns.ChainModel
+    local view = Me.ChainView()
+    local list = state.chainList == "friends" and "friends" or "mine"
+    local known = { mine = 0, friends = #view.friends }
+    for _, c in ipairs(view.mine) do if c.known then known.mine = known.mine + 1 end end
+    ui.chainTabs.buttons.mine.text:SetText(string.format(L.CHAIN_TAB_MINE, known.mine))
+    ui.chainTabs.buttons.friends.text:SetText(string.format(L.CHAIN_TAB_FRIENDS, known.friends))
+    ui.chainTabs:Select(list)
+    local pick = Me.SelectedChain(view, list)
+    local opts = chainOpts()
+    local lines = CM.ListLines(view[list], pick and CM.EntryId(pick), L, {
+        goodCode = opts.goodCode,
+        onSelect = function(id)
+            state.chainSel[list] = id
+            Me.Refresh()
+        end,
     })
+    if list == "mine" and view.emptyLog then table.insert(lines, 1, { kind = "detail", text = L.CHAIN_EMPTY_LOG }) end
+    if list == "friends" and #view.friends == 0 then lines[#lines + 1] = { kind = "detail", text = L.CHAIN_FRIENDS_NONE } end
+    if view.questieMissing then lines[#lines + 1] = { kind = "detail", text = L.CHAIN_QUESTIE_HINT } end
+    ui.chainList:SetLines(lines)
+    if pick then pick.showAll = true end
+    ui.chainDetail:SetLines(CM.DetailLines(pick, L, opts))
 end
 
 -- The details of one quest: rewards (seen in the game or from Questie) and your
@@ -379,10 +434,12 @@ function Me.Refresh()
     ui.ranges:Select(state.range)
     ui.ranges:SetShown(characters)
     ui.modeButton.text:SetText(characters and L.SHOW_CHAINS or L.SHOW_CHARACTERS)
+    ui.chains:SetShown(not characters)
+    ui.chainTabs:SetShown(not characters)
     local lines, count, rows
     if state.mode == "chains" then
-        lines = chainLines()
-        count = #lines
+        refreshChains()
+        lines, count = {}, 1 -- the table stays empty under the list and pane
     else
         lines, count, rows = characterLines()
     end
@@ -428,6 +485,40 @@ local function build(panel)
     ui.empty = W.Text(panel, "body", "muted")
     ui.empty:SetPoint("TOPLEFT", 8, -80)
     ui.empty:SetText(L.NO_DATA_YET)
+
+    -- Quest chains (1.14.0, D-134): In your log / Friends are on, a list of chains on
+    -- the left and the chosen one on the right.
+    ui.chainTabs = W.Segmented(panel, {
+        { id = "mine", label = string.format(L.CHAIN_TAB_MINE, 0), width = 120 },
+        { id = "friends", label = string.format(L.CHAIN_TAB_FRIENDS, 0), width = 130 },
+    }, function(id)
+        state.chainList = id
+        Me.Refresh()
+    end, 20)
+    ui.chainTabs:SetPoint("TOPLEFT", 4, -2)
+    ui.chainTabs:Hide()
+    ui.chains = CreateFrame("Frame", nil, panel)
+    ui.chains:SetPoint("TOPLEFT", 0, -30)
+    ui.chains:SetPoint("BOTTOMRIGHT", 0, 0)
+    ui.chains:Hide()
+    local left = CreateFrame("Frame", nil, ui.chains)
+    left:SetPoint("TOPLEFT", 0, 0)
+    left:SetPoint("BOTTOMLEFT", 0, 0)
+    left:SetWidth(Me.CHAIN_LIST_W)
+    W.Background(left, "panel")
+    W.Border(left, "rule", 1)
+    local right = CreateFrame("Frame", nil, ui.chains)
+    right:SetPoint("TOPLEFT", left, "TOPRIGHT", 10, 0)
+    right:SetPoint("BOTTOMRIGHT", 0, 0)
+    W.Background(right, "panel")
+    W.Border(right, "rule", 1)
+    -- No column titles: the first line starts at the top.
+    ui.chainList = ns.Table.New(left, {}, { top = -16 })
+    ui.chainList.rule:Hide()
+    ui.chainDetail = ns.Table.New(right, {}, { top = -12 })
+    ui.chainDetail.rule:Hide()
 end
+
+Me.CHAIN_LIST_W = 300
 
 ns.MainWindow.RegisterTab("me", build, function() Me.Refresh() end)
