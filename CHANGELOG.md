@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.14.1 - 2026-11-16
 
 ### Changed
 - **Dungeon timer**: bosses are compared by the order they died in, not by name, so a different route still lines up: your 4th kill against the compared run's 4th kill, and the final boss always against its final boss. The same on a dungeon's page in the Dungeons tab.
