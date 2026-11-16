@@ -73,7 +73,8 @@ function SessionGoals.Begin(list)
         if g.on then
             local start = { levelPos = snap.levelPos, xp = snap.xp, quests = snap.quests, active = snap.active, at = snap.at,
                 ranks = snap.ranks, rank = g.start and g.start.rank }
-            chosen[#chosen + 1] = { kind = g.kind, target = g.target, name = g.name, key = g.key, max = g.max, start = start }
+            chosen[#chosen + 1] = { kind = g.kind, target = g.target, name = g.name, key = g.key, max = g.max, start = start,
+                rate = g.rate }
         end
     end
     if #chosen == 0 then
@@ -96,7 +97,10 @@ function SessionGoals.Tick()
     for i, g in ipairs(set.list) do
         local value, done = Goals.Progress(g, now)
         local was = set.last[i] and set.last[i].done
-        set.last[i] = { value = value, done = done or nil }
+        -- took (1.14.0): active seconds from the start to the minute it was reached.
+        local took = set.last[i] and set.last[i].took
+        if done and not was then took = math.max(0, (now.active or 0) - ((g.start or {}).active or 0)) end
+        set.last[i] = { value = value, done = done or nil, took = done and took or nil }
         if done and not was then
             ns.Toast.Show(L.GOAL_REACHED_TITLE, { Goals.Text(g, value, done, L, fmt()) })
         end
@@ -119,6 +123,17 @@ function SessionGoals.ResultsFor(prev)
 end
 
 -- Window -------------------------------------------------------------------------
+-- 1.14.0 (D-137): a head with the level in a ring, one row per goal (a tick box, a
+-- small badge for its kind, the label, a bar of your usual session against the
+-- target, a grey hint, and - value + on the right), and a foot that counts the goals
+-- picked and says about how long they take at your usual pace.
+
+local MEDIA = "Interface\\AddOns\\FellowshipLedger\\media\\"
+SessionGoals.WIDTH = 540
+SessionGoals.ROW_H = 54
+SessionGoals.HEAD_H = 64
+SessionGoals.FOOT_H = 52
+SessionGoals.BAR_W = 250
 
 local win
 local rows = {}
@@ -131,24 +146,143 @@ local function xpMaxNow()
     return plain(UnitXPMax("player"))
 end
 
+local function tint(tex, role, alpha)
+    local c = W.Color(role)
+    tex:SetVertexColor(c[1], c[2], c[3], alpha or 1)
+end
+
+-- The foot: "3 goals picked" and "About 2h at your usual pace".
+function SessionGoals.FootText(list)
+    local n = 0
+    for _, g in ipairs(list or {}) do if g.on then n = n + 1 end end
+    local picked = string.format(n == 1 and L.GOALS_PICKED_ONE or L.GOALS_PICKED, n)
+    local secs = Goals.Estimate(list)
+    local about = ""
+    if secs and secs > 0 then
+        about = string.format(L.GOALS_ABOUT, ns.Format.DurationShort(math.max(600, math.floor(secs / 600 + 0.5) * 600)))
+    end
+    return picked, about
+end
+
 local function redraw()
     local xpMax = xpMaxNow()
     for i, row in ipairs(rows) do
         local g = current[i]
         row:SetShown(g ~= nil)
         if g then
-            row.label.text:SetText((g.on and "[x] " or "[ ] ") .. Goals.Label(g, L, fmt()))
+            local on = g.on and true or false
+            row.check:SetShown(on)
+            W.SetTextRole(row.label, on and "text" or "muted")
+            row.label:SetText(Goals.KindLabel(g, L))
+            row.icon.text:SetText(L["GOAL_ICON_" .. g.kind:upper()] or "")
+            W.SetTextRole(row.icon.text, on and "accent" or "muted")
+            row.shade:SetShown(on)
+            row.box.fill:SetShown(on)
+            local usual, target = Goals.Scale(g)
+            row.bar:SetShown(usual ~= nil)
+            if usual then
+                local w = SessionGoals.BAR_W
+                row.bar.usual:SetWidth(math.max(1, w * math.min(1, usual)))
+                row.bar.target:ClearAllPoints()
+                row.bar.target:SetPoint("LEFT", row.bar, "LEFT", math.floor(w * math.min(1, target)) - 1, 0)
+                tint(row.bar.target, on and "accent" or "muted")
+            end
+            row.hint:ClearAllPoints()
+            row.hint:SetPoint("TOPLEFT", row.label, "BOTTOMLEFT", 0, usual and -16 or -5)
             row.hint:SetText(Goals.Hint(g, L))
             local adjustable = Goals.Step(g, xpMax) > 0
             row.minus:SetShown(adjustable)
             row.plus:SetShown(adjustable)
+            row.value:SetShown(adjustable)
+            row.value:SetText(Goals.Value(g, fmt()))
+            W.SetTextRole(row.value, on and "text" or "muted")
         end
     end
+    if win then
+        local picked, about = SessionGoals.FootText(current)
+        win.picked:SetText(picked)
+        win.about:SetText(about)
+    end
+end
+
+local function makeRow(f, i)
+    local row = CreateFrame("Button", nil, f)
+    row:SetSize(SessionGoals.WIDTH - 20, SessionGoals.ROW_H - 2)
+    row:SetPoint("TOPLEFT", 10, -(SessionGoals.HEAD_H + 6) - (i - 1) * SessionGoals.ROW_H)
+    row.shade = row:CreateTexture(nil, "BACKGROUND")
+    row.shade:SetAllPoints()
+    W.Fill(row.shade, "accent", 0.06)
+    -- The tick box: an outline, filled gold with a check mark when ticked.
+    row.box = CreateFrame("Frame", nil, row)
+    row.box:SetSize(18, 18)
+    row.box:SetPoint("LEFT", 8, 0)
+    W.Border(row.box, "buttonBorder", 1)
+    row.box.fill = row.box:CreateTexture(nil, "ARTWORK")
+    row.box.fill:SetAllPoints()
+    W.Fill(row.box.fill, "accent", 0.9)
+    row.check = row.box:CreateTexture(nil, "OVERLAY")
+    row.check:SetTexture(MEDIA .. "check")
+    row.check:SetSize(14, 14)
+    row.check:SetPoint("CENTER", 0, 0)
+    tint(row.check, "bg")
+    -- The kind badge.
+    row.icon = CreateFrame("Frame", nil, row)
+    row.icon:SetSize(30, 30)
+    row.icon:SetPoint("LEFT", row.box, "RIGHT", 10, 0)
+    W.Background(row.icon, "panel")
+    W.Border(row.icon, "rule", 1)
+    row.icon.text = W.Text(row.icon, "small", "accent")
+    row.icon.text:SetPoint("CENTER", 0, 0)
+    row.icon.text:SetJustifyH("CENTER")
+    row.label = W.Text(row, "body", "text")
+    row.label:SetPoint("TOPLEFT", row.icon, "TOPRIGHT", 12, 0)
+    row.label:SetWidth(SessionGoals.WIDTH - 230)
+    row.label:SetWordWrap(false)
+    -- Your usual session (grey) and the target (a gold tick) on one scale.
+    row.bar = CreateFrame("Frame", nil, row)
+    row.bar:SetSize(SessionGoals.BAR_W, 12)
+    row.bar:SetPoint("TOPLEFT", row.label, "BOTTOMLEFT", 0, -2)
+    row.bar.track = row.bar:CreateTexture(nil, "BACKGROUND")
+    row.bar.track:SetPoint("LEFT", 0, 0)
+    row.bar.track:SetSize(SessionGoals.BAR_W, 4)
+    W.Fill(row.bar.track, "rule", 0.35)
+    row.bar.usual = row.bar:CreateTexture(nil, "ARTWORK")
+    row.bar.usual:SetPoint("LEFT", 0, 0)
+    row.bar.usual:SetHeight(4)
+    W.Fill(row.bar.usual, "muted", 0.7)
+    row.bar.target = row.bar:CreateTexture(nil, "OVERLAY")
+    row.bar.target:SetTexture(MEDIA .. "switch-knob")
+    row.bar.target:SetSize(3, 12)
+    row.hint = W.Text(row, "small", "muted")
+    row.hint:SetWidth(SessionGoals.WIDTH - 230)
+    row.hint:SetWordWrap(false)
+    row.plus = W.Button(row, "+", 24, 22, function()
+        local g = current[i]
+        if g then Goals.Adjust(g, 1, xpMaxNow()); g.on = true; redraw() end
+    end)
+    row.plus:SetPoint("RIGHT", -8, 0)
+    row.value = W.Text(row, "body", "text")
+    row.value:SetWidth(50)
+    row.value:SetJustifyH("CENTER")
+    row.value:SetPoint("RIGHT", row.plus, "LEFT", -2, 0)
+    row.minus = W.Button(row, "-", 24, 22, function()
+        local g = current[i]
+        if g then Goals.Adjust(g, -1, xpMaxNow()); g.on = true; redraw() end
+    end)
+    row.minus:SetPoint("RIGHT", row.value, "LEFT", -2, 0)
+    -- A click anywhere else on the row ticks or unticks the goal.
+    row:SetScript("OnClick", function()
+        local g = current[i]
+        if g then g.on = not g.on; redraw() end
+    end)
+    row:SetScript("OnEnter", function(self) self.shade:Show() end)
+    row:SetScript("OnLeave", function() redraw() end)
+    return row
 end
 
 local function build()
     local f = CreateFrame("Frame", "FellowshipLedgerGoalsWindow", UIParent)
-    f:SetSize(520, 120 + SessionGoals.MAX_ROWS * 40)
+    f:SetSize(SessionGoals.WIDTH, 200)
     f:SetPoint("CENTER", 0, 60)
     f:SetFrameStrata("DIALOG")
     f:SetClampedToScreen(true)
@@ -159,55 +293,63 @@ local function build()
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
     W.Background(f, "bg")
     W.Border(f, "border", 2)
+    -- Head: the level in a ring, the title, a grey line, the x.
+    f.badge = CreateFrame("Frame", nil, f)
+    f.badge:SetSize(36, 36)
+    f.badge:SetPoint("TOPLEFT", 16, -14)
+    f.badge.ring = f.badge:CreateTexture(nil, "ARTWORK")
+    f.badge.ring:SetTexture(MEDIA .. "ring")
+    f.badge.ring:SetAllPoints()
+    tint(f.badge.ring, "accent")
+    f.badge.text = W.Text(f.badge, "body", "heading")
+    f.badge.text:SetPoint("CENTER", 0, 0)
     f.title = W.Text(f, "heading", "heading")
-    f.title:SetPoint("TOPLEFT", 16, -14)
-    f.intro = W.Text(f, "small", "muted")
-    f.intro:SetPoint("TOPLEFT", 16, -38)
-    f.intro:SetPoint("RIGHT", -16, 0)
-    f.intro:SetWordWrap(true)
-    f.intro:SetText(L.GOALS_INTRO)
-    for i = 1, SessionGoals.MAX_ROWS do
-        local row = CreateFrame("Frame", nil, f)
-        row:SetSize(488, 36)
-        row:SetPoint("TOPLEFT", 16, -64 - (i - 1) * 40)
-        row.label = W.Button(row, "", 380, 20, function()
-            local g = current[i]
-            if g then g.on = not g.on; redraw() end
-        end)
-        row.label:SetPoint("TOPLEFT", 0, 0)
-        row.label.text:ClearAllPoints()
-        row.label.text:SetPoint("LEFT", 6, 0)
-        row.label.text:SetJustifyH("LEFT")
-        row.hint = W.Text(row, "small", "muted")
-        row.hint:SetPoint("TOPLEFT", 6, -22)
-        row.minus = W.Button(row, "-", 24, 20, function()
-            local g = current[i]
-            if g then Goals.Adjust(g, -1, xpMaxNow()); g.on = true; redraw() end
-        end)
-        row.minus:SetPoint("TOPRIGHT", -30, 0)
-        row.plus = W.Button(row, "+", 24, 20, function()
-            local g = current[i]
-            if g then Goals.Adjust(g, 1, xpMaxNow()); g.on = true; redraw() end
-        end)
-        row.plus:SetPoint("TOPRIGHT", 0, 0)
-        rows[i] = row
-    end
-    local start = W.Button(f, L.GOALS_START, 140, 24, function()
+    f.title:SetPoint("TOPLEFT", f.badge, "TOPRIGHT", 12, 0)
+    f.title:SetText(L.GOALS_HEAD)
+    f.sub = W.Text(f, "small", "muted")
+    f.sub:SetPoint("TOPLEFT", f.title, "BOTTOMLEFT", 0, -4)
+    f.sub:SetPoint("RIGHT", f, "RIGHT", -40, 0)
+    f.sub:SetWordWrap(false)
+    f.close = W.Button(f, "x", 22, 20, function() f:Hide() end)
+    f.close:SetPoint("TOPRIGHT", -12, -12)
+    f.headRule = W.Rule(f, "rule")
+    f.headRule:SetPoint("TOPLEFT", 0, -SessionGoals.HEAD_H)
+    f.headRule:SetPoint("TOPRIGHT", 0, -SessionGoals.HEAD_H)
+    for i = 1, SessionGoals.MAX_ROWS do rows[i] = makeRow(f, i) end
+    -- Foot: the count and the time, then Skip today, Not now and Start.
+    f.foot = CreateFrame("Frame", nil, f)
+    f.foot:SetPoint("BOTTOMLEFT", 2, 2)
+    f.foot:SetPoint("BOTTOMRIGHT", -2, 2)
+    f.foot:SetHeight(SessionGoals.FOOT_H)
+    W.Background(f.foot, "panel")
+    local footRule = W.Rule(f.foot, "rule")
+    footRule:SetPoint("TOPLEFT", 0, 0)
+    footRule:SetPoint("TOPRIGHT", 0, 0)
+    f.picked = W.Text(f.foot, "body", "accent")
+    f.picked:SetPoint("TOPLEFT", 14, -10)
+    f.about = W.Text(f.foot, "small", "muted")
+    f.about:SetPoint("TOPLEFT", f.picked, "BOTTOMLEFT", 0, -3)
+    local start = W.Button(f.foot, L.GOALS_START, 96, 26, function()
         if not preview then SessionGoals.Begin(current) end
         f:Hide()
     end)
-    start:SetPoint("BOTTOMLEFT", 16, 14)
-    local later = W.Button(f, L.GOALS_NOT_NOW, 140, 24, function() f:Hide() end)
-    later:SetPoint("BOTTOM", 0, 14)
-    local skip = W.Button(f, L.GOALS_SKIP_TODAY, 140, 24, function()
+    start:SetPoint("RIGHT", -12, 0)
+    start:SetSelected(true)
+    start:SetScript("OnLeave", nil)
+    start:SetScript("OnEnter", nil)
+    local later = W.Button(f.foot, L.GOALS_NOT_NOW, 84, 26, function() f:Hide() end)
+    later:SetPoint("RIGHT", start, "LEFT", -8, 0)
+    local skip = W.Button(f.foot, L.GOALS_SKIP_TODAY, 84, 26, function()
         if not preview then ns.Store.char.goalsSkipDay = ns.Store.Today() end
         f:Hide()
     end)
-    skip:SetPoint("BOTTOMRIGHT", -16, 14)
+    skip:SetPoint("RIGHT", later, "LEFT", -8, 0)
+    f.start, f.later, f.skip = start, later, skip
     if type(UISpecialFrames) == "table" then table.insert(UISpecialFrames, "FellowshipLedgerGoalsWindow") end
     f:Hide()
     return f
 end
+SessionGoals.rows = rows -- for tests
 
 -- Open the window. force: /fl goals (says why when there is nothing to suggest yet).
 function SessionGoals.Open(force)
@@ -234,11 +376,14 @@ function SessionGoals.Open(force)
     end
     local char = ns.Store.char
     preview = false
-    return SessionGoals.Show(list, char.display or char.name or "?", char.level or 0)
+    local info = SessionGoals.Info()
+    return SessionGoals.Show(list, { name = char.display or char.name or "?", class = char.class, level = info.level or char.level or 0,
+        rested = info.rested, xpMax = info.xpMax, sessions = #Goals.Qualifying(char.sessions, ns.Store.session.start) })
 end
 
--- Show a list of suggestions in the window.
-function SessionGoals.Show(list, name, level)
+-- Show a list of suggestions in the window. who: { name, class, level, rested
+-- (XP), xpMax, sessions (how many recent sessions the suggestions come from) }.
+function SessionGoals.Show(list, who)
     while #list > SessionGoals.MAX_ROWS do table.remove(list) end
     current = list
     if not win then
@@ -249,11 +394,23 @@ function SessionGoals.Show(list, name, level)
         end
         win = f
     end
-    win.title:SetText(string.format(L.GOALS_TITLE, name, level))
-    win:SetHeight(120 + #list * 40)
+    win.badge.text:SetText(tostring(who.level or "?"))
+    win.sub:SetText(SessionGoals.SubText(who))
+    win:SetHeight(SessionGoals.HEAD_H + 12 + #list * SessionGoals.ROW_H + SessionGoals.FOOT_H)
     redraw()
     win:Show()
     return true
+end
+
+-- "Brannoc  -  level 31  -  1.5 bubbles rested  -  from your last 6 sessions"
+function SessionGoals.SubText(who)
+    local parts = { W.ClassName(who.name or "?", who.class), string.format(L.GOALS_SUB_LEVEL, who.level or 0) }
+    local rested, xpMax = tonumber(who.rested), tonumber(who.xpMax)
+    if rested and xpMax and rested > 0 and xpMax > 0 then
+        parts[#parts + 1] = string.format(L.GOALS_SUB_RESTED, string.format("%.1f", rested / xpMax * 20))
+    end
+    if (tonumber(who.sessions) or 0) > 0 then parts[#parts + 1] = string.format(L.GOALS_SUB_FROM, who.sessions) end
+    return table.concat(parts, "  -  ")
 end
 
 -- /fl shots: the window with goals suggested from a made-up character's history.
@@ -268,7 +425,8 @@ function SessionGoals.Preview(char, now)
         cleared = {}, dungeons = ns.DungeonLevels.InRange(level) })
     if #list == 0 then return false end
     preview = true
-    return SessionGoals.Show(list, char.display or char.name or "?", level)
+    return SessionGoals.Show(list, { name = char.display or char.name or "?", class = char.class, level = level,
+        rested = previewXpMax * 0.075, xpMax = previewXpMax, sessions = #Goals.Qualifying(char.sessions, now) })
 end
 
 -- The window, for /fl shots (nil until first opened).

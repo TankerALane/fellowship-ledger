@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Changed
+- **Session goals** window redrawn: each goal is a row with a tick box, a bar of your usual session against the goal, and - and + beside its number. The bottom counts the goals picked and says about how long they take at your usual pace.
+- **Goals tracker**: the done count in a ring, a button to fold it to one line, a tick on each bar showing where your usual pace would have you by now ("Ahead of your usual pace" or what is left under it), how long each finished goal took, and **Pick more goals** once all are done.
 - **Friends**: characters in the same two-line rows, **This week** in a panel beside the list (the This week button hides it), and a friend's character opens as its own page like yours.
 - **Me**: each character is two lines (its level in a ring, then class, faction and when it was last played) with six figures: Levels, Quests, Dungeons, Gold, Active, Deaths. Clicking one opens **its own page**: a Back button, its views as tabs, tiles (average, fastest and slowest level, gold, played, deaths), then the view. Faction, played time, kills and skill-ups are on the page.
 - **Quest chains** is a list and a pane: the chains on the left, each with its step and a progress bar (In your log, Friends are on); the chosen one on the right with what to do next and all its quests.

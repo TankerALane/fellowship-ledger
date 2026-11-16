@@ -441,3 +441,91 @@ H.test("goals tracker: shows started goals, follows progress, moves, closes and 
     ns.Data.DisableFake(); T.Refresh()
     H.ok(f:IsShown())
 end)
+
+-- 1.14.0 (D-137): the redrawn goals window and tracker -----------------------------
+
+H.test("goals: usual, best and pace for the window's bars, the estimate and the tracker's tick", function()
+    local ns = H.pureNamespace()
+    local G, L = ns.Goals, ns.L
+    local levels = { [9] = { active = 1800 }, [10] = { active = 1800 } }
+    local list = G.Suggest({ level = 10, xpMax = 7000, sessions = sessions(3, 3600), levels = levels })
+    local by = {}
+    for _, g in ipairs(list) do by[g.kind] = g end
+    H.eq(by.levels.usual, 1); H.eq(by.levels.best, 1); H.eq(by.levels.rate, 2 / 3600)
+    H.eq(by.quests.usual, 10); H.eq(by.quests.rate, 30 / (3 * 3600))
+    H.eq(by.xphour.usual, 14000)
+    local u, t = G.Scale(by.quests)
+    H.ok(u < t and t < 1, "the target (11) past your usual (10), inside the bar")
+    H.eq(G.Scale({ kind = "dungeon", target = 1 }), nil, "no bar for a dungeon")
+    -- Levels 2 at 2 an hour: 1 hour; quests 11 at 10 an hour: 66 minutes. The slowest.
+    H.eq(math.floor(G.Estimate(list) + 0.5), 3960)
+    by.quests.on = false
+    H.eq(G.Estimate(list), 3600, "only ticked goals")
+    -- Half an hour in, quests at 10 an hour should be at 5 of 11.
+    local g = { kind = "quests", target = 11, rate = 10 / 3600, start = { quests = 0, active = 0 } }
+    H.eq(G.Expected(g, { active = 1800 }), 5 / 11)
+    H.eq(select(1, G.PaceNote(g, 6, false, { active = 1800 }, L)), L.GOAL_PACE_AHEAD)
+    local note, role = G.PaceNote(g, 3, false, { active = 1800 }, L)
+    H.eq(note, "8 to go"); H.eq(role, "muted")
+    H.eq(G.PaceNote(g, 11, true, { active = 1800 }, L), nil, "nothing once done")
+    H.eq(G.KindLabel({ kind = "quests" }, L), "Turn in quests")
+    H.eq(G.KindLabel({ kind = "profession", name = "Mining" }, L), "Mining to")
+    H.eq(G.Value({ kind = "levels", target = 1.5 }, { Number = ns.Format.Number }), "1.5")
+end)
+
+H.test("goals window: rows tick and change, the foot counts them; the tracker folds and says how long goals took", function()
+    local Mock = dofile(H.ROOT .. "/tests/wowmock.lua")
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    env.FellowshipLedgerDB = { settings = { askStale = false, welcomeEveryLogin = false, sessionSummary = false } }
+    local ns = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.runTimers(env)
+    local char = ns.Store.char
+    for i = 1, 3 do table.insert(char.sessions, 1, { start = i, stop = i, active = 3600, played = 3600, counts = { quests = 8 } }) end
+    H.eq(ns.SessionGoals.Open(true), true)
+    local f, rows = ns.SessionGoals.Frame(), ns.SessionGoals.rows
+    H.eq(f.title:GetText(), "Today's goals")
+    H.ok(f.sub:GetText():find("from your last 3 sessions", 1, true), f.sub:GetText())
+    local qi
+    for i, r in ipairs(rows) do if r:IsShown() and r.label:GetText() == "Turn in quests" then qi = i end end
+    H.ok(qi, "a quests row")
+    local r = rows[qi]
+    H.eq(r.value:GetText(), "9")
+    r.plus:GetScript("OnClick")(r.plus)
+    H.eq(r.value:GetText(), "10", "+ raises it")
+    H.ok(f.picked:GetText():find("picked", 1, true), f.picked:GetText())
+    H.ok(f.about:GetText():find("About", 1, true), "an estimate from the quest pace: " .. tostring(f.about:GetText()))
+    r:GetScript("OnClick")(r)
+    H.ok(not r.check:IsShown(), "a click on the row unticks it")
+    r:GetScript("OnClick")(r)
+    H.ok(r.check:IsShown())
+    f.start:GetScript("OnClick")(f.start)
+    local set = ns.SessionGoals.Current()
+    H.ok(set and #set.list >= 1, "started")
+    -- The tracker: fold to one line and back.
+    local T = ns.GoalsTracker
+    local tf = T.Frame()
+    H.ok(tf:IsShown())
+    tf.fold:GetScript("OnClick")(tf.fold)
+    H.eq(ns.db.settings.goalsTrackerFolded, true)
+    H.ok(tf.title:GetText():find("^Goals 0 / "), tf.title:GetText())
+    H.ok(not tf.time:IsShown(), "folded: one line")
+    tf.fold:GetScript("OnClick")(tf.fold)
+    H.eq(ns.db.settings.goalsTrackerFolded, nil)
+    -- Reach every goal: each says how long it took; the frame offers more.
+    ns.Store.session.active = (ns.Store.session.active or 0) + 600
+    for _, g in ipairs(set.list) do
+        if g.kind == "quests" then ns.Store.Count("quests", g.target)
+        elseif g.kind == "levels" then g.target = 0.01; char.level = (char.level or 1) end
+    end
+    local only = {}
+    for _, g in ipairs(set.list) do if g.kind == "quests" then only[#only + 1] = g end end
+    set.list = only
+    ns.SessionGoals.Tick()
+    H.ok(set.last[1].took and set.last[1].took >= 600, "took kept: " .. tostring(set.last[1].took))
+    T.Refresh()
+    H.ok(tf.doneFrame:IsShown() and tf.more:IsShown(), "all done: green, Pick more goals")
+    local lines = T.Lines(set.list, ns.SessionGoals.Snapshot(), set.last)
+    H.eq(lines[1].took, set.last[1].took)
+end)

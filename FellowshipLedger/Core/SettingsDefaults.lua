@@ -33,6 +33,7 @@ SettingsDefaults.VALUES = {
     dungeonTimerMine = false,        -- compare with your own fastest clear instead of the Leaderboard's #1
     goalsTracker = true,             -- the small on-screen goals tracker once goals are started
     goalsTrackerPos = nil,           -- where it was dragged: { point, relativePoint, x, y }
+    goalsTrackerFolded = nil,        -- folded to one line (1.14.0)
     goals = false,                   -- suggest goals when a session starts (D-116; off unless asked for)
     bestToasts = true,
     leaderToasts = true,             -- a run of yours made a top 5 on the Leaderboard (D-115)               -- a record of all your characters was beaten (D-115)

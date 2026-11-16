@@ -393,6 +393,12 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:charpage` | manual | two-line character rows and a character page (D-135): media/ring.tga tinted, Table lines with a badge and a second line | after a game restart: /fl, Me: each character shows its level in a ring and a grey line under its name; clicking one opens its page with Back, its tabs and tiles; every tab works; Back returns to the list; nothing overlaps at the smallest window size | ? | ? |
 
+### Goals
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:goalswin` | manual | the redrawn goals window and tracker (D-137): media/check.tga and ring.tga tinted, whole-row click with - and + buttons on top | after a game restart: /fl goals: each goal shows a tick box, a bar with a gold tick, and - number +; clicking a row unticks it, - and + change the number without unticking; the bottom shows the count and 'About ... at your usual pace'; Start: the tracker shows a ring with 0/n, the - button folds it to one line and + opens it again; finishing a goal shows how long it took | ? | ? |
+
 ### Dungeons
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
