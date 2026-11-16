@@ -534,3 +534,9 @@ From the same approval as D-137.
 - **Friends:** the old friends' totals table.
 - DungeonsTab.OpenRun opens a run (the timer's "Open the run"). DungeonsModel.Lines is gone (RunListLines, RunDetailLines, DungeonListLines, DungeonDetailLines, FriendLines replace it); ByDungeon also counts deaths, the boss count and keeps its runs.
 - /fl shots: step 7 now shows Runs; a new last step shows By dungeon (plain).
+
+## D-141 Friends tab: fold a Battle.net friend to one line; Collapse all (1.14.0)
+Austin, 2026-11-16: "collapse the friends list down to show a single line per friend ... by default they are all open ... a Collapse All button like in the Leaderboard."
+- A Battle.net friend's header line starts with "- " (open) or "+ " (folded); a click folds or opens it. Folded, only the header shows (name, online, character count, last update). Character-only friends are already one line each and do not fold.
+- "Collapse all" sits right of "This week" (hidden on a friend's page and when there are no Battle.net friends); it reads "Open all" once every one is folded, as on the Leaderboard.
+- Folds are saved in settings.friendsCollapsed by friend id, so they stay after a /reload. Nothing is folded by default.

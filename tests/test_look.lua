@@ -75,6 +75,43 @@ H.test("Leaderboard: the fastest clear has the crown and a full bar, slower ones
     H.ok(not clears[2].line.segments[1].text:find("crown", 1, true), "none on #2")
 end)
 
+H.test("Friends tab: a Battle.net friend folds to its header line; Collapse all and Open all", function()
+    local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
+    local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")
+    Mock.fire(env, "ADDON_LOADED", "FellowshipLedger")
+    Mock.fire(env, "PLAYER_LOGIN")
+    Mock.fire(env, "PLAYER_ENTERING_WORLD", true, false)
+    Mock.runTimers(env)
+    Mock.slash(env, "fake")
+    ns2.MainWindow.Open("friends")
+    local FT = ns2.FriendsTab
+    local function heads()
+        local out = {}
+        for _, l in ipairs((FT.Lines())) do if l.kind == "group" and l.friendId then out[#out + 1] = l end end
+        return out
+    end
+    local h = heads()
+    H.ok(#h >= 2, "fake data has Battle.net friends")
+    H.ok(h[1].text:find("^%- "), "open by default: " .. h[1].text)
+    H.ok(FT.ui.allToggle:IsShown())
+    H.eq(FT.ui.allToggle.text:GetText(), "Collapse all")
+    local openCount = #FT.Lines()
+    h[1].onClick()
+    H.ok(heads()[1].text:find("^%+ "), "folded")
+    H.ok(#FT.Lines() < openCount, "its characters are hidden")
+    H.eq(ns2.db.settings.friendsCollapsed[h[1].friendId], true, "saved in settings")
+    heads()[1].onClick()
+    H.eq(#FT.Lines(), openCount, "open again")
+    FT.ui.allToggle:GetScript("OnClick")()
+    for _, l in ipairs((FT.Lines())) do
+        H.ok(not (l.kind == "row" and l.indent), "no Battle.net friend's character shows")
+    end
+    H.eq(FT.ui.allToggle.text:GetText(), "Open all")
+    FT.ui.allToggle:GetScript("OnClick")()
+    H.eq(#FT.Lines(), openCount)
+    H.eq(FT.ui.allToggle.text:GetText(), "Collapse all")
+end)
+
 H.test("Friends tab: This week compares you and friends side by side (fake data)", function()
     local env = Mock.new({ interface = 120105, tocFlavor = "Retail" })
     local ns2 = Mock.loadToc(H, env, "FellowshipLedger_Mainline.toc")

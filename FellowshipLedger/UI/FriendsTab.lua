@@ -14,7 +14,7 @@ local MeModel, FriendsModel = ns.MeModel, ns.FriendsModel
 local FriendsTab = {}
 ns.FriendsTab = FriendsTab
 
-local state = { range = "week", weekly = true, sort = nil, desc = false, expanded = {}, detailView = {}, showAll = {} }
+local state = { range = "week", weekly = true, sort = nil, desc = false, expanded = {}, detailView = {}, showAll = {}, collapsed = {} }
 FriendsTab.WEEK_W = 290 -- the This week panel (1.14.0)
 local ui = {}
 local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE_MONTH", all = "RANGE_ALL" }
@@ -240,20 +240,47 @@ local function openPage(id)
 end
 FriendsTab.OpenPage = openPage
 
+-- Folded Battle.net friends (1.14.0, Austin): only their header line shows. All open
+-- by default; saved in settings.friendsCollapsed so it stays after a /reload.
+local function collapsed(fresh)
+    local s = ns.db and ns.db.settings
+    if s then
+        if fresh or type(s.friendsCollapsed) ~= "table" then s.friendsCollapsed = {} end
+        state.collapsed = s.friendsCollapsed
+    elseif fresh or not state.collapsed then
+        state.collapsed = {}
+    end
+    return state.collapsed
+end
+
+local function buildRows()
+    return FriendsModel.Build(ns.Data.Friends(), ns.db.blocklist, state.range, ns.Store.Today(), time, date,
+        state.sort, state.desc)
+end
+
 local function lines()
     local now = time()
-    local rows, hidden = FriendsModel.Build(ns.Data.Friends(), ns.db.blocklist, state.range, ns.Store.Today(), time, date,
-        state.sort, state.desc)
+    local rows, hidden = buildRows()
+    local folded = collapsed()
     local out = {}
     for _, r in ipairs(rows) do
-        if r.header then
+        if r.indent and folded[r.friendId] then
+            -- folded under its friend's header
+        elseif r.header then
             local f = r.friend
             local status = f.online and L.ONLINE or L.OFFLINE
             if ns.Merge.CompareVersions(f.version, ns.VERSION) == -1 then
                 status = status .. ", " .. string.format(L.FRIEND_OLD_VERSION, f.version)
             end
-            out[#out + 1] = { kind = "group", text = string.format(r.count == 1 and L.FRIEND_HEADER_ONE or L.FRIEND_HEADER, f.name or r.id, status, r.count,
+            local fid = r.id
+            out[#out + 1] = { kind = "group", friendId = fid, text = (folded[fid] and "+ " or "- ")
+                .. string.format(r.count == 1 and L.FRIEND_HEADER_ONE or L.FRIEND_HEADER, f.name or r.id, status, r.count,
                 FriendsModel.Ago(now, f.lastUpdated)),
+                onClick = function()
+                    local c = collapsed()
+                    c[fid] = not c[fid] or nil
+                    FriendsTab.Refresh()
+                end,
                 onRightClick = function(owner) FriendsTab.OpenMenu(owner, r.id, f.name or r.id, false) end,
                 action = { label = L.BLOCK, onClick = function() FriendsTab.Block(f.tag or r.id) end } }
         else
@@ -377,6 +404,25 @@ function FriendsTab.OpenWeekly()
     ns.MainWindow.Open("friends")
 end
 
+-- Fold every Battle.net friend, or open them all when every one is already folded.
+local function headerIds()
+    local ids = {}
+    for _, r in ipairs((buildRows())) do if r.header then ids[#ids + 1] = r.id end end
+    return ids
+end
+local function allFolded(ids)
+    local c = collapsed()
+    for _, id in ipairs(ids) do if not c[id] then return false end end
+    return #ids > 0
+end
+function FriendsTab.ToggleAll()
+    local ids = headerIds()
+    local closeAll = not allFolded(ids)
+    local c = collapsed(true)
+    if closeAll then for _, id in ipairs(ids) do c[id] = true end end
+    FriendsTab.Refresh()
+end
+
 FriendsTab.Lines = lines -- for tests
 FriendsTab.ui = ui
 FriendsTab.state = state
@@ -407,6 +453,9 @@ function FriendsTab.Refresh()
     ui.views:SetShown(pageId ~= nil)
     ui.weeklyButton:SetShown(not pageId)
     ui.status:SetShown(not pageId)
+    local ids = pageId and {} or headerIds()
+    ui.allToggle:SetShown(#ids > 0)
+    ui.allToggle.text:SetText(allFolded(ids) and L.LEADER_OPEN_ALL or L.LEADER_COLLAPSE_ALL)
     local week = state.weekly and not pageId
     ui.week:SetShown(week)
     ui.listFrame:ClearAllPoints()
@@ -469,10 +518,12 @@ local function build(panel)
         FriendsTab.Refresh()
     end)
     ui.weeklyButton:SetPoint("LEFT", ui.ranges, "RIGHT", 12, 0)
+    ui.allToggle = W.Button(panel, L.LEADER_COLLAPSE_ALL, 100, 20, function() FriendsTab.ToggleAll() end)
+    ui.allToggle:SetPoint("LEFT", ui.weeklyButton, "RIGHT", 8, 0)
     ui.status = W.Text(panel, "small", "muted")
     -- Right of "This week" (Sync is in the window's header since 1.13.0): a long status
     -- wraps instead of running over the button (Austin, 2026-11-12).
-    ui.status:SetPoint("LEFT", ui.weeklyButton, "RIGHT", 8, 0)
+    ui.status:SetPoint("LEFT", ui.allToggle, "RIGHT", 8, 0)
     ui.status:SetPoint("RIGHT", panel, "TOPRIGHT", -4, -12)
     ui.status:SetJustifyH("RIGHT")
     ui.status:SetWordWrap(true)

@@ -411,6 +411,12 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:notices2` | manual | the redrawn notices (D-139): coloured stripes, ring icons with text or media/check and crown, the shrinking line, the big notice | after a game restart: /fl test (or level up): the notice has a gold stripe, LEVEL UP over the title, the level in a ring and 'Click to open your level times'; the line along the bottom runs down and the notice fades; a friend's notice is blue; nothing is cut off at the right | ? | ? |
 
+### Friends
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:friendsfold` | manual | folding Battle.net friends on the Friends tab (D-141): a click on a group line and a button beside This week | `/fl, Friends: click a Battle.net friend's name line, their characters fold away and the line starts with +; click again to open; Collapse all folds everyone and becomes Open all; /reload keeps the folds; the button does not overlap the sync status` | ? | ? |
+
 ### Dungeons
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |

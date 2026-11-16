@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Changed
+- **Friends**: click a Battle.net friend's name line to fold their characters away to that one line (click again to open). **Collapse all** folds every friend (then **Open all**). Folds stay after a /reload; everyone is open to start with.
 - **Dungeons** is split into **By dungeon**, **Runs** and **Friends**. By dungeon lists each dungeon with your best time and your place on the Leaderboard; picking one shows its figures, the fastest clears, your best run boss by boss against #1, and your latest runs there. Runs lists every run with a green stripe when cleared; picking one shows the run start to finish, each boss fight, and who was in the group. Friends shows your friends' totals as before.
 - **Notices** look different by kind: a coloured stripe and an icon (gold for you, blue for friends, green for goals, orange for dungeons), a small label over the title, a last line saying what a click opens, and a thin line along the bottom that runs down until the notice goes. A friend reaching the level cap, or a new #1 of yours on the Leaderboard, gets a larger notice in the middle that stays until you close it. A level-up also says how it compares with the level before.
 - **Dungeon timer**: a large clock with the + or - in a coloured box, a bar with a tick for each boss (yours and the compared run's), the next boss with the compared run's time for it, and a switch between **#1** and **My best**. Once cleared it shows the run's place on the Leaderboard, how it compares with your best, and buttons to open the run or the Leaderboard.

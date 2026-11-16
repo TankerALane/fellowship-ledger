@@ -33,6 +33,7 @@ SettingsDefaults.VALUES = {
     dungeonTimerMine = false,        -- compare with your own fastest clear instead of the Leaderboard's #1
     goalsTracker = true,             -- the small on-screen goals tracker once goals are started
     goalsTrackerPos = nil,           -- where it was dragged: { point, relativePoint, x, y }
+    friendsCollapsed = nil,          -- Friends tab: folded Battle.net friends, by id (1.14.0)
     goalsTrackerFolded = nil,        -- folded to one line (1.14.0)
     goals = false,                   -- suggest goals when a session starts (D-116; off unless asked for)
     bestToasts = true,
