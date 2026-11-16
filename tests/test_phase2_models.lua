@@ -253,24 +253,27 @@ H.test("dungeons model: runs, per-dungeon summary, bosses, groups, friends' tota
     local fr = M.FriendRows(friends, blocked, nil, "2026-11-06")
     H.eq(#fr, 2); H.eq(fr[1].name, "Alastair Ratt"); H.eq(fr[1].completed, 0); H.eq(fr[2].completed, 1)
     H.eq(#M.FriendRows(friends, blocked, "2026-11-06", "2026-11-06"), 1, "range")
-    -- Lines: sections, an opened run shows its bosses, the completing one marked.
-    local opened = {}
-    local lines = M.Lines({ chars = chars, friends = friends, isBlocked = blocked, now = E + 4000, dateFn = os.date, L = L,
-        todayKey = "2026-11-06", expanded = { ["Tara-R|" .. E] = true }, toggle = function(k) opened[#opened + 1] = k end })
-    local text = {}
-    for _, l in ipairs(lines) do
-        if l.text then text[#text + 1] = l.text end
-        for _, sg in ipairs(l.segments or {}) do if sg.text then text[#text + 1] = sg.text end end
+    -- 1.14.0 (D-140): the run list and the chosen run's pane.
+    local function texts(lines)
+        local out = {}
+        for _, l in ipairs(lines) do
+            if l.text then out[#out + 1] = l.text end
+            for _, sg in ipairs(l.segments or {}) do if sg.text then out[#out + 1] = sg.text end end
+        end
+        return table.concat(out, "|")
     end
-    local all = table.concat(text, "|")
-    H.ok(all:find("By dungeon", 1, true) and all:find("Friends", 1, true) and all:find("Runs", 1, true), all)
-    H.ok(all:find("Rath'mael|31:00|-", 1, true), "bosses with the time after entering, no fight time without a pull: " .. all)
-    H.ok(all:find("Cleared in 31:00", 1, true), all)
-    H.ok(all:find("final boss", 1, true))
-    H.ok(all:find("1 damage", 1, true))
-    local clicked
-    for _, l in ipairs(lines) do if l.onClick and not clicked then l.onClick(); clicked = true end end
-    H.eq(opened[1], "Tara-R|" .. E, "clicking a run toggles it")
+    local picked = {}
+    local list = M.RunListLines(runs, "Tara-R|" .. E, L, { dateFn = os.date, now = E + 4000,
+        onSelect = function(k) picked[#picked + 1] = k end })
+    H.eq(list[1].runKey, "Tara-R|" .. E); H.ok(list[1].shade, "the chosen run is shaded")
+    list[4].onClick()
+    H.eq(picked[1], runs[2].charKey .. "|" .. runs[2].run.entered, "a click picks a run")
+    local all = texts(M.RunDetailLines(runs[1], { L = L, dateFn = os.date, now = E + 4000 }))
+    H.ok(all:find("Rath'mael  -  final boss|31:00|-", 1, true), "bosses with the time after entering, no fight time without a pull: " .. all)
+    H.ok(all:find("31:00", 1, true) and all:find(L.DUNGEONS_T_CLEARED_IN, 1, true), all)
+    H.ok(all:find("D  Player", 1, true), "a player with no name or class: their role and 'Player': " .. all)
+    -- Friends' totals view.
+    H.ok(texts(M.FriendLines({ L = L, friends = friends, isBlocked = blocked, todayKey = "2026-11-06" })):find("Alastair Ratt", 1, true))
 end)
 
 H.test("boss times: clock, clear time, fight length, friends' best (D-104)", function()
@@ -293,21 +296,27 @@ H.test("boss times: clock, clear time, fight length, friends' best (D-104)", fun
     }
     local best = M.FriendBest(friends, nil, nil, os.date)
     H.eq(best["Ragefire Chasm"].time, 1400); H.eq(best["Ragefire Chasm"].friend, "Hamlet", "clear time beats a longer stay inside")
-    local lines = M.Lines({ chars = chars, friends = friends, now = E + 4000, dateFn = os.date, L = L, todayKey = "2026-11-06",
-        expanded = { ["Me-R|" .. E] = true } })
-    local text, friendSeg = {}, nil
-    for _, l in ipairs(lines) do
-        for _, sg in ipairs(l.segments or {}) do
-            if sg.text then text[#text + 1] = sg.text end
-            if sg.text == "23:20 Hamlet" then friendSeg = sg end
-        end
+    -- 1.14.0 (D-140): a dungeon's pane, and a run's.
+    local runs = M.Runs(chars, nil, nil, os.date)
+    local by = M.ByDungeon(runs)
+    local function texts(lines)
+        local out = {}
+        for _, l in ipairs(lines) do for _, sg in ipairs(l.segments or {}) do if sg.text then out[#out + 1] = sg.text end end end
+        return table.concat(out, "|")
     end
-    local all = table.concat(text, "|")
-    H.ok(all:find("Ragefire Chasm|1|1|25:00|25:00|23:20 Hamlet", 1, true), "average of clear times: " .. all)
-    H.ok(all:find("Ragefire Chasm|Me R|25:00|2|0", 1, true), "Time is the clear, not the 30m inside: " .. all)
-    H.ok(all:find("Cleared in 25:00     30m inside", 1, true), "the opened run still says both")
-    H.eq(friendSeg.role, "good", "the faster one is green")
-    H.ok(all:find("Oggleflint|6:40|0:42", 1, true) and all:find("Bazzalan|25:00|1:35", 1, true), all)
+    local board = { clears = { { rank = 1, clear = 1400, lead = "Cain", names = { "Cain" }, size = 1 },
+        { rank = 2, clear = 1500, lead = "Me R", names = { "Me R" }, size = 1, mine = true } } }
+    local leader = { clear = 1400, lead = "Cain", splits = { Oggleflint = 300, Bazzalan = 1400 } }
+    local all = texts(M.DungeonDetailLines(by[1], { L = L, board = board, leader = leader, entries = by[1].entries, dateFn = os.date }))
+    H.ok(all:find("Runs|Cleared|Best|Average|Deaths|1|1|25:00|25:00|0", 1, true), "tiles, average of clear times: " .. all)
+    H.ok(all:find("#1|Cain|23:20|#2|Me R|25:00", 1, true), "the Leaderboard's clears: " .. all)
+    H.ok(all:find("Oggleflint|6:40|+1:40", 1, true) and all:find("Bazzalan|25:00|+1:40", 1, true), "splits against #1: " .. all)
+    local list = M.DungeonListLines(by, { ["Ragefire Chasm"] = board }, "Ragefire Chasm", L, {})
+    H.ok(texts(list):find("2nd on the Leaderboard", 1, true), texts(list))
+    all = texts(M.RunDetailLines(runs[1], { L = L, dateFn = os.date, now = E + 4000, best = 1600 }))
+    H.ok(all:find("25:00|-1:40|2 / 2", 1, true) or all:find("25:00|-1:40|2", 1, true), "cleared in, against your best: " .. all)
+    H.ok(all:find("30m inside", 1, true), "the time inside too")
+    H.ok(all:find("Oggleflint|6:40|0:42", 1, true) and all:find("Bazzalan  -  final boss|25:00|1:35", 1, true), all)
 end)
 
 H.test("boss times are shared in the run record and old fields still read (D-104)", function()
@@ -514,16 +523,17 @@ H.test("an open run after the final boss shows Completed (D-112)", function()
         currentRun = { name = "Wailing Caverns", entered = E, lastSeen = E + 2000, completed = true, completedAt = E + 1900, bosses = {} } } }
     local function text()
         local out = {}
-        for _, l in ipairs(M.Lines({ chars = chars, friends = {}, isBlocked = function() return false end, now = E + 2100,
-            dateFn = os.date, L = L, todayKey = "2026-11-09", expanded = {}, toggle = function() end })) do
+        local runs = M.Runs(chars, nil, nil, os.date, E + 2100)
+        for _, l in ipairs(M.RunDetailLines(runs[1], { L = L, dateFn = os.date, now = E + 2100 })) do
             if l.text then out[#out + 1] = l.text end
             for _, sg in ipairs(l.segments or {}) do if sg.text then out[#out + 1] = sg.text end end
         end
         return table.concat(out, "|")
     end
     local all = text()
-    H.ok(all:find(L.DUNGEONS_COMPLETED, 1, true) and not all:find(L.DUNGEONS_IN_PROGRESS, 1, true), all)
+    local U = ns.Format.Upper
+    H.ok(all:find(U(L.DUNGEONS_COMPLETED), 1, true) and not all:find(U(L.DUNGEONS_IN_PROGRESS), 1, true), all)
     chars["Tara-R"].currentRun.completed = nil
     all = text()
-    H.ok(all:find(L.DUNGEONS_IN_PROGRESS, 1, true), all)
+    H.ok(all:find(U(L.DUNGEONS_IN_PROGRESS), 1, true), all)
 end)

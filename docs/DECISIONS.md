@@ -525,3 +525,12 @@ From the same approval as D-137.
 - Friend notices: Notices.Look picks the label and icon per kind (the level, the rank, a check for a chain or a dungeon, the count for several); "Click to open Cain" / "on Friends" / "Friends" from where the click goes.
 - Big notices (in the middle, until closed, with a button and Dismiss): a friend at the level cap, and a new #1 of yours on the Leaderboard.
 - Level-up: a second line when both levels have full times and they differ by a minute or more ("10m faster than the level before"); a click opens the character's level times. Goal reached: "2 of 3 goals done"; a click shows the tracker again.
+
+## D-140 Dungeons tab: By dungeon, Runs and Friends; a list and a pane (1.14.0)
+From the same approval as D-137.
+- Three joined tabs (By dungeon with its count, Runs with its count, Friends), then the range buttons (58 px each here) and the character drop-down. The summary line shows only when the tab is at least 900 px wide, so nothing overlaps at the smallest window.
+- **By dungeon:** the list gives each dungeon its best clear, "levels 17-26 - 5 runs, 4 cleared", a small bar of cleared runs and your place on the Leaderboard ("3rd", "#1"). The pane has tiles (runs, cleared, best, average, deaths); the Leaderboard's fastest clears at level (the same top 5 as the Leaderboard tab, bars against the slowest); your best run boss by boss against #1 (RunTimer.Target, the timer's own comparison); and your four latest runs there (a click opens the run in Runs). The mock-up's clears and splits side by side became one under the other: the pane is narrow at the smallest window.
+- **Runs:** two lines a run with a green (cleared) or grey stripe, the time, the character, the date, bosses and deaths. The pane has the result, tiles (cleared in, against your best other clear, bosses, deaths), the run as stretches ending at each boss kill with the times under them, the bosses with their fight bars, and the group with roles (players who are not ledger friends show their class; hover for your role, as the old With column's tooltip did). Deaths are not drawn on the timeline: only their count is saved.
+- **Friends:** the old friends' totals table.
+- DungeonsTab.OpenRun opens a run (the timer's "Open the run"). DungeonsModel.Lines is gone (RunListLines, RunDetailLines, DungeonListLines, DungeonDetailLines, FriendLines replace it); ByDungeon also counts deaths, the boss count and keeps its runs.
+- /fl shots: step 7 now shows Runs; a new last step shows By dungeon (plain).

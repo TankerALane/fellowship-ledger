@@ -162,7 +162,7 @@ def main():
             else:
                 opened = step.get("layout") and not step.get("mode") and not step.get("weekly") and not step.get("invites")
                 parts = [step.get("tab"), step.get("layout") if step.get("tab") in ("me", "friends") and opened else None,
-                         step.get("mode"), step.get("view"), step.get("settingsPage"), "weekly" if step.get("weekly") else None,
+                         step.get("mode"), step.get("view"), step.get("settingsPage"), step.get("dungeonsView"), "weekly" if step.get("weekly") else None,
                          "invites" if step.get("invites") else None, step.get("skin")]
             name = f"{n:02d}-" + "-".join(p for p in parts if p) + ".png"
             rect = step.get("rect")

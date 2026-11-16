@@ -415,6 +415,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `m:dungeons2` | manual | the Dungeons tab as a list and a pane (D-140): Table grid lines with bars as stripes and timeline stretches | `/fl, Dungeons: By dungeon lists your dungeons, the pane shows tiles, fastest clears, your best run's bosses and recent runs (click one: Runs opens on it); Runs: green stripes on cleared runs, the pane shows the timeline with times under it, the bosses and the group (hover the group line for your role); Friends shows the totals; at the smallest window nothing overlaps (the summary line hides)` | ? | ? |
 | `m:myrole` | manual | your own role is saved with a run (D-132): UnitGroupRolesAssigned("player") in a group | run a dungeon in a group with roles set; on the Dungeons tab its With column counts you too, and hovering the run says which role you were | ? | ? |
 
 ### Window

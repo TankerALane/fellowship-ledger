@@ -689,22 +689,36 @@ H.test("1.13.0 look: header status and buttons, joined ranges, tiles, section ti
     Main.syncButton:GetScript("OnClick")()
 end)
 
-H.test("Dungeons tab: fake runs render, open to their bosses, character drop-down", function()
+H.test("Dungeons tab: a list and a pane per view, a run's bosses, friends, character drop-down (D-140)", function()
     local env, ns = boot()
     Mock.slash(env, "fake")
     ns.MainWindow.Select("dungeons")
     local D = ns.DungeonsTab
-    local lines = D.ui.table.lines
-    H.ok(#lines > 6, "lines shown")
-    local runLine
-    for _, l in ipairs(lines) do if l.onClick then runLine = l break end end
-    H.ok(runLine, "a run to click")
-    runLine.onClick()
-    local found = false
-    for _, l in ipairs(D.ui.table.lines) do
-        if l.box then found = true end
+    H.eq(D.state.view, "dungeons")
+    H.ok(#D.ui.list.lines > 2, "dungeons listed")
+    H.ok(#D.ui.detail.lines > 6, "the chosen dungeon's pane")
+    H.ok(D.state.dungeon ~= nil, "the first dungeon chosen")
+    local function texts(t)
+        local out = {}
+        for _, l in ipairs(t.lines) do for _, sg in ipairs(l.segments or {}) do if sg.text then out[#out + 1] = sg.text end end end
+        return table.concat(out, "|")
     end
-    H.ok(found, "the opened run shows its bosses")
+    H.ok(texts(D.ui.detail):find(ns.L.DUNGEONS_FASTEST, 1, true), texts(D.ui.detail))
+    -- Runs: pick another run; its bosses show.
+    D.ui.views.buttons.runs:GetScript("OnClick")()
+    H.eq(D.state.view, "runs")
+    local other
+    for _, l in ipairs(D.ui.list.lines) do if l.runKey and l.runKey ~= D.state.run then other = l break end end
+    H.ok(other, "another run to pick")
+    other.onClick()
+    H.eq(D.state.run, other.runKey)
+    H.ok(texts(D.ui.detail):find(ns.L.DUNGEONS_BOSS_HEAD, 1, true), "the run's bosses: " .. texts(D.ui.detail))
+    -- Friends: their totals in one table.
+    D.ui.views.buttons.friends:GetScript("OnClick")()
+    H.ok(D.ui.friends:IsShown() and not D.ui.split:IsShown(), "friends view")
+    -- The dungeon timer's "Open the run".
+    D.OpenRun(other.runKey)
+    H.eq(D.state.view, "runs"); H.eq(D.state.run, other.runKey)
     H.ok(D.ui.summary:GetText():find("runs", 1, true), D.ui.summary:GetText())
     -- Without the game's menu the character button cycles through characters with runs.
     env.MenuUtil = nil

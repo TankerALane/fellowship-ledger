@@ -41,6 +41,8 @@ Shots.PLAN = {
     { tab = "settings", skin = "plain", settingsPage = "notices" },
     { tab = "settings", skin = "ledger", settingsPage = "look" },
     { tab = "me", skin = "leather", mode = "chains" },
+    -- 1.14.0: the Dungeons tab's By dungeon view (D-140); step 7 shows Runs.
+    { tab = "dungeons", skin = "plain", dungeonsView = "dungeons" },
 }
 
 local function sortedKeys(t)
@@ -80,6 +82,10 @@ local function openCharacter(step)
         end
     end
     if step.tab == "settings" then ns.SettingsTab.state.page = step.settingsPage or "general" end
+    if step.dungeonsView then
+        local d = ns.DungeonsTab.state
+        d.view, d.char, d.range = step.dungeonsView, nil, "all"
+    end
     if step.open == "me" then
         -- The highest-level character: the fullest card.
         local best, bestLevel
@@ -91,7 +97,7 @@ local function openCharacter(step)
         -- Dungeons: open the newest completed run that has bosses.
         local d = ns.DungeonsTab.state
         for k in pairs(d.expanded) do d.expanded[k] = nil end
-        d.char = nil
+        d.char, d.view = nil, "runs"
         local runs = ns.DungeonsModel.Runs(ns.Data.Characters(), nil, nil, date)
         for _, e in ipairs(runs) do
             if e.run.completed and #(e.run.bosses or {}) > 0 then
@@ -165,6 +171,7 @@ local function restore(saved)
     for k in pairs(me.chainOpen) do me.chainOpen[k] = nil end
     for k in pairs(ns.FriendsTab.state.expanded) do ns.FriendsTab.state.expanded[k] = nil end
     for k in pairs(ns.DungeonsTab.state.expanded) do ns.DungeonsTab.state.expanded[k] = nil end
+    ns.DungeonsTab.state.view = "dungeons"
     ns.FriendsTab.state.weekly = saved.weekly
     if not saved.fake then ns.Data.DisableFake() end
     Shots.active = false
@@ -240,7 +247,7 @@ function Shots.Run()
             local shots = ns.db.dev.shots.steps
             shots[#shots + 1] = { tab = step.tab, skin = step.skin, layout = step.layout, mode = step.mode, view = step.view,
                 weekly = step.weekly or nil, invites = step.invites or nil, window = step.window,
-                settingsPage = step.settingsPage, at = time(), rect = rect }
+                settingsPage = step.settingsPage, dungeonsView = step.dungeonsView, at = time(), rect = rect }
             -- Leave time for the picture to be written before the window changes.
             ns.Events.After(Shots.DELAY, nextStep)
         end))

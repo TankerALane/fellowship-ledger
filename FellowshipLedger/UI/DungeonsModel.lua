@@ -1,7 +1,7 @@
 -- UI/DungeonsModel.lua
--- PURE: no WoW globals. The Dungeons tab (D-094): a summary per dungeon, my runs
--- (from each character's saved runs), then friends' totals (friends share day
--- counts only, so their runs are counted, not listed). Builds the tab's lines as
+-- PURE: no WoW globals. The Dungeons tab (D-094, redrawn in 1.14.0, D-140): a summary
+-- per dungeon, my runs (from each character's saved runs), and friends' totals
+-- (friends share day counts only, so their runs are counted, not listed). Builds the tab's lines as
 -- "grid" lines for UI/Table.lua, like UI/DetailModel.lua.
 
 local _, ns = ...
@@ -100,11 +100,15 @@ function DungeonsModel.ByDungeon(runs, now)
         local name = e.run.name or "?"
         local d = by[name]
         if not d then
-            d = { name = name, runs = 0, completed = 0, total = 0, timed = 0, last = 0 }
+            d = { name = name, runs = 0, completed = 0, total = 0, timed = 0, last = 0, deaths = 0, entries = {} }
             by[name] = d
             list[#list + 1] = d
         end
         d.runs = d.runs + 1
+        -- 1.14.0: deaths, the boss count and the runs themselves (newest first, as given).
+        d.deaths = d.deaths + (tonumber(e.run.deaths) or 0)
+        if e.run.bossCount and (not d.bossCount or e.run.bossCount > d.bossCount) then d.bossCount = e.run.bossCount end
+        d.entries[#d.entries + 1] = e
         local dur = durationOf(e, now)
         if e.run.completed then
             d.completed = d.completed + 1
@@ -233,151 +237,341 @@ function DungeonsModel.FriendBest(friends, isBlocked, fromKey, dateFn)
     return best
 end
 
--- Lines --------------------------------------------------------------------------
+-- Lines (1.14.0, D-140) ----------------------------------------------------------
+-- The tab has three views: By dungeon and Runs are a list on the left and the chosen
+-- one on the right (like Quest chains); Friends is the friends' totals.
 
 local function seg(x, w, text, role, font, align)
     return { x = x, w = w, text = text, role = role, font = font, align = align }
 end
 
--- Column layouts (fractions of the width).
-DungeonsModel.RUN_COLS = { { 0, .12 }, { .12, .24 }, { .36, .20 }, { .56, .07, "RIGHT" }, { .63, .07, "RIGHT" },
-    { .70, .07, "RIGHT" }, { .78, .12 }, { .90, .10 } }
-DungeonsModel.DUNGEON_COLS = { { 0, .26 }, { .26, .08, "RIGHT" }, { .34, .10, "RIGHT" }, { .44, .10, "RIGHT" },
-    { .54, .10, "RIGHT" }, { .67, .19 }, { .86, .14, "RIGHT" } }
-DungeonsModel.FRIEND_COLS = { { 0, .20 }, { .20, .30 }, { .50, .15, "RIGHT" }, { .65, .15, "RIGHT" }, { .80, .15, "RIGHT" } }
+DungeonsModel.VIEWS = { "dungeons", "runs", "friends" }
+DungeonsModel.RECENT = 4 -- runs listed under a dungeon
 
-local function row(cols, texts, role, font, roles)
-    local segs = {}
-    for i, c in ipairs(cols) do
-        if texts[i] ~= nil then
-            segs[#segs + 1] = seg(c[1], c[2], texts[i], (roles and roles[i]) or role, font, c[3])
-        end
-    end
-    return segs
+function DungeonsModel.RunKey(e) return tostring(e.charKey) .. "|" .. tostring(e.run.entered) end
+
+-- "1st", "2nd", ... (a place on the Leaderboard's top 5).
+function DungeonsModel.Ordinal(n, L)
+    return rawget(L, "DUNGEONS_ORD_" .. tostring(n)) or ("#" .. tostring(n))
 end
 
--- opts: { chars, friends, isBlocked, charKey, range, fromKey, todayKey, now, dateFn,
---         L, expanded = { [runKey] = true }, toggle = fn(runKey), nameOf = fn(text, class),
---         goodCode = "|cff..", reset = "|r" }
--- Returns lines, summary.
-function DungeonsModel.Lines(o)
+-- Your place on a dungeon's board (Leaderboard.Build): the rank of your fastest clear, or nil.
+function DungeonsModel.MyRank(board)
+    for _, e in ipairs(board and board.clears or {}) do
+        if e.mine then return e.rank end
+    end
+    return nil
+end
+
+local function resultOf(e, L)
+    if e.run.completed then return L.DUNGEONS_COMPLETED, "good" end
+    if e.live then return L.DUNGEONS_IN_PROGRESS, "muted" end
+    return L.DUNGEONS_NOT_DONE, "muted"
+end
+
+local function bossText(run)
+    local n = #(run.bosses or {})
+    return run.bossCount and (n .. " / " .. run.bossCount) or tostring(n)
+end
+
+-- Tiles as two lines: small titles, then the figures. tiles: { { label, value, role } }.
+local function tileLines(out, tiles)
+    local w = 1 / #tiles
+    local labels, values = {}, {}
+    for i, t in ipairs(tiles) do
+        labels[#labels + 1] = seg((i - 1) * w, w - .02, t[1], "section", "small")
+        values[#values + 1] = seg((i - 1) * w, w - .02, t[2], t[3] or "text", "number")
+    end
+    out[#out + 1] = { kind = "grid", height = 16, segments = labels }
+    out[#out + 1] = { kind = "grid", height = 26, segments = values }
+end
+
+local function section(out, text)
+    out[#out + 1] = { kind = "grid", height = 8, segments = {} }
+    out[#out + 1] = { kind = "grid", height = 18, segments = { seg(0, 1, text, "section", "small") } }
+end
+
+-- The list of dungeons. by: ByDungeon; boards: { [dungeon] = Leaderboard board entry };
+-- opts: { onSelect = fn(name) }.
+function DungeonsModel.DungeonListLines(by, boards, selected, L, opts)
+    local out = {}
+    for _, d in ipairs(by or {}) do
+        local chosen = d.name == selected
+        local click = function() if opts.onSelect then opts.onSelect(d.name) end end
+        local rank = DungeonsModel.MyRank(boards and boards[d.name])
+        local range = ns.DungeonLevels.For(d.name)
+        local sub = string.format(d.runs == 1 and L.DUNGEONS_LIST_RUN or L.DUNGEONS_LIST_RUNS, d.runs, d.completed)
+        if range then sub = string.format(L.DUNGEONS_LEVELS, range[1], range[2]) .. "  -  " .. sub end
+        local rankText = rank and (rank == 1 and L.DUNGEONS_RANK_TOP or string.format(L.DUNGEONS_RANK, DungeonsModel.Ordinal(rank, L))) or ""
+        out[#out + 1] = { kind = "grid", shade = chosen or nil, onClick = click, dungeon = d.name,
+            segments = { seg(.03, .64, d.name, chosen and "heading" or "text"),
+                seg(.67, .31, d.best and DungeonsModel.Clock(d.best) or "-", "text", nil, "RIGHT") } }
+        out[#out + 1] = { kind = "grid", shade = chosen or nil, onClick = click, height = 16, dungeon = d.name,
+            segments = { seg(.03, .55, sub, "muted", "small"),
+                { x = .60, w = .12, bar = d.runs > 0 and d.completed / d.runs or 0, track = true, barRole = "good", barH = 4 },
+                seg(.74, .24, rankText, rank == 1 and "heading" or "muted", "small", "RIGHT") } }
+        out[#out + 1] = { kind = "grid", height = 6, segments = {} }
+    end
+    if #out == 0 then out[1] = { kind = "grid", segments = { seg(.03, .94, L.DUNGEONS_NO_RUNS, "muted") } } end
+    return out
+end
+
+-- The fastest of my runs of a dungeon (completed, by clear time).
+local function bestRun(entries)
+    local best, bestT
+    for _, e in ipairs(entries or {}) do
+        local t = DungeonsModel.ClearTime(e.run)
+        if t and (not bestT or t < bestT) then best, bestT = e, t end
+    end
+    return best, bestT
+end
+
+-- The right pane for one dungeon. d: a ByDungeon row; o: { L, board, leader (a
+-- RunTimer.Target for #1), entries (my runs of it, newest first), nameOf, dateFn,
+-- onRun = fn(runKey), onAllRuns = fn() }.
+function DungeonsModel.DungeonDetailLines(d, o)
     local L = o.L
     local nameOf = o.nameOf or function(t) return t end
-    local lines = {}
-    local runs = DungeonsModel.Runs(o.chars, o.charKey, o.fromKey, o.dateFn, o.now)
-    local sum = DungeonsModel.Summary(runs)
     local when = function(t) return t and o.dateFn("%m-%d %H:%M", t) or "" end
+    local out = {}
+    if not d then
+        out[1] = { kind = "grid", segments = { seg(0, 1, L.DUNGEONS_PICK, "muted") } }
+        return out
+    end
+    out[#out + 1] = { kind = "grid", height = 24, segments = { seg(0, .65, d.name, "heading", "large"),
+        seg(.65, .35, string.format(L.DUNGEONS_LAST_RUN, when(d.last)), "muted", "small", "RIGHT") } }
+    local range = ns.DungeonLevels.For(d.name)
+    local sub = {}
+    if range then sub[#sub + 1] = string.format(L.DUNGEONS_LEVELS, range[1], range[2]) end
+    if d.bossCount then sub[#sub + 1] = string.format(L.DUNGEONS_BOSS_COUNT, d.bossCount) end
+    out[#out + 1] = { kind = "grid", height = 16, segments = { seg(0, 1, table.concat(sub, "  -  "), "muted", "small") } }
+    out[#out + 1] = { kind = "grid", height = 8, segments = {} }
+    tileLines(out, { { L.DUNGEONS_T_RUNS, tostring(d.runs) }, { L.DUNGEONS_T_CLEARED, tostring(d.completed), "good" },
+        { L.DUNGEONS_T_BEST, d.best and DungeonsModel.Clock(d.best) or "-", "heading" },
+        { L.DUNGEONS_T_AVERAGE, d.average and DungeonsModel.Clock(d.average) or "-" },
+        { L.DUNGEONS_T_DEATHS, tostring(d.deaths or 0), (d.deaths or 0) > 0 and "bad" or "text" } })
 
-    -- By dungeon
-    lines[#lines + 1] = { kind = "group", section = true, text = L.DUNGEONS_BY }
-    local by = DungeonsModel.ByDungeon(runs, o.now)
-    if #by == 0 then
-        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_RUNS }
+    -- The Leaderboard's fastest clears here (at level), you among them.
+    section(out, L.DUNGEONS_FASTEST)
+    local clears = o.board and o.board.clears or {}
+    if #clears == 0 then
+        out[#out + 1] = { kind = "grid", segments = { seg(0, 1, L.DUNGEONS_NO_CLEARS, "muted") } }
     else
-        local fbest = DungeonsModel.FriendBest(o.friends, o.isBlocked, o.fromKey, o.dateFn)
-        lines[#lines + 1] = { kind = "grid", rules = { { 0, 1 } }, segments = row(DungeonsModel.DUNGEON_COLS,
-            { L.DCOL_DUNGEON, L.DCOL_RUNS, L.DCOL_COMPLETED, L.DCOL_BEST, L.DCOL_AVERAGE, L.DCOL_FRIEND_BEST, L.DCOL_LAST }, "muted", "small") }
-        for i, d in ipairs(by) do
-            local fb = fbest[d.name]
-            -- The faster of you and your fastest friend is drawn green.
-            local mineFaster = d.best and (not fb or d.best <= fb.time)
-            lines[#lines + 1] = { kind = "grid", shade = i % 2 == 0, segments = row(DungeonsModel.DUNGEON_COLS,
-                { d.name, tostring(d.runs), tostring(d.completed), DungeonsModel.Clock(d.best),
-                  d.average and DungeonsModel.Clock(d.average) or "-", fb and string.format(L.DUNGEONS_FRIEND_BEST, DungeonsModel.Clock(fb.time), fb.friend) or "-",
-                  when(d.last) }, nil, nil,
-                { nil, nil, nil, (mineFaster and fb) and "good" or nil, nil, (fb and d.best and fb.time < d.best) and "good" or "muted" }),
-                tooltip = fb and function()
-                    return d.name, { string.format(L.DUNGEONS_FRIEND_BEST_TIP, fb.friend, fb.name, DungeonsModel.Clock(fb.time)) }
-                end or nil }
+        local slowest = 0
+        for _, e in ipairs(clears) do if e.clear > slowest then slowest = e.clear end end
+        for _, e in ipairs(clears) do
+            out[#out + 1] = { kind = "grid", segments = {
+                seg(0, .06, "#" .. tostring(e.rank), e.rank == 1 and "heading" or "muted", nil, "RIGHT"),
+                seg(.09, .32, ns.Leaderboard.Group(e, L), e.mine and "good" or "text"),
+                { x = .43, w = .40, bar = slowest > 0 and e.clear / slowest or 0, track = true,
+                    barRole = e.rank == 1 and "accent" or (e.mine and "good" or "muted"), barH = 6 },
+                seg(.85, .15, DungeonsModel.Clock(e.clear) .. (e.partial and "*" or ""), "text", nil, "RIGHT") } }
         end
     end
-    lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
 
-    -- Runs
-    lines[#lines + 1] = { kind = "group", section = true, text = L.DUNGEONS_RUNS }
-    if #runs == 0 then
-        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_RUNS }
-    else
-        lines[#lines + 1] = { kind = "grid", rules = { { 0, 1 } }, segments = row(DungeonsModel.RUN_COLS,
-            { L.DCOL_WHEN, L.DCOL_DUNGEON, L.DCOL_CHARACTER, L.DCOL_TIME, L.DCOL_BOSSES, L.DCOL_DEATHS, L.DCOL_WITH,
-              L.DCOL_RESULT }, "muted", "small") }
-        for i, e in ipairs(runs) do
-            local run = e.run
-            local runKey = tostring(e.charKey) .. "|" .. tostring(run.entered)
-            local open = o.expanded and o.expanded[runKey]
-            local result, resultRole
-            -- Completed wins over in progress: after the final boss the run stays open
-            -- (D-112) but is done (Austin, 2026-11-09).
-            if run.completed then result, resultRole = L.DUNGEONS_COMPLETED, "good"
-            elseif e.live then result, resultRole = L.DUNGEONS_IN_PROGRESS, "muted"
-            else result, resultRole = L.DUNGEONS_NOT_DONE, "muted" end
-            local bosses = #(run.bosses or {})
-            local bossText = run.bossCount and (bosses .. " / " .. run.bossCount) or tostring(bosses)
+    -- Your best run boss by boss, against #1.
+    local best = bestRun(o.entries)
+    if best and #(best.run.bosses or {}) > 0 then
+        section(out, L.DUNGEONS_BEST_SPLITS)
+        local leader = o.leader
+        local same = leader and leader.mine and leader.clear == DungeonsModel.ClearTime(best.run)
+        for _, b in ipairs(DungeonsModel.Bosses(best.run)) do
+            local ref = (leader and not same and b.offset) and leader.splits and leader.splits[b.name]
+            local delta = ref and (b.offset - ref) or nil
+            out[#out + 1] = { kind = "grid", segments = {
+                seg(0, .06, tostring(b.n), "muted", nil, "RIGHT"),
+                seg(.09, .55, b.name, b.final and "good" or "text"),
+                seg(.64, .16, b.offset and DungeonsModel.Clock(b.offset) or "-", "muted", nil, "RIGHT"),
+                seg(.82, .18, delta and ns.RunTimer.Delta(delta) or "", delta and (delta < 0 and "good" or delta > 0 and "bad" or "muted") or "muted",
+                    nil, "RIGHT") } }
+        end
+        local note
+        if same then note = L.DUNGEONS_SPLITS_TOP
+        elseif leader then note = string.format(L.DUNGEONS_SPLITS_VS, leader.lead or "?", DungeonsModel.Clock(leader.clear)) end
+        if note then out[#out + 1] = { kind = "grid", height = 16, segments = { seg(.09, .91, note, "muted", "small") } } end
+    end
+
+    -- Your recent runs here; a click opens one in Runs.
+    local entries = o.entries or {}
+    if #entries > 0 then
+        section(out, L.DUNGEONS_RECENT)
+        for i = 1, math.min(#entries, DungeonsModel.RECENT) do
+            local e = entries[i]
             local c = e.char or {}
-            lines[#lines + 1] = { kind = "grid", shade = open or i % 2 == 0,
-                segments = row(DungeonsModel.RUN_COLS,
-                    { (open and "- " or "+ ") .. when(run.entered), run.name or "?", nameOf(c.display or c.name or e.charKey, c.class),
-                      DungeonsModel.TimeText(run, durationOf(e, o.now)), bossText, tostring(run.deaths or 0),
-                      DungeonsModel.Group(run.party, L, (DungeonsModel.MyRole(run))), result },
-                    nil, nil, { nil, nil, nil, nil, nil, nil, nil, resultRole }),
-                onClick = o.toggle and function() o.toggle(runKey) end or nil,
-                tooltip = function()
-                    local tip = { string.format(L.DUNGEONS_TIP_ENTERED, when(run.entered)) }
-                    if run.partial then tip[#tip + 1] = DungeonsModel.PartialText(run.partial, L) end
-                    local me, guessed = DungeonsModel.MyRole(run)
-                    local roleName = me and L["DUNGEONS_ROLE_" .. me]
-                    if roleName then
-                        tip[#tip + 1] = string.format(guessed and L.DUNGEONS_TIP_ROLE_GUESS or L.DUNGEONS_TIP_ROLE, roleName)
+            local result, role = resultOf(e, L)
+            local key = DungeonsModel.RunKey(e)
+            out[#out + 1] = { kind = "grid", shade = i % 2 == 0 or nil,
+                onClick = o.onRun and function() o.onRun(key) end or nil, segments = {
+                seg(0, .20, when(e.run.entered), "muted"),
+                seg(.21, .27, nameOf(c.display or c.name or e.charKey, c.class)),
+                seg(.49, .14, bossText(e.run), "muted", nil, "RIGHT"),
+                seg(.64, .14, DungeonsModel.TimeText(e.run, e.run.duration), "text", nil, "RIGHT"),
+                seg(.80, .20, result, role, nil, "RIGHT") } }
+        end
+        if #entries > DungeonsModel.RECENT and o.onAllRuns then
+            out[#out + 1] = { kind = "grid", height = 18, onClick = o.onAllRuns,
+                segments = { seg(0, 1, string.format(L.DUNGEONS_ALL_RUNS, #entries), "heading", "small", "RIGHT") } }
+        end
+    end
+    return out
+end
+
+-- The list of runs (Runs, newest first): two lines each with a stripe, green when cleared.
+function DungeonsModel.RunListLines(runs, selected, L, opts)
+    local out = {}
+    local nameOf = opts.nameOf or function(t) return t end
+    local when = function(t) return t and opts.dateFn("%m-%d %H:%M", t) or "" end
+    for _, e in ipairs(runs or {}) do
+        local key = DungeonsModel.RunKey(e)
+        local chosen = key == selected
+        local click = function() if opts.onSelect then opts.onSelect(key) end end
+        local c = e.char or {}
+        local stripe = e.run.completed and "good" or "muted"
+        local deaths = tonumber(e.run.deaths) or 0
+        out[#out + 1] = { kind = "grid", shade = chosen or nil, onClick = click, runKey = key, segments = {
+            { x = 0, w = .012, bar = 1, barRole = stripe, barH = 20 },
+            seg(.04, .64, e.run.name or "?", chosen and "heading" or "text"),
+            seg(.68, .30, DungeonsModel.TimeText(e.run, durationOf(e, opts.now)), "text", nil, "RIGHT") } }
+        out[#out + 1] = { kind = "grid", shade = chosen or nil, onClick = click, runKey = key, height = 16, segments = {
+            { x = 0, w = .012, bar = 1, barRole = stripe, barH = 16 },
+            seg(.04, .34, nameOf(c.display or c.name or e.charKey, c.class), "text", "small"),
+            seg(.38, .26, when(e.run.entered), "muted", "small"),
+            seg(.64, .18, string.format(L.DUNGEONS_BOSSES_SHORT, bossText(e.run)), "muted", "small", "RIGHT"),
+            seg(.83, .15, deaths > 0 and string.format(L.DUNGEONS_DEATHS_SHORT, deaths) or "", "bad", "small", "RIGHT") } }
+        out[#out + 1] = { kind = "grid", height = 4, segments = {} }
+    end
+    if #out == 0 then out[1] = { kind = "grid", segments = { seg(.04, .94, L.DUNGEONS_NO_RUNS, "muted") } } end
+    return out
+end
+
+-- The right pane for one run. e: a Runs entry; o: { L, nameOf, dateFn, now, best (your
+-- fastest other clear of this dungeon, seconds, or nil) }.
+function DungeonsModel.RunDetailLines(e, o)
+    local L = o.L
+    local nameOf = o.nameOf or function(t) return t end
+    local out = {}
+    if not e then
+        out[1] = { kind = "grid", segments = { seg(0, 1, L.DUNGEONS_PICK_RUN, "muted") } }
+        return out
+    end
+    local run, c = e.run, e.char or {}
+    local result, role = resultOf(e, L)
+    out[#out + 1] = { kind = "grid", height = 24, segments = { seg(0, .70, run.name or "?", "heading", "large"),
+        seg(.70, .30, ns.Format.Upper(result), role, "small", "RIGHT") } }
+    local dur = durationOf(e, o.now)
+    local sub = { nameOf(c.display or c.name or e.charKey, c.class), run.entered and o.dateFn("%Y-%m-%d %H:%M", run.entered) or "",
+        string.format(L.DUNGEONS_INSIDE, DungeonsModel.Minutes(dur)) }
+    out[#out + 1] = { kind = "grid", height = 16, segments = { seg(0, 1, table.concat(sub, "  -  "), "muted", "small") } }
+    if run.partial then
+        out[#out + 1] = { kind = "grid", height = 16, segments = { seg(0, 1, DungeonsModel.PartialText(run.partial, L), "muted", "small") } }
+    end
+    out[#out + 1] = { kind = "grid", height = 8, segments = {} }
+    local clear = DungeonsModel.ClearTime(run)
+    local vs, vsRole = "-", "muted"
+    if clear and o.best then
+        local d = clear - o.best
+        vs, vsRole = ns.RunTimer.Delta(d), d < 0 and "good" or d > 0 and "bad" or "text"
+    end
+    local deaths = tonumber(run.deaths) or 0
+    tileLines(out, { { clear and L.DUNGEONS_T_CLEARED_IN or L.DUNGEONS_T_INSIDE, clear and DungeonsModel.Clock(clear) or DungeonsModel.Minutes(dur),
+            clear and "good" or "text" },
+        { L.DUNGEONS_T_VS_BEST, vs, vsRole }, { L.DUNGEONS_T_BOSSES, bossText(run) },
+        { L.DUNGEONS_T_DEATHS, tostring(deaths), deaths > 0 and "bad" or "text" } })
+
+    local list = DungeonsModel.Bosses(run)
+    if #list == 0 then
+        section(out, L.DUNGEONS_BOSS_HEAD)
+        out[#out + 1] = { kind = "grid", segments = { seg(0, 1, L.DUNGEONS_NO_BOSSES, "muted") } }
+    else
+        -- The run from its start to the final boss: a stretch per boss, the times under it.
+        local total = clear or dur or 0
+        for _, b in ipairs(list) do if b.offset and b.offset > total then total = b.offset end end
+        if total > 0 then
+            section(out, L.DUNGEONS_TIMELINE_HEAD)
+            local bars, labels, prev = {}, {}, 0
+            labels[1] = seg(0, .12, "0:00", "muted", "small")
+            for i, b in ipairs(list) do
+                if b.offset then
+                    local x = math.min(1, b.offset / total)
+                    if x - prev > .006 then
+                        bars[#bars + 1] = { x = prev, w = x - prev - .004, bar = 1, barRole = i % 2 == 1 and "accent" or "muted", barH = 8 }
                     end
-                    tip[#tip + 1] = string.format(L.DUNGEONS_TIP_CLICK)
-                    return run.name, tip
-                end }
-            if open then
-                local list = DungeonsModel.Bosses(run)
-                local dur = durationOf(e, o.now)
-                local inset = 24
-                if #list == 0 then
-                    lines[#lines + 1] = { kind = "grid", inset = inset, box = "single",
-                        segments = { seg(0, 1, L.DUNGEONS_NO_BOSSES, "muted") } }
-                else
-                    local clear = DungeonsModel.ClearTime(run)
-                    local head = string.format(L.DUNGEONS_INSIDE, DungeonsModel.Minutes(dur))
-                    if clear then head = string.format(L.DUNGEONS_CLEARED_IN, DungeonsModel.Clock(clear)) .. "     " .. head end
-                    -- Columns (D-104): killed at (time after entering), fight (pull to kill).
-                    lines[#lines + 1] = { kind = "grid", inset = inset, box = "top",
-                        segments = { seg(0, .30, L.DUNGEONS_TIMELINE, "muted", "small"),
-                            seg(.36, .12, L.DUNGEONS_KILLED_AT, "muted", "small", "RIGHT"),
-                            seg(.49, .10, L.DUNGEONS_FIGHT, "muted", "small", "RIGHT"),
-                            seg(.60, .40, head, "muted", "small", "RIGHT") } }
-                    for j, b in ipairs(list) do
-                        local frac = (b.offset and dur and dur > 0) and math.max(0, math.min(1, b.offset / dur)) or 0
-                        lines[#lines + 1] = { kind = "grid", inset = inset, box = j == #list and "bottom" or "middle",
-                            segments = { seg(0, .04, tostring(b.n), "muted", nil, "RIGHT"),
-                                seg(.06, .30, b.name, b.final and "good" or "text"),
-                                seg(.36, .12, b.offset and DungeonsModel.Clock(b.offset) or "", "muted", nil, "RIGHT"),
-                                seg(.49, .10, b.fight and DungeonsModel.Clock(b.fight) or "-", b.fight and "text" or "muted", nil, "RIGHT"),
-                                { x = .62, w = .24, bar = frac },
-                                seg(.87, .13, b.final and L.DUNGEONS_FINAL or "", "good", "small") } }
-                    end
+                    labels[#labels + 1] = seg(math.max(.12, x - .12), .12, DungeonsModel.Clock(b.offset), b.final and "good" or "text",
+                        "small", "RIGHT")
+                    prev = x
                 end
             end
+            if 1 - prev > .006 then bars[#bars + 1] = { x = prev, w = 1 - prev, bar = 1, track = true, barRole = "muted", barH = 8 } end
+            out[#out + 1] = { kind = "grid", height = 14, segments = bars }
+            out[#out + 1] = { kind = "grid", height = 16, segments = labels }
+            out[#out + 1] = { kind = "grid", height = 16, segments = { seg(0, 1, L.DUNGEONS_TIMELINE_NOTE, "muted", "small") } }
+        end
+        section(out, L.DUNGEONS_BOSS_HEAD)
+        out[#out + 1] = { kind = "grid", height = 16, rules = { { 0, 1 } }, segments = {
+            seg(.09, .40, L.DUNGEONS_BOSS, "muted", "small"), seg(.50, .14, L.DUNGEONS_KILLED_AT, "muted", "small", "RIGHT"),
+            seg(.65, .12, L.DUNGEONS_FIGHT, "muted", "small", "RIGHT") } }
+        local longest = 0
+        for _, b in ipairs(list) do if (b.fight or 0) > longest then longest = b.fight end end
+        for _, b in ipairs(list) do
+            out[#out + 1] = { kind = "grid", segments = {
+                seg(0, .06, tostring(b.n), "muted", nil, "RIGHT"),
+                seg(.09, .40, b.final and (b.name .. "  -  " .. L.DUNGEONS_FINAL) or b.name, b.final and "good" or "text"),
+                seg(.50, .14, b.offset and DungeonsModel.Clock(b.offset) or "", "muted", nil, "RIGHT"),
+                seg(.65, .12, b.fight and DungeonsModel.Clock(b.fight) or "-", b.fight and "text" or "muted", nil, "RIGHT"),
+                { x = .80, w = .20, bar = (b.fight and longest > 0) and b.fight / longest or 0, track = true,
+                    barRole = b.final and "good" or "accent", barH = 6 } } }
         end
     end
-    lines[#lines + 1] = { kind = "detail", text = "", height = 8 }
-    -- Friends
-    lines[#lines + 1] = { kind = "group", section = true, text = L.DUNGEONS_FRIENDS }
+
+    -- The group: you and the others, with their roles.
+    local members = {}
+    local me = DungeonsModel.MyRole(run)
+    members[#members + 1] = { name = L.DUNGEONS_YOU, class = c.class, role = me }
+    for _, p in ipairs(run.party or {}) do
+        if not p.npc then
+            members[#members + 1] = { name = p.name or (p.class and rawget(L, "CLASS_" .. p.class)) or L.DUNGEONS_SOMEONE, class = p.class, role = p.role }
+        end
+    end
+    if #members > 1 then
+        section(out, L.DUNGEONS_GROUP)
+        local segs, w = {}, 1 / 5
+        for i = 1, math.min(#members, 5) do
+            local m = members[i]
+            local short = m.role and rawget(L, "DUNGEONS_ROLE_SHORT_" .. m.role)
+            segs[#segs + 1] = seg((i - 1) * w, w - .01, (short and (short .. "  ") or "") .. nameOf(m.name, m.class), "text")
+        end
+        local roleName = me and rawget(L, "DUNGEONS_ROLE_" .. me)
+        local _, guessed = DungeonsModel.MyRole(run)
+        out[#out + 1] = { kind = "grid", segments = segs, tooltip = roleName and function()
+            return L.DUNGEONS_GROUP, { string.format(guessed and L.DUNGEONS_TIP_ROLE_GUESS or L.DUNGEONS_TIP_ROLE, roleName) }
+        end or nil }
+    end
+    return out
+end
+
+-- The Friends view: each friend's dungeons over the range, from their shared day counts.
+DungeonsModel.FRIEND_COLS = { { 0, .20 }, { .20, .30 }, { .50, .15, "RIGHT" }, { .65, .15, "RIGHT" }, { .80, .15, "RIGHT" } }
+function DungeonsModel.FriendLines(o)
+    local L = o.L
+    local nameOf = o.nameOf or function(t) return t end
+    local out = {}
+    local function row(texts, role, font)
+        local segs = {}
+        for i, c in ipairs(DungeonsModel.FRIEND_COLS) do segs[#segs + 1] = seg(c[1], c[2], texts[i], role, font, c[3]) end
+        return segs
+    end
     local fr = DungeonsModel.FriendRows(o.friends, o.isBlocked, o.fromKey, o.todayKey)
     if #fr == 0 then
-        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_NO_FRIENDS }
+        out[#out + 1] = { kind = "detail", text = L.DUNGEONS_NO_FRIENDS }
     else
-        lines[#lines + 1] = { kind = "grid", rules = { { 0, 1 } }, segments = row(DungeonsModel.FRIEND_COLS,
-            { L.DCOL_FRIEND, L.DCOL_CHARACTER, L.DCOL_ENTERED, L.DCOL_COMPLETED, L.DCOL_BOSSES }, "muted", "small") }
+        out[#out + 1] = { kind = "grid", rules = { { 0, 1 } },
+            segments = row({ L.DCOL_FRIEND, L.DCOL_CHARACTER, L.DCOL_ENTERED, L.DCOL_COMPLETED, L.DCOL_BOSSES }, "muted", "small") }
         for i, f in ipairs(fr) do
-            lines[#lines + 1] = { kind = "grid", shade = i % 2 == 0, segments = row(DungeonsModel.FRIEND_COLS,
-                { f.friend, nameOf(f.name, f.class), tostring(f.entered), tostring(f.completed), tostring(f.bosses) }) }
+            out[#out + 1] = { kind = "grid", shade = i % 2 == 0,
+                segments = row({ f.friend, nameOf(f.name, f.class), tostring(f.entered), tostring(f.completed), tostring(f.bosses) }) }
         end
-        lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_FRIENDS_NOTE }
+        out[#out + 1] = { kind = "detail", text = L.DUNGEONS_FRIENDS_NOTE }
     end
-    lines[#lines + 1] = { kind = "detail", text = L.DUNGEONS_FOOTER }
-    return lines, sum
+    out[#out + 1] = { kind = "detail", text = L.DUNGEONS_FOOTER }
+    return out
 end

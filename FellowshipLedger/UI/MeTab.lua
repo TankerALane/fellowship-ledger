@@ -23,10 +23,10 @@ local RANGE_LABEL = { today = "RANGE_TODAY", week = "RANGE_WEEK", month = "RANGE
 
 -- Today / 7 days / 30 days / All as one joined group (1.13.0), shared by the Me,
 -- Friends and Dungeons tabs. Returns the group; group.buttons[range] are the buttons.
-function Me.RangeGroup(parent, onPick)
+function Me.RangeGroup(parent, onPick, width)
     local items = {}
     for _, range in ipairs(ns.Days.RANGES) do
-        items[#items + 1] = { id = range, label = L[RANGE_LABEL[range]], width = 72 }
+        items[#items + 1] = { id = range, label = L[RANGE_LABEL[range]], width = width or 72 }
     end
     return W.Segmented(parent, items, onPick)
 end
