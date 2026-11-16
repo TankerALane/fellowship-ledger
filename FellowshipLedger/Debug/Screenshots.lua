@@ -165,6 +165,7 @@ local function restore(saved)
     hideWindows()
     local s = ns.db.settings
     s.skin, s.detailsLayout = saved.skin, saved.layout
+    s.opacity, s.friendsCollapsed, s.leaderCollapsed = saved.opacity, saved.friendsCollapsed, saved.leaderCollapsed
     local me = ns.MeTab.state
     me.mode, me.range, ns.FriendsTab.state.range = saved.mode, saved.meRange, saved.friendsRange
     for k in pairs(me.expanded) do me.expanded[k] = nil end
@@ -192,7 +193,11 @@ function Shots.Run()
     local s = ns.db.settings
     local saved = { skin = s.skin, layout = s.detailsLayout, tab = ns.MainWindow.current, fake = ns.Data.IsFake(),
         mode = ns.MeTab.state.mode, w = f:GetWidth(), h = f:GetHeight(),
-        meRange = ns.MeTab.state.range, friendsRange = ns.FriendsTab.state.range, weekly = ns.FriendsTab.state.weekly }
+        meRange = ns.MeTab.state.range, friendsRange = ns.FriendsTab.state.range, weekly = ns.FriendsTab.state.weekly,
+        opacity = s.opacity, friendsCollapsed = s.friendsCollapsed, leaderCollapsed = s.leaderCollapsed }
+    -- 1.14.1: pictures with a solid background and every friend and dungeon open,
+    -- whatever the player has set (put back afterwards).
+    s.opacity, s.friendsCollapsed, s.leaderCollapsed = 1, {}, {}
     ns.MeTab.state.range, ns.FriendsTab.state.range = "all", "all"
     if not saved.fake then ns.Data.EnableFake() end
     Shots.active = true
@@ -227,6 +232,8 @@ function Shots.Run()
         ns.FriendsTab.state.weekly = step.weekly or false
         ns.Widgets.ApplySkin()
         ns.MainWindow.Select(step.tab)
+        -- Each picture starts at the top of the Friends list (the invites step scrolls down).
+        if ns.FriendsTab.ui.table then ns.FriendsTab.ui.table:ScrollTo(1) end
         if step.invites and ns.FriendsTab.ui.table then
             -- The invite section is at the bottom: scroll there (the table stops at the last page).
             ns.FriendsTab.ui.table:ScrollTo(#ns.FriendsTab.ui.table.lines)

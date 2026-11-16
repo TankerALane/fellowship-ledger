@@ -312,7 +312,12 @@ H.test("boss times: clock, clear time, fight length, friends' best (D-104)", fun
     H.ok(all:find("#1|Cain|23:20|#2|Me R|25:00", 1, true), "the Leaderboard's clears: " .. all)
     H.ok(all:find("Oggleflint|6:40|+1:40", 1, true) and all:find("Bazzalan|25:00|+1:40", 1, true), "splits against #1: " .. all)
     local list = M.DungeonListLines(by, { ["Ragefire Chasm"] = board }, "Ragefire Chasm", L, {})
-    H.ok(texts(list):find("2nd on the Leaderboard", 1, true), texts(list))
+    H.ok(texts(list):find("2nd fastest", 1, true), texts(list))
+    H.ok(not all:find("is not on this list", 1, true), "your best is listed: no note")
+    -- 1.14.1: your best beats the list but is not on it (over level): say why.
+    local over = { clears = { { rank = 1, clear = 2400, lead = "Cain", names = { "Cain" }, size = 1 } } }
+    local note = texts(M.DungeonDetailLines(by[1], { L = L, board = over, entries = by[1].entries, dateFn = os.date }))
+    H.ok(note:find("Your best here, 25:00, is not on this list", 1, true), note)
     all = texts(M.RunDetailLines(runs[1], { L = L, dateFn = os.date, now = E + 4000, best = 1600 }))
     H.ok(all:find("25:00|-1:40|2 / 2", 1, true) or all:find("25:00|-1:40|2", 1, true), "cleared in, against your best: " .. all)
     H.ok(all:find("30m inside", 1, true), "the time inside too")

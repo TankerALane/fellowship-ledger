@@ -368,6 +368,17 @@ function DungeonsModel.DungeonDetailLines(d, o)
                 seg(.85, .15, DungeonsModel.Clock(e.clear) .. (e.partial and "*" or ""), "text", nil, "RIGHT") } }
         end
     end
+    -- 1.14.1: your best clear beats a place on the list but is not on it: it was over
+    -- level (someone more than DungeonLevels.OVER above the dungeon).
+    local mineListed, slowest = false, 0
+    for _, e in ipairs(clears) do
+        if e.mine then mineListed = true end
+        if e.clear > slowest then slowest = e.clear end
+    end
+    if d.best and not mineListed and (#clears < 5 or d.best < slowest) then
+        out[#out + 1] = { kind = "grid", height = 16, segments = { seg(.09, .91,
+            string.format(L.DUNGEONS_BEST_OVER, DungeonsModel.Clock(d.best), ns.DungeonLevels.OVER), "muted", "small") } }
+    end
 
     -- Your best run boss by boss, against #1.
     local best = bestRun(o.entries)
@@ -434,9 +445,9 @@ function DungeonsModel.RunListLines(runs, selected, L, opts)
             seg(.68, .30, DungeonsModel.TimeText(e.run, durationOf(e, opts.now)), "text", nil, "RIGHT") } }
         out[#out + 1] = { kind = "grid", shade = chosen or nil, onClick = click, runKey = key, height = 16, segments = {
             { x = 0, w = .012, bar = 1, barRole = stripe, barH = 16 },
-            seg(.04, .34, nameOf(c.display or c.name or e.charKey, c.class), "text", "small"),
-            seg(.38, .26, when(e.run.entered), "muted", "small"),
-            seg(.64, .18, string.format(L.DUNGEONS_BOSSES_SHORT, bossText(e.run)), "muted", "small", "RIGHT"),
+            seg(.04, .28, nameOf(c.display or c.name or e.charKey, c.class), "text", "small"),
+            seg(.32, .24, when(e.run.entered), "muted", "small"),
+            seg(.56, .26, string.format(L.DUNGEONS_BOSSES_SHORT, bossText(e.run)), "muted", "small", "RIGHT"),
             seg(.83, .15, deaths > 0 and string.format(L.DUNGEONS_DEATHS_SHORT, deaths) or "", "bad", "small", "RIGHT") } }
         out[#out + 1] = { kind = "grid", height = 4, segments = {} }
     end

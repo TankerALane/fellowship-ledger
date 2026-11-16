@@ -519,7 +519,8 @@ H.test("/fl shots: the 1.8.0 pictures have something to show, and fake friends a
     local seen = {}
     env.Screenshot = function()
         local step = ns.Screenshots.PLAN[#seen + 1]
-        local info = { step = step }
+        local info = { step = step, opacity = ns.db.settings.opacity, folded = next(ns.db.settings.friendsCollapsed or {}),
+            friendsTop = ns.FriendsTab.ui.table and ns.FriendsTab.ui.table.offset }
         if step.tab == "leaderboard" then info.board = ns.LeaderboardTab.Board() end
         if step.invites then info.lines = ns.FriendsTab.Lines() end
         if step.window == "goals" then info.shown = ns.SessionGoals.Frame() and ns.SessionGoals.Frame():IsShown() end
@@ -529,10 +530,18 @@ H.test("/fl shots: the 1.8.0 pictures have something to show, and fake friends a
     local whispers = 0
     env.BNSendWhisper = function() whispers = whispers + 1 end
     env.SendChatMessage = function() whispers = whispers + 1 end
+    ns.db.settings.opacity, ns.db.settings.friendsCollapsed = 0.5, { x = true }
     Mock.slash(env, "shots")
     for _ = 1, 5 do Mock.runTimers(env) end
     noErrors(env)
     H.eq(#seen, #ns.Screenshots.PLAN, "every step took its picture")
+    for _, info in ipairs(seen) do
+        H.eq(info.opacity, 1, "solid in every picture (1.14.1)")
+        H.eq(info.folded, nil, "nobody folded")
+        if info.step.tab == "friends" and not info.step.invites and info.friendsTop then
+            H.eq(info.friendsTop, 0, "the Friends list from the top")
+        end
+    end
     local checked = {}
     for i, info in ipairs(seen) do
         local step = info.step
@@ -570,6 +579,8 @@ H.test("/fl shots: the 1.8.0 pictures have something to show, and fake friends a
     ns.Data.DisableFake()
     H.ok(not ns.SessionGoals.Frame():IsShown() and not ns.InviteDialog.Frame():IsShown(), "windows closed afterwards")
     H.eq(ns.FriendsTab.state.weekly, true, "weekly panel put back as it was (shown, 1.14.0)")
+    H.eq(ns.db.settings.opacity, 0.5, "the player's opacity is put back (shots are solid, 1.14.1)")
+    H.eq(ns.db.settings.friendsCollapsed.x, true, "and their folded friends")
 end)
 
 H.test("/fl shots: no Screenshot function, one message and nothing changed", function()

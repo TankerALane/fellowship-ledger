@@ -540,3 +540,11 @@ Austin, 2026-11-16: "collapse the friends list down to show a single line per fr
 - A Battle.net friend's header line starts with "- " (open) or "+ " (folded); a click folds or opens it. Folded, only the header shows (name, online, character count, last update). Character-only friends are already one line each and do not fold.
 - "Collapse all" sits right of "This week" (hidden on a friend's page and when there are no Battle.net friends); it reads "Open all" once every one is folded, as on the Leaderboard.
 - Folds are saved in settings.friendsCollapsed by friend id, so they stay after a /reload. Nothing is folded by default.
+
+## D-142 Fixes from the 1.14.0 screenshots (1.14.1)
+Austin, 2026-11-16, after looking over the new /fl shots pictures.
+- Pop-up windows that sit over the ledger (session goals, invite, the stale-data prompt, welcome) are solid whatever the Background opacity: the ledger's text showed through the goals window's title.
+- /fl shots takes every picture with a solid background and nothing folded (Friends or Leaderboard), putting the player's settings back afterwards, and starts each picture at the top of the Friends list (the invites picture scrolls down).
+- Shorter text where it was cut off: a run's boss count in Runs has more room; By dungeon says "2nd fastest" / "Fastest" instead of "... on the Leaderboard"; "This week (last 7 days)" and "Last week (11-04 to 11-11)" fit the This week panel.
+- A dungeon's pane says when your best clear is not among the fastest clears because the group was over level (the Leaderboard's at-level rule, D-115), instead of leaving a faster run of yours unexplained.
+

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The session goals window (and the invite window) is solid, so the ledger behind it no longer shows through, whatever the background opacity.
+- Text that was cut off: a run's boss count in Runs, "2nd fastest" in By dungeon, and the This week panel's titles.
+- A dungeon's page says why your best clear is not among the fastest clears when someone in the group was over level.
+- /fl shots: pictures are solid and show every friend and dungeon open, and the Friends list starts at the top.
+
 ## 1.14.0 - 2026-11-16
 
 ### Changed

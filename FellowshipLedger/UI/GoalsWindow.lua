@@ -299,7 +299,7 @@ local function build()
     f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", f.StartMoving)
     f:SetScript("OnDragStop", f.StopMovingOrSizing)
-    W.Background(f, "bg")
+    W.Background(f, "bg", 1) -- solid: it sits over the ledger (1.14.1)
     W.Border(f, "border", 2)
     -- Head: the level in a ring, the title, a grey line, the x.
     f.badge = CreateFrame("Frame", nil, f)
