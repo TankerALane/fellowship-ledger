@@ -121,7 +121,7 @@ function handlers.PLAYER_LOGIN()
         -- How last session's goals went (D-116).
         local okG, goals = pcall(ns.SessionGoals.ResultsFor, ns.Store.previousSession)
         if okG then for _, l in ipairs(goals) do lines[#lines + 1] = l end end
-        ns.Toast.Show(title, lines)
+        ns.Toast.Show(title, lines, { kind = "you", label = L.NOTICE_K_SESSION })
     end
 end
 

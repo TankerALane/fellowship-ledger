@@ -156,8 +156,11 @@ function LeaderboardTab.CheckRun(run)
     local board = Leaderboard.Build(entries(false), true)
     local rank, e = Leaderboard.RankOf(board, run.name, run.completedAt)
     if not rank then return nil end
-    ns.Toast.Show(L.LEADER_TOAST_TITLE, { string.format(L.LEADER_TOAST, rank, run.name, ns.Format.Duration(e.clear)) },
-        { onClick = function() ns.MainWindow.Open("leaderboard") end })
+    -- 1.14.0 (D-139): a new #1 gets the big notice in the middle.
+    ns.Toast.Show(rank == 1 and L.LEADER_NEW_TOP or L.LEADER_TOAST_TITLE,
+        { string.format(L.LEADER_TOAST, rank, run.name, ns.Format.Duration(e.clear)) },
+        { kind = "dungeon", label = L.NOTICE_K_LEADER, icon = "#" .. rank, big = rank == 1, button = L.TAB_LEADERBOARD,
+            action = L.NOTICE_ACT_LEADER, onClick = function() ns.MainWindow.Open("leaderboard") end })
     return rank
 end
 

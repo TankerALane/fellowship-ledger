@@ -404,6 +404,17 @@ These come from addons already installed in Austin's game folders. They are good
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
 | `m:timer2` | manual | the redrawn dungeon timer (D-138): a scaled font (SetFont at 1.9 x), textures as ticks on a bar, W.Segmented as the switch | run a dungeon: the time is large with a green or red box beside it; the bar fills with a green tick per boss and grey ticks for the compared run; the next boss shows in grey with a time; the switch flips between #1 and My best; after the final boss the frame turns gold and says your place and your best, and both buttons open the right tab | ? | ? |
+
+### Notices
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:notices2` | manual | the redrawn notices (D-139): coloured stripes, ring icons with text or media/check and crown, the shrinking line, the big notice | after a game restart: /fl test (or level up): the notice has a gold stripe, LEVEL UP over the title, the level in a ring and 'Click to open your level times'; the line along the bottom runs down and the notice fades; a friend's notice is blue; nothing is cut off at the right | ? | ? |
+
+### Dungeons
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
 | `m:myrole` | manual | your own role is saved with a run (D-132): UnitGroupRolesAssigned("player") in a group | run a dungeon in a group with roles set; on the Dungeons tab its With column counts you too, and hovering the run says which role you were | ? | ? |
 
 ### Window

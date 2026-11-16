@@ -103,7 +103,19 @@ Levels.events.PLAYER_LEVEL_UP = function(_, newLevel)
 
     local line = Format.LevelLine(rec) .. (rec.partial and (" " .. L.PARTIAL) or "")
     if ns.db.settings.levelToast ~= false then
-        ns.Toast.Show(string.format(L.LEVEL_UP_TITLE, newLevel), { line })
+        -- 1.14.0 (D-139): against the level before, when both are full times.
+        local lines = { line }
+        local prev = char.levels[newLevel - 1]
+        if not rec.partial and prev and not prev.partial and tonumber(prev.active) and prev.active > 0 then
+            local d = rec.active - prev.active
+            if math.abs(d) >= 60 then
+                lines[2] = string.format(d < 0 and L.LEVEL_FASTER or L.LEVEL_SLOWER, Format.DurationShort(math.abs(d)))
+            end
+        end
+        local key = Store.key
+        ns.Toast.Show(string.format(L.LEVEL_UP_TITLE, newLevel), lines, { kind = "you", label = L.NOTICE_K_LEVEL,
+            icon = tostring(newLevel), action = L.NOTICE_ACT_LEVELS,
+            onClick = function() if ns.MeTab and ns.MeTab.OpenView then ns.MeTab.OpenView(key, "xp") end end })
     else
         ns.Log.Info(L.LEVEL_UP_TOAST, line)
     end

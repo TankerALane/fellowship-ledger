@@ -90,7 +90,48 @@ function Notices.Target(items)
     return { tab = "friends" }
 end
 
--- One notice for the selected items: title, lines, click target. nil if none.
+-- How the notice looks (1.14.0, D-139): the options for Toast.Show (kind, label, icon or
+-- iconTex, action, big). target: from Notices.Target.
+Notices.ICON_TEX = { chain = "check", dungeon = "check", maxlevel = "crown" }
+Notices.LABEL = { level = "NOTICE_K_MILESTONE", maxlevel = "NOTICE_K_CAP", chain = "NOTICE_K_CHAIN",
+    dungeon = "NOTICE_K_DUNGEON", profession = "NOTICE_K_PROF", joined = "NOTICE_K_JOINED", loot = "NOTICE_K_LOOT",
+    levels = "NOTICE_K_MILESTONE" }
+function Notices.Look(items, L, away, target)
+    local n = #(items or {})
+    local look = { kind = "friend" }
+    local first = items[1] or {}
+    local e = first.event or {}
+    if away or n > 1 then
+        look.label = away and L.AWAY_TITLE or L.NOTICE_K_FRIENDS
+        look.icon = tostring(n)
+    else
+        look.label = L[Notices.LABEL[e.kind] or "NOTICE_K_MILESTONE"]
+        if e.kind == "dungeon" then look.kind = "dungeon" end
+        look.iconTex = Notices.ICON_TEX[e.kind]
+        if not look.iconTex then
+            if e.kind == "profession" then look.icon = tostring(e.rank or "")
+            elseif e.kind == "joined" then look.icon = "+"
+            elseif e.kind == "loot" then look.icon = "!"
+            else look.icon = tostring(e.level or e.to or "") end
+        end
+        -- A friend at the level cap: the big notice with a button to their page.
+        if e.kind == "maxlevel" then
+            look.big = true
+            look.button = string.format(L.NOTICE_SEE_PAGE, e.character or first.friendName or "?")
+        end
+    end
+    target = target or {}
+    if target.key then
+        look.action = string.format(L.NOTICE_ACT_CHAR, e.character or "?")
+    elseif target.friendId then
+        look.action = string.format(L.NOTICE_ACT_FRIEND, first.friendName or "?")
+    else
+        look.action = L.NOTICE_ACT_FRIENDS
+    end
+    return look
+end
+
+-- One notice for the selected items: title, lines, click target, look. nil if none.
 function Notices.Build(items, L, away)
     local n = #(items or {})
     if n == 0 then return nil end
@@ -102,7 +143,8 @@ function Notices.Build(items, L, away)
     local shown = n > Notices.MAX_LINES and Notices.MAX_LINES - 1 or n
     for i = 1, shown do lines[i] = Notices.Text(items[i].event or {}, items[i].friendName, L) end
     if shown < n then lines[#lines + 1] = string.format(L.FRIEND_BUNDLE_MORE, n - shown) end
-    return title, lines, Notices.Target(items)
+    local target = Notices.Target(items)
+    return title, lines, target, Notices.Look(items, L, away, target)
 end
 
 -- Is a notice queued at `at` part of the "While you were away" notice?

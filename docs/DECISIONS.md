@@ -517,3 +517,11 @@ From the same approval as D-137.
 - Each kill has a green dot; the next boss (the compared run's next kill not made here) is listed in grey with the compared run's time for it.
 - The compared run is a two-way switch, "#1 Zip 20:00" / "My best 25:00", both labels always shown; the old line to click is gone. Both targets are looked up together (every 30 seconds).
 - Cleared: a gold frame, the run's place on the Leaderboard at level (the crown and "New #1 on your Leaderboard" for first), "Your best here was 25:00 (-7:21)" and deaths, and buttons to open the run on the Dungeons tab or the Leaderboard.
+
+## D-139 Notices: a colour per kind, an icon, what a click opens (1.14.0)
+From the same approval as D-137.
+- Toast.Show(title, lines, opts) takes kind ("you" gold, "friend" blue, "goal" green, "dungeon" orange; blue and orange are our own colours, darker on the light skin), label (small capitals over the title), icon (short text in a ring) or iconTex ("check", "crown"), action (the last line: what a click opens), big, button.
+- A coloured stripe at the left; a thin line along the bottom shrinks until the notice fades (7 seconds as before).
+- Friend notices: Notices.Look picks the label and icon per kind (the level, the rank, a check for a chain or a dungeon, the count for several); "Click to open Cain" / "on Friends" / "Friends" from where the click goes.
+- Big notices (in the middle, until closed, with a button and Dismiss): a friend at the level cap, and a new #1 of yours on the Leaderboard.
+- Level-up: a second line when both levels have full times and they differ by a minute or more ("10m faster than the level before"); a click opens the character's level times. Goal reached: "2 of 3 goals done"; a click shows the tracker again.

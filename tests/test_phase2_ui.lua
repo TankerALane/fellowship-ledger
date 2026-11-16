@@ -123,16 +123,33 @@ H.test("minimap button, options page and compartment entry", function()
 end)
 
 H.test("level-up toast and session summary at the next login", function()
-    local env = boot()
+    local env, ns = boot()
     Mock.fire(env, "PLAYER_LEVEL_UP", 13)
     H.ok(Mock.chatContains(env, "Level 13!"), "toast echoed to chat")
+    -- 1.14.0 (D-139): the notice's stripe, label, icon and click line.
+    local t = ns.Toast.Pool()[1]
+    H.ok(t and t:IsShown(), "on screen")
+    H.eq(t.label:GetText(), ns.Format.Upper(ns.L.NOTICE_K_LEVEL))
+    H.eq(t.icon.text:GetText(), "13")
+    H.eq(t.action:GetText(), ns.L.NOTICE_ACT_LEVELS)
+    -- A level a few minutes quicker than the one before says so.
+    ns.Store.char.levels[13].active, ns.Store.char.levels[13].partial = 1800, nil
+    ns.Store.char.levelStart.active = ns.Store.char.clock.active - 1200
+    ns.Store.char.levelStart.partial = nil
+    Mock.fire(env, "PLAYER_LEVEL_UP", 14)
+    H.ok(Mock.chatContains(env, "10m faster than the level before"), "compared with level 13")
+    -- A big notice stays until closed.
+    ns.Toast.Show("A new #1!", { "#1 on X" }, { kind = "dungeon", big = true, icon = "#1", onClick = function() end })
+    H.ok(ns.Toast.Big():IsShown(), "the big notice")
+    ns.Toast.Big().dismiss:GetScript("OnClick")(ns.Toast.Big().dismiss)
+    H.ok(not ns.Toast.Big():IsShown(), "dismissed")
     env.__state.speed = 7
     Mock.advance(env, 600)
     Mock.fire(env, "PLAYER_LOGOUT")
     local opts = { interface = 120105, tocFlavor = "Retail", now = env.__state.now + 3600 }
     local env2 = boot(opts, env.FellowshipLedgerDB, env.FellowshipLedgerBackupDB)
     H.ok(Mock.chatContains(env2, "Session of"), "previous session summarised")
-    H.ok(Mock.chatContains(env2, "1 level(s)"))
+    H.ok(Mock.chatContains(env2, "2 level(s)"), "both level-ups (13 and 14)")
     Mock.slash(env2, "summary")
     noErrors(env2)
 end)

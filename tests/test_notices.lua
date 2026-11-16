@@ -85,3 +85,20 @@ H.test("tooltip line and finding a friend's character", function()
     H.eq(M.TooltipLine(f, { quests = 12, dungeonsCompleted = 2 }, L), "Ledger: Hamlet's character, 12 quests and 2 dungeons this week")
     H.eq(M.TooltipLine(f, {}, L), "Ledger: Hamlet's character")
 end)
+
+H.test("look (1.14.0): a colour, a label, an icon and what a click opens", function()
+    local one = { item("level", "Hamlet", "Cain-R", { level = 30 }) }
+    local _, _, _, look = N.Build(one, L, false)
+    H.eq(look.kind, "friend"); H.eq(look.label, L.NOTICE_K_MILESTONE); H.eq(look.icon, "30")
+    H.eq(look.action, "Click to open Cain")
+    _, _, _, look = N.Build({ item("dungeon", "Hamlet", "Cain-R", { dungeon = "Deadmines" }) }, L, false)
+    H.eq(look.kind, "dungeon"); H.eq(look.iconTex, "check")
+    _, _, _, look = N.Build({ item("maxlevel", "Hamlet", "Cain-R", { level = 60 }) }, L, false)
+    H.eq(look.big, true, "the level cap gets the big notice"); H.eq(look.button, "See Cain's page")
+    local many = {}
+    for i = 1, 3 do many[i] = item("level", "F" .. i, "C" .. i .. "-R", { level = 10 }) end
+    _, _, _, look = N.Build(many, L, false)
+    H.eq(look.icon, "3"); H.eq(look.label, L.NOTICE_K_FRIENDS); H.eq(look.action, L.NOTICE_ACT_FRIENDS)
+    _, _, _, look = N.Build(many, L, true)
+    H.eq(look.label, L.AWAY_TITLE)
+end)

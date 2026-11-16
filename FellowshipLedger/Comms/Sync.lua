@@ -261,8 +261,11 @@ function Sync.OpenTarget(target)
 end
 
 local function showNotice(items, away)
-    local title, lines, target = ns.Notices.Build(items, L, away)
-    if title then ns.Toast.Show(title, lines, { onClick = function() Sync.OpenTarget(target) end }) end
+    local title, lines, target, look = ns.Notices.Build(items, L, away)
+    if not title then return end
+    look = look or {}
+    look.onClick = function() Sync.OpenTarget(target) end
+    ns.Toast.Show(title, lines, look)
 end
 
 -- A friend's looted item for its notice (D-105): the game's link (colored, clickable
@@ -620,9 +623,10 @@ function Sync.CheckWeekly()
     local rows = ns.Weekly.Rows(ns.db.characters, ns.db.friends, ns.db.blocklist, fromKey, toKey, L)
     local title, lines = ns.Weekly.Notice(rows, L)
     if title then
-        ns.Toast.Show(title, lines, { onClick = function()
-            if ns.FriendsTab and ns.FriendsTab.OpenWeekly then ns.FriendsTab.OpenWeekly() end
-        end })
+        ns.Toast.Show(title, lines, { kind = "you", label = L.NOTICE_K_WEEKLY, icon = L.NOTICE_ICON_WEEK,
+            action = L.NOTICE_ACT_WEEKLY, onClick = function()
+                if ns.FriendsTab and ns.FriendsTab.OpenWeekly then ns.FriendsTab.OpenWeekly() end
+            end })
     end
 end
 

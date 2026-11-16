@@ -102,7 +102,15 @@ function SessionGoals.Tick()
         if done and not was then took = math.max(0, (now.active or 0) - ((g.start or {}).active or 0)) end
         set.last[i] = { value = value, done = done or nil, took = done and took or nil }
         if done and not was then
-            ns.Toast.Show(L.GOAL_REACHED_TITLE, { Goals.Text(g, value, done, L, fmt()) })
+            local reached = 0
+            for j, other in ipairs(set.list) do
+                if j == i then reached = reached + 1
+                elseif set.last[j] and set.last[j].done then reached = reached + 1 end
+            end
+            ns.Toast.Show(L.GOAL_REACHED_TITLE, { Goals.Text(g, value, false, L, fmt()),
+                string.format(L.GOAL_REACHED_COUNT, reached, #set.list) }, { kind = "goal", label = L.NOTICE_K_GOAL,
+                iconTex = "check", action = L.NOTICE_ACT_GOALS,
+                onClick = function() if ns.GoalsTracker then ns.GoalsTracker.Reopen() end end })
         end
     end
     if ns.GoalsTracker then ns.GoalsTracker.Refresh() end

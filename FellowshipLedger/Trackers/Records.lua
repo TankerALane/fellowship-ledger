@@ -30,7 +30,8 @@ function Records.Check()
     if #beaten > 0 and ns.db.settings.bestToasts ~= false then
         local lines = {}
         for _, b in ipairs(beaten) do lines[#lines + 1] = Bests.Text(b, L, fmt()) end
-        ns.Toast.Show(L.BEST_TITLE, lines, { onClick = function() Records.Open() end })
+        ns.Toast.Show(L.BEST_TITLE, lines, { kind = "you", label = L.NOTICE_K_BEST, iconTex = "crown",
+            action = L.NOTICE_ACT_BESTS, onClick = function() Records.Open() end })
     end
     return beaten
 end
