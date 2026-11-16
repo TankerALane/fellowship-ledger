@@ -35,6 +35,7 @@ local BADGE = 24 -- the level ring (1.14.0)
 local RING = "Interface\\AddOns\\FellowshipLedger\\media\\ring"
 Table.TALL_H = 34 -- a line with a second line under its name
 Table.ROW_H = ROW_H
+Table.INDENT = 18 -- an indented line with a level ring starts this far in (1.14.0)
 local Obj = {}
 Obj.__index = Obj
 
@@ -406,12 +407,14 @@ end
 function Obj:PlaceFirst(w, line)
     local width = self.widths and self.widths[1]
     local cell = w.cells[1]
-    local x0 = line.badge and (BADGE + 8) or 0
+    -- Indented under a friend's name (or the Me list's totals): the ring moves in too.
+    local ind = (line.indent and line.badge) and Table.INDENT or 0
+    local x0 = line.badge and (ind + BADGE + 8) or 0
     local dy = (line.sub and line.sub ~= "") and 7 or 0
     w.badge:SetShown(line.badge ~= nil)
     if line.badge then
         w.badge:ClearAllPoints()
-        w.badge:SetPoint("LEFT", w, "LEFT", 0, 0)
+        w.badge:SetPoint("LEFT", w, "LEFT", ind, 0)
         w.badge.text:SetText(tostring(line.badge))
         local c = W.Color(line.badgeRole or "muted")
         w.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
@@ -481,7 +484,7 @@ function Obj:Render()
                 for c = 1, #self.columns do
                     local shown = self.widths[c] ~= nil
                     local text = line.cells[c] or ""
-                    if c == 1 and line.indent then text = "    " .. text end
+                    if c == 1 and line.indent and not line.badge then text = "    " .. text end
                     w.cells[c]:SetText(text)
                     W.SetTextRole(w.cells[c], line.kind == "total" and "heading" or (line.muted and "muted" or "text"))
                     w.cells[c]:SetShown(shown)

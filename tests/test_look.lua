@@ -264,6 +264,7 @@ H.test("Friends: two-line rows; a friend's character opens as its own page with 
     for _, l in ipairs(FT.ui.table.lines) do if l.kind == "row" and l.badge then row = l break end end
     H.ok(row, "a character row with its level ring")
     H.ok(row.sub and row.sub ~= "", "a grey line under the name")
+    H.ok(row.indent, "indented under the friend's name")
     row.onClick()
     H.ok(FT.ui.page:IsShown() and FT.ui.views:IsShown(), "the page head and its tabs")
     H.ok(not FT.ui.week:IsShown(), "no This week panel on a page")

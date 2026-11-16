@@ -272,7 +272,7 @@ local function lines()
             local friend = ns.Data.Friends()[r.friendId]
             local char = friend and friend.characters and friend.characters[r.key]
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
-            out[#out + 1] = { kind = "row", id = openId, cells = cells,
+            out[#out + 1] = { kind = "row", id = openId, cells = cells, indent = r.indent,
                 tag = r.playing and L.TAG_PLAYING or nil, height = ns.Table.TALL_H,
                 badge = r.level, badgeRole = r.playing and "accent" or "muted", sub = MeModel.SubText(r, L, nil, true),
                 tooltip = function()

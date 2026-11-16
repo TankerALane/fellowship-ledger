@@ -302,7 +302,7 @@ local function characterLines()
         local playing = key == ns.Store.key and not ns.Data.IsFake()
         lines[#lines + 1] = { kind = "row", cells = cellsFor(row), tag = playing and L.TAG_PLAYING or nil,
             badge = row.level, badgeRole = playing and "accent" or "muted", sub = MeModel.SubText(row, L, ago, playing),
-            height = ns.Table.TALL_H, key = key, onClick = function() Me.OpenPage(key) end }
+            height = ns.Table.TALL_H, indent = true, key = key, onClick = function() Me.OpenPage(key) end }
     end
     return lines, #rows, rows
 end
