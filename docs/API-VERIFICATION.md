@@ -415,6 +415,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `m:friendsonline` | manual | a friend's line with an online dot (D-144): switch-knob as an inline texture code | `/fl, Friends: an online Battle.net friend's line starts with a round green dot and says online, playing <character> in green; an offline friend's dot and line are grey; folded, you can still tell who is on; no 'old version' text` | ? | ? |
 | `m:friendsfold` | manual | folding Battle.net friends on the Friends tab (D-141): a click on a group line and a button beside This week | `/fl, Friends: click a Battle.net friend's name line, their characters fold away and the line starts with +; click again to open; Collapse all folds everyone and becomes Open all; /reload keeps the folds; the button does not overlap the sync status` | ? | ? |
 
 ### Dungeons

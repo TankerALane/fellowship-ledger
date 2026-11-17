@@ -30,6 +30,29 @@ function FriendsModel.IsPlaying(friend, charKey)
     return norm(friend.playing) == norm(charKey)
 end
 
+-- A Battle.net friend's line on the Friends tab (1.14.2, Austin 2026-11-17: easier to
+-- tell who is online when the list is folded; no version). o: colour codes and dots,
+-- { on = dot, off = dot, good = "|cff..", muted = "|cff.." }. Online: a green dot and
+-- "online, playing <character>"; offline: a grey dot and the whole line grey.
+function FriendsModel.HeaderText(f, id, count, now, L, o)
+    o = o or {}
+    local good, muted = o.good or "", o.muted or ""
+    local close = function(code) return code ~= "" and "|r" or "" end
+    local name = f.name or tostring(id)
+    local rest = string.format(count == 1 and L.FRIEND_HEADER_REST_ONE or L.FRIEND_HEADER_REST, count, FriendsModel.Ago(now, f.lastUpdated))
+    if f.online then
+        local status = L.ONLINE
+        for key, c in pairs(f.characters or {}) do
+            if FriendsModel.IsPlaying(f, key) then
+                status = string.format(L.FRIEND_PLAYING_ON, c.display or c.name or key)
+                break
+            end
+        end
+        return (o.on and (o.on .. " ") or "") .. name .. "  " .. good .. status .. close(good) .. "  -  " .. rest
+    end
+    return (o.off and (o.off .. " ") or "") .. muted .. name .. "  " .. L.OFFLINE .. "  -  " .. rest .. close(muted)
+end
+
 -- Returns a flat list of display rows: { header = true, friend, id } and
 -- { character row from MeModel, friendId, indent = bool }.
 -- sortField/desc (optional): sort characters by that column, and order friends by

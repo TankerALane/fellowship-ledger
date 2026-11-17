@@ -17,6 +17,24 @@ H.test("Format.Upper: text upper-cased, colors, textures and links left alone", 
     H.eq(F.Upper(""), ""); H.eq(F.Upper(nil), nil)
 end)
 
+H.test("a friend's line: online with a green dot and who they play, offline all grey, no version (1.14.2)", function()
+    local L2 = { ONLINE = "online", OFFLINE = "offline", FRIEND_PLAYING_ON = "online, playing %s",
+        FRIEND_HEADER_REST = "%d characters, updated %s", FRIEND_HEADER_REST_ONE = "%d character, updated %s",
+        AGO_JUST_NOW = "just now", AGO_MINUTES = "%dm ago", AGO_HOURS = "%dh ago", AGO_DAYS = "%dd ago", NEVER = "never" }
+    setmetatable(L2, { __index = function(_, k) return k end })
+    local o = { on = "<ON>", off = "<OFF>", good = "<G>", muted = "<M>" }
+    local f = { name = "Fennick", online = true, playing = "Grimwald-Realm", version = "1.0.0", lastUpdated = 1000,
+        characters = { ["Grimwald-Realm"] = { name = "Grimwald" }, ["Pip-Realm"] = { name = "Pip" } } }
+    local t = FM.HeaderText(f, "x", 2, 1000, L2, o)
+    H.ok(t:find("^<ON> Fennick  <G>online, playing Grimwald|r  %-  2 characters, updated "), t)
+    H.ok(not t:find("1.0.0", 1, true), "no version")
+    f.online = false
+    t = FM.HeaderText(f, "x", 1, 1000, L2, o)
+    H.ok(t:find("^<OFF> <M>Fennick  offline  %-  1 character, updated .*|r$"), t)
+    f.online, f.playing = true, nil
+    H.ok(FM.HeaderText(f, "x", 2, 1000, L2, o):find("<G>online|r", 1, true), "online, not on a shared character")
+end)
+
 H.test("header status: friends online of all (blocked not counted), last sync", function()
     local friends = { a = { name = "A", online = true }, b = { name = "B" }, c = { name = "C", tag = "C#3", online = true } }
     H.eq(FM.HeaderStatus(friends, { ["C#3"] = true }, 1000 - 30, 1000, L), "1 of 2 friends online, synced just now")

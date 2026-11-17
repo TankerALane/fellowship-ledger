@@ -554,3 +554,8 @@ Austin, 2026-11-16: "The time for the bosses on the timer should be based on the
 - RunTimer.Target also keeps the kills in order with names (order) and BeforeFinal counts the kills before the final boss.
 - Used by the timer's rows and +/-, the next boss line (the compared run's next boss you have not killed, timed by kill number), and a dungeon's "your best run, boss by boss" on the Dungeons tab. The Leaderboard's fastest boss kills are fight lengths, still by name.
 
+## D-144 A friend's line: who is online at a glance, no version (1.14.2)
+Austin, 2026-11-17: "I think we can take the version off the friends list" and "easier to tell when the friends list is collapsed who is online".
+- The "old version x" note is gone from a Battle.net friend's line: with frequent releases nearly everyone showed it. The version is still in a character's hover, and views that need a newer version still say so.
+- Online: a green dot, the name, "online, playing <character>" in green (or just "online"), then the character count and last update. Offline: a grey dot and the whole line grey. FriendsModel.HeaderText builds it (pure, tested).
+

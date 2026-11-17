@@ -258,6 +258,13 @@ local function buildRows()
         state.sort, state.desc)
 end
 
+-- The dots and colours of a friend's line (1.14.2).
+local function headerLook()
+    local IC = ns.DetailModel.IconCode
+    return { on = IC("switch-knob", W.Color("good")), off = IC("switch-knob", W.Color("muted")),
+        good = ns.Palette.Code(W.Color("good")), muted = ns.Palette.Code(W.Color("muted")) }
+end
+
 local function lines()
     local now = time()
     local rows, hidden = buildRows()
@@ -268,14 +275,9 @@ local function lines()
             -- folded under its friend's header
         elseif r.header then
             local f = r.friend
-            local status = f.online and L.ONLINE or L.OFFLINE
-            if ns.Merge.CompareVersions(f.version, ns.VERSION) == -1 then
-                status = status .. ", " .. string.format(L.FRIEND_OLD_VERSION, f.version)
-            end
             local fid = r.id
-            out[#out + 1] = { kind = "group", friendId = fid, text = (folded[fid] and "+ " or "- ")
-                .. string.format(r.count == 1 and L.FRIEND_HEADER_ONE or L.FRIEND_HEADER, f.name or r.id, status, r.count,
-                FriendsModel.Ago(now, f.lastUpdated)),
+            out[#out + 1] = { kind = "group", friendId = fid, online = f.online and true or nil, text = (folded[fid] and "+ " or "- ")
+                .. FriendsModel.HeaderText(f, fid, r.count, now, L, headerLook()),
                 onClick = function()
                     local c = collapsed()
                     c[fid] = not c[fid] or nil
