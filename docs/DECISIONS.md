@@ -558,4 +558,4 @@ Austin, 2026-11-16: "The time for the bosses on the timer should be based on the
 Austin, 2026-11-17: "I think we can take the version off the friends list" and "easier to tell when the friends list is collapsed who is online".
 - The "old version x" note is gone from a Battle.net friend's line: with frequent releases nearly everyone showed it. The version is still in a character's hover, and views that need a newer version still say so.
 - Online: a green dot, the name, "online, playing <character>" in green (or just "online"), then the character count and last update. Offline: a grey dot and the whole line grey. FriendsModel.HeaderText builds it (pure, tested).
-
+- 1.14.3 fix (2026-11-17): RunTimer.Target counts each boss once, at its earliest kill. A run reported by several friends is one joined Leaderboard entry holding every copy's kills, so by kill number every boss after the first was compared with a copy of an earlier one (Austin's Ruins of Lordaeron showed about +14 while slightly ahead, until the final boss).

@@ -93,6 +93,15 @@ H.test("run timer: bosses are compared by the order they died in; the final boss
         bosses = { { name = "B", at = 1300 }, { name = "A", at = 1100 }, { name = "F", at = 1800 } } } }
     local t = RT.Target(entries, "The Deadmines", "leader")
     H.eq(t.order[1].name, "A"); H.eq(t.order[3].name, "F"); H.eq(t.refs[2], 300); H.eq(RT.BeforeFinal(t), 2)
+    -- 1.14.3: one run reported by three friends is joined with every copy's kills; each
+    -- boss counts once (Austin's Ruins of Lordaeron showed +14 while ahead).
+    local joined = { { dungeon = "The Deadmines", clear = 800, finishedAt = 1800, levelMax = 20, lead = "Zip", names = { "Zip" }, size = 1,
+        bosses = { { name = "A", at = 1100 }, { name = "A", at = 1101 }, { name = "A", at = 1101 }, { name = "B", at = 1300 },
+            { name = "B", at = 1301 }, { name = "F", at = 1800 }, { name = "F", at = 1801 } } } }
+    t = RT.Target(joined, "The Deadmines", "leader")
+    H.eq(#t.refs, 3, "three bosses, not seven kills"); H.eq(t.refs[2], 300); H.eq(RT.BeforeFinal(t), 2)
+    local v2 = RT.View({ entered = 1000, bosses = { { name = "A", at = 1090 }, { name = "B", at = 1290 } } }, 1295, t)
+    H.eq(v2.bosses[2].delta, -10, "second kill against their second boss, not a copy of their first")
 end)
 
 -- Mock client helpers (as in test_tracking_smoke) ----------------------------------

@@ -47,15 +47,21 @@ function RunTimer.Target(entries, dungeon, mode, current)
     -- run's own kills (up to its final boss) in order, for the running +/-.
     -- order: those kills with their names, first to final (1.14.1: bosses are compared
     -- by the order they died in, since routes differ, Austin 2026-11-16).
+    -- Each boss once, at its earliest kill: a run several friends reported is joined
+    -- into one entry with every copy's kills (Leaderboard.Merge), so the same kill can
+    -- be listed two or three times (1.14.3: by kill number that put every boss after
+    -- the first against the wrong one, Austin's Ruins of Lordaeron 2026-11-17).
     local splits, refs, order = {}, {}, {}
     for _, b in ipairs(best.bosses or {}) do
         if b.name and b.at then
             local into = b.at - start
             if not splits[b.name] or into < splits[b.name] then splits[b.name] = into end
-            if b.at <= best.finishedAt + 1 then order[#order + 1] = { name = b.name, into = into } end
         end
     end
-    table.sort(order, function(a, b) return a.into < b.into end)
+    for name, into in pairs(splits) do
+        if start + into <= best.finishedAt + 1 then order[#order + 1] = { name = name, into = into } end
+    end
+    table.sort(order, function(a, b) if a.into ~= b.into then return a.into < b.into end return a.name < b.name end)
     for i, o in ipairs(order) do refs[i] = o.into end
     return { clear = best.clear, splits = splits, refs = refs, order = order, lead = best.lead, mine = best.mine }
 end

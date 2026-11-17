@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Dungeon timer**: when the compared run was shared by several friends, each boss was counted once per friend, so your kills were compared with the wrong bosses and the timer could show you far behind while you were ahead.
+
 ## 1.14.2 - 2026-11-17
 
 ### Changed
