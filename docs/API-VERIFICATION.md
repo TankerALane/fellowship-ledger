@@ -409,6 +409,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
+| `m:noticewrap` | manual | a notice's body is measured with FontString:GetStringHeight (an estimate if it is missing) so a wrapped line does not run into the click line | a friend milestone with a long name (or several in one notice): the text wraps and 'Click to open ...' sits below it with a small gap, nothing overlaps | ? | ? |
 | `m:notices2` | manual | the redrawn notices (D-139): coloured stripes, ring icons with text or media/check and crown, the shrinking line, the big notice | after a game restart: /fl test (or level up): the notice has a gold stripe, LEVEL UP over the title, the level in a ring and 'Click to open your level times'; the line along the bottom runs down and the notice fades; a friend's notice is blue; nothing is cut off at the right | ? | ? |
 
 ### Friends

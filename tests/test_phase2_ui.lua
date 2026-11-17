@@ -138,6 +138,13 @@ H.test("level-up toast and session summary at the next login", function()
     ns.Store.char.levelStart.partial = nil
     Mock.fire(env, "PLAYER_LEVEL_UP", 14)
     H.ok(Mock.chatContains(env, "10m faster than the level before"), "compared with level 13")
+    -- 1.14.4: a long body line wraps; the click line goes below it, not on top.
+    local f = ns.Toast.Pool()[1]
+    local short = ns.Toast.Fill(f, "T", "Short line", { kind = "friend", label = "X", icon = "30", action = "Click" })
+    local long = ns.Toast.Fill(f, "T", string.rep("Tarahawk (Kalimdorian) reached level 30! ", 3), { kind = "friend", label = "X", icon = "30", action = "Click" })
+    H.ok(long >= short + 2 * ns.Toast.LINE_H, "a wrapped line makes the notice taller: " .. short .. " vs " .. long)
+    H.eq(ns.Toast.TextHeight({}, "a\nb", 300), 2 * ns.Toast.LINE_H, "line breaks still count")
+    H.eq(ns.Toast.TextHeight({ GetStringHeight = function() return 31 end }, "a", 300), 31, "the game's measure wins")
     -- A big notice stays until closed.
     ns.Toast.Show("A new #1!", { "#1 on X" }, { kind = "dungeon", big = true, icon = "#1", onClick = function() end })
     H.ok(ns.Toast.Big():IsShown(), "the big notice")

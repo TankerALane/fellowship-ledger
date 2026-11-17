@@ -43,6 +43,22 @@ end
 
 local function colorText(fs, c) fs:SetTextColor(c[1], c[2], c[3], 1) end
 
+-- How tall a wrapped text is (1.14.4): the game's own measure when it gives one, else
+-- an estimate from the length of each line at about 6.5 px a letter. A long line wraps,
+-- so counting line breaks alone let the click line sit on top of the text.
+Toast.CHAR_W = 6.5
+function Toast.TextHeight(fs, text, width)
+    if text == "" then return 0 end
+    local h = type(fs.GetStringHeight) == "function" and fs:GetStringHeight()
+    if type(h) == "number" and h > 0 then return h end
+    local lines = 0
+    for line in (text .. "\n"):gmatch("(.-)\n") do
+        local plain = line:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        lines = lines + math.max(1, math.ceil(#plain * Toast.CHAR_W / width))
+    end
+    return lines * Toast.LINE_H
+end
+
 -- The icon in a ring: opts.icon (short text) or opts.iconTex ("check" | "crown").
 local function makeIcon(parent, size)
     local i = CreateFrame("Frame", nil, parent)
@@ -142,17 +158,17 @@ local function fill(f, title, text, opts)
     y = y - 18
     f.body:ClearAllPoints()
     f.body:SetPoint("TOPLEFT", x0, y)
-    f.body:SetPoint("RIGHT", -12, 0)
+    local bodyW = Toast.WIDTH - x0 - 12
+    f.body:SetWidth(bodyW)
     f.body:SetText(text)
-    local lineCount = text == "" and 0 or select(2, text:gsub("\n", "")) + 1
-    y = y - Toast.LINE_H * lineCount
+    y = y - math.ceil(Toast.TextHeight(f.body, text, bodyW))
     f.action:ClearAllPoints()
     f.action:SetShown(opts.action ~= nil)
     if opts.action then
-        f.action:SetPoint("TOPLEFT", x0, y - 3)
+        f.action:SetPoint("TOPLEFT", x0, y - 6)
         f.action:SetText(opts.action)
         colorText(f.action, c)
-        y = y - 17
+        y = y - 20
     end
     return math.max(hasIcon and 54 or 0, -y + 10)
 end
