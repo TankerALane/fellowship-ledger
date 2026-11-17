@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.14.4 - 2026-11-17
 
 ### Fixed
 - **Notices**: a long line that wrapped (a friend's milestone with a long name) no longer runs into the "Click to open" line under it; the notice grows to fit.
