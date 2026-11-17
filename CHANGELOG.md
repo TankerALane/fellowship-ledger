@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.14.5 - 2026-11-17
 
 ### Added
 - **Level rings show how far through the level a character is.** The circle round each level on the Me and Friends lists (and on a character's page) is 20 pieces, one for each bar of the XP bar, filling clockwise from a dot at the top. Friends' rings fill once they update to this version; until then, and at the level cap, the plain circle shows.
