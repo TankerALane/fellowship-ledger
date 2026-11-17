@@ -200,7 +200,10 @@ end
 -- One character's shared data since `since` (nil = all). Returns nil if it shares nothing.
 function Codec.EncodeData(key, char, shared, since)
     local recs = { table.concat({ "c", Codec.Escape(key), Codec.Escape(char.class), Codec.Escape(char.race),
-        Codec.Escape(char.faction), tostring(char.level or 0), tostring(char.lastSeen or 0), Codec.ShareMask(shared) }, ",") }
+        Codec.Escape(char.faction), tostring(char.level or 0), tostring(char.lastSeen or 0), Codec.ShareMask(shared),
+        -- How far through the level in thousandths (1.14.5, D-145), with levels shared;
+        -- older clients read only the first eight fields.
+        shared.levels and tonumber(char.xpp) and string.format("%d", char.xpp) or "" }, ",") }
     local days = {}
     for day in pairs(char.days or {}) do
         if not since or day >= since then days[#days + 1] = day end
@@ -381,6 +384,8 @@ function Codec.DecodeData(body)
         if f[1] == "c" then
             out.key, out.class, out.race, out.faction = Codec.Unescape(f[2]), Codec.Unescape(f[3]), Codec.Unescape(f[4]), Codec.Unescape(f[5])
             out.level, out.lastSeen, out.mask = tonumber(f[6]) or 0, tonumber(f[7]) or 0, f[8] or ""
+            local xpp = tonumber(f[9])
+            if xpp and xpp >= 0 and xpp <= 1000 then out.xpp = math.floor(xpp) end
         elseif f[1] == "d" and f[2] and f[2]:match("^%d%d%d%d%-%d%d%-%d%d$") then
             out.days[f[2]] = decodeCounts(f, 3)
         elseif f[1] == "lx" and tonumber(f[2]) then

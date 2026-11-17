@@ -301,7 +301,7 @@ local function characterLines()
         -- The character I am playing (real data only; fake characters are never played).
         local playing = key == ns.Store.key and not ns.Data.IsFake()
         lines[#lines + 1] = { kind = "row", cells = cellsFor(row), tag = playing and L.TAG_PLAYING or nil,
-            badge = row.level, badgeRole = playing and "accent" or "muted", sub = MeModel.SubText(row, L, ago, playing),
+            badge = row.level, badgeProgress = row.progress, badgeRole = playing and "accent" or "muted", sub = MeModel.SubText(row, L, ago, playing),
             height = ns.Table.TALL_H, indent = true, key = key, onClick = function() Me.OpenPage(key) end }
     end
     return lines, #rows, rows
@@ -553,6 +553,7 @@ function Me.PageHead(panel, onBack)
     head.badge.ring = head.badge:CreateTexture(nil, "ARTWORK")
     head.badge.ring:SetTexture("Interface\\AddOns\\FellowshipLedger\\media\\ring")
     head.badge.ring:SetAllPoints()
+    W.LevelRing(head.badge, 32)
     head.badge.text = W.Text(head.badge, "body", "heading")
     head.badge.text:SetPoint("CENTER", 0, 0)
     head.name = W.Text(head, "large", "text")
@@ -581,6 +582,7 @@ function Me.FillHead(head, row, playing, sub)
     head.badge.text:SetText(tostring(row.level or "?"))
     local c = W.Color(playing and "accent" or "muted")
     head.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
+    head.badge:SetLevelProgress(row.progress, c)
     head.name:SetText(W.ClassName(row.name, row.class))
     head.sub:SetText(sub or "")
     if playing then

@@ -141,6 +141,7 @@ local function makeCharacter(rng, spec, now, timeFn, dateFn)
         end
     end
     c.level = level
+    c.xpp = (level * 137) % 1000 -- how far through the level, for the ring (D-145); no random draw
     -- XP by source per level (D-120), from each level's time and pace; no random draws.
     c.levelXP = {}
     for to, rec in pairs(c.levels) do

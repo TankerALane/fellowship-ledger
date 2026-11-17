@@ -91,6 +91,8 @@ H.test("XP gains are counted, including across a level wrap", function()
     Mock.fire(env, "PLAYER_XP_UPDATE", "player")
     Mock.fire(env, "PLAYER_XP_UPDATE", "target")
     H.eq(today(env).xp, 500 + 1300)
+    -- How far through the level, for the ring (1.14.5, D-145): 100 of 2500.
+    H.eq(char(env).xpp, 40)
 end)
 
 H.test("quest turn-ins are logged once with their title", function()

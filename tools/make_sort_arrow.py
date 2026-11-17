@@ -7,6 +7,8 @@ tints them):
     FellowshipLedger/media/switch-track.tga 32x16 rounded bar (an on/off switch, 1.14.0)
     FellowshipLedger/media/switch-knob.tga  16x16 dot (the switch's knob, 1.14.0)
     FellowshipLedger/media/ring.tga         32x32 thin circle (a character's level, 1.14.0)
+    FellowshipLedger/media/ring-segments.tga 512x256: 20 pieces of a ring, one per 64x64 cell
+                                            (how far through the level, 1.14.5)
 Our own art, made here so nothing from the game is shipped. Run from the repo root:
     python tools/make_sort_arrow.py
 """
@@ -78,6 +80,28 @@ def ring(x, y):
     return 13.6 <= d <= 15.4
 
 
+RING_SEGMENTS = 20  # one for each bar of the game's XP bar
+SEGMENT_GAP = 5.0   # degrees left empty between two segments
+
+
+def ring_segments(x, y):
+    # 512x256: 8 x 4 cells of 64x64, segment i in cell i (left to right, then down).
+    # Segment 0 starts at the top and they run clockwise, a thicker ring than ring.tga
+    # (the same circle at twice the size: radius 25.2 to 31.2 of 32).
+    import math
+    col, row = int(x // 64), int(y // 64)
+    i = row * 8 + col
+    if i >= RING_SEGMENTS:
+        return False
+    dx, dy = x - col * 64 - 32, y - row * 64 - 32
+    d = (dx * dx + dy * dy) ** 0.5
+    if not 25.2 <= d <= 31.2:
+        return False
+    angle = math.degrees(math.atan2(dx, -dy)) % 360  # 0 at the top, growing clockwise
+    span = 360 / RING_SEGMENTS
+    return i * span + SEGMENT_GAP / 2 <= angle <= (i + 1) * span - SEGMENT_GAP / 2
+
+
 def write(path, inside, width=SIZE, height=SIZE):
     pixels = bytearray()
     for row in range(height):  # top row first (descriptor bit 5 set below)
@@ -103,6 +127,7 @@ def main():
     write("FellowshipLedger/media/switch-knob.tga", switch_knob)
     write("FellowshipLedger/media/ring.tga", ring, 32, 32)
     write("FellowshipLedger/media/crown.tga", crown)
+    write("FellowshipLedger/media/ring-segments.tga", ring_segments, 512, 256)
 
 
 if __name__ == "__main__":

@@ -405,6 +405,12 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:timer2` | manual | the redrawn dungeon timer (D-138): a scaled font (SetFont at 1.9 x), textures as ticks on a bar, W.Segmented as the switch | run a dungeon: the time is large with a green or red box beside it; the bar fills with a green tick per boss and grey ticks for the compared run; the next boss shows in grey with a time; the switch flips between #1 and My best; after the final boss the frame turns gold and says your place and your best, and both buttons open the right tab | ? | ? |
 
+### Me
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:levelring` | manual | the level ring in 20 pieces (D-145): media/ring-segments.tga cut with SetTexCoord, faint pieces via SetVertexColor alpha, a start dot | after a game restart (new media): /fl, Me: your character's ring fills clockwise from the dot at the top as far as your XP bar (half the bar = the right half lit); gain some XP and /reload: it moves; a friend on 1.14.5 shows theirs; the pieces line up with the number in the middle on the list and on the page head | ? | ? |
+
 ### Notices
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |

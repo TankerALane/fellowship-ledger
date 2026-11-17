@@ -57,6 +57,18 @@ end
 
 local Levels = T.Define({ id = "levels" })
 
+-- How far through the level, in thousandths (1.14.5, D-145), for the level ring. Kept
+-- on the character (char.xpp) and shared with friends; nil at the level cap.
+function Levels.SaveProgress(char, xp, xpMax, level)
+    if not char then return end
+    local maxLevel = ns.Merge and ns.Merge.maxLevel
+    if type(xp) ~= "number" or type(xpMax) ~= "number" or xpMax <= 0 or (maxLevel and (level or 0) >= maxLevel) then
+        char.xpp = nil
+        return
+    end
+    char.xpp = math.max(0, math.min(999, math.floor(xp * 1000 / xpMax)))
+end
+
 function Levels:OnLogin()
     local char = Store.char
     local level = T.Plain(UnitLevel("player")) or char.level
@@ -65,6 +77,7 @@ function Levels:OnLogin()
         newStart(char, level, (T.Plain(UnitXP("player")) or 0) > 0 or level > 1)
     end
     lastXP, lastXPMax = T.Plain(UnitXP("player")), T.Plain(UnitXPMax("player"))
+    Levels.SaveProgress(char, lastXP, lastXPMax, level)
 end
 
 Levels.events.PLAYER_LEVEL_UP = function(_, newLevel)
@@ -94,6 +107,7 @@ Levels.events.PLAYER_LEVEL_UP = function(_, newLevel)
     Store.session.levelEnd = newLevel
     Store.Count("levels")
     newStart(char, newLevel, false)
+    Levels.SaveProgress(char, 0, 1, newLevel) -- the ring starts again at the top
     -- UnitXPMax may still report the old level during the event; read it again shortly.
     ns.Events.After(2, function()
         if char.levelStart and char.levelStart.level == newLevel then
@@ -149,4 +163,5 @@ Levels.events.PLAYER_XP_UPDATE = function(_, unit)
         end
     end
     lastXP, lastXPMax = xp, xpMax
+    Levels.SaveProgress(Store.char, xp, xpMax, T.Plain(UnitLevel("player")) or (Store.char and Store.char.level))
 end

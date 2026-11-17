@@ -13,6 +13,7 @@
 --     section = true (a group line drawn as a section title: small, upper case, 1.13.0),
 --     tag = "Playing" (a boxed tag after the first cell's text, 1.13.0),
 --     badge = "31" (a small ring with the level before the first cell, 1.14.0),
+--     badgeProgress = 0.5 (how far through the level, drawn on the ring, 1.14.5),
 --     sub = "Priest - Alliance" (a grey second line under the first cell, 1.14.0; give the
 --     line height = Table.TALL_H) }
 -- A grid segment with role = "section" is drawn the same way as a section title.
@@ -164,6 +165,7 @@ function Obj:Line(i)
     w.badge.ring = w.badge:CreateTexture(nil, "ARTWORK")
     w.badge.ring:SetTexture(RING)
     w.badge.ring:SetAllPoints()
+    W.LevelRing(w.badge, BADGE)
     w.badge.text = W.Text(w.badge, "small", "text")
     w.badge.text:SetPoint("CENTER", 0, 0)
     w.badge.text:SetJustifyH("CENTER")
@@ -418,6 +420,7 @@ function Obj:PlaceFirst(w, line)
         w.badge.text:SetText(tostring(line.badge))
         local c = W.Color(line.badgeRole or "muted")
         w.badge.ring:SetVertexColor(c[1], c[2], c[3], 1)
+        w.badge:SetLevelProgress(line.badgeProgress, c)
         W.SetTextRole(w.badge.text, line.badgeRole == "accent" and "heading" or "text")
     end
     w.sub:SetShown(dy ~= 0)

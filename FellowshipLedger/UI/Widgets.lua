@@ -548,3 +548,50 @@ function W.ScrollArea(parent)
     scroll:SetScript("OnSizeChanged", function(self, w) content:SetWidth(w or 10) end)
     return scroll, content
 end
+
+-- How far through the level, on a level ring (1.14.5, D-145). badge: a square frame with
+-- .ring (the plain circle). Adds 20 pieces of a ring from media/ring-segments.tga, one
+-- for each bar of the game's XP bar, and a dot at the top where the level starts.
+-- badge:SetLevelProgress(p, c): p from 0 to 1 fills that many pieces clockwise from the
+-- top in colour c (the rest faint); nil shows the plain circle (unknown, or the cap).
+W.RING_SEGMENTS = 20
+W.RING_FAINT = 0.22
+local SEGMENTS = "Interface\\AddOns\\FellowshipLedger\\media\\ring-segments"
+
+-- How many pieces p fills (pure; for tests).
+function W.RingFilled(p)
+    if type(p) ~= "number" then return nil end
+    return math.max(0, math.min(W.RING_SEGMENTS, math.floor(p * W.RING_SEGMENTS + 1e-6)))
+end
+
+function W.LevelRing(badge, size)
+    badge.segments = {}
+    for i = 1, W.RING_SEGMENTS do
+        local t = badge:CreateTexture(nil, "ARTWORK")
+        t:SetTexture(SEGMENTS)
+        local col, row = (i - 1) % 8, math.floor((i - 1) / 8)
+        t:SetTexCoord(col / 8, (col + 1) / 8, row / 4, (row + 1) / 4)
+        t:SetAllPoints()
+        t:Hide()
+        badge.segments[i] = t
+    end
+    -- The start dot sits on the ring at the top (the ring's middle is 28.2 / 32 of the radius).
+    badge.startDot = badge:CreateTexture(nil, "OVERLAY")
+    badge.startDot:SetTexture("Interface\\AddOns\\FellowshipLedger\\media\\switch-knob")
+    local dot = math.max(4, math.floor(size * 0.2 + 0.5))
+    badge.startDot:SetSize(dot, dot)
+    badge.startDot:SetPoint("CENTER", badge, "CENTER", 0, size / 2 * 28.2 / 32)
+    badge.startDot:Hide()
+    function badge:SetLevelProgress(p, c)
+        local filled = W.RingFilled(p)
+        self.ring:SetShown(filled == nil)
+        self.startDot:SetShown(filled ~= nil)
+        if filled then self.startDot:SetVertexColor(c[1], c[2], c[3], 1) end
+        for i, t in ipairs(self.segments) do
+            t:SetShown(filled ~= nil)
+            if filled then t:SetVertexColor(c[1], c[2], c[3], i <= filled and 1 or W.RING_FAINT) end
+        end
+        self.filled = filled -- for tests
+    end
+    return badge
+end

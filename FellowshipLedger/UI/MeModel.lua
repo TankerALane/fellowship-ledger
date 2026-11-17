@@ -59,6 +59,15 @@ function MeModel.SubText(row, L, ago, playing)
     return table.concat(parts, "  -  ")
 end
 
+-- How far through the level (1.14.5, D-145): 0 to 1 from c.xpp (thousandths, saved for
+-- my characters and shared by friends on 1.14.5+), nil when unknown or at the level cap.
+function MeModel.Progress(c, maxLevel)
+    local xpp = c and tonumber(c.xpp)
+    if not xpp or xpp < 0 then return nil end
+    if maxLevel and (c.level or 0) >= maxLevel then return nil end
+    return math.min(1, xpp / 1000)
+end
+
 -- characters: db.characters; range: "today" | "week" | "month" | "all"
 function MeModel.Build(characters, range, todayKey, timeFn, dateFn)
     local Days = ns.Days
@@ -73,6 +82,7 @@ function MeModel.Build(characters, range, todayKey, timeFn, dateFn)
             faction = c.faction,
             lastSeen = c.lastSeen,
             level = c.level or 0,
+            progress = MeModel.Progress(c, ns.Merge and ns.Merge.maxLevel),
             levels = sum.levels or 0,
             quests = sum.quests or 0,
             dungeons = sum.dungeonsCompleted or 0,

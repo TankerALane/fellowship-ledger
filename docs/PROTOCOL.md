@@ -56,7 +56,7 @@ m                            (1.12.0: the same with no characters listed: everyt
 ### DATA (`D`), one per shared character
 
 ```
-c,<Name-Realm>,<CLASS>,<race>,<faction>,<level>,<lastSeen>,<shareMask>
+c,<Name-Realm>,<CLASS>,<race>,<faction>,<level>,<lastSeen>,<shareMask>,<xpp>   xpp: how far through the level in thousandths, only with levels shared, empty when unknown or at the cap (1.14.5, D-145; older receivers read the first eight fields)
 d,<YYYY-MM-DD>,<code>=<int>,...                                        day buckets
 l,<toLevel>,<active>,<total>,<partial 0|1>,<at>                        level times (levels tracker)
 lx,<level>,<quest>,<kill>,<explore>,<other>                             XP by source earned at that level (levels tracker; 1.9.0, D-120)

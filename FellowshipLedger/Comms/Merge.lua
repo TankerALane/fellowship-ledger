@@ -133,6 +133,7 @@ function Merge.Data(friend, data, todayKey, cutoffKey, now)
     -- lastSeen never goes back: a late message (or another computer's older copy, D-128)
     -- must not make the copy look older than one already held.
     c.level, c.mask = data.level, data.mask
+    c.xpp = data.xpp -- how far through the level (1.14.5+ senders, D-145); nil from older ones
     if type(data.lastSeen) == "number" and data.lastSeen > (c.lastSeen or 0) then c.lastSeen = data.lastSeen end
     c.days = c.days or {}
     for day, counts in pairs(data.days) do

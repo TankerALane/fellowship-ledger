@@ -71,6 +71,26 @@ H.test("DATA round-trips days, levels and sessions, honouring 'since'", function
     H.ok(since.days["2026-11-04"])
 end)
 
+H.test("how far through the level travels with levels (1.14.5, D-145)", function()
+    local ns = ns_()
+    local C = ns.Codec
+    local c = sampleChar(ns)
+    c.xpp = 512
+    local shared = { levels = true }
+    local body = C.EncodeData("Hawk-Realm", c, shared)
+    H.eq(C.DecodeData(body).xpp, 512)
+    H.eq(C.DecodeData(C.EncodeData("Hawk-Realm", c, {})).xpp, nil, "not sent without levels")
+    c.xpp = nil
+    H.eq(C.DecodeData(C.EncodeData("Hawk-Realm", c, shared)).xpp, nil, "unknown stays unknown")
+    -- An older sender's record (eight fields) and junk.
+    H.eq(C.DecodeData("c,Hawk-Realm,HUNTER,Orc,Horde,18,500,ql").xpp, nil)
+    H.eq(C.DecodeData("c,Hawk-Realm,HUNTER,Orc,Horde,18,500,ql,9999").xpp, nil)
+    -- The level ring's numbers.
+    H.eq(ns.MeModel.Progress({ level = 20, xpp = 500 }, 60), 0.5)
+    H.eq(ns.MeModel.Progress({ level = 60, xpp = 0 }, 60), nil, "the cap shows the plain circle")
+    H.eq(ns.MeModel.Progress({ level = 20 }, 60), nil, "unknown")
+end)
+
 H.test("unknown fields and junk are ignored (forward compatible)", function()
     local C = ns_().Codec
     local d = C.DecodeData("c,Vel-Doom,HUNTER,BloodElf,Horde,18,5,1~d,2026-11-04,qu=2,zz=9,bad~x,whatever~l,notanumber")

@@ -303,7 +303,7 @@ local function lines()
             local factionText = MeModel.FormatCell({ field = "faction", kind = "faction" }, r)
             out[#out + 1] = { kind = "row", id = openId, cells = cells, indent = r.indent,
                 tag = r.playing and L.TAG_PLAYING or nil, height = ns.Table.TALL_H,
-                badge = r.level, badgeRole = r.playing and "accent" or "muted", sub = MeModel.SubText(r, L, nil, true),
+                badge = r.level, badgeProgress = r.progress, badgeRole = r.playing and "accent" or "muted", sub = MeModel.SubText(r, L, nil, true),
                 tooltip = function()
                     local me = ns.Store.char
                     r.common = #FriendsModel.CommonQuests(me and me.logQuests, char and char.logQuests)
@@ -465,7 +465,8 @@ function FriendsTab.Refresh()
     ui.listFrame:SetPoint("BOTTOMRIGHT", week and -(FriendsTab.WEEK_W + 10) or 0, 0)
     if week then ui.weekTable:SetLines(weeklyLines()) end
     if pageId then
-        local row = { name = char.display or char.name or key, class = char.class, level = char.level, faction = char.faction }
+        local row = { name = char.display or char.name or key, class = char.class, level = char.level, faction = char.faction,
+            progress = MeModel.Progress(char, ns.Merge.maxLevel) }
         local playing = FriendsModel.IsPlaying(friend, key)
         local sub = string.format(L.FRIEND_PAGE_OF, friend.name or "?")
         local more = MeModel.SubText(row, L, nil, true)
