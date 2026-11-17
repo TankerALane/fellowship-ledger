@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.14.2 - 2026-11-17
 
 ### Changed
 - **Friends**: each friend's line starts with a green dot and says "online, playing Grimwald" when they are on, so you can see who is online even with the list folded. Offline friends get a grey dot and a grey line. The "old version" note is gone; a character's hover still shows the version.
