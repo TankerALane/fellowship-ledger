@@ -7,7 +7,8 @@
 -- Core/XPRecent.lua.
 -- Resizable from the corner (settings.xpWindowSize) down to about a quarter of its
 -- full size: narrow, the title goes and the buttons say 1m / 5m / 10m with a short
--- pace; short, the level lines and then the time labels go; the bars take the rest.
+-- pace; short, the level lines and then the time labels go; the bars take the rest,
+-- and at the very smallest the bars go too: just the buttons, the XP and the pace.
 
 local _, ns = ...
 local L = ns.L
@@ -18,7 +19,8 @@ local XPWindow = {}
 ns.XPWindow = XPWindow
 
 XPWindow.WIDTH, XPWindow.HEIGHT = 300, 220   -- the size at first
-XPWindow.MIN_W, XPWindow.MIN_H = 150, 90     -- about a quarter of it
+XPWindow.MIN_W, XPWindow.MIN_H = 150, 54     -- the buttons, the XP and the pace only
+XPWindow.GRAPH_MIN = 20                       -- less room than this: no bars
 XPWindow.MAX_W, XPWindow.MAX_H = 700, 500
 XPWindow.COMPACT_W = 240                      -- narrower than this: the compact top line
 XPWindow.REFRESH = 1
@@ -54,8 +56,8 @@ local function place(f)
 end
 
 -- Where things go at a size (pure; for tests). noteLines: the level lines to show.
--- Returns { compact, totalY, graphY, graphH, axis (show the time labels), note
--- (show the level lines), noteY }: y as offsets down from the top.
+-- Returns { compact, totalY, graphY, graph (show the bars), graphH, axis (show the
+-- time labels), note (show the level lines), noteY }: y as offsets down from the top.
 function XPWindow.Layout(w, h, noteLines)
     local compact = w < XPWindow.COMPACT_W
     local out = { compact = compact }
@@ -69,7 +71,8 @@ function XPWindow.Layout(w, h, noteLines)
     out.axis = room - axisH >= 40
     out.note = room - axisH - noteH >= 40
     out.graphH = room - (out.axis and axisH or 0) - (out.note and noteH or 0)
-    out.graphH = math.max(12, out.graphH)
+    out.graph = out.graphH >= XPWindow.GRAPH_MIN
+    if not out.graph then out.axis, out.note, out.graphH = false, false, 0 end
     out.noteY = out.graphY + out.graphH + (out.axis and axisH or 0) + 2
     return out
 end
@@ -155,14 +158,15 @@ function XPWindow.Refresh()
     frame.graph:ClearAllPoints()
     frame.graph:SetPoint("TOPLEFT", 10, -lay.graphY)
     frame.graph:SetPoint("TOPRIGHT", -10, -lay.graphY)
-    frame.graph:SetHeight(lay.graphH)
+    frame.graph:SetHeight(math.max(1, lay.graphH))
+    frame.graph:SetShown(lay.graph)
     frame.left:SetShown(lay.axis)
     frame.right:SetShown(lay.axis)
     frame.note:SetShown(lay.note)
     frame.note:ClearAllPoints()
     frame.note:SetPoint("TOPLEFT", 10, -lay.noteY)
     frame.note:SetPoint("RIGHT", frame, "RIGHT", -10, 0)
-    frame.top:SetShown(lay.graphH >= 24)
+    frame.top:SetShown(lay.graph and lay.graphH >= 24)
     -- The words.
     frame.total:SetText(string.format(L.XPWIN_TOTAL, ns.Format.Number(s.total)))
     local pace = lay.compact and L.XPWIN_PACE_SHORT or L.XPWIN_PACE
