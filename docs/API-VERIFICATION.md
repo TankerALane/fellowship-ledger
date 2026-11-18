@@ -405,6 +405,12 @@ These come from addons already installed in Austin's game folders. They are good
 |---|---|---|---|---|---|
 | `m:timer2` | manual | the redrawn dungeon timer (D-138): a scaled font (SetFont at 1.9 x), textures as ticks on a bar, W.Segmented as the switch | run a dungeon: the time is large with a green or red box beside it; the bar fills with a green tick per boss and grey ticks for the compared run; the next boss shows in grey with a time; the switch flips between #1 and My best; after the final boss the frame turns gold and says your place and your best, and both buttons open the right tab | ? | ? |
 
+### Character
+
+| ID | Kind | What it is for | In-game test | Forever | Retail |
+|---|---|---|---|---|---|
+| `m:xpwindow` | manual | the /fl xp window (D-146): W.Segmented, bars as textures with hover, OnUpdate redraw each second | `/fl xp: a small window opens; kill something: the total, XP / hour and a bar at the right appear within a second; 1 min / 5 min / 10 min change the bars; hover a bar for its XP; drag it, /reload, /fl xp: same place and the gains are still there; /fl xp again closes it` | ? | ? |
+
 ### Me
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |

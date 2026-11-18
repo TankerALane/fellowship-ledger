@@ -152,6 +152,9 @@ Levels.events.PLAYER_XP_UPDATE = function(_, unit)
         end
         if gained > 0 then
             Store.Count("xp", gained)
+            -- The last 10 minutes of gains, for /fl xp (1.14.6, D-146).
+            if Store.char then Store.char.xpRecent = ns.XPRecent.Add(Store.char.xpRecent, Store.Now(), gained) end
+            if ns.XPWindow then pcall(ns.XPWindow.Refresh) end
             sources = sources or ns.XPSources.New()
             local now = clock()
             if before and before > 0 then

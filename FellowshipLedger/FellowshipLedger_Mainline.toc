@@ -40,6 +40,7 @@ Core\Bests.lua
 Core\DungeonLevels.lua
 Core\Goals.lua
 Core\XPSources.lua
+Core\XPRecent.lua
 Core\RunTimer.lua
 Core\Leaderboard.lua
 Core\QuestChainLogic.lua
@@ -92,6 +93,7 @@ UI\InviteDialog.lua
 UI\GoalsWindow.lua
 UI\GoalsTracker.lua
 UI\DungeonTimer.lua
+UI\XPWindow.lua
 UI\Graph.lua
 UI\GraphsTab.lua
 UI\DungeonsTab.lua

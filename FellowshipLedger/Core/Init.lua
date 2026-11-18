@@ -157,7 +157,7 @@ ns.pewRegistered = pcall(frame.RegisterEvent, frame, "PLAYER_ENTERING_WORLD") --
 -- Slash commands ------------------------------------------------------------
 
 local HELP = { "HELP_OPEN", "HELP_SUMMARY", "HELP_FAKE", "HELP_EXPORT", "HELP_VERIFY", "HELP_VERIFY_SHOW", "HELP_PROBE", "HELP_DEBUG",
-    "HELP_SYNC", "HELP_FRIENDS", "HELP_COMMS", "HELP_COMMTEST", "HELP_TEST", "HELP_GOALS", "HELP_TIMER", "HELP_WELCOME", "HELP_RESTORE", "HELP_SHOTS", "HELP_VERSION" }
+    "HELP_SYNC", "HELP_FRIENDS", "HELP_COMMS", "HELP_COMMTEST", "HELP_TEST", "HELP_GOALS", "HELP_TIMER", "HELP_XP", "HELP_WELCOME", "HELP_RESTORE", "HELP_SHOTS", "HELP_VERSION" }
 
 local function printHelp()
     Log.Info(L.HELP_HEADER)
@@ -175,6 +175,10 @@ commands.help = printHelp
 
 function commands.timer()
     if ns.tracking then ns.DungeonTimer.Reopen() end
+end
+
+function commands.xp()
+    if ns.tracking then ns.XPWindow.Toggle() end
 end
 
 function commands.goals(rest)
