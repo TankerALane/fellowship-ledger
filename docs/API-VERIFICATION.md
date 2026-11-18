@@ -409,7 +409,7 @@ These come from addons already installed in Austin's game folders. They are good
 
 | ID | Kind | What it is for | In-game test | Forever | Retail |
 |---|---|---|---|---|---|
-| `m:xpwindow` | manual | the /fl xp window (D-146): W.Segmented, bars as textures with hover, OnUpdate redraw each second | `/fl xp: a small window opens; kill something: the total, XP / hour and a bar at the right appear within a second; 1 min / 5 min / 10 min change the bars; hover a bar for its XP; drag it, /reload, /fl xp: same place and the gains are still there; /fl xp again closes it` | ? | ? |
+| `m:xpwindow` | manual | the /fl xp window (D-146): W.Segmented, bars as textures with hover, OnUpdate redraw each second | `/fl xp: a small window opens; kill something: the total, XP / hour and a bar at the right appear within a second; 1 min / 5 min / 10 min change the bars; hover a bar for its XP; drag it and shrink it from the corner to the smallest (short buttons, just the bars, nothing overlaps), /reload, /fl xp: same place and size, the gains still there; /fl xp again closes it` | ? | ? |
 
 ### Me
 

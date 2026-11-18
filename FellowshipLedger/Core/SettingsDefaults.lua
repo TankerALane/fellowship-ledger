@@ -35,6 +35,7 @@ SettingsDefaults.VALUES = {
     goalsTrackerPos = nil,           -- where it was dragged: { point, relativePoint, x, y }
     xpWindowPos = nil,               -- the /fl xp window's place (1.14.6, D-146)
     xpWindowSpan = "5m",             -- its choice: "1m" | "5m" | "10m"
+    xpWindowSize = nil,              -- its size when resized: { width, height }
     friendsCollapsed = nil,          -- Friends tab: folded Battle.net friends, by id (1.14.0)
     goalsTrackerFolded = nil,        -- folded to one line (1.14.0)
     goals = false,                   -- suggest goals when a session starts (D-116; off unless asked for)

@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- **/fl xp**: a small window with your XP in the last 1, 5 or 10 minutes: the XP gained, XP per hour, how much of the level that is and how long the next level takes at that pace, over bars of XP across the time (hover a bar for its XP). Drag it anywhere; type /fl xp again to close it.
+- **/fl xp**: a small window with your XP in the last 1, 5 or 10 minutes: the XP gained, XP per hour, how much of the level that is and how long the next level takes at that pace, over bars of XP across the time (hover a bar for its XP). Drag it anywhere and shrink it from the corner down to about a quarter of its size (small, it keeps just the total, the pace and the bars); type /fl xp again to close it.
 
 ## 1.14.5 - 2026-11-17
 

@@ -294,6 +294,22 @@ H.test("/fl xp opens a window with the recent XP (D-146)", function()
     H.ok(f.pace:GetText():find("27,000", 1, true), "450 in a minute: " .. f.pace:GetText())
     H.eq(#f.bars, 20, "bars made for 5 minutes stay; 12 shown for 1 minute")
     H.ok(f.bars[12]:IsShown() and not f.bars[13]:IsShown())
+    -- Full size: everything shows.
+    local lay = f.layout
+    H.ok(not lay.compact and lay.axis and lay.note and lay.graphH >= 60, "full size")
+    -- Shrunk to the smallest (about a quarter): short buttons and pace, just the bars.
+    ns.db.settings.xpWindowSize = { 100, 50 }
+    Mock.slash(env, "xp"); Mock.slash(env, "xp")
+    H.eq(f:GetWidth(), ns.XPWindow.MIN_W, "never below the smallest")
+    lay = f.layout
+    H.ok(lay.compact and not lay.axis and not lay.note, "compact")
+    H.ok(f.spansShort:IsShown() and not f.spans:IsShown() and not f.title:IsShown())
+    H.ok(f.pace:GetText():find("/h", 1, true), f.pace:GetText())
+    H.ok(lay.graphH >= 30, "the bars still have room: " .. lay.graphH)
+    -- In between: compact top line, the time labels back once there is height.
+    local mid = ns.XPWindow.Layout(200, 160, 2)
+    H.ok(mid.compact and mid.axis, "narrow but tall")
+    H.ok(ns.XPWindow.Layout(300, 150, 2).axis and not ns.XPWindow.Layout(300, 150, 2).note, "short: the level lines go first")
     Mock.slash(env, "xp")
     H.ok(not f:IsShown(), "/fl xp again closes it")
 end)
