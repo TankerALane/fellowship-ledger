@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- **Going straight into another wing of Scarlet Monastery starts a new run.** The wings are one dungeon to the game, so the dungeon timer kept counting the last wing. A run now notices another wing by its map, by the door you walked through, or (once a wing is finished) by a boss from another wing.
+
 ## 1.14.6 - 2026-11-17
 
 ### Added

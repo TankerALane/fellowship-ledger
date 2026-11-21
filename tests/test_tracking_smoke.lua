@@ -1021,3 +1021,105 @@ H.test("dungeon: back in under a leader from outside the run's group is a new ru
     go(env, DEADMINES, 60)
     H.eq(char(env).currentRun, now)
 end)
+
+-- Scarlet Monastery: four wings in one instance on Forever (D-147).
+local SCARLET = { "Scarlet Monastery", "party", 1, "Normal", 5, 0, false, 189 }
+local TIRISFAL = { "Tirisfal Glades", "none", 0, "", 5, 0, false, 0 }
+local function wings(env, opts)
+    local st = env.__state
+    st.map, st.pos = nil, nil
+    env.IsInInstance = function() return st.instance[2] ~= "none" end
+    env.C_Map.GetBestMapForUnit = function() return st.map end
+    if opts.positions then
+        env.C_Map.GetPlayerMapPosition = function()
+            local p = st.pos
+            return p and { GetXY = function() return p[1], p[2] end } or nil
+        end
+    end
+end
+-- Stand outside at a door (Tirisfal map 1420), then walk in onto `map` (nil: unknown).
+local function through(env, ns, door, map, secs)
+    local st = env.__state
+    go(env, TIRISFAL, secs)
+    st.map, st.pos = 1420, door
+    ns.Trackers.byId.dungeons.SampleOutside()
+    st.map = map
+    go(env, SCARLET, 5)
+end
+local GRAVEYARD_DOOR, LIBRARY_DOOR = { 0.8480, 0.3037 }, { 0.8535, 0.3239 }
+
+H.test("dungeon: Scarlet Monastery, another wing's door is a new run; the same door is not (D-147)", function()
+    local env, ns = boot(RETAIL)
+    local D = ns.Trackers.byId.dungeons
+    wings(env, { positions = true })
+    H.eq(D.OtherDoor({ map = 1420, x = 0.848, y = 0.3037 }, { map = 1420, x = 0.855, y = 0.3037 }), true, "portals 0.007 apart")
+    H.eq(D.OtherDoor({ map = 1420, x = 0.848, y = 0.3037 }, { map = 1420, x = 0.849, y = 0.304 }), false)
+    H.eq(D.OtherDoor({ map = 1420, x = 0.848, y = 0.3 }, { map = 1458, x = 0.2, y = 0.3 }), false, "other maps: unknown")
+    H.eq(D.OtherDoor(nil, { map = 1420, x = 0.8, y = 0.3 }), false)
+    through(env, ns, GRAVEYARD_DOOR, nil, 0)
+    local first = char(env).currentRun
+    H.ok(first.door and first.door.map == 1420, "the door is kept while the run is open")
+    Mock.advance(env, 300)
+    Mock.fire(env, "PLAYER_DEAD")
+    through(env, ns, GRAVEYARD_DOOR, nil, 30) -- died, ran back through the same door
+    H.eq(char(env).currentRun, first, "the same run")
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 30, "Bloodmage Thalnos", 1, 5, 1)
+    H.ok(first.completed)
+    through(env, ns, LIBRARY_DOOR, nil, 240) -- 4 minutes later, the Library
+    local back = env.time()
+    local runs = char(env).dungeons
+    H.eq(#runs, 1, "the Graveyard run closed")
+    H.eq(runs[1].door, nil, "no door saved")
+    H.eq(runs[1].maps, nil)
+    local cur = char(env).currentRun
+    H.ok(cur ~= first, "a new run")
+    H.eq(cur.entered, back, "began coming in")
+    H.eq(cur.started, nil, "its clock starts at the first fight")
+    H.eq(#cur.bosses, 0)
+    H.eq(today(env).dungeonsEntered, 1, "the new run counts once it qualifies")
+end)
+
+H.test("dungeon: Scarlet Monastery, another wing's map is a new run, also when known late (D-147)", function()
+    local env, ns = boot(RETAIL)
+    wings(env, {})
+    through(env, ns, nil, 302, 0)
+    local first = char(env).currentRun
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 30, "Bloodmage Thalnos", 1, 5, 1)
+    through(env, ns, nil, 302, 60) -- out to sell, back into the Graveyard
+    H.eq(char(env).currentRun, first, "the same map: the same run")
+    through(env, ns, nil, nil, 60) -- the Library, its map not known yet
+    H.eq(char(env).currentRun, first, "not known yet")
+    env.__state.map = 303
+    Mock.advance(env, 2)
+    Mock.runTimers(env)
+    H.eq(#char(env).dungeons, 1, "known two seconds later: the Graveyard run closed")
+    H.ok(char(env).currentRun ~= first)
+    H.eq(char(env).currentRun.maps[303], true)
+end)
+
+H.test("dungeon: back in a finished wing dungeon, a boss the run never killed is a new run (D-147)", function()
+    local env, ns = boot(RETAIL)
+    wings(env, {})
+    through(env, ns, nil, nil, 0)
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 30, "Bloodmage Thalnos", 1, 5, 1)
+    through(env, ns, nil, nil, 60)
+    Mock.advance(env, 120)
+    Mock.fire(env, "ENCOUNTER_END", 31, "Houndmaster Loksey", 1, 5, 1)
+    H.eq(#char(env).dungeons, 1, "the Graveyard run closed")
+    H.eq(#char(env).currentRun.bosses, 1)
+    H.eq(char(env).currentRun.bosses[1].name, "Houndmaster Loksey")
+    -- A dungeon with one final boss: a boss skipped before and killed after is the same run.
+    go(env, WESTFALL, 60)
+    deadmines(env)
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 12, "Edwin VanCleef", 1, 5, 1) -- the list's final boss (the map is unknown here)
+    local dm = char(env).currentRun
+    H.ok(dm.completed)
+    go(env, WESTFALL, 60)
+    go(env, DEADMINES, 60)
+    Mock.fire(env, "ENCOUNTER_END", 5, "Sneed", 1, 5, 1)
+    H.eq(char(env).currentRun, dm, "still one run")
+end)

@@ -229,6 +229,7 @@ local function closeRun(char)
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
     run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset, run.copy = nil, nil, nil, nil, nil, nil
+    run.door, run.maps, run.wingCheck = nil, nil, nil -- only while the run is open (D-147)
     run.members = nil -- names are kept only while the run is open, never saved with it
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
@@ -314,6 +315,66 @@ function Dungeons.AdoptStart(name, at, partial, from)
     return true
 end
 
+-- Another wing (D-147). Scarlet Monastery's four wings are one instance on Forever
+-- (instance 189, one name), and its creature GUIDs are hidden, so going straight
+-- from one wing into the next looked like coming back into the same run. As in
+-- ForeverDungeonJournal (Systems/ScarletWing.lua), the wing shows two ways:
+--   the map: each wing has its own (302 to 305), when the client reports it;
+--   the door: the wings' portals stand side by side, about 0.007 of the Tirisfal
+--   map apart, so where the player last stood outside names the door used.
+-- Coming back in on a map this run never saw, or through another door, is a new
+-- run. Dying and running back uses the same door and lands on the entrance map.
+Dungeons.DOOR_APART = 0.0035 -- map distance between two doors (half the portals' gap)
+Dungeons.DOOR_FRESH = 120    -- seconds: the last spot outside still names the door
+Dungeons.DOOR_SAMPLE = 0.25  -- seconds between looks at where the player stands outside
+Dungeons.lastOutside = nil   -- { map, x, y, at }: in memory only
+
+-- Two doors, { map, x, y }: true when both are known on the same map and far apart.
+function Dungeons.OtherDoor(a, b)
+    if type(a) ~= "table" or type(b) ~= "table" or a.map == nil or a.map ~= b.map then return false end
+    local dx, dy = (a.x or 0) - (b.x or 0), (a.y or 0) - (b.y or 0)
+    return math.sqrt(dx * dx + dy * dy) > Dungeons.DOOR_APART
+end
+
+-- The door just walked through: the last spot outside, if recent.
+local function doorNow()
+    local p = Dungeons.lastOutside
+    if not p or Store.Now() - (p.at or 0) > Dungeons.DOOR_FRESH then return nil end
+    return { map = p.map, x = p.x, y = p.y }
+end
+
+-- Where the player stands outside (any dungeon's door is somewhere outside).
+function Dungeons.SampleOutside()
+    local okIn, inside = ns.Compat.Try("IsInInstance")
+    if not okIn or T.Plain(inside) then return end
+    local okMap, map = ns.Compat.Try("C_Map.GetBestMapForUnit", "player")
+    map = okMap and T.Plain(map) or nil
+    if type(map) ~= "number" then return end
+    local okPos, pos = ns.Compat.Try("C_Map.GetPlayerMapPosition", map, "player")
+    if not okPos or type(pos) ~= "table" or type(pos.GetXY) ~= "function" then return end
+    local okXY, x, y = pcall(pos.GetXY, pos)
+    x, y = okXY and T.Plain(x) or nil, okXY and T.Plain(y) or nil
+    if type(x) ~= "number" or type(y) ~= "number" or (x <= 0 and y <= 0) then return end
+    Dungeons.lastOutside = { map = map, x = x, y = y, at = Store.Now() }
+end
+
+-- The map the player is on now, or nil.
+local function mapNow()
+    local ok, id = ns.Compat.Try("C_Map.GetBestMapForUnit", "player")
+    id = ok and T.Plain(id) or nil
+    return type(id) == "number" and id > 0 and id or nil
+end
+
+-- Remember a map this run has been on (not while a wing check waits for the map).
+local function noteMap(run)
+    if not run or run.outside or run.wingCheck then return end
+    local m = mapNow()
+    if m then
+        run.maps = run.maps or {}
+        run.maps[m] = true
+    end
+end
+
 local function startRun(char, t, name, instanceID, difficultyID)
     local lastBoss, bossCount, how, lastName = findLastBoss(name)
     char.currentRun = {
@@ -333,9 +394,11 @@ local function startRun(char, t, name, instanceID, difficultyID)
         lookups = 1,
         pending = true, -- counted as entered after 5 minutes or a boss kill
         startTracked = true, -- run.started is set at the first fight (D-126)
+        door = doorNow(), -- the door walked through (D-147)
     }
     noteMembers(char.currentRun)
     local run = char.currentRun
+    noteMap(run)
     -- Did the run start before we came in (D-127)? Now, and once more when the group's
     -- details have arrived. And ask group members who run the ledger when theirs began.
     Dungeons.EntryCheck(run)
@@ -351,6 +414,26 @@ end
 -- when that time passes (checked here, each minute and at login), when another
 -- dungeon is entered, on a reset line, or when coming back finds a new copy of the
 -- dungeon (seeCopy) or a boss killed again.
+local splitAtBack -- below
+
+-- Back in: is this a map the run never saw (another wing, D-147)? Tried at once and
+-- twice more, as the map can be unknown right after the loading screen.
+Dungeons.WING_TRIES = 3
+local function wingCheck(run)
+    if not run or not run.wingCheck or not Store.char or Store.char.currentRun ~= run then return end
+    local m = mapNow()
+    if not m then
+        run.wingCheck = run.wingCheck > 1 and run.wingCheck - 1 or nil
+        return
+    end
+    run.wingCheck = nil
+    if run.backAt and run.maps and next(run.maps) ~= nil and not run.maps[m] then
+        splitAtBack(run)
+        return
+    end
+    noteMap(run)
+end
+
 local function check()
     local char = Store.char
     local t = Store.Now()
@@ -367,9 +450,22 @@ local function check()
                 -- Back in: remember when, in case a reset shows this is a new run.
                 run.outside = nil
                 run.backAt, run.seenBefore = t, run.lastSeen
+                -- Through another door: another wing, a new run (D-147).
+                local door = doorNow()
+                if Dungeons.OtherDoor(run.door, door) then
+                    splitAtBack(run)
+                    return
+                end
+                if not run.door then run.door = door end
+                -- On a map this run never saw: now, or once the map is known.
+                run.wingCheck = Dungeons.WING_TRIES
+                wingCheck(run)
+                ns.Events.After(2, function() wingCheck(run) end)
+                ns.Events.After(5, function() wingCheck(run) end)
             end
             run.lastSeen = t
             countIfReady(run, t)
+            noteMap(run)
             return
         end
         closeRun(char)
@@ -385,7 +481,7 @@ end
 
 -- Coming back found a different dungeon: the old run ended when we last left, and a
 -- new one began when we came back in. Returns the new run.
-local function splitAtBack(run)
+function splitAtBack(run)
     local char = Store.char
     local backAt = run.backAt
     run.lastSeen = run.seenBefore or run.lastSeen
@@ -578,6 +674,10 @@ function Dungeons:OnLogin()
     for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c); Dungeons.MergeSplits(c); Dungeons.FixStarts(c) end
     check()
     Dungeons.Repair(Store.char)
+    -- Where the player stands outside, for the door of the next dungeon (D-147).
+    if not Dungeons.sampler then
+        Dungeons.sampler = ns.Events.Every(Dungeons.DOOR_SAMPLE, "dungeonDoor", Dungeons.SampleOutside) or true
+    end
 end
 
 function Dungeons:OnTick()
@@ -589,6 +689,7 @@ function Dungeons:OnTick()
             countIfReady(run, run.lastSeen)
             ensureLastBoss(run)
             noteMembers(run)
+            noteMap(run)
         else
             check() -- outside: close the run once the time to come back has passed
         end
@@ -706,11 +807,20 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
     -- A boss this run already killed died again: the dungeon was reset while we were
     -- out, so the old run ended when we left and a new one began when we came back.
     if run.backAt then
+        local seen = false
         for _, b in ipairs(run.bosses) do
             if encounterID ~= nil and b.id == encounterID and (b.at or 0) < run.backAt then
                 run = splitAtBack(run)
+                seen = nil
                 break
             end
+            if (encounterID ~= nil and b.id == encounterID) or (b.name ~= nil and b.name == T.Plain(encounterName)) then seen = true end
+        end
+        -- Back in after finishing a dungeon with wings (several final bosses), and a
+        -- boss this run never killed died: another wing, so a new run (D-147). For
+        -- when neither the map nor the door told the wings apart.
+        if seen == false and run.completed and #(ns.DungeonBosses.For(run.name) or {}) > 1 then
+            run = splitAtBack(run)
         end
     end
     -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.

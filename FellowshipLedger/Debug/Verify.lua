@@ -436,6 +436,13 @@ custom["x:dungeon.copy"] = function()
     table.sort(keys)
     for i, k in ipairs(keys) do keys[i] = k .. "=" .. stats[k] end
     detail = detail .. "; seen: " .. (#keys > 0 and table.concat(keys, " ") or "none")
+    -- The wing signals (D-147): the door walked through and the maps seen in this run.
+    local function door(d) return d and string.format("%s@%.4f,%.4f", tostring(d.map), d.x or 0, d.y or 0) or "nil" end
+    local maps = {}
+    for m in pairs(run and run.maps or {}) do maps[#maps + 1] = tostring(m) end
+    table.sort(maps)
+    detail = detail .. string.format("; door=%s, last outside=%s, maps=%s", door(run and run.door), door(D and D.lastOutside),
+        #maps > 0 and table.concat(maps, ",") or "none")
     if not seen and (stats.secret or 0) > 0 then
         return "INFO", detail .. "; creature GUIDs are hidden here, so the copy is not known (the reset line, a boss killed again and the leader check still work)"
     end
