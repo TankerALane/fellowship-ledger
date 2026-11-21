@@ -173,8 +173,9 @@ end
 
 commands.help = printHelp
 
-function commands.timer()
-    if ns.tracking then ns.DungeonTimer.Reopen() end
+function commands.timer(rest)
+    if not ns.tracking then return end
+    if rest == "new" then ns.DungeonTimer.NewRun() else ns.DungeonTimer.Reopen() end
 end
 
 function commands.xp()

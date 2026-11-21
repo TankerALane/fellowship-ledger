@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **Start a new run from the dungeon timer.** If the ledger ever misses that a new run began, click New on the timer (or type /fl timer new) to end the run and start the clock again. If you came back in since your last boss, the old run ends when you left and the new one counts from your first fight back.
+
 ### Fixed
 - **Going straight into another wing of Scarlet Monastery starts a new run.** The wings are one dungeon to the game, so the dungeon timer kept counting the last wing. A run now notices another wing by its map, by the door you walked through, or (once a wing is finished) by a boss from another wing.
 

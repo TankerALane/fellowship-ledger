@@ -1123,3 +1123,40 @@ H.test("dungeon: back in a finished wing dungeon, a boss the run never killed is
     Mock.fire(env, "ENCOUNTER_END", 5, "Sneed", 1, 5, 1)
     H.eq(char(env).currentRun, dm, "still one run")
 end)
+
+H.test("dungeon: a new run by hand from the timer (D-148)", function()
+    local env, ns = boot(RETAIL)
+    local D = ns.Trackers.byId.dungeons
+    H.eq(select(2, D.NewRun()), "noRun")
+    deadmines(env)
+    Mock.advance(env, 400)
+    Mock.fire(env, "ENCOUNTER_END", 1, "Rhahk'Zor", 1, 5, 1)
+    go(env, WESTFALL, 60)
+    H.eq(select(2, D.NewRun()), "outside", "only inside")
+    -- Back in, no boss since: the old run ends when we left, the new one starts on coming back.
+    local left = char(env).currentRun.lastSeen
+    go(env, DEADMINES, 120)
+    local back = env.time()
+    Mock.advance(env, 30)
+    Mock.fire(env, "PLAYER_REGEN_DISABLED")
+    local fight = env.time()
+    Mock.advance(env, 60)
+    H.eq(D.NewRun(), true)
+    local runs = char(env).dungeons
+    H.eq(#runs, 1, "the old run saved")
+    H.eq(runs[1].left, left, "ended when we left")
+    H.eq(runs[1].fightBack, nil, "no working fields saved")
+    local cur = char(env).currentRun
+    H.eq(cur.entered, back)
+    H.eq(cur.started, fight, "its clock from the first fight since coming back")
+    -- No coming back: both now, the clock at the next fight.
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 5, "Sneed", 1, 5, 1)
+    Mock.advance(env, 10)
+    Mock.slash(env, "timer new")
+    H.ok(Mock.chatContains(env, "Started a new dungeon run"), "/fl timer new says so")
+    H.eq(#char(env).dungeons, 2)
+    H.eq(char(env).currentRun.entered, env.time())
+    H.eq(char(env).currentRun.started, nil)
+    H.eq(#char(env).currentRun.bosses, 0)
+end)

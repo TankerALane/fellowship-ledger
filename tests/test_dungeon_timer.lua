@@ -305,6 +305,16 @@ H.test("not timed from the start: the group fighting or a boss dead when you com
     H.ok(not f.status:GetText():find("*", 1, true), "just the * on the clock: " .. f.status:GetText())
     H.ok(ns.DungeonTimer.ShowWhy(f.clockHover), "hovering the clock says why")
     H.ok(env.GameTooltip:IsShown(), "tooltip shown")
+    -- The "new run" button asks first (D-148).
+    H.ok(f.newRun, "a new-run button")
+    local entered = ns.Store.char.currentRun.entered
+    f.newRun:GetScript("OnClick")(f.newRun)
+    local dialog = env.FellowshipLedgerDialog
+    H.ok(dialog and dialog:IsShown(), "asks first")
+    H.eq(ns.Store.char.currentRun.entered, entered, "nothing changed yet")
+    Mock.advance(env, 10)
+    dialog.yes:GetScript("OnClick")(dialog.yes)
+    H.ok(ns.Store.char.currentRun.entered ~= entered, "a new run once confirmed")
     -- A saved dungeon with a boss already down.
     local env2, ns2 = boot()
     env2.GetInstanceLockTimeRemaining = function() return 3600, false, 3, 1 end

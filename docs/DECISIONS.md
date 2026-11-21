@@ -580,3 +580,8 @@ Austin, 2026-11-20: went into another Scarlet Monastery wing 3 to 5 minutes afte
 - as a last resort, in a dungeon with several final bosses listed (Scarlet Monastery, Dire Maul, Stratholme, Blackrock Spire), back in after the run is finished, a boss the run never killed dies.
 In each case the old run ends when we last left and the new one begins on coming back, its clock from the first fight. Door and maps are kept only while the run is open.
 
+## D-148 A new run by hand from the dungeon timer
+Austin, 2026-11-20, agreeing to the suggestion after D-147: telling when a new run begins is guesswork from what the game shows (resets, wings, leaders, doors), and Forever hides a lot, so some case will slip through again. Then the run's time was wrong with no way to fix it in game.
+- A New button on the timer, left of the x, asks "End this dungeon run and start a new one?" first; /fl timer new does it at once. Only inside the dungeon with a run open.
+- Came back in since the last boss (no boss died since): the old run ends when we last left and the new one begins on coming back (the same split as a reset found later), its clock from the first fight since coming back in (run.fightBack, kept only while the run is open), or the next fight. Otherwise the old run ends now and the new one begins now, its clock at the next fight; an old run under 5 minutes with no boss is dropped as usual.
+

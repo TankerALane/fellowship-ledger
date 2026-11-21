@@ -79,7 +79,7 @@ The window opens with your friends online and when you last synced at the top, b
 - **/fl summary**: your last session at a glance
 - **/fl sync**: share with online friends now
 - **/fl goals**: this session's goals
-- **/fl timer**: show the dungeon timer again
+- **/fl timer**: show the dungeon timer again; **/fl timer new** starts a new dungeon run
 - **/fl xp**: a small window with your XP in the last 1, 5 or 10 minutes: the total, XP per hour, and how long the next level takes at that pace
 - **/fl fake**: try every view with made-up data (never shared)
 - **/fl export**: all your data as text you can copy

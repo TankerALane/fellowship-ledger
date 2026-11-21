@@ -124,7 +124,7 @@ local function build()
     f.doneFrame:Hide()
     f.title = W.Text(f, "body", "heading")
     f.title:SetPoint("TOPLEFT", 10, -8)
-    f.title:SetPoint("RIGHT", f, "RIGHT", -30, 0)
+    f.title:SetPoint("RIGHT", f, "RIGHT", -74, 0)
     f.title:SetJustifyH("LEFT")
     f.title:SetWordWrap(false)
     f.status = W.Text(f, "small", "muted")
@@ -173,6 +173,11 @@ local function build()
     f.ticks = {}
     f.close = W.Button(f, "x", 18, 18, function() Timer.Close() end)
     f.close:SetPoint("TOPRIGHT", -5, -5)
+    -- Start a new run by hand, when the ledger missed one (D-148).
+    f.newRun = W.Button(f, L.TIMER_NEW, 40, 18, function() Timer.AskNewRun() end)
+    f.newRun:SetPoint("RIGHT", f.close, "LEFT", -4, 0)
+    f.newRun:HookScript("OnEnter", function(self) W.Tooltip(self, L.TIMER_NEW_TITLE, { L.TIMER_NEW_TIP }) end)
+    f.newRun:HookScript("OnLeave", function() W.HideTooltip() end)
     -- Under a cleared run: its place on the Leaderboard, against your best, two buttons.
     f.result = CreateFrame("Frame", nil, f)
     f.result:SetSize(Timer.WIDTH - 20, Timer.RESULT_H)
@@ -440,6 +445,25 @@ function Timer.Reopen()
         return false
     end
     return Timer.Refresh()
+end
+
+-- A new run by hand (D-148): the button asks first; /fl timer new does it at once.
+function Timer.NewRun()
+    local D = ns.Trackers and ns.Trackers.byId and ns.Trackers.byId.dungeons
+    if not (D and D.NewRun) then return false end
+    local ok, why = D.NewRun()
+    if not ok then
+        ns.Log.Info(why == "outside" and L.TIMER_NEW_OUTSIDE or L.TIMER_NO_RUN)
+        return false
+    end
+    ns.Log.Info(L.TIMER_NEW_DONE)
+    cache.key = nil
+    Timer.Refresh()
+    return true
+end
+
+function Timer.AskNewRun()
+    W.Confirm(L.TIMER_NEW_CONFIRM, L.TIMER_NEW_YES, L.TIMER_NEW_NO, function() Timer.NewRun() end)
 end
 
 function Timer.Frame() return frame end

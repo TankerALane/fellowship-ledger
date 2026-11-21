@@ -229,7 +229,7 @@ local function closeRun(char)
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
     run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset, run.copy = nil, nil, nil, nil, nil, nil
-    run.door, run.maps, run.wingCheck = nil, nil, nil -- only while the run is open (D-147)
+    run.door, run.maps, run.wingCheck, run.fightBack = nil, nil, nil, nil -- only while the run is open (D-147, D-148)
     run.members = nil -- names are kept only while the run is open, never saved with it
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
@@ -449,7 +449,7 @@ local function check()
             if run.outside then
                 -- Back in: remember when, in case a reset shows this is a new run.
                 run.outside = nil
-                run.backAt, run.seenBefore = t, run.lastSeen
+                run.backAt, run.seenBefore, run.fightBack = t, run.lastSeen, nil
                 -- Through another door: another wing, a new run (D-147).
                 local door = doorNow()
                 if Dungeons.OtherDoor(run.door, door) then
@@ -491,6 +491,38 @@ function splitAtBack(run)
     local new = startRun(char, backAt, run.name, run.instanceID, T.Plain(diff) or run.difficultyID)
     new.lastSeen = Store.Now()
     return new
+end
+
+-- The timer's "new run" button and /fl timer new (D-148): for when the ledger missed
+-- that a new run began. Inside the dungeon only. Since coming back in with no boss
+-- killed: the old run ends when we last left and the new one begins on coming back,
+-- its clock from the first fight since then (or the next one). Otherwise both now.
+-- Returns true, or false and why ("noRun" | "outside").
+function Dungeons.NewRun()
+    local char = Store.char
+    local run = char and char.currentRun
+    if not run then return false, "noRun" end
+    local name, instanceType, difficultyID, _, _, _, _, instanceID = GetInstanceInfo()
+    if T.Plain(instanceType) ~= "party" or run.outside then return false, "outside" end
+    local bossSinceBack = false
+    for _, b in ipairs(run.bosses or {}) do
+        if run.backAt and (b.at or 0) >= run.backAt then bossSinceBack = true end
+    end
+    if run.backAt and not bossSinceBack then
+        local fight = run.fightBack
+        local new = splitAtBack(run)
+        if fight and new.startTracked and not new.started then
+            new.started = fight
+            if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(new) end
+        end
+    else
+        local t = Store.Now()
+        run.lastSeen = t
+        closeRun(char)
+        startRun(char, t, T.Plain(name), T.Plain(instanceID), T.Plain(difficultyID))
+    end
+    if char.timerClosedFor then char.timerClosedFor = nil end
+    return true
 end
 
 local function complete(run, how)
@@ -782,7 +814,10 @@ Dungeons.events.PLAYER_REGEN_ENABLED = function()
 end
 
 Dungeons.events.PLAYER_REGEN_DISABLED = function()
-    markStarted(Store.char and Store.char.currentRun)
+    local run = Store.char and Store.char.currentRun
+    markStarted(run)
+    -- The first fight since coming back in, for a new run started by hand (D-148).
+    if run and run.backAt and not run.outside and not run.fightBack then run.fightBack = Store.Now() end
 end
 
 Dungeons.events.ENCOUNTER_START = function(_, encounterID, _, difficultyID)
