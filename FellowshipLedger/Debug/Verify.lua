@@ -443,6 +443,11 @@ custom["x:dungeon.copy"] = function()
     table.sort(maps)
     detail = detail .. string.format("; door=%s, last outside=%s, maps=%s", door(run and run.door), door(D and D.lastOutside),
         #maps > 0 and table.concat(maps, ",") or "none")
+    -- What started the clock, and when (D-149).
+    if run then
+        detail = detail .. string.format("; clock: started=%s by %s, in combat on coming in=%s", run.started and ("+" .. (run.started - run.entered) .. "s") or "not yet",
+            tostring(run.startedBy), tostring(run.combatIn == true))
+    end
     if not seen and (stats.secret or 0) > 0 then
         return "INFO", detail .. "; creature GUIDs are hidden here, so the copy is not known (the reset line, a boss killed again and the leader check still work)"
     end

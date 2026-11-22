@@ -251,7 +251,7 @@ end
 function Dungeons.MarkPartial(run, why)
     if not run or run.partial or run.startShared then return end
     run.partial = why
-    if not run.started then run.started = run.entered end
+    if not run.started then run.started, run.startedBy = run.entered, why end
 end
 
 -- At entering: a boss already dead, or a group member here already in combat.
@@ -311,7 +311,7 @@ function Dungeons.AdoptStart(name, at, partial, from)
         if not partial and run.partial and math.abs(at - run.started) <= 5 then run.partial, run.startShared = nil, from end
         return false
     end
-    run.started, run.partial, run.startShared = at, partial, from
+    run.started, run.partial, run.startShared, run.startedBy = at, partial, from, "shared"
     return true
 end
 
@@ -399,6 +399,9 @@ local function startRun(char, t, name, instanceID, difficultyID)
     noteMembers(char.currentRun)
     local run = char.currentRun
     noteMap(run)
+    -- Already in combat on coming in (a mob followed you to the door)? D-149.
+    local okC, fighting = ns.Compat.Try("UnitAffectingCombat", "player")
+    if okC and T.Plain(fighting) == true then run.combatIn = true end
     -- Did the run start before we came in (D-127)? Now, and once more when the group's
     -- details have arrived. And ask group members who run the ledger when theirs began.
     Dungeons.EntryCheck(run)
@@ -512,7 +515,7 @@ function Dungeons.NewRun()
         local fight = run.fightBack
         local new = splitAtBack(run)
         if fight and new.startTracked and not new.started then
-            new.started = fight
+            new.started, new.startedBy = fight, "newRun"
             if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(new) end
         end
     else
@@ -780,6 +783,9 @@ end
 -- boss and at least 5 others; bosses often come with a few adds, Austin) show a mass pull, not a cleared way: the mark goes and
 -- the clock starts at the pull.
 Dungeons.MASS_PULL_KILLS = 6
+-- how: what started it, kept on the run as run.startedBy (D-149: "combat" the game
+-- said you entered combat, "kill" something died, "boss" a boss pull). For telling
+-- why a clock started when it should not have.
 local function markStarted(run, at, how)
     if not run or run.started or run.outside then return end
     -- A run already going when the ledger was updated keeps counting from entering
@@ -790,7 +796,7 @@ local function markStarted(run, at, how)
         if run.partial == "boss" then run.bossFirst = { at = at or Store.Now(), kills = 0 } end
         return
     end
-    run.started = at or Store.Now()
+    run.started, run.startedBy = at or Store.Now(), how
     if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(run) end
 end
 Dungeons.MarkStarted = markStarted
@@ -802,7 +808,7 @@ local function countFirstFightKill(run)
     first.kills = first.kills + 1
     if first.kills >= Dungeons.MASS_PULL_KILLS and run.partial == "boss" then
         run.partial, run.bossFirst = nil, nil
-        run.started = first.at
+        run.started, run.startedBy = first.at, "massPull"
         if ns.Sync and ns.Sync.ShareStart then ns.Sync.ShareStart(run) end
     end
 end
@@ -815,7 +821,7 @@ end
 
 Dungeons.events.PLAYER_REGEN_DISABLED = function()
     local run = Store.char and Store.char.currentRun
-    markStarted(run)
+    markStarted(run, nil, "combat")
     -- The first fight since coming back in, for a new run started by hand (D-148).
     if run and run.backAt and not run.outside and not run.fightBack then run.fightBack = Store.Now() end
 end
@@ -945,7 +951,7 @@ end
 Dungeons.events.PARTY_KILL = function(_, _, target)
     seeCopy(target, "kill")
     local run = Store.char and Store.char.currentRun
-    markStarted(run)
+    markStarted(run, nil, "kill")
     countFirstFightKill(run)
 end
 Dungeons.events.PLAYER_TARGET_CHANGED = function()
