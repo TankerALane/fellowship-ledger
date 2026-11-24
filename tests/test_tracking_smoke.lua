@@ -1244,3 +1244,13 @@ H.test("dungeon: without Core/Wings.lua (an update then a /reload) runs still wo
     H.eq(ns.Trackers.byId.dungeons.NameWings(char(env)), 0)
     H.ok(not Mock.chatContains(env, "dungeons"), "no handler error in chat")
 end)
+
+H.test("dungeon: an open run with no wing is named from its door at login (D-150)", function()
+    local env, ns = boot(RETAIL)
+    local c = char(env)
+    c.currentRun = { name = "Scarlet Monastery", entered = env.time() - 60, lastSeen = env.time(), bosses = {}, deaths = 0,
+        door = { map = 1420, x = 0.8537, y = 0.3236 } } -- Austin's Library door, 2026-11-24
+    H.eq(ns.Trackers.byId.dungeons.NameWings(c), 1)
+    H.eq(c.currentRun.name, "Scarlet Monastery: Library")
+    H.eq(c.currentRun.wingBy, "door")
+end)

@@ -763,7 +763,13 @@ function Dungeons.NameWings(char)
             local names = {}
             for _, b in ipairs(r.bosses or {}) do names[#names + 1] = b.name end
             local w = Wings().FromBosses(r.name, names)
-            if w then setWing(r, w, "saved"); named = named + 1 end
+            if w then
+                setWing(r, w, "saved")
+            elseif r == char.currentRun then
+                w = Wings().FromDoor(r.name, r.door) -- an open run with no boss yet: its door
+                setWing(r, w, "door")
+            end
+            if w then named = named + 1 end
         end
     end
     return named
