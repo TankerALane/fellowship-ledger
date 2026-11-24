@@ -229,7 +229,7 @@ local function closeRun(char)
     run.left = run.lastSeen or Store.Now()
     run.duration = run.left - run.entered
     run.pull, run.outside, run.backAt, run.seenBefore, run.wasReset, run.copy = nil, nil, nil, nil, nil, nil
-    run.door, run.maps, run.wingCheck, run.fightBack = nil, nil, nil, nil -- only while the run is open (D-147, D-148)
+    run.door, run.maps, run.wingCheck, run.fightBack, run.backDoor = nil, nil, nil, nil, nil -- only while the run is open (D-147, D-148)
     run.members = nil -- names are kept only while the run is open, never saved with it
     countIfReady(run, run.left)
     if run.pending then -- in and out: not a run
@@ -304,7 +304,7 @@ Dungeons.START_MAX_AGE = 7200
 function Dungeons.AdoptStart(name, at, partial, from)
     local run = Store.char and Store.char.currentRun
     local now = Store.Now()
-    if not (run and run.name == name and not run.outside and type(at) == "number") then return false end
+    if not (run and type(name) == "string" and ns.Wings.Base(run.name) == ns.Wings.Base(name) and not run.outside and type(at) == "number") then return false end
     if at > now + 5 or now - at > Dungeons.START_MAX_AGE then return false end
     if run.started and at >= run.started - 2 then
         -- About the same start, seen from the beginning by them: no mark.
@@ -375,7 +375,40 @@ local function noteMap(run)
     end
 end
 
-local function startRun(char, t, name, instanceID, difficultyID)
+-- Name the run by its wing (D-150): "Scarlet Monastery" -> "Scarlet Monastery: Library".
+-- Once only; the final boss is then that wing's (Core/DungeonBosses.lua).
+-- by: what told it, "door" | "boss" | "room" | "saved". The door is only a guess from
+-- where the player stood outside: a boss or room of another wing corrects it while
+-- the run has killed none of its wing's bosses (Austin, 2026-11-24: in the Library,
+-- the timer showed the Graveyard).
+local function wingConfirmed(run)
+    if not run or not run.wing then return false end
+    if run.wingBy ~= "door" then return true end
+    for _, b in ipairs(run.bosses or {}) do
+        if ns.Wings.FromBoss(run.name, b.name) == run.wing then return true end
+    end
+    return false
+end
+Dungeons.WingConfirmed = wingConfirmed
+
+local function setWing(run, wing, by)
+    if not run or not wing or run.wing == wing then return end
+    if run.wing and (by == "door" or wingConfirmed(run)) then return end
+    run.wing, run.wingBy = wing, by
+    run.name = ns.Wings.Name(ns.Wings.Base(run.name), wing)
+end
+Dungeons.SetWing = setWing
+
+-- The room the player stands in names the wing, for a run that has none yet.
+local function roomWing(run)
+    if not run or wingConfirmed(run) or run.outside or not ns.Wings.Has(run.name) then return end
+    local ok, room = ns.Compat.Try("GetSubZoneText")
+    room = ok and T.Plain(room) or nil
+    setWing(run, ns.Wings.FromRoom(run.name, room), "room")
+end
+
+-- door: the door walked through, when known before (a run split on coming back).
+local function startRun(char, t, name, instanceID, difficultyID, door)
     local lastBoss, bossCount, how, lastName = findLastBoss(name)
     char.currentRun = {
         name = name,
@@ -394,11 +427,13 @@ local function startRun(char, t, name, instanceID, difficultyID)
         lookups = 1,
         pending = true, -- counted as entered after 5 minutes or a boss kill
         startTracked = true, -- run.started is set at the first fight (D-126)
-        door = doorNow(), -- the door walked through (D-147)
+        door = door or doorNow(), -- the door walked through (D-147)
     }
     noteMembers(char.currentRun)
     local run = char.currentRun
     noteMap(run)
+    setWing(run, ns.Wings.FromDoor(name, run.door), "door") -- D-150
+    roomWing(run)
     -- Already in combat on coming in (a mob followed you to the door)? D-149.
     local okC, fighting = ns.Compat.Try("UnitAffectingCombat", "player")
     if okC and T.Plain(fighting) == true then run.combatIn = true end
@@ -455,6 +490,7 @@ local function check()
                 run.backAt, run.seenBefore, run.fightBack = t, run.lastSeen, nil
                 -- Through another door: another wing, a new run (D-147).
                 local door = doorNow()
+                run.backDoor = door
                 if Dungeons.OtherDoor(run.door, door) then
                     splitAtBack(run)
                     return
@@ -491,7 +527,7 @@ function splitAtBack(run)
     run.pull = nil
     closeRun(char)
     local _, _, diff = GetInstanceInfo()
-    local new = startRun(char, backAt, run.name, run.instanceID, T.Plain(diff) or run.difficultyID)
+    local new = startRun(char, backAt, ns.Wings.Base(run.name), run.instanceID, T.Plain(diff) or run.difficultyID, run.backDoor)
     new.lastSeen = Store.Now()
     return new
 end
@@ -703,10 +739,27 @@ function Dungeons.FixStarts(char)
     return fixed
 end
 
+-- Runs saved before wings were known (D-150): named by their wing from their bosses.
+function Dungeons.NameWings(char)
+    local runs = {}
+    for _, r in ipairs(char.dungeons or {}) do runs[#runs + 1] = r end
+    if char.currentRun then runs[#runs + 1] = char.currentRun end
+    local named = 0
+    for _, r in ipairs(runs) do
+        if not r.wing and ns.Wings.Has(r.name) then
+            local names = {}
+            for _, b in ipairs(r.bosses or {}) do names[#names + 1] = b.name end
+            local w = ns.Wings.FromBosses(r.name, names)
+            if w then setWing(r, w, "saved"); named = named + 1 end
+        end
+    end
+    return named
+end
+
 function Dungeons:OnLogin()
     -- Every character on this account, not only the one logging in: a character
     -- not played since the update would otherwise keep its old walk-in runs.
-    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c); Dungeons.MergeSplits(c); Dungeons.FixStarts(c) end
+    for _, c in pairs(ns.db.characters or {}) do Dungeons.DropBlips(c); Dungeons.MergeSplits(c); Dungeons.FixStarts(c); Dungeons.NameWings(c) end
     check()
     Dungeons.Repair(Store.char)
     -- Where the player stands outside, for the door of the next dungeon (D-147).
@@ -725,6 +778,7 @@ function Dungeons:OnTick()
             ensureLastBoss(run)
             noteMembers(run)
             noteMap(run)
+            roomWing(run)
         else
             check() -- outside: close the run once the time to come back has passed
         end
@@ -860,10 +914,14 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
         -- Back in after finishing a dungeon with wings (several final bosses), and a
         -- boss this run never killed died: another wing, so a new run (D-147). For
         -- when neither the map nor the door told the wings apart.
-        if seen == false and run.completed and #(ns.DungeonBosses.For(run.name) or {}) > 1 then
+        -- Or a boss of another wing than the run's (D-150).
+        local bossWing = ns.Wings.FromBoss(run.name, T.Plain(encounterName))
+        local otherWing = wingConfirmed(run) and bossWing ~= nil and bossWing ~= run.wing
+        if seen == false and (otherWing or (run.completed and #(ns.DungeonBosses.For(ns.Wings.Base(run.name)) or {}) > 1)) then
             run = splitAtBack(run)
         end
     end
+    setWing(run, ns.Wings.FromBoss(run.name, T.Plain(encounterName)), "boss") -- D-150
     -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.
     local fight = pull and pull.at and (pull.id == nil or pull.id == encounterID) and t - pull.at or nil
     if fight and (fight < 0 or fight > 3600) then fight = nil end

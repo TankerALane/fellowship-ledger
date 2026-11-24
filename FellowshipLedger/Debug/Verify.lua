@@ -445,6 +445,7 @@ custom["x:dungeon.copy"] = function()
         #maps > 0 and table.concat(maps, ",") or "none")
     -- What started the clock, and when (D-149).
     if run then
+        detail = detail .. string.format("; wing=%s (from %s)", tostring(run.wing), tostring(run.wingBy))
         detail = detail .. string.format("; clock: started=%s by %s, in combat on coming in=%s", run.started and ("+" .. (run.started - run.entered) .. "s") or "not yet",
             tostring(run.startedBy), tostring(run.combatIn == true))
     end

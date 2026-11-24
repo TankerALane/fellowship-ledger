@@ -37,6 +37,7 @@ local FILES = {
     "test_stats",
     "test_friend_details",
     "test_dungeon_bosses",
+    "test_wings",
     "test_notices",
     "test_weekly",
     "test_social",

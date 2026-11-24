@@ -65,6 +65,15 @@ local function guessLevel(c, r)
     return top
 end
 
+-- A run's dungeon with its wing (D-150): runs saved before wings were known, and
+-- friends on older versions, say only "Scarlet Monastery"; their bosses name the wing.
+local function label(name, bosses)
+    if not ns.Wings then return name end
+    local names = {}
+    for _, b in ipairs(bosses or {}) do names[#names + 1] = type(b) == "table" and b.name or b end
+    return ns.Wings.Label(name, names)
+end
+
 function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
     local out = {}
     for key, c in pairs(chars or {}) do
@@ -74,7 +83,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
         for _, r in ipairs(runs) do
             local clear = (r.completed and r.completedAt and r.entered) and (r.completedAt - ns.RunTimer.Start(r)) or nil
             if clear and clear >= Leaderboard.MIN_CLEAR and r.name then
-                local e = { dungeon = r.name, clear = clear, finishedAt = r.completedAt, names = {}, size = 1,
+                local e = { dungeon = label(r.name, r.bosses), clear = clear, finishedAt = r.completedAt, names = {}, size = 1,
                     levelMax = r.levelMax, mine = true, bosses = {}, partial = r.partial }
                 if not e.levelMax then e.levelMax, e.levelGuess = guessLevel(c, r), true end
                 addName(e, nameOf and nameOf(key, c) or c.display or c.name or key)
@@ -98,7 +107,7 @@ function Leaderboard.Entries(chars, friends, isBlocked, nameOf)
                 for _, r in ipairs(c.runs or {}) do
                     if r.completed and r.clear and r.clear >= Leaderboard.MIN_CLEAR and r.entered and r.name then
                         -- r.clear counts from the first fight, startOffset seconds after entering (D-126).
-                        local e = { dungeon = r.name, clear = r.clear, finishedAt = r.entered + (r.startOffset or 0) + r.clear, names = {},
+                        local e = { dungeon = label(r.name, r.bossNames), clear = r.clear, finishedAt = r.entered + (r.startOffset or 0) + r.clear, names = {},
                             size = r.size or (1 + #(r.names or {})), levelMax = r.levelMax, friendId = fid, bosses = {},
                             partial = r.partial }
                         if not e.levelMax then e.levelMax, e.levelGuess = guessLevel(c, r), true end

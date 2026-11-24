@@ -236,7 +236,7 @@ end
 -- kept, for the switch's two labels.
 function Timer.Target(run, now, which)
     which = which or mode()
-    local key = tostring(run.entered) .. "|" .. tostring(run.completed and true or false)
+    local key = tostring(run.entered) .. "|" .. tostring(run.completed and true or false) .. "|" .. tostring(run.name) -- the wing can name it later (D-150)
     if cache.key ~= key or now - cache.at >= Timer.TARGET_EVERY then
         cache.key, cache.at, cache.targets, cache.rank = key, now, {}, nil
         -- Fresh entries for each: joining runs changes them.

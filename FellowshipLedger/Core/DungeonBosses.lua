@@ -27,6 +27,11 @@ DungeonBosses.FINAL = {
     ["Gnomeregan"] = { "Mekgineer Thermaplugg" },
     ["Razorfen Kraul"] = { "Charlga Razorflank" },
     ["Scarlet Monastery"] = { "Bloodmage Thalnos", "Arcanist Doan", "Herod", "High Inquisitor Whitemane" },
+    -- Each wing on its own (runs are named by wing, D-150; the longest key wins).
+    ["Scarlet Monastery: Graveyard"] = { "Bloodmage Thalnos" },
+    ["Scarlet Monastery: Library"] = { "Arcanist Doan" },
+    ["Scarlet Monastery: Armory"] = { "Herod" },
+    ["Scarlet Monastery: Cathedral"] = { "High Inquisitor Whitemane" },
     ["Razorfen Downs"] = { "Amnennar the Coldbringer" },
     ["Uldaman"] = { "Archaedas" },
     ["Zul'Farrak"] = { "Chief Ukorz Sandscalp" },
@@ -51,15 +56,21 @@ local function lower(s) return type(s) == "string" and s:lower() or nil end
 function DungeonBosses.For(instanceName)
     local n = lower(instanceName)
     if not n or n == "" then return nil end
-    local best, bestLen
+    -- An exact key first; then the longest key inside the name ("Blackrock Spire" over
+    -- a shorter one; "Scarlet Monastery: Library" over "Scarlet Monastery"); then the
+    -- shortest key that holds the name ("Deadmines" in "The Deadmines"; plain
+    -- "Scarlet Monastery" is not taken for one of its wings, D-150).
+    local inside, insideLen, outside, outsideLen
     for key, bosses in pairs(DungeonBosses.FINAL) do
         local k = key:lower()
-        if n == k or n:find(k, 1, true) or k:find(n, 1, true) then
-            -- The longest matching key wins ("Blackrock Spire" over a shorter one).
-            if not bestLen or #k > bestLen then best, bestLen = bosses, #k end
+        if n == k then return bosses end
+        if n:find(k, 1, true) then
+            if not insideLen or #k > insideLen then inside, insideLen = bosses, #k end
+        elseif k:find(n, 1, true) then
+            if not outsideLen or #k < outsideLen then outside, outsideLen = bosses, #k end
         end
     end
-    return best
+    return inside or outside
 end
 
 -- Is `bossName` a final boss of the dungeon `instanceName`?

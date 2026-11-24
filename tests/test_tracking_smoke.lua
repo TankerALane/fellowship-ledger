@@ -1177,3 +1177,55 @@ H.test("dungeon: a run keeps what started its clock (D-149)", function()
     Mock.fire(env2, "PARTY_KILL", "Player-1-1", "Creature-0-1-36-1-123-1")
     H.eq(char(env2).currentRun.startedBy, "kill")
 end)
+
+H.test("dungeon: a Scarlet Monastery run is named by its wing (D-150)", function()
+    local env, ns = boot(RETAIL)
+    local D = ns.Trackers.byId.dungeons
+    wings(env, { positions = true })
+    through(env, ns, LIBRARY_DOOR, nil, 0)
+    H.eq(char(env).currentRun.name, "Scarlet Monastery: Library", "by the door")
+    H.eq(char(env).currentRun.wing, "Library")
+    -- No door known: the first boss names it.
+    go(env, TIRISFAL, 60)
+    waitOut(env, ns)
+    env.__state.instance = SCARLET
+    Mock.fire(env, "ZONE_CHANGED_NEW_AREA")
+    H.eq(char(env).currentRun.name, "Scarlet Monastery")
+    Mock.advance(env, 200)
+    Mock.fire(env, "ENCOUNTER_END", 31, "Herod", 1, 5, 1)
+    H.eq(char(env).currentRun.name, "Scarlet Monastery: Armory")
+    H.ok(char(env).currentRun.completed, "Herod ends the Armory")
+    -- Runs saved before: named from their bosses, once.
+    local c = char(env)
+    table.insert(c.dungeons, { name = "Scarlet Monastery", entered = env.time() - 9000, duration = 900, bosses = { { name = "Houndmaster Loksey", at = 1 } } })
+    table.insert(c.dungeons, { name = "Scarlet Monastery", entered = env.time() - 8000, duration = 900, bosses = {} })
+    H.eq(D.NameWings(c), 1)
+    H.eq(c.dungeons[#c.dungeons - 1].name, "Scarlet Monastery: Library")
+    H.eq(c.dungeons[#c.dungeons].name, "Scarlet Monastery", "no boss: left alone")
+    H.eq(D.NameWings(c), 0)
+end)
+
+H.test("dungeon: a boss or the room corrects a wing guessed from the door (D-150)", function()
+    local env, ns = boot(RETAIL)
+    wings(env, { positions = true })
+    through(env, ns, GRAVEYARD_DOOR, nil, 0) -- read as the Graveyard's door
+    local run = char(env).currentRun
+    H.eq(run.name, "Scarlet Monastery: Graveyard")
+    H.eq(run.wingBy, "door")
+    Mock.advance(env, 200)
+    Mock.fire(env, "ENCOUNTER_END", 446, "Houndmaster Loksey", 1, 5, 1)
+    H.eq(char(env).currentRun, run, "the same run")
+    H.eq(run.name, "Scarlet Monastery: Library", "the Library's boss corrects it")
+    H.eq(run.wingBy, "boss")
+    -- Once a boss names it, nothing renames it.
+    env.GetSubZoneText = function() return "Chamber of Atonement" end
+    ns.Trackers.byId.dungeons:OnTick()
+    H.eq(run.name, "Scarlet Monastery: Library")
+    -- The room corrects a door guess too.
+    local env2, ns2 = boot(RETAIL)
+    wings(env2, { positions = true })
+    env2.GetSubZoneText = function() return "Athenaeum" end
+    through(env2, ns2, GRAVEYARD_DOOR, nil, 0)
+    H.eq(char(env2).currentRun.name, "Scarlet Monastery: Library", "the room, at once")
+    H.eq(char(env2).currentRun.wingBy, "room")
+end)
