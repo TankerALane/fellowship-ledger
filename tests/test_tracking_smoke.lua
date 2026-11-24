@@ -1259,7 +1259,7 @@ H.test("dungeon: a boss teaches the ledger its wing's door (D-151)", function()
     local env, ns = boot(RETAIL)
     local D = ns.Trackers.byId.dungeons
     wings(env, { positions = true })
-    local armoryDoor = { 0.8510, 0.3110 } -- the Cathedral's: no door known there yet
+    local armoryDoor = { 0.8510, 0.3110 } -- off the Cathedral's known door: no wing from it yet
     through(env, ns, armoryDoor, nil, 0)
     H.eq(char(env).currentRun.name, "Scarlet Monastery", "no wing from an unknown door")
     Mock.advance(env, 300)

@@ -6,10 +6,9 @@
 -- wing ("Scarlet Monastery: Library") as soon as one of these tells it:
 --   the door walked through: the four portals stand close together on the Tirisfal
 --     Glades map (1420). The Graveyard and Library doors were measured in game on
---     Forever by ForeverDungeonJournal (Systems/ScarletWing.lua), the Armory's by
---     Austin's /fl verify (2026-11-24; not in a line with the other two, so no door
---     is guessed). The Cathedral's is not known yet: it is learned (Wings.Learn) the
---     first time a boss or room there names the wing;
+--     Forever by ForeverDungeonJournal (Systems/ScarletWing.lua), the Armory's and
+--     Cathedral's by Austin's /fl verify (2026-11-24). Doors are also learned on
+--     the account (Wings.Learn) when a boss or room confirms the wing, and used first;
 --   a boss of the wing dying;
 --   the room the player stands in (GetSubZoneText), in English.
 -- Boss and room names are from ForeverDungeonJournal's data (Data/Dungeons.lua).
@@ -23,6 +22,7 @@ Wings.DOOR_RADIUS = 0.0035 -- half the gap between two portals
 
 local G, L = { x = 0.8480, y = 0.3037 }, { x = 0.8535, y = 0.3239 }
 local A = { x = 0.8567, y = 0.3181 } -- Austin's Armory door, 2026-11-24
+local C = { x = 0.8530, y = 0.3045 } -- Austin's Cathedral door, 2026-11-24 (0.0051 from the Graveyard's)
 
 Wings.DUNGEONS = {
     ["Scarlet Monastery"] = {
@@ -31,7 +31,7 @@ Wings.DUNGEONS = {
             { id = "Graveyard", door = G,
                 bosses = { "Interrogator Vishas", "Azshir the Sleepless", "Fallen Champion", "Ironspine", "Bloodmage Thalnos" },
                 rooms = { "chamber of atonement", "forlorn cloister", "honor's tomb" } },
-            { id = "Cathedral", -- door not known: learned
+            { id = "Cathedral", door = C,
                 bosses = { "High Inquisitor Fairbanks", "Scarlet Commander Mograine", "High Inquisitor Whitemane" },
                 rooms = { "chapel gardens", "crusader's chapel" } },
             { id = "Armory", door = A,

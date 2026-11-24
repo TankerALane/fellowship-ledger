@@ -14,3 +14,6 @@ INFO x:dungeon.copy: open run: Scarlet Monastery: Library (map 189), copy=nil, b
 # entering the Armory, 13:47 (the estimated Armory door, between Graveyard and Library, did not match)
 INFO x:dungeon.copy: open run: Scarlet Monastery (map 189), copy=nil, back in=true; seen: none; door=1420@0.8567,0.3181, last outside=1420@0.8568,0.3179, maps=none; wing=nil (from nil); learned doors: none; clock: started=not yet by nil, in combat on coming in=false
 
+# entering the Cathedral, 13:48 (before the Armory change was loaded; no Cathedral door known then)
+INFO x:dungeon.copy: open run: Scarlet Monastery (map 189), copy=nil, back in=false; seen: none; door=1420@0.8530,0.3045, last outside=1420@0.8530,0.3045, maps=none; wing=nil (from nil); learned doors: none; clock: started=not yet by nil, in combat on coming in=false
+

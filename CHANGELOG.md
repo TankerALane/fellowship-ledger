@@ -4,7 +4,7 @@
 
 ### Fixed
 - **Scarlet Monastery runs are named by wing.** A Library run is "Scarlet Monastery: Library" and the dungeon timer compares it with your Library runs, not your fastest Graveyard. The wing comes from the door you walked through, the room you are in, or the first boss, and your earlier Scarlet Monastery runs are named from their bosses. Friends' runs from older versions are sorted by their bosses on the Leaderboard.
-- **All four wings, Armory and Cathedral too.** Once a boss or the room has confirmed a wing, the ledger remembers that wing's door, so next time the door alone names it the moment you walk in.
+- **All four wings, Armory and Cathedral too.** Each wing's door is known, so the wing is named the moment you walk in; a room or the first boss corrects it if needed, and the ledger remembers the door you used.
 
 ## 1.14.7 - 2026-11-20
 

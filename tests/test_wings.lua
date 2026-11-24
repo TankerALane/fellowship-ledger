@@ -20,7 +20,8 @@ H.test("wings: by door, boss and room", function()
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.8535, y = 0.3239 }), "Library")
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.8567, y = 0.3181 }), "Armory", "Austin's Armory door, 2026-11-24")
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.8568, y = 0.3179 }), "Armory", "the last spot outside, same report")
-    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8510, y = 0.3110 }), nil, "the Cathedral's door is not known until learned")
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8530, y = 0.3045 }), "Cathedral", "Austin's Cathedral door, 2026-11-24")
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8510, y = 0.3110 }), nil, "off every door")
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.80, y = 0.30 }), nil, "far from every door")
     H.eq(W.FromDoor(SM, { map = 1414, x = 0.8482, y = 0.3035 }), nil, "another map")
     H.eq(W.FromDoor("Razorfen Kraul", { map = 1420, x = 0.8482, y = 0.3035 }), nil)
@@ -74,7 +75,7 @@ H.test("wings: doors learned from a boss or room are used first (D-151)", functi
     H.eq(W.Learn(SM, "Armory", { map = 1414, x = 0.8562, y = 0.3184 }, learned), false, "another map")
     H.eq(W.Learn("Razorfen Kraul", "Armory", armory, learned), false)
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.8561, y = 0.3185 }, learned), "Armory", "by the learned door")
-    -- The Cathedral: no door known, learned near the others, never on another wing's door.
+    -- The Cathedral: a door a little off the known one is learned, never on another wing's door.
     local cath = { map = 1420, x = 0.8510, y = 0.3110 }
     H.eq(W.FromDoor(SM, cath, learned), nil)
     H.eq(W.Learn(SM, "Cathedral", { map = 1420, x = 0.8536, y = 0.3238 }, learned), false, "the Library's door")
