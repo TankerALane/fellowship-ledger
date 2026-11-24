@@ -10,3 +10,7 @@ PASS C_Map.GetPlayerMapPosition (api pass list)
 # after a full restart, 13:42
 PASS x:dungeon.journal: Scarlet Monastery: Library: 0 bosses killed, completed=false, ...; final-boss list: Arcanist Doan; journal: 0 instances
 INFO x:dungeon.copy: open run: Scarlet Monastery: Library (map 189), copy=nil, back in=true; seen: none; door=1420@0.8537,0.3236, last outside=1420@0.8535,0.3233, maps=none; wing=Library (from door); clock: started=not yet by nil, in combat on coming in=false
+
+# entering the Armory, 13:47 (the estimated Armory door, between Graveyard and Library, did not match)
+INFO x:dungeon.copy: open run: Scarlet Monastery (map 189), copy=nil, back in=true; seen: none; door=1420@0.8567,0.3181, last outside=1420@0.8568,0.3179, maps=none; wing=nil (from nil); learned doors: none; clock: started=not yet by nil, in combat on coming in=false
+

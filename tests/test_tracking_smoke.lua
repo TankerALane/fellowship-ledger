@@ -1259,18 +1259,19 @@ H.test("dungeon: a boss teaches the ledger its wing's door (D-151)", function()
     local env, ns = boot(RETAIL)
     local D = ns.Trackers.byId.dungeons
     wings(env, { positions = true })
-    local armoryDoor = { 0.8521, 0.3165 }
+    local armoryDoor = { 0.8510, 0.3110 } -- the Cathedral's: no door known there yet
     through(env, ns, armoryDoor, nil, 0)
+    H.eq(char(env).currentRun.name, "Scarlet Monastery", "no wing from an unknown door")
     Mock.advance(env, 300)
-    Mock.fire(env, "ENCOUNTER_END", 448, "Herod", 1, 5, 1)
-    H.eq(char(env).currentRun.name, "Scarlet Monastery: Armory")
+    Mock.fire(env, "ENCOUNTER_END", 450, "High Inquisitor Fairbanks", 1, 5, 1)
+    H.eq(char(env).currentRun.name, "Scarlet Monastery: Cathedral")
     local learned = D.LearnedDoors("Scarlet Monastery")
-    H.ok(learned and learned.Armory and math.abs(learned.Armory.x - 0.8521) < 1e-6, "the Armory's door learned")
+    H.ok(learned and learned.Cathedral and math.abs(learned.Cathedral.x - 0.8510) < 1e-6, "the Cathedral's door learned")
     -- Next time that door alone names the wing.
     go(env, TIRISFAL, 0)
     Mock.advance(env, 1900) -- gone longer than the 30 minutes: the next time in is a new run
     through(env, ns, armoryDoor, nil, 0)
     H.eq(#char(env).dungeons, 1)
-    H.eq(char(env).currentRun.name, "Scarlet Monastery: Armory")
+    H.eq(char(env).currentRun.name, "Scarlet Monastery: Cathedral")
     H.eq(char(env).currentRun.wingBy, "door")
 end)

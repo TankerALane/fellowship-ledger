@@ -18,8 +18,9 @@ end)
 H.test("wings: by door, boss and room", function()
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.8482, y = 0.3035 }), "Graveyard", "Austin's door, 2026-11-24")
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.8535, y = 0.3239 }), "Library")
-    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8498, y = 0.3104 }), "Cathedral", "a third of the way")
-    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8517, y = 0.3172 }), "Armory", "two thirds")
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8567, y = 0.3181 }), "Armory", "Austin's Armory door, 2026-11-24")
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8568, y = 0.3179 }), "Armory", "the last spot outside, same report")
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8510, y = 0.3110 }), nil, "the Cathedral's door is not known until learned")
     H.eq(W.FromDoor(SM, { map = 1420, x = 0.80, y = 0.30 }), nil, "far from every door")
     H.eq(W.FromDoor(SM, { map = 1414, x = 0.8482, y = 0.3035 }), nil, "another map")
     H.eq(W.FromDoor("Razorfen Kraul", { map = 1420, x = 0.8482, y = 0.3035 }), nil)
@@ -66,14 +67,18 @@ end)
 
 H.test("wings: doors learned from a boss or room are used first (D-151)", function()
     local learned = {}
-    local armory = { map = 1420, x = 0.8521, y = 0.3165 } -- a little off the estimate
+    local armory = { map = 1420, x = 0.8562, y = 0.3184 } -- a little off the known door
     H.eq(W.Learn(SM, "Armory", armory, learned), true)
-    H.eq(learned.Armory.x, 0.8521)
+    H.eq(learned.Armory.x, 0.8562)
     H.eq(W.Learn(SM, "Armory", { map = 1420, x = 0.80, y = 0.30 }, learned), false, "far from that wing's door: not kept")
-    H.eq(W.Learn(SM, "Armory", { map = 1414, x = 0.8521, y = 0.3165 }, learned), false, "another map")
+    H.eq(W.Learn(SM, "Armory", { map = 1414, x = 0.8562, y = 0.3184 }, learned), false, "another map")
     H.eq(W.Learn("Razorfen Kraul", "Armory", armory, learned), false)
-    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8523, y = 0.3167 }, learned), "Armory", "by the learned door")
-    -- A learned door moves where a wing is read.
-    local moved = { Cathedral = { map = 1420, x = 0.8505, y = 0.3125 } }
-    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8506, y = 0.3126 }, moved), "Cathedral")
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8561, y = 0.3185 }, learned), "Armory", "by the learned door")
+    -- The Cathedral: no door known, learned near the others, never on another wing's door.
+    local cath = { map = 1420, x = 0.8510, y = 0.3110 }
+    H.eq(W.FromDoor(SM, cath, learned), nil)
+    H.eq(W.Learn(SM, "Cathedral", { map = 1420, x = 0.8536, y = 0.3238 }, learned), false, "the Library's door")
+    H.eq(W.Learn(SM, "Cathedral", { map = 1420, x = 0.70, y = 0.30 }, learned), false, "far from the monastery")
+    H.eq(W.Learn(SM, "Cathedral", cath, learned), true)
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8511, y = 0.3111 }, learned), "Cathedral", "known from then on")
 end)

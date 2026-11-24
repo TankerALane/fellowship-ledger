@@ -4,11 +4,12 @@
 -- game gives no map inside, so a run there was just "Scarlet Monastery" and the
 -- dungeon timer compared a Library run with a Graveyard one. A run is named by its
 -- wing ("Scarlet Monastery: Library") as soon as one of these tells it:
---   the door walked through: the four portals stand side by side on the Tirisfal
---     Glades map (1420), left to right Graveyard, Cathedral, Armory, Library. The
---     Graveyard and Library doors were measured in game on Forever by
---     ForeverDungeonJournal (Systems/ScarletWing.lua); the two between are a third
---     of the way apart each (about 0.007, as that addon notes);
+--   the door walked through: the four portals stand close together on the Tirisfal
+--     Glades map (1420). The Graveyard and Library doors were measured in game on
+--     Forever by ForeverDungeonJournal (Systems/ScarletWing.lua), the Armory's by
+--     Austin's /fl verify (2026-11-24; not in a line with the other two, so no door
+--     is guessed). The Cathedral's is not known yet: it is learned (Wings.Learn) the
+--     first time a boss or room there names the wing;
 --   a boss of the wing dying;
 --   the room the player stands in (GetSubZoneText), in English.
 -- Boss and room names are from ForeverDungeonJournal's data (Data/Dungeons.lua).
@@ -21,7 +22,7 @@ ns.Wings = Wings
 Wings.DOOR_RADIUS = 0.0035 -- half the gap between two portals
 
 local G, L = { x = 0.8480, y = 0.3037 }, { x = 0.8535, y = 0.3239 }
-local function between(f) return { x = G.x + (L.x - G.x) * f, y = G.y + (L.y - G.y) * f } end
+local A = { x = 0.8567, y = 0.3181 } -- Austin's Armory door, 2026-11-24
 
 Wings.DUNGEONS = {
     ["Scarlet Monastery"] = {
@@ -30,10 +31,10 @@ Wings.DUNGEONS = {
             { id = "Graveyard", door = G,
                 bosses = { "Interrogator Vishas", "Azshir the Sleepless", "Fallen Champion", "Ironspine", "Bloodmage Thalnos" },
                 rooms = { "chamber of atonement", "forlorn cloister", "honor's tomb" } },
-            { id = "Cathedral", door = between(1 / 3),
+            { id = "Cathedral", -- door not known: learned
                 bosses = { "High Inquisitor Fairbanks", "Scarlet Commander Mograine", "High Inquisitor Whitemane" },
                 rooms = { "chapel gardens", "crusader's chapel" } },
-            { id = "Armory", door = between(2 / 3),
+            { id = "Armory", door = A,
                 bosses = { "Herod" },
                 rooms = { "training grounds", "footman's armory", "crusader's armory", "hall of champions" } },
             { id = "Library", door = L,
@@ -81,28 +82,36 @@ function Wings.FromDoor(name, door, learned)
     local best, bestDist
     for _, w in ipairs(d.wings) do
         local at = learned and validDoor(d, learned[w.id]) and learned[w.id] or w.door
-        local dd = dist(at, door)
-        if dd <= Wings.DOOR_RADIUS and (not bestDist or dd < bestDist) then best, bestDist = w.id, dd end
+        local dd = at and dist(at, door)
+        if dd and dd <= Wings.DOOR_RADIUS and (not bestDist or dd < bestDist) then best, bestDist = w.id, dd end
     end
     return best
 end
 
 -- A wing a boss or room has confirmed: the door walked through is that wing's door
 -- (as ForeverDungeonJournal learns its doors). Kept only near where that wing's door
--- should be (within a portal's gap), so a door read far away teaches nothing.
--- learned: the table to keep it in. Returns true when kept.
+-- is (within a portal's gap), or for a wing whose door is not known, near the others
+-- (NEAR_DOORS), and never on another wing's door: a door read far away teaches
+-- nothing. learned: the table to keep it in. Returns true when kept.
 Wings.LEARN_RADIUS = 0.007
+Wings.NEAR_DOORS = 0.03
 function Wings.Learn(name, wing, door, learned)
     local d = Wings.DUNGEONS[Wings.Base(name) or ""]
     if not d or type(learned) ~= "table" or not validDoor(d, door) then return false end
+    local mine, near = nil, false
     for _, w in ipairs(d.wings) do
         if w.id == wing then
-            if dist(w.door, door) > Wings.LEARN_RADIUS then return false end
-            learned[wing] = { map = door.map, x = door.x, y = door.y }
-            return true
+            mine = w
+        elseif w.door and dist(w.door, door) <= Wings.DOOR_RADIUS then
+            return false -- another wing's door
         end
+        if w.door and dist(w.door, door) <= Wings.NEAR_DOORS then near = true end
     end
-    return false
+    if not mine then return false end
+    if mine.door and dist(mine.door, door) > Wings.LEARN_RADIUS then return false end
+    if not mine.door and not near then return false end
+    learned[wing] = { map = door.map, x = door.x, y = door.y }
+    return true
 end
 
 -- The wing a boss belongs to, or nil.
