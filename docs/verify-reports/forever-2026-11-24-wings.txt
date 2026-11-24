@@ -20,3 +20,6 @@ INFO x:dungeon.copy: open run: Scarlet Monastery (map 189), copy=nil, back in=fa
 
 # the Cathedral after a /reload, 13:50: named from its door
 INFO x:dungeon.copy: open run: Scarlet Monastery: Cathedral (map 189), copy=nil, back in=false; seen: none; door=1420@0.8531,0.3041, last outside=1420@0.8531,0.3041, maps=none; wing=Cathedral (from door); learned doors: none; clock: started=not yet by nil, in combat on coming in=false
+
+# the Armory, a fresh walk-in, 13:51: named from its door
+INFO x:dungeon.copy: open run: Scarlet Monastery: Armory (map 189), copy=nil, back in=false; seen: none; door=1420@0.8567,0.3177, last outside=1420@0.8567,0.3177, maps=none; wing=Armory (from door); learned doors: none; clock: started=not yet by nil, in combat on coming in=false
