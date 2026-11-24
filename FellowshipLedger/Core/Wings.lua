@@ -64,17 +64,45 @@ function Wings.Name(base, wing)
     return base .. ": " .. wing
 end
 
--- The wing whose door { map, x, y } is, or nil.
-function Wings.FromDoor(name, door)
+local function dist(a, b)
+    local dx, dy = a.x - b.x, a.y - b.y
+    return math.sqrt(dx * dx + dy * dy)
+end
+
+local function validDoor(d, door)
+    return type(door) == "table" and door.map == d.doorMap and type(door.x) == "number" and type(door.y) == "number"
+end
+
+-- The wing whose door { map, x, y } is, or nil. learned: { [wing] = { map, x, y } },
+-- doors measured on this account (Wings.Learn), used before the ones above.
+function Wings.FromDoor(name, door, learned)
     local d = Wings.DUNGEONS[Wings.Base(name) or ""]
-    if not d or type(door) ~= "table" or door.map ~= d.doorMap or type(door.x) ~= "number" or type(door.y) ~= "number" then return nil end
+    if not d or not validDoor(d, door) then return nil end
     local best, bestDist
     for _, w in ipairs(d.wings) do
-        local dx, dy = w.door.x - door.x, w.door.y - door.y
-        local dist = math.sqrt(dx * dx + dy * dy)
-        if dist <= Wings.DOOR_RADIUS and (not bestDist or dist < bestDist) then best, bestDist = w.id, dist end
+        local at = learned and validDoor(d, learned[w.id]) and learned[w.id] or w.door
+        local dd = dist(at, door)
+        if dd <= Wings.DOOR_RADIUS and (not bestDist or dd < bestDist) then best, bestDist = w.id, dd end
     end
     return best
+end
+
+-- A wing a boss or room has confirmed: the door walked through is that wing's door
+-- (as ForeverDungeonJournal learns its doors). Kept only near where that wing's door
+-- should be (within a portal's gap), so a door read far away teaches nothing.
+-- learned: the table to keep it in. Returns true when kept.
+Wings.LEARN_RADIUS = 0.007
+function Wings.Learn(name, wing, door, learned)
+    local d = Wings.DUNGEONS[Wings.Base(name) or ""]
+    if not d or type(learned) ~= "table" or not validDoor(d, door) then return false end
+    for _, w in ipairs(d.wings) do
+        if w.id == wing then
+            if dist(w.door, door) > Wings.LEARN_RADIUS then return false end
+            learned[wing] = { map = door.map, x = door.x, y = door.y }
+            return true
+        end
+    end
+    return false
 end
 
 -- The wing a boss belongs to, or nil.

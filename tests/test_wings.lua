@@ -63,3 +63,17 @@ H.test("wings: the Leaderboard and the timer's compared run keep wings apart", f
     H.eq(t.order[1].name, "Houndmaster Loksey", "the Library's bosses, not the Graveyard's")
     H.eq(t.splits["Bloodmage Thalnos"], nil)
 end)
+
+H.test("wings: doors learned from a boss or room are used first (D-151)", function()
+    local learned = {}
+    local armory = { map = 1420, x = 0.8521, y = 0.3165 } -- a little off the estimate
+    H.eq(W.Learn(SM, "Armory", armory, learned), true)
+    H.eq(learned.Armory.x, 0.8521)
+    H.eq(W.Learn(SM, "Armory", { map = 1420, x = 0.80, y = 0.30 }, learned), false, "far from that wing's door: not kept")
+    H.eq(W.Learn(SM, "Armory", { map = 1414, x = 0.8521, y = 0.3165 }, learned), false, "another map")
+    H.eq(W.Learn("Razorfen Kraul", "Armory", armory, learned), false)
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8523, y = 0.3167 }, learned), "Armory", "by the learned door")
+    -- A learned door moves where a wing is read.
+    local moved = { Cathedral = { map = 1420, x = 0.8505, y = 0.3125 } }
+    H.eq(W.FromDoor(SM, { map = 1420, x = 0.8506, y = 0.3126 }, moved), "Cathedral")
+end)

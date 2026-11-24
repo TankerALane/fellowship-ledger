@@ -446,6 +446,12 @@ custom["x:dungeon.copy"] = function()
     -- What started the clock, and when (D-149).
     if run then
         detail = detail .. string.format("; wing=%s (from %s)", tostring(run.wing), tostring(run.wingBy))
+        -- Doors learned on this account (D-151).
+        local learned = D and D.LearnedDoors and D.LearnedDoors(run.name)
+        local doors = {}
+        for wing, d in pairs(learned or {}) do doors[#doors + 1] = wing .. "=" .. door(d) end
+        table.sort(doors)
+        detail = detail .. "; learned doors: " .. (#doors > 0 and table.concat(doors, " ") or "none")
         detail = detail .. string.format("; clock: started=%s by %s, in combat on coming in=%s", run.started and ("+" .. (run.started - run.entered) .. "s") or "not yet",
             tostring(run.startedBy), tostring(run.combatIn == true))
     end

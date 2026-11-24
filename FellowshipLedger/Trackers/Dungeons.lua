@@ -23,6 +23,7 @@ local NO_WINGS = {
     FromBoss = function() return nil end,
     FromRoom = function() return nil end,
     FromBosses = function() return nil end,
+    Learn = function() return false end,
 }
 local function Wings() return ns.Wings or NO_WINGS end
 
@@ -404,11 +405,32 @@ local function wingConfirmed(run)
 end
 Dungeons.WingConfirmed = wingConfirmed
 
+-- Doors learned on this account (D-151): ns.db.wingDoors[dungeon][wing] = { map, x, y }.
+local function learnedDoors(name, create)
+    local db = ns.db
+    if not db or type(name) ~= "string" then return nil end
+    local base = Wings().Base(name)
+    if create then
+        db.wingDoors = db.wingDoors or {}
+        db.wingDoors[base] = db.wingDoors[base] or {}
+    end
+    return db.wingDoors and db.wingDoors[base]
+end
+Dungeons.LearnedDoors = learnedDoors
+
 local function setWing(run, wing, by)
-    if not run or not wing or run.wing == wing then return end
-    if run.wing and (by == "door" or wingConfirmed(run)) then return end
-    run.wing, run.wingBy = wing, by
-    run.name = Wings().Name(Wings().Base(run.name), wing)
+    if not run or not wing then return end
+    if run.wing ~= wing then
+        if run.wing and (by == "door" or wingConfirmed(run)) then return end
+        run.wing, run.wingBy = wing, by
+        run.name = Wings().Name(Wings().Base(run.name), wing)
+    elseif run.wingBy == "door" and by ~= "door" then
+        run.wingBy = by -- the door's guess, now confirmed
+    end
+    -- A boss or the room says which wing: the door walked through is its door (D-151).
+    if (by == "boss" or by == "room") and run.door then
+        Wings().Learn(run.name, wing, run.door, learnedDoors(run.name, true))
+    end
 end
 Dungeons.SetWing = setWing
 
@@ -445,7 +467,7 @@ local function startRun(char, t, name, instanceID, difficultyID, door)
     noteMembers(char.currentRun)
     local run = char.currentRun
     noteMap(run)
-    setWing(run, Wings().FromDoor(name, run.door), "door") -- D-150
+    setWing(run, Wings().FromDoor(name, run.door, learnedDoors(name)), "door") -- D-150
     roomWing(run)
     -- Already in combat on coming in (a mob followed you to the door)? D-149.
     local okC, fighting = ns.Compat.Try("UnitAffectingCombat", "player")
@@ -766,7 +788,7 @@ function Dungeons.NameWings(char)
             if w then
                 setWing(r, w, "saved")
             elseif r == char.currentRun then
-                w = Wings().FromDoor(r.name, r.door) -- an open run with no boss yet: its door
+                w = Wings().FromDoor(r.name, r.door, learnedDoors(r.name)) -- an open run with no boss yet: its door
                 setWing(r, w, "door")
             end
             if w then named = named + 1 end
