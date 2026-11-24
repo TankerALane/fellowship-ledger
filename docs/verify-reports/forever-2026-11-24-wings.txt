@@ -6,3 +6,7 @@ FAIL x:map.current: mapID=nil
 INFO x:dungeon.instance: returned 11 values; type=party difficultyID=1 instanceID=189
 INFO x:dungeon.copy: open run: Scarlet Monastery (map 189), copy=nil, back in=true; seen: none; door=1420@0.8537,0.3236, last outside=1420@0.8534,0.3234, maps=none; wing=nil (from nil); clock: started=not yet by nil, in combat on coming in=false; no creature GUID read yet this session (target one inside a dungeon)
 PASS C_Map.GetPlayerMapPosition (api pass list)
+
+# after a full restart, 13:42
+PASS x:dungeon.journal: Scarlet Monastery: Library: 0 bosses killed, completed=false, ...; final-boss list: Arcanist Doan; journal: 0 instances
+INFO x:dungeon.copy: open run: Scarlet Monastery: Library (map 189), copy=nil, back in=true; seen: none; door=1420@0.8537,0.3236, last outside=1420@0.8535,0.3233, maps=none; wing=Library (from door); clock: started=not yet by nil, in combat on coming in=false
