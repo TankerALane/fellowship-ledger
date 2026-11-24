@@ -506,7 +506,7 @@ Transport.handlers.S = function(_, body, info)
     if ns.Friends.IsSelf(info.sender) then return end
     local s = Codec.DecodeStart(body)
     local run = ns.Store.char and ns.Store.char.currentRun
-    if not (s and run and type(s.dungeon) == "string" and ns.Wings.Base(run.name) == ns.Wings.Base(s.dungeon)) then return end
+    if not (s and run and type(s.dungeon) == "string" and (ns.Wings and ns.Wings.Base(run.name) or run.name) == (ns.Wings and ns.Wings.Base(s.dungeon) or s.dungeon)) then return end
     if s.ago then
         local who = type(info.sender) == "string" and info.sender:match("^([^%-]+)") or "?"
         local D = ns.Trackers.byId and ns.Trackers.byId.dungeons

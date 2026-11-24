@@ -1229,3 +1229,18 @@ H.test("dungeon: a boss or the room corrects a wing guessed from the door (D-150
     H.eq(char(env2).currentRun.name, "Scarlet Monastery: Library", "the room, at once")
     H.eq(char(env2).currentRun.wingBy, "room")
 end)
+
+H.test("dungeon: without Core/Wings.lua (an update then a /reload) runs still work (D-150)", function()
+    local env, ns = boot(RETAIL)
+    ns.Wings = nil
+    wings(env, { positions = true })
+    through(env, ns, GRAVEYARD_DOOR, nil, 0)
+    H.eq(char(env).currentRun.name, "Scarlet Monastery", "no wing, no error")
+    Mock.advance(env, 300)
+    Mock.fire(env, "ENCOUNTER_END", 30, "Bloodmage Thalnos", 1, 5, 1)
+    H.ok(char(env).currentRun.completed)
+    through(env, ns, LIBRARY_DOOR, nil, 60)
+    H.eq(#char(env).dungeons, 1, "the door still splits the runs")
+    H.eq(ns.Trackers.byId.dungeons.NameWings(char(env)), 0)
+    H.ok(not Mock.chatContains(env, "dungeons"), "no handler error in chat")
+end)

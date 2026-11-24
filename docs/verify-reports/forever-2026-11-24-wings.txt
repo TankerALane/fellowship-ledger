@@ -1,0 +1,8 @@
+# trimmed copy (Austin, 2026-11-24, after a /reload, before a full restart: Core/Wings.lua not loaded)
+Fellowship Ledger verify report
+addon=1.14.7 flavor=Forever toc=Forever interface=16001 client=1.60.1 build=71091 at=2026-11-24 13:39
+summary pass=242 fail=13 error=0 info=12 manual=50
+FAIL x:map.current: mapID=nil
+INFO x:dungeon.instance: returned 11 values; type=party difficultyID=1 instanceID=189
+INFO x:dungeon.copy: open run: Scarlet Monastery (map 189), copy=nil, back in=true; seen: none; door=1420@0.8537,0.3236, last outside=1420@0.8534,0.3234, maps=none; wing=nil (from nil); clock: started=not yet by nil, in combat on coming in=false; no creature GUID read yet this session (target one inside a dungeon)
+PASS C_Map.GetPlayerMapPosition (api pass list)

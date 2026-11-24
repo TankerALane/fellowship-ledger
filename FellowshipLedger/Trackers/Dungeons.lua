@@ -13,6 +13,19 @@ local Dungeons = T.Define({ id = "dungeons" })
 local RESUME_SECONDS = 1800 -- re-entering the same instance within this continues the run
 local unitKey -- below
 
+-- Core/Wings.lua (D-150), or a stand-in that knows no wings: a file added in an update
+-- loads only after a full game restart, not a /reload, and runs must go on without it.
+local NO_WINGS = {
+    Base = function(name) return name end,
+    Name = function(base) return base end,
+    Has = function() return false end,
+    FromDoor = function() return nil end,
+    FromBoss = function() return nil end,
+    FromRoom = function() return nil end,
+    FromBosses = function() return nil end,
+}
+local function Wings() return ns.Wings or NO_WINGS end
+
 -- Is this character ("Name" or "Name-Realm") one of my friends who runs the ledger
 -- (has said hello)? Battle.net friends by the character they are on, character
 -- friends by name.
@@ -304,7 +317,7 @@ Dungeons.START_MAX_AGE = 7200
 function Dungeons.AdoptStart(name, at, partial, from)
     local run = Store.char and Store.char.currentRun
     local now = Store.Now()
-    if not (run and type(name) == "string" and ns.Wings.Base(run.name) == ns.Wings.Base(name) and not run.outside and type(at) == "number") then return false end
+    if not (run and type(name) == "string" and Wings().Base(run.name) == Wings().Base(name) and not run.outside and type(at) == "number") then return false end
     if at > now + 5 or now - at > Dungeons.START_MAX_AGE then return false end
     if run.started and at >= run.started - 2 then
         -- About the same start, seen from the beginning by them: no mark.
@@ -385,7 +398,7 @@ local function wingConfirmed(run)
     if not run or not run.wing then return false end
     if run.wingBy ~= "door" then return true end
     for _, b in ipairs(run.bosses or {}) do
-        if ns.Wings.FromBoss(run.name, b.name) == run.wing then return true end
+        if Wings().FromBoss(run.name, b.name) == run.wing then return true end
     end
     return false
 end
@@ -395,16 +408,16 @@ local function setWing(run, wing, by)
     if not run or not wing or run.wing == wing then return end
     if run.wing and (by == "door" or wingConfirmed(run)) then return end
     run.wing, run.wingBy = wing, by
-    run.name = ns.Wings.Name(ns.Wings.Base(run.name), wing)
+    run.name = Wings().Name(Wings().Base(run.name), wing)
 end
 Dungeons.SetWing = setWing
 
 -- The room the player stands in names the wing, for a run that has none yet.
 local function roomWing(run)
-    if not run or wingConfirmed(run) or run.outside or not ns.Wings.Has(run.name) then return end
+    if not run or wingConfirmed(run) or run.outside or not Wings().Has(run.name) then return end
     local ok, room = ns.Compat.Try("GetSubZoneText")
     room = ok and T.Plain(room) or nil
-    setWing(run, ns.Wings.FromRoom(run.name, room), "room")
+    setWing(run, Wings().FromRoom(run.name, room), "room")
 end
 
 -- door: the door walked through, when known before (a run split on coming back).
@@ -432,7 +445,7 @@ local function startRun(char, t, name, instanceID, difficultyID, door)
     noteMembers(char.currentRun)
     local run = char.currentRun
     noteMap(run)
-    setWing(run, ns.Wings.FromDoor(name, run.door), "door") -- D-150
+    setWing(run, Wings().FromDoor(name, run.door), "door") -- D-150
     roomWing(run)
     -- Already in combat on coming in (a mob followed you to the door)? D-149.
     local okC, fighting = ns.Compat.Try("UnitAffectingCombat", "player")
@@ -527,7 +540,7 @@ function splitAtBack(run)
     run.pull = nil
     closeRun(char)
     local _, _, diff = GetInstanceInfo()
-    local new = startRun(char, backAt, ns.Wings.Base(run.name), run.instanceID, T.Plain(diff) or run.difficultyID, run.backDoor)
+    local new = startRun(char, backAt, Wings().Base(run.name), run.instanceID, T.Plain(diff) or run.difficultyID, run.backDoor)
     new.lastSeen = Store.Now()
     return new
 end
@@ -746,10 +759,10 @@ function Dungeons.NameWings(char)
     if char.currentRun then runs[#runs + 1] = char.currentRun end
     local named = 0
     for _, r in ipairs(runs) do
-        if not r.wing and ns.Wings.Has(r.name) then
+        if not r.wing and Wings().Has(r.name) then
             local names = {}
             for _, b in ipairs(r.bosses or {}) do names[#names + 1] = b.name end
-            local w = ns.Wings.FromBosses(r.name, names)
+            local w = Wings().FromBosses(r.name, names)
             if w then setWing(r, w, "saved"); named = named + 1 end
         end
     end
@@ -915,13 +928,13 @@ Dungeons.events.ENCOUNTER_END = function(_, encounterID, encounterName, difficul
         -- boss this run never killed died: another wing, so a new run (D-147). For
         -- when neither the map nor the door told the wings apart.
         -- Or a boss of another wing than the run's (D-150).
-        local bossWing = ns.Wings.FromBoss(run.name, T.Plain(encounterName))
+        local bossWing = Wings().FromBoss(run.name, T.Plain(encounterName))
         local otherWing = wingConfirmed(run) and bossWing ~= nil and bossWing ~= run.wing
-        if seen == false and (otherWing or (run.completed and #(ns.DungeonBosses.For(ns.Wings.Base(run.name)) or {}) > 1)) then
+        if seen == false and (otherWing or (run.completed and #(ns.DungeonBosses.For(Wings().Base(run.name)) or {}) > 1)) then
             run = splitAtBack(run)
         end
     end
-    setWing(run, ns.Wings.FromBoss(run.name, T.Plain(encounterName)), "boss") -- D-150
+    setWing(run, Wings().FromBoss(run.name, T.Plain(encounterName)), "boss") -- D-150
     -- Fight length: from this encounter's pull to the kill (D-104); nil without a pull.
     local fight = pull and pull.at and (pull.id == nil or pull.id == encounterID) and t - pull.at or nil
     if fight and (fight < 0 or fight > 3600) then fight = nil end
